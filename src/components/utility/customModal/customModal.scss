@@ -1,0 +1,66 @@
+@use '../../../assets/scss/index' as *;
+
+.modal {
+  @include center-align(fixed);
+
+  background-color: $grey-3;
+  padding: 60px;
+  color: $white;
+  z-index: 900;
+  max-width: 1000px;
+  width: calc(100% - 1rem);
+  box-shadow: rgb(0 0 0 / 0.25) 0 14px 28px, rgb(0 0 0 / 0.22) 0 10px 10px;
+
+  & div {
+    transition: none;
+  }
+
+  &__overlay {
+    display: block;
+    position: fixed;
+    width: 100vw;
+    background-color: rgb(0 0 0 / 0.5);
+    z-index: 890;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    backdrop-filter: blur(10px);
+  }
+
+  &__header {
+    text-transform: uppercase;
+    font-weight: 300;
+    font-size: 40px;
+    line-height: 49px;
+    padding-bottom: 30px;
+  }
+
+  &__close {
+    color: $white;
+    position: absolute;
+    right: 30px;
+    top: 30px;
+    font-size: 30px;
+  }
+
+  &__icon {
+    display: block;
+    height: 66px;
+    width: 66px;
+    border-radius: 33px;
+    background-color: $red-1;
+    position: relative;
+    margin: 0 auto;
+  }
+
+  &__footer {
+    padding: 60px 0 0;
+    text-align: right;
+
+    .btn {
+      width: 180px;
+      padding: 16px;
+      margin-left: 13px;
+    }
+  }
+}

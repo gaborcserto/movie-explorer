@@ -1,0 +1,41 @@
+@use '../../../assets/scss/index' as *;
+
+.custom-select {
+  box-sizing: border-box;
+
+  &__header {
+    cursor: pointer;
+    position: relative;
+
+    &:after {
+      background-color: $red-1;
+      content: '';
+      mask-image: url('../../../assets/img/down.svg');
+      mask-position: center;
+      mask-repeat: no-repeat;
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      display: block;
+      transition: none;
+    }
+  }
+
+  &__wrapper {
+    position: relative;
+    z-index: 100;
+  }
+
+  &__container {
+    position: absolute;
+    width: 100%;
+    margin: 0 auto;
+    z-index: 900;
+    transition: none;
+  }
+
+  &__item {
+    list-style: none;
+    cursor: pointer;
+  }
+}

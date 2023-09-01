@@ -1,0 +1,23 @@
+@use 'assets/scss' as *;
+@import 'scss-reset/reset';
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: $grey-3;
+}
+
+section,
+header,
+main,
+h1,
+h2,
+p,
+nav,
+div,
+img {
+  @include transition(all 1s ease-in-out, left 1.5s ease-in-out);
+}

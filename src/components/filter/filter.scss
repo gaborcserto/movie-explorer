@@ -1,0 +1,194 @@
+@use '../../assets/scss/index' as *;
+
+@mixin hover-filter($top) {
+  background-color: $red-1;
+  top: $top;
+  content: '';
+  display: block;
+  height: 2px;
+  width: 100%;
+  position: absolute;
+  z-index: 100;
+}
+
+.menu {
+  align-items: stretch;
+  color: $grey-1;
+  display: flex;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 20px;
+  min-height: 20px;
+  padding: 20px 60px;
+  position: relative;
+
+
+  &:after {
+    background-color: $grey-2;
+    bottom: 0;
+    content: '';
+    display: block;
+    height: 2px;
+    width: calc(100% - 120px);
+    position: absolute;
+  }
+
+  &__link {
+    cursor: pointer;
+    position: relative;
+    padding: 5px 0;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: $white;
+
+    &:hover,
+    &--active {
+      &:after {
+        @include hover-filter(48px);
+      }
+    }
+  }
+
+  &__filters {
+    color: $white;
+    display: flex;
+    flex: 0.5;
+    justify-content: space-between;
+  }
+
+  &__short {
+    display: flex;
+    flex: 0.5;
+    justify-content: flex-end;
+
+    &__label {
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 30px;
+      text-transform: uppercase;
+      opacity: 0.6;
+      margin-right: 20px;
+    }
+  }
+
+  @include media-size(lg-down) {
+    display: block;
+    padding: 1rem;
+
+    &:after {
+      width: calc(100% - 2rem);
+    }
+
+    &__link {
+      &:hover,
+      &--active {
+        &:after {
+          @include hover-filter(35px);
+        }
+      }
+    }
+
+    &__filters {
+      flex: 1;
+    }
+
+    &__short {
+      flex: 1;
+      margin-top: 10px;
+    }
+  }
+
+  @include media-size(md-down) {
+    &__link {
+      display: block;
+
+      &:hover {
+        color: $grey-1;
+
+        &:after {
+          display: none;
+        }
+      }
+
+      &--active {
+        color: $red-1;
+
+        &:after {
+          display: none;
+        }
+      }
+    }
+
+    &__filters {
+      display: block;
+    }
+
+    &__short {
+      display: block;
+    }
+  }
+
+  @include media-size(sm-down) {
+    &__short__label {
+      margin: 0;
+      padding: 0 10px;
+    }
+  }
+}
+
+.menu__short__select {
+  .custom-select {
+    padding: 0 0 0 1em;
+    margin: 0;
+    box-sizing: border-box;
+    color: $white;
+    font-size: 14px;
+    font-weight: 500;
+
+    &:first-child {
+      padding-top: 0.8em;
+    }
+
+    &__header {
+      font-style: normal;
+      font-weight: 500;
+      font-size: 16px;
+      line-height: 20px;
+      color: $white;
+      padding: 5px 20px 5px 10px;
+      width: 180px;
+      text-transform: capitalize;
+
+      &:after {
+        top: 5px;
+        right: 10px;
+      }
+    }
+
+    &__item {
+      margin-bottom: 0.8em;
+
+      &:hover {
+        color: $red-1;
+      }
+    }
+
+    &__item--selected {
+      color: $red-1;
+    }
+  }
+
+  &.custom-select__wrapper {
+    .custom-select__header,
+    .custom-select__container {
+      background: rgb(0 0 0 / 0);
+    }
+
+    &--open {
+      .custom-select__header,
+      .custom-select__container {
+        background: rgb(0 0 0 / 0.8);
+      }
+    }
+  }
+}

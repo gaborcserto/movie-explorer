@@ -1,0 +1,92 @@
+@use 'sass:color';
+
+// btn-variant
+@mixin btn-variant($background, $color, $border) {
+  background-color: $background;
+  border-color: $border;
+  box-shadow: 0 5px 15px 0 rgb(0 0 0 / 0.15);
+  color: $color;
+
+  &.focus,
+  &:hover,
+  &:focus {
+    background-color: color.scale($background, $lightness: -8%);
+    border-color: color.scale($border, $lightness: -8%);
+    color: $color;
+  }
+
+  &:active {
+    background: color.scale($background, $lightness: -25%);
+    border-color: color.scale($border, $lightness: -25%);
+    color: $color;
+  }
+}
+
+// box sizing
+@mixin box-sizing($box-property) {
+  box-sizing: $box-property;
+}
+
+// box shadow
+@mixin box-shadow($shadow-property) {
+  box-shadow: $shadow-property;
+}
+
+// border radius
+@mixin border-top-left-radius($radius) {
+  border-top-left-radius: $radius;
+  background-clip: padding-box;
+}
+
+@mixin border-top-right-radius($radius) {
+  border-top-right-radius: $radius;
+  background-clip: padding-box;
+}
+
+@mixin border-bottom-left-radius($radius) {
+  border-bottom-left-radius: $radius;
+  background-clip: padding-box;
+}
+
+@mixin border-bottom-right-radius($radius) {
+  border-bottom-right-radius: $radius;
+  background-clip: padding-box;
+}
+
+@mixin border-radius($radius) {
+  border-radius: $radius;
+  background-clip: padding-box;
+}
+
+// transform
+@mixin transform($transform-property) {
+  transform: $transform-property;
+}
+
+// transition
+@mixin transition($transition-property...) {
+  transition: $transition-property;
+}
+
+// positions
+@mixin center-align($position) {
+  @include transform(translate(-50%, -50%));
+
+  position: $position;
+  left: 50%;
+  top: 50%;
+}
+
+@mixin vertical-align($position) {
+  @include transform(translateY(-50%));
+
+  position: $position;
+  top: 50%;
+}
+
+@mixin horizontal-align($position) {
+  @include transform(translateX(-50%));
+
+  position: $position;
+  left: 50%;
+}

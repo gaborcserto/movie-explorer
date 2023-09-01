@@ -1,0 +1,16 @@
+@use '../../assets/scss' as *;
+
+.error {
+  background-color: $white;
+  height: 100vh;
+
+  &__title {
+    @include center-align(absolute);
+
+    border-radius: 5px;
+    background-color: $red-1;
+    color: $white;
+    font-family: Helvetica, Arial, serif;
+    padding: 3rem;
+  }
+}

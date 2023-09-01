@@ -1,0 +1,140 @@
+@use '../../assets/scss/index' as *;
+
+.modal {
+  span[role="alert"] {
+    color: $alert;
+    font-weight: 600;
+    text-transform: none;
+  }
+
+  &__label {
+    text-transform: uppercase;
+    padding: 11px 0;
+    color: $red-1;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 20px;
+    display: block;
+  }
+
+  &__input {
+    width: 100%;
+    background: rgb(50 50 50 / 0.948);
+    mix-blend-mode: normal;
+    opacity: 0.8;
+    border-radius: 4px;
+    border: none;
+    padding: 19px;
+    color: $white;
+    color-scheme: dark;
+
+    &--textarea {
+      min-height: 190px;
+    }
+
+    &::-webkit-calendar-picker-indicator {
+      color: $red-1;
+    }
+  }
+
+  &__row {
+    display: flex;
+    column-gap: 30px;
+
+    &__part1 {
+      flex-basis: 70%;
+    }
+
+    &__part2 {
+      flex-basis: 30%;
+    }
+
+    .custom-select {
+      padding: 0 0 0 1em;
+      margin: 0;
+      box-sizing: border-box;
+      color: $white;
+      font-size: 14px;
+      font-weight: 500;
+
+      &:first-child {
+        padding-top: 0.8em;
+      }
+
+      &__header {
+        background: rgb(0 0 0 / 0);
+        font-style: normal;
+        font-weight: 500;
+        font-size: 16px;
+        line-height: 20px;
+        color: $white;
+
+        &:after {
+          top: 0;
+          right: 0;
+        }
+      }
+
+      &__container {
+        background: rgb(0 0 0 / 0);
+      }
+
+      &__wrapper {
+        &--open {
+          .custom-select__container {
+            background: rgb(35 35 35 / 0.918);
+            box-shadow: 0 0 2px rgb(0 0 0 / 0.1), 0 2px 10px rgb(0 0 0 / 0.1),
+              0 10px 20px rgb(0 0 0 / 0.1), 0 10px 50px rgb(0 0 0 / 0.1);
+            backdrop-filter: blur(13.5914px);
+            left: 0;
+            top: 57px;
+          }
+        }
+      }
+
+      &__item {
+        margin-bottom: 0.8em;
+        position: relative;
+        padding-left: 25px;
+
+        &:before {
+          @include vertical-align(absolute);
+
+          background-color: $white;
+          border-radius: 3px;
+          content: '';
+          width: 16px;
+          height: 16px;
+          display: inline-block;
+          left: 0;
+        }
+
+        &:hover {
+          color: $red-1;
+        }
+      }
+
+      &__item--selected {
+        color: $red-1;
+
+        &:before {
+          background-color: $red-1;
+        }
+
+        &:after {
+          @include vertical-align(absolute);
+
+          background-color: $white;
+          content: '';
+          width: 10px;
+          height: 10px;
+          display: block;
+          left: 3px;
+          mask-image: url('../../assets/img/check.svg');
+          mask-size: contain;
+          mask-position: center;
+        }
+      }
+    }
+  }
+}

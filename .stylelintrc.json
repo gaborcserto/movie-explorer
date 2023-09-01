@@ -1,0 +1,33 @@
+{
+  "extends": [
+    "stylelint-prettier/recommended",
+    "stylelint-config-standard-scss"
+  ],
+  "ignoreFiles": ["**/*.html", "**/*.js", "**/*.ts"],
+  "plugins": [
+    "stylelint-prettier"
+  ],
+  "rules": {
+    "prettier/prettier": true,
+    "alpha-value-notation": "number",
+    "at-rule-no-unknown": null,
+    "font-family-no-missing-generic-family-keyword": null,
+    "no-missing-end-of-source-newline": null,
+    "no-empty-source": null,
+    "shorthand-property-no-redundant-values": null,
+    "block-no-empty": null,
+    "no-duplicate-selectors": true,
+    "color-hex-length": "long",
+    "color-named": "never",
+    "selector-no-qualifying-type": true,
+    "selector-attribute-quotes": "always",
+    "property-no-vendor-prefix": true,
+    "value-no-vendor-prefix": true,
+    "at-rule-no-vendor-prefix": true,
+    "selector-class-pattern": null,
+    "selector-pseudo-element-colon-notation": "single",
+    "selector-no-vendor-prefix": true,
+    "media-feature-name-no-vendor-prefix": true,
+    "max-empty-lines": null
+  }
+}
