@@ -84,7 +84,7 @@ describe('EditModal component', () => {
     );
 
     const titleInput = screen.getByLabelText('Title');
-    userEvent.clear(titleInput);
+    await userEvent.clear(titleInput);
 
     const saveButton = screen.getByText('Submit');
     fireEvent.click(saveButton);
