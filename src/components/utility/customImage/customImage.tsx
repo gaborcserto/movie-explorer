@@ -18,6 +18,9 @@ function CustomImage({ img_path, img_title, img_style }: ImgProps) {
       image.onload = () => {
         setIsImage(img_path);
       };
+      image.onerror = () => {
+        setIsImage(placeholderImage);
+      };
     }
   }, [img_path]);
 

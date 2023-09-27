@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
 import './card.scss';
 import { useDispatch } from 'react-redux';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -20,6 +20,7 @@ function Card({ movie }: CardProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const hoverBtnRef = useRef<HTMLDivElement>(null);
   const [searchParams] = useSearchParams();
+  const uniqueId = useId();
 
   const filter = searchParams.get('filter');
   const sort = searchParams.get('sorting');
@@ -67,7 +68,7 @@ function Card({ movie }: CardProps) {
   const genreLinks = genres
     .map((genre) => {
       return (
-        <span key={Math.random()}>
+        <span key={uniqueId}>
           <Link
             to={`?filter=${genre.toLowerCase().replace(/ /g, '+')}${
               sort ? `&sorting=${sort}` : ''
