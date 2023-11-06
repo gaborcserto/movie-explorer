@@ -49,6 +49,10 @@ function List() {
       });
   }, [dispatch, params]);
 
+  const capitalizeFirstLetter = (data: string) => {
+    return data.charAt(0).toUpperCase() + data.slice(1);
+  }
+
   if (loadingData) {
     return (
       <Loading className="list__container container list__container--loading" />
@@ -69,6 +73,9 @@ function List() {
     <section className="list__container container">
       <h2 className="list__number">
         <strong>{moviesData?.totalAmount}</strong> movies found
+        {filter && (
+          <span> in genre: <strong className="genre">{capitalizeFirstLetter(filter)}</strong></span>
+        )}
       </h2>
       <div className="list__items">
         {moviesList?.map((movieData: Movie) => (
