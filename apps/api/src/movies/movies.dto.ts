@@ -8,6 +8,13 @@ import {
   ValidateIf,
   Min,
 } from 'class-validator';
+import type {
+  Movie as MovieContract,
+  MovieListResponse,
+} from '@movie-explorer/contracts';
+
+export type MovieResponseContract = MovieContract;
+export type MoviesResponseContract = MovieListResponse;
 
 export class GetMoviesFilter {
   @ApiPropertyOptional({ description: 'Field to sort by' })
