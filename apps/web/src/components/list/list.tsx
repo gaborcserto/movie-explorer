@@ -123,7 +123,7 @@ function List({
 
   return (
     <section className="list__container container">
-      <h2 className="list__number">
+      <h2 className="list__number" aria-live="polite">
         <strong>{movieTotal}</strong> movies found
         {filter && (
           <span>

@@ -26,7 +26,13 @@ function CustomImage({ img_path, img_title, img_style }: ImgProps) {
 
   return (
     <div className={img_style}>
-      <img src={isImage} alt={img_title} className={`${img_style}__img`} />
+      <img
+        src={isImage}
+        alt={img_title}
+        className={`${img_style}__img`}
+        loading="lazy"
+        decoding="async"
+      />
     </div>
   );
 }

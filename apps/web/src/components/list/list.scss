@@ -3,13 +3,13 @@
 .list {
   &__container {
     color: $white;
-    padding: 20px 60px;
+    padding: 28px 60px 48px;
   }
 
   &__number {
     font-size: 20px;
     line-height: 24px;
-    padding-bottom: 20px;
+    padding-bottom: 24px;
 
     .genre {
       color: $red-1;
@@ -19,25 +19,36 @@
 
   &__items {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-gap: 20px 60px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-gap: 36px 56px;
   }
 
   &__state {
+    align-items: center;
+    background-color: rgb(255 255 255 / 0.03);
+    border: 1px solid rgb(255 255 255 / 0.08);
+    border-radius: 4px;
     color: $white;
+    display: flex;
     font-size: 18px;
     line-height: 24px;
     min-height: 240px;
-    opacity: 0.8;
-    padding: 40px 0;
+    opacity: 0.85;
+    padding: 40px;
   }
 
   &__container--error,
   &__container--loading {
+    align-items: center;
+    display: flex;
     min-height: 280px;
   }
 
   &__container--error {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
+
     h2 {
       font-size: 24px;
       line-height: 30px;
@@ -56,7 +67,7 @@
 
     &__items {
       grid-template-columns: repeat(2, 1fr);
-      grid-gap: 10px 10px;
+      grid-gap: 24px 20px;
     }
   }
 

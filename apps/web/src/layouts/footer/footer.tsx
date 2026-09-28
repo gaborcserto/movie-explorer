@@ -5,7 +5,7 @@ function Footer() {
   return (
     <footer className="footer">
       <Link to="/search" className="footer__title brand">
-        <strong>netflix</strong>roulette
+        <strong>Movie</strong> Roulette
       </Link>
     </footer>
   );

@@ -10,7 +10,7 @@ import { TmdbMovieProvider } from '../integrations/tmdb/tmdb-movie.provider';
     MoviesService,
     {
       provide: MOVIE_PROVIDER,
-      useClass: TmdbMovieProvider,
+      useFactory: () => new TmdbMovieProvider(),
     },
   ],
 })

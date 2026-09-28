@@ -41,7 +41,7 @@ function Filter() {
   }, [sort]);
 
   return (
-    <nav className="menu container">
+    <nav className="menu container" aria-label="Movie filters and sorting">
       <div className="menu__filters">
         <Link
           to={sort ? `?sorting=${sort}` : ``}
@@ -65,7 +65,7 @@ function Filter() {
         ))}
       </div>
       <div className="menu__short">
-        <p className="menu__short__label">short by</p>
+        <p className="menu__short__label">sort by</p>
         <CustomSelect
           options={sortOptions}
           selectedOptions={[selectedOption]}

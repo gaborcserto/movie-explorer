@@ -11,15 +11,33 @@
 .container {
   margin: 0 auto;
   max-width: 1200px;
-  width: calc(100% - 1rem);
+  width: min(calc(100% - 32px), 1200px);
 }
 
 .btn {
   border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  line-height: 1.2;
   padding: 11px 18px;
   text-transform: uppercase;
   border-width: 1px;
   border-style: solid;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:focus-visible {
+    outline: 2px solid $white;
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
 
   &--transparent {
     @include btn-variant(
@@ -41,13 +59,30 @@
 .brand {
   color: $red-1;
   font-size: 20px;
+  line-height: 1.2;
   text-decoration: none;
+  transition: color 0.2s ease;
 
   strong {
     font-weight: 900;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $red-1;
+    outline-offset: 4px;
   }
 }
 
 .main {
   flex: 1 1 auto;
+}
+
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }

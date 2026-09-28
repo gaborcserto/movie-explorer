@@ -36,7 +36,7 @@ function Search({ onAddMovie }: SearchProps) {
       <div className="header__container container">
         <div className="header__top">
           <Link to="/search" className="header__brand brand">
-            <strong>netflix</strong>roulette
+            <strong>Movie</strong> Roulette
           </Link>
           <button
             className="btn--transparent btn"
@@ -47,8 +47,16 @@ function Search({ onAddMovie }: SearchProps) {
           </button>
         </div>
         <h1 className="header__title">FIND YOUR MOVIE</h1>
-        <form className="header__search" onSubmit={handleFormSubmit}>
+        <form
+          className="header__search"
+          onSubmit={handleFormSubmit}
+          role="search"
+        >
+          <label className="visually-hidden" htmlFor="movie-search">
+            Search movies
+          </label>
           <input
+            id="movie-search"
             className="header__search__input"
             type="text"
             placeholder="What do you want to watch?"

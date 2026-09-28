@@ -8,16 +8,31 @@ body {
 
 body {
   background: $grey-3;
+  color: $white;
+  font-family: Montserrat, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizelegibility;
 }
 
-section,
-header,
-main,
-h1,
-h2,
-p,
-nav,
-div,
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a,
+button,
+input,
+textarea,
+[role='button'] {
+  &:focus-visible {
+    outline: 2px solid $red-1;
+    outline-offset: 3px;
+  }
+}
+
 img {
-  @include transition(all 1s ease-in-out, left 1.5s ease-in-out);
+  display: block;
+  max-width: 100%;
 }

@@ -12,14 +12,15 @@
 }
 
 .menu {
-  align-items: stretch;
+  align-items: center;
   color: $grey-1;
   display: flex;
   font-weight: 500;
   font-size: 16px;
   line-height: 20px;
   min-height: 20px;
-  padding: 20px 60px;
+  gap: 24px;
+  padding: 22px 60px 18px;
   position: relative;
 
   &:after {
@@ -33,17 +34,23 @@
   }
 
   &__link {
+    color: $white;
     cursor: pointer;
     position: relative;
-    padding: 5px 0;
+    padding: 5px 0 16px;
     text-transform: uppercase;
     text-decoration: none;
-    color: $white;
+    transition:
+      color 0.2s ease,
+      opacity 0.2s ease;
 
     &:hover,
+    &:focus-visible,
     &--active {
+      color: $red-1;
+
       &:after {
-        @include hover-filter(48px);
+        @include hover-filter(42px);
       }
     }
   }
@@ -51,13 +58,16 @@
   &__filters {
     color: $white;
     display: flex;
-    flex: 0.5;
-    justify-content: space-between;
+    flex: 1 1 auto;
+    gap: clamp(16px, 3vw, 32px);
+    overflow-x: auto;
+    scrollbar-width: thin;
   }
 
   &__short {
+    align-items: center;
     display: flex;
-    flex: 0.5;
+    flex: 0 0 auto;
     justify-content: flex-end;
 
     &__label {
@@ -67,6 +77,7 @@
       text-transform: uppercase;
       opacity: 0.6;
       margin-right: 20px;
+      white-space: nowrap;
     }
   }
 
@@ -89,6 +100,7 @@
 
     &__filters {
       flex: 1;
+      padding-bottom: 4px;
     }
 
     &__short {
@@ -119,11 +131,12 @@
     }
 
     &__filters {
-      display: block;
+      display: flex;
+      gap: 18px;
     }
 
     &__short {
-      display: block;
+      justify-content: space-between;
     }
   }
 
@@ -157,6 +170,7 @@
       padding: 5px 20px 5px 10px;
       width: 180px;
       text-transform: capitalize;
+      transition: color 0.2s ease;
 
       &:after {
         top: 5px;
@@ -166,6 +180,7 @@
 
     &__item {
       margin-bottom: 0.8em;
+      transition: color 0.2s ease;
 
       &:hover {
         color: $red-1;

@@ -14,7 +14,8 @@
   color: $white;
 
   &__top {
-    padding: 30px 0;
+    align-items: center;
+    padding: 28px 0;
     display: flex;
     justify-content: space-between;
   }
@@ -28,6 +29,12 @@
     width: 30px;
     height: 30px;
     position: relative;
+    transition: opacity 0.2s ease;
+
+    &:hover,
+    &:focus-visible {
+      opacity: 0.75;
+    }
 
     &:after {
       background-color: $red-1;
@@ -46,8 +53,9 @@
   }
 
   &__image {
+    aspect-ratio: 2 / 3;
+    flex: 0 0 320px;
     width: 320px;
-    height: 480px;
 
     &__img {
       border-radius: 4px;
@@ -56,10 +64,14 @@
       box-shadow:
         rgb(0 0 0 / 0.19) 0 10px 20px,
         rgb(0 0 0 / 0.23) 0 6px 6px;
+      height: 100%;
+      object-fit: cover;
+      width: 100%;
     }
   }
 
   &__container {
+    align-items: flex-start;
     display: flex;
     padding-bottom: 30px;
     gap: 60px;
@@ -67,6 +79,7 @@
 
   &__container--error,
   &__container--loading {
+    align-items: center;
     min-height: 240px;
   }
 
@@ -85,18 +98,19 @@
   }
 
   &__content {
-    max-width: 60%;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   &__title {
     font-style: normal;
     font-weight: 300;
-    font-size: 40px;
-    line-height: 60px;
+    font-size: clamp(30px, 4vw, 40px);
+    line-height: 1.25;
     letter-spacing: 1px;
     text-transform: uppercase;
     display: inline-block;
-    padding-right: 30px;
+    padding-right: 84px;
 
     &__wrapper {
       position: relative;
@@ -117,6 +131,7 @@
     border-radius: 30px;
     top: -2px;
     position: absolute;
+    right: 0;
   }
 
   &__genre {
@@ -146,6 +161,7 @@
     font-weight: 300;
     font-size: 20px;
     line-height: 24px;
+    max-width: 720px;
     opacity: 0.5;
   }
 
@@ -157,22 +173,24 @@
     }
 
     &__image {
-      width: auto;
-      height: auto;
+      flex-basis: 260px;
+      width: 260px;
     }
 
     &__content {
-      max-width: 60%;
+      max-width: none;
     }
 
     &__title {
       display: block;
       font-size: 30px;
-      padding-right: 10px;
+      padding-right: 0;
     }
 
     &__rating {
+      margin-top: 12px;
       position: relative;
+      right: auto;
     }
   }
 
@@ -186,7 +204,6 @@
 
     &__image {
       width: 100%;
-      height: auto;
       min-height: auto;
 
       &__img {
@@ -195,7 +212,7 @@
     }
 
     &__title {
-      font-size: 20px;
+      font-size: 24px;
     }
   }
 

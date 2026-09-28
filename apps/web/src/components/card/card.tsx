@@ -21,7 +21,7 @@ function Card({
   const { id, title, releaseDate, posterUrl, genres } = movie;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const hoverBtnRef = useRef<HTMLDivElement>(null);
+  const hoverBtnRef = useRef<HTMLButtonElement>(null);
   const [searchParams] = useSearchParams();
 
   const filter = searchParams.get('filter');
@@ -93,14 +93,13 @@ function Card({
   return (
     <div className="card">
       <div className="card__image__wrapper">
-        <div
+        <button
           className="card__hover-btn"
           onClick={handleMenu}
-          onKeyDown={handleMenu}
-          tabIndex={0}
           ref={hoverBtnRef}
-          role="button"
-          aria-label="Menu"
+          type="button"
+          aria-label={`Menu for ${title}`}
+          aria-expanded={isMenuOpen}
         />
         <CustomImage
           img_path={posterUrl}
@@ -130,8 +129,9 @@ function Card({
             className="card__menu__close"
             onClick={handleCloseMenu}
             type="button"
+            aria-label="Close movie actions"
           >
-            ✖
+            x
           </button>
           <button
             className="card__menu__btn"

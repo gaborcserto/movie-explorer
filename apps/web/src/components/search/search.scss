@@ -3,7 +3,7 @@
 .header {
   background: $black;
   border-bottom: 10px solid $grey-1;
-  min-height: 396px;
+  min-height: 360px;
   position: relative;
   z-index: 100;
 
@@ -39,42 +39,58 @@
   &__top {
     display: flex;
     font-size: 20px;
+    gap: 16px;
     justify-content: space-between;
-    padding: 20px 60px;
+    padding: 24px 60px;
   }
 
   &__title {
     color: $white;
-    font-size: 40px;
+    font-size: clamp(30px, 5vw, 40px);
     font-weight: 300;
-    line-height: 49px;
-    padding: 38px 120px;
+    line-height: 1.2;
+    padding: 42px 120px 24px;
   }
 
   &__search {
     align-items: stretch;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     font-size: 20px;
-    padding: 20px 120px;
+    gap: 14px;
+    padding: 20px 120px 56px;
     width: 100%;
 
     &__input {
       background-color: rgb(50 50 50 / 0.8);
-      border: rgb(50 50 50 / 0.8);
+      border: 1px solid rgb(255 255 255 / 0.08);
       border-radius: 4px;
       color: $white;
       display: flex;
       flex: 1 1 auto;
       line-height: 57px;
       mix-blend-mode: normal;
-      opacity: 0.7;
       padding: 0 19px;
-      margin-right: 14px;
+      min-width: 0;
+      transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+
+      &::placeholder {
+        color: rgb(255 255 255 / 0.55);
+      }
+
+      &:focus {
+        background-color: rgb(35 35 35 / 0.92);
+        border-color: rgb(246 82 97 / 0.65);
+        box-shadow: 0 0 0 3px rgb(246 82 97 / 0.18);
+        outline: none;
+      }
     }
 
     .btn {
-      width: 233px;
+      flex: 0 0 220px;
     }
   }
 
@@ -88,28 +104,30 @@
 
   @include media-size(md-down) {
     &__top {
-      padding: 1rem;
+      align-items: center;
+      padding: 1rem 0;
 
       .btn {
         font-size: 15px;
+        padding: 10px 14px;
       }
     }
 
     &__title {
-      font-size: 30px;
-      padding: 1rem;
+      padding: 1.5rem 0 1rem;
     }
 
     &__search {
-      padding: 1rem;
+      flex-wrap: wrap;
+      padding: 1rem 0 2rem;
 
       &__input {
         line-height: 42px;
-        margin: 0 0 5px 0;
         width: 100%;
       }
 
       .btn {
+        flex-basis: 100%;
         width: 100%;
       }
     }
