@@ -1,52 +1,89 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import './details.scss';
 import { Link, useParams } from 'react-router-dom';
 import type { MovieDetails } from '@movie-explorer/contracts';
 import DetailsContent from './detailsContent';
 import Error from '../../layouts/error';
 import Loading from '../../layouts/loading';
-import { getMovie } from '../../util/apiUtils';
+import { getMovie, isNotFoundError } from '../../util/apiUtils';
+
+type DetailsState = 'loading' | 'success' | 'not-found' | 'error';
 
 function Details() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState();
+  const [detailsState, setDetailsState] = useState<DetailsState>('loading');
   const { movieId: movieIdStr } = useParams();
 
   const movieId = Number(movieIdStr);
 
   const [movieData, setMovieData] = useState<MovieDetails | null>(null);
 
+  const loadMovie = useCallback(
+    (isCurrentRequest: () => boolean = () => true) => {
+      if (!Number.isInteger(movieId) || movieId <= 0) {
+        setMovieData(null);
+        setDetailsState('not-found');
+        return;
+      }
+
+      setDetailsState('loading');
+
+      getMovie(movieId)
+        .then((movie) => {
+          if (!isCurrentRequest()) return;
+
+          setMovieData(movie);
+          setDetailsState('success');
+        })
+        .catch((error: unknown) => {
+          if (!isCurrentRequest()) return;
+
+          setMovieData(null);
+          setDetailsState(isNotFoundError(error) ? 'not-found' : 'error');
+        });
+    },
+    [movieId]
+  );
+
   useEffect(() => {
-    setIsLoading(true);
-    getMovie(movieId)
-      .then((movie) => {
-        setMovieData(movie);
-      })
-      .catch((error) => {
-        setIsError(error);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [movieId]);
+    let isCurrent = true;
+
+    loadMovie(() => isCurrent);
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [loadMovie]);
 
   const renderContent = () => {
-    if (isLoading) {
+    if (detailsState === 'loading') {
       return (
         <Loading className="movie-details__container movie-details__container--loading" />
       );
     }
 
-    if (isError) {
+    if (detailsState === 'not-found') {
       return (
         <Error
-          message="Movies not found"
+          title="Movie not found"
+          message="We could not find that movie."
           className="movie-details__container movie-details__container--error"
         />
       );
     }
 
-    if (movieData) {
+    if (detailsState === 'error') {
+      return (
+        <Error
+          title="Unable to load movie"
+          message="Something went wrong while loading this movie."
+          className="movie-details__container movie-details__container--error"
+          actionLabel="Try again"
+          onAction={() => loadMovie()}
+        />
+      );
+    }
+
+    if (detailsState === 'success' && movieData) {
       return <DetailsContent movieData={movieData} />;
     }
 

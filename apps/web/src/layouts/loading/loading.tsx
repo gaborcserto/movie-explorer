@@ -3,7 +3,7 @@ interface LoadingProps {
 }
 function Loading({ className }: LoadingProps) {
   return (
-    <section className={className}>
+    <section className={className} role="status" aria-live="polite">
       <div>Loading...</div>
     </section>
   );

@@ -16,6 +16,10 @@ const apiBaseUrl = (configuredApiBaseUrl ?? 'http://localhost:4000').replace(
 );
 const moviesUrl = `${apiBaseUrl}/movies`;
 
+export const isNotFoundError = (error: unknown): boolean => {
+  return axios.isAxiosError(error) && error.response?.status === 404;
+};
+
 export const postMovie = async (data: MovieMutationPayload): Promise<void> => {
   await axios.post<void>(moviesUrl, data);
 };

@@ -58,8 +58,8 @@ function Card({
     try {
       const movieDetails = await getMovie(id);
       onEditMovie(movieDetails);
-    } catch (error) {
-      onMovieActionError(`Error: ${error}`);
+    } catch {
+      onMovieActionError('Something went wrong while loading this movie.');
     }
   };
 

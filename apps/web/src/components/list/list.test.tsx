@@ -1,4 +1,5 @@
 import { render, waitFor, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import List from './list';
 import { getMovies as originalGetMovies } from '../../util/apiUtils';
@@ -95,9 +96,52 @@ describe('<List />', () => {
     renderList();
 
     await waitFor(() =>
-      expect(
-        screen.getByText(/Error: Failed to fetch movies/)
-      ).toBeInTheDocument()
+      expect(screen.getByText('Unable to load movies')).toBeInTheDocument()
     );
+    expect(
+      screen.getByText('Something went wrong while loading movies.')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Failed to fetch movies/)
+    ).not.toBeInTheDocument();
+  });
+
+  test('it retries loading movies from the error state', async () => {
+    const user = userEvent.setup();
+
+    getMovies
+      .mockRejectedValueOnce(new Error('Failed to fetch movies'))
+      .mockResolvedValueOnce({
+        movies: [],
+        total: 0,
+        offset: 0,
+        limit: 10,
+      });
+
+    renderList();
+
+    await screen.findByText('Unable to load movies');
+    await user.click(screen.getByRole('button', { name: /try again/i }));
+
+    expect(await screen.findByText('No movies available.')).toBeInTheDocument();
+    expect(getMovies).toHaveBeenCalledTimes(2);
+  });
+
+  test('it displays an empty state for searches with no results', async () => {
+    getMovies.mockResolvedValue({
+      movies: [],
+      total: 0,
+      offset: 0,
+      limit: 10,
+    });
+
+    renderList('/search/Nope');
+
+    expect(
+      await screen.findByText('No movies found for "Nope".')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: '0 movies found' })
+    ).toBeInTheDocument();
   });
 });

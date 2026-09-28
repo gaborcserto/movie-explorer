@@ -23,6 +23,32 @@
     grid-gap: 20px 60px;
   }
 
+  &__state {
+    color: $white;
+    font-size: 18px;
+    line-height: 24px;
+    min-height: 240px;
+    opacity: 0.8;
+    padding: 40px 0;
+  }
+
+  &__container--error,
+  &__container--loading {
+    min-height: 280px;
+  }
+
+  &__container--error {
+    h2 {
+      font-size: 24px;
+      line-height: 30px;
+      padding-bottom: 8px;
+    }
+
+    p {
+      padding-bottom: 20px;
+    }
+  }
+
   @include media-size(lg-down) {
     &__container {
       padding: 1rem;

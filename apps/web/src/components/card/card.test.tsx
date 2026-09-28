@@ -93,6 +93,36 @@ describe('<Card />', () => {
     });
   });
 
+  it('shows a friendly error when edit movie details fail to load', async () => {
+    getMovie.mockRejectedValueOnce(new Error('Failed to fetch'));
+
+    render(
+      <MemoryRouter>
+        <Card
+          movie={mockMovie}
+          onEditMovie={onEditMovie}
+          onDeleteMovie={onDeleteMovie}
+          onMovieActionError={onMovieActionError}
+        />
+      </MemoryRouter>
+    );
+
+    const menuButton = screen.getByRole('button', { name: /menu/i });
+    fireEvent.click(menuButton);
+
+    const editButton = screen.getByText('Edit');
+    fireEvent.click(editButton);
+
+    await waitFor(() => {
+      expect(onMovieActionError).toHaveBeenCalledWith(
+        'Something went wrong while loading this movie.'
+      );
+    });
+    expect(onMovieActionError).not.toHaveBeenCalledWith(
+      expect.stringContaining('Failed to fetch')
+    );
+  });
+
   it('opens the delete modal when handleDeleteModal is called', () => {
     render(
       <MemoryRouter>
