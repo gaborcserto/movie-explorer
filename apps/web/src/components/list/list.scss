@@ -1,0 +1,42 @@
+@use '../../assets/scss' as *;
+
+.list {
+  &__container {
+    color: $white;
+    padding: 20px 60px;
+  }
+
+  &__number {
+    font-size: 20px;
+    line-height: 24px;
+    padding-bottom: 20px;
+
+    .genre {
+      color: $red-1;
+      text-transform: capitalize;
+    }
+  }
+
+  &__items {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 20px 60px;
+  }
+
+  @include media-size(lg-down) {
+    &__container {
+      padding: 1rem;
+    }
+
+    &__items {
+      grid-template-columns: repeat(2, 1fr);
+      grid-gap: 10px 10px;
+    }
+  }
+
+  @include media-size(md-down) {
+    &__items {
+      grid-template-columns: repeat(1, 1fr);
+    }
+  }
+}

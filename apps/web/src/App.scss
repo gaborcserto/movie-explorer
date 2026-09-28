@@ -1,0 +1,53 @@
+@use 'assets/scss' as *;
+
+.App {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  font-family: Montserrat, sans-serif;
+  min-height: 100vh;
+}
+
+.container {
+  margin: 0 auto;
+  max-width: 1200px;
+  width: calc(100% - 1rem);
+}
+
+.btn {
+  border-radius: 4px;
+  padding: 11px 18px;
+  text-transform: uppercase;
+  border-width: 1px;
+  border-style: solid;
+
+  &--transparent {
+    @include btn-variant(
+      rgba(96, 96, 96, 0.68),
+      $red-1,
+      rgba(96, 96, 96, 0.68)
+    );
+  }
+
+  &--primary {
+    @include btn-variant($red-1, $white, $red-1);
+  }
+
+  &--outline {
+    @include btn-variant(transparent, $red-1, $red-1);
+  }
+}
+
+.brand {
+  color: $red-1;
+  font-size: 20px;
+  text-decoration: none;
+
+  strong {
+    font-weight: 900;
+  }
+}
+
+.main {
+  flex: 1 1 auto;
+}

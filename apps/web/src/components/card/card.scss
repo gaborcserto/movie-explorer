@@ -1,0 +1,154 @@
+@use '../../assets/scss' as *;
+
+.card {
+  color: $white;
+  position: relative;
+
+  &__footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+
+    &__part {
+      display: inline-block;
+    }
+  }
+
+  &__title {
+    font-size: 18px;
+    line-height: 22px;
+    display: block;
+    opacity: 0.7;
+    padding-bottom: 8px;
+    color: $white;
+    text-align: left;
+    text-decoration: none;
+  }
+
+  &__type {
+    color: rgb(255 255 255 / .5);
+
+    &__link {
+      font-size: 14px;
+      line-height: 17px;
+      opacity: 0.5;
+      color: $white;
+      text-decoration: none;
+
+      &:hover {
+        color: $red-1;
+        opacity: 1;
+      }
+    }
+  }
+
+  &__date {
+    border: 1px solid #979797;
+    border-radius: 4px;
+    font: 14px / 17px;
+    opacity: 0.7;
+    padding: 4px 8px;
+  }
+
+  &__hover-btn {
+    display: none;
+    width: 36px;
+    height: 36px;
+    top: 14px;
+    right: 14px;
+    border-radius: 18px;
+    background-color: $grey-3;
+    position: absolute;
+    z-index: 110;
+    cursor: pointer;
+
+    &:after {
+      @include center-align(absolute);
+
+      content: '';
+      background-color: $white;
+      width: 26px;
+      height: 26px;
+      display: inline-block;
+      mask-image: url('../../assets/img/ellipsis-v-icon.svg');
+      mask-size: contain;
+      mask-position: center;
+      mask-repeat: no-repeat;
+    }
+  }
+
+  &__image__wrapper {
+    border-radius: 4px;
+    background-clip: padding-box;
+    overflow: hidden;
+    position: relative;
+
+    &:hover {
+      .card__hover-btn {
+        display: block;
+      }
+    }
+  }
+
+  &__image {
+    width: 320px;
+    height: 480px;
+
+    &__img {
+      box-shadow: rgb(0 0 0 / 0.19) 0 10px 20px, rgb(0 0 0 / 0.23) 0 6px 6px;
+      image-rendering: optimizeQuality;
+    }
+  }
+
+  &__menu {
+    background-color: $grey-3;
+    display: block;
+    position: absolute;
+    width: 190px;
+    height: 120px;
+    top: 14px;
+    right: 14px;
+    z-index: 120;
+    padding-top: 40px;
+    box-shadow: rgb(0 0 0 / 0.19) 0 10px 20px, rgb(0 0 0 / 0.23) 0 6px 6px;
+
+    &__btn {
+      color: $white;
+      display: block;
+      width: 100%;
+      line-height: 34px;
+      padding: 0 26px;
+      text-align: left;
+
+      &:hover {
+        background-color: $red-1;
+      }
+    }
+
+    &__close {
+      color: $white;
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      font-size: 20px;
+    }
+  }
+
+  @include media-size(xl-down) {
+    &__image {
+      max-width: inherit;
+      width: auto;
+      height: auto;
+
+      &__img {
+        width: 100%;
+      }
+    }
+  }
+
+  @include media-size(sm-down) {
+    &__image {
+      width: 100%;
+    }
+  }
+}

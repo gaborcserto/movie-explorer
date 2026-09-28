@@ -1,0 +1,25 @@
+@use '../../../assets/scss/index' as *;
+
+.modal {
+  &__header--error {
+    padding-top: 30px;
+  }
+
+  &__content--error {
+    text-align: center;
+  }
+}
+
+.error-icon {
+  &__inner {
+    @include center-align(absolute);
+
+    background-color: $white;
+    width: 40px;
+    height: 40px;
+    display: inline-block;
+    mask-image: url('../../../assets/img/error.svg');
+    mask-size: contain;
+    mask-position: center;
+  }
+}

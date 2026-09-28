@@ -1,0 +1,16 @@
+@use '../../assets/scss' as *;
+
+.footer {
+  background: $grey-2;
+  color: $red-1;
+  height: 70px;
+  margin-top: auto;
+  text-align: center;
+
+  &__title {
+    @include center-align(relative);
+
+    display: block;
+    line-height: 24px;
+  }
+}

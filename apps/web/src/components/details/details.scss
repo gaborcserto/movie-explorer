@@ -1,0 +1,186 @@
+@use '../../assets/scss' as *;
+
+.header--movie-details {
+  &:before {
+    opacity: 0.1;
+  }
+}
+
+.movie-details {
+  min-height: 396px;
+  position: relative;
+  z-index: 100;
+  padding: 0 60px;
+  color: $white;
+
+  &__top {
+    padding: 30px 0;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  &__brand {
+    display: inline-block;
+  }
+
+  &__btn {
+    color: transparent;
+    width: 30px;
+    height: 30px;
+    position: relative;
+
+    &:after {
+      background-color: $red-1;
+      content: '';
+      mask-image: url('../../assets/img/search.svg');
+      mask-size: contain;
+      mask-position: center;
+      mask-repeat: no-repeat;
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      display: block;
+      transition: none;
+      top: 0;
+    }
+  }
+
+  &__image {
+    width: 320px;
+    height: 480px;
+
+    &__img {
+      border-radius: 4px;
+      background-clip: padding-box;
+      overflow: hidden;
+      box-shadow: rgb(0 0 0 / 0.19) 0 10px 20px, rgb(0 0 0 / 0.23) 0 6px 6px;
+    }
+  }
+
+  &__container {
+    display: flex;
+    padding-bottom: 30px;
+    gap: 60px;
+  }
+
+  &__content {
+    max-width: 60%;
+  }
+
+  &__title {
+    font-style: normal;
+    font-weight: 300;
+    font-size: 40px;
+    line-height: 60px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: inline-block;
+    padding-right: 30px;
+
+    &__wrapper {
+      position: relative;
+    }
+  }
+
+  &__rating {
+    display: inline-block;
+    font-style: normal;
+    font-weight: 300;
+    font-size: 20px;
+    line-height: 60px;
+    text-align: center;
+    text-transform: uppercase;
+    width: 60px;
+    height: 60px;
+    border: 1px solid $white;
+    border-radius: 30px;
+    top: -2px;
+    position: absolute;
+  }
+
+  &__genre {
+    font-style: normal;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 17px;
+    opacity: 0.5;
+    padding-bottom: 30px;
+  }
+
+  &__data {
+    color: $red-1;
+    font-style: normal;
+    font-weight: 300;
+    font-size: 24px;
+    line-height: 29px;
+  }
+
+  &__year {
+    padding-right: 50px;
+  }
+
+  &__overview {
+    padding-top: 30px;
+    font-style: normal;
+    font-weight: 300;
+    font-size: 20px;
+    line-height: 24px;
+    opacity: 0.5;
+  }
+
+  @include media-size(lg-down) {
+    padding: 0 20px;
+
+    &__container {
+      gap: 20px;
+    }
+
+    &__image {
+      width: auto;
+      height: auto;
+    }
+
+    &__content {
+      max-width: 60%;
+    }
+
+    &__title {
+      display: block;
+      font-size: 30px;
+      padding-right: 10px;
+    }
+
+    &__rating {
+      position: relative;
+    }
+  }
+
+  @include media-size(md-down) {
+    padding: 0 10px;
+
+    &__container {
+      display: block;
+      gap: 0;
+    }
+
+    &__image {
+      width: 100%;
+      height: auto;
+      min-height: auto;
+
+      &__img {
+        width: 100%;
+      }
+    }
+
+    &__title {
+      font-size: 20px;
+    }
+  }
+
+  @include media-size(sm-down) {
+    &__content {
+      max-width: 100%;
+    }
+  }
+}

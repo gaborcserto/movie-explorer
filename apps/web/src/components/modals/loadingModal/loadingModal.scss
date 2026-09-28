@@ -1,0 +1,52 @@
+@use '../../../assets/scss/index' as *;
+
+.loader {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+  margin: 15px auto;
+  position: relative;
+  color: $white;
+  left: -100px;
+  box-sizing: border-box;
+  animation: shadow-rolling 2s linear infinite;
+}
+
+@keyframes shadow-rolling {
+  0% {
+    box-shadow: 0 0 $white, 0 0 $white, 0 0 $white, 0 0 $white;
+  }
+
+  12% {
+    box-shadow: 100px 0 $white, 0 0 $white, 0 0 $white, 0 0 $white;
+  }
+
+  25% {
+    box-shadow: 110px 0 $white, 100px 0 $white, 0 0 $white, 0 0 $white;
+  }
+
+  36% {
+    box-shadow: 120px 0 $white, 110px 0 $white, 100px 0 $white, 0 0 $white;
+  }
+
+  50% {
+    box-shadow: 130px 0 $white, 120px 0 $white, 110px 0 $white, 100px 0 $white;
+  }
+
+  62% {
+    box-shadow: 200px 0 $white, 130px 0 $white, 120px 0 $white, 110px 0 $white;
+  }
+
+  75% {
+    box-shadow: 200px 0 $white, 200px 0 $white, 130px 0 $white, 120px 0 $white;
+  }
+
+  87% {
+    box-shadow: 200px 0 $white, 200px 0 $white, 200px 0 $white, 130px 0 $white;
+  }
+
+  100% {
+    box-shadow: 200px 0 $white, 200px 0 $white, 200px 0 $white, 200px 0 $white;
+  }
+}
