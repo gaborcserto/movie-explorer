@@ -1,4 +1,4 @@
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { useParams as originalUseParams } from 'react-router-dom';
 import Details from './details';
 import { getMovie as originalGetMovie } from '../../util/apiUtils';
@@ -30,22 +30,12 @@ jest.mock('react-router-dom', () => ({
 }));
 
 describe('<Details />', () => {
-  beforeEach(async () => {
-    jest.clearAllMocks();
-
-    useParams.mockReturnValue({ movieId: '1234' });
-    getMovie.mockResolvedValueOnce({ data: mockData });
-
-    await act(async () => {
-      render(<Details />);
-    });
-  });
-
-  afterEach(() => {
+  beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('displays the loading component while fetching data', async () => {
+    useParams.mockReturnValue({ movieId: '1234' });
     getMovie.mockReturnValueOnce(
       // eslint-disable-next-line no-promise-executor-return
       new Promise((res) => setTimeout(() => res({ data: mockData }), 1000))
@@ -57,6 +47,7 @@ describe('<Details />', () => {
   });
 
   it('displays movie data once it is fetched', async () => {
+    useParams.mockReturnValue({ movieId: '1234' });
     getMovie.mockResolvedValueOnce({ data: mockData });
 
     render(<Details />);
@@ -64,7 +55,11 @@ describe('<Details />', () => {
     await waitFor(() => {
       expect(screen.getByText('Sample Movie')).toBeInTheDocument();
       expect(screen.getByText(8.5)).toBeInTheDocument();
+      expect(screen.getByText('Drama, Action')).toBeInTheDocument();
+      expect(screen.getByText('2021')).toBeInTheDocument();
+      expect(screen.getByText('120 min')).toBeInTheDocument();
     });
+    expect(getMovie).toHaveBeenCalledWith(1234);
   });
 
   it('handles errors and shows an error message when fetching fails', async () => {

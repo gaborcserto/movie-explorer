@@ -6,7 +6,7 @@ import { AppModule } from './../src/app.module';
 describe('AppController (e2e)', () => {
   let app: INestApplication;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -15,10 +15,23 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('/movies (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/movies')
       .expect(200)
-      .expect('Hello World!');
+      .expect((response) => {
+        expect(response.body).toEqual({
+          data: expect.any(Array),
+          totalAmount: expect.any(Number),
+          offset: 0,
+          limit: 10,
+        });
+        expect(response.body.data.length).toBeLessThanOrEqual(10);
+        expect(response.body.totalAmount).toBeGreaterThan(0);
+      });
   });
 });

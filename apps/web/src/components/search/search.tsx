@@ -26,7 +26,7 @@ function Search() {
       setSearchData('');
       dispatch(setMoviesSearch(''));
     }
-  }, [searchQuery]);
+  }, [dispatch, location.pathname, searchQuery]);
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchData(event.target.value);

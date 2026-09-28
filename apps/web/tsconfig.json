@@ -23,9 +23,8 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-
+    "types": ["node", "jest", "@testing-library/jest-dom"]
   },
-  "types": ["node", "jest", "@testing-library/jest-dom"],
   "include": ["src", ".eslintrc.jsc"],
   "references": [{ "path": "./tsconfig.node.json" }],
   "exclude": ["node_modules"],

@@ -44,7 +44,9 @@ export class MoviesService {
     const lowerCaseSearch = search.toLowerCase();
 
     if (searchBy === 'title') {
-      return movies.filter((movie) => movie.title.toLowerCase().includes(lowerCaseSearch));
+      return movies.filter((movie) =>
+        movie.title.toLowerCase().includes(lowerCaseSearch),
+      );
     } else if (searchBy === 'genres') {
       return movies.filter((movie) =>
         movie.genres.some((genre) =>

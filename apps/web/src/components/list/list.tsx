@@ -51,7 +51,7 @@ function List() {
 
   const capitalizeFirstLetter = (data: string) => {
     return data.charAt(0).toUpperCase() + data.slice(1);
-  }
+  };
 
   if (loadingData) {
     return (
@@ -74,7 +74,11 @@ function List() {
       <h2 className="list__number">
         <strong>{moviesData?.totalAmount}</strong> movies found
         {filter && (
-          <span> in genre: <strong className="genre">{capitalizeFirstLetter(filter)}</strong></span>
+          <span>
+            {' '}
+            in genre:{' '}
+            <strong className="genre">{capitalizeFirstLetter(filter)}</strong>
+          </span>
         )}
       </h2>
       <div className="list__items">
