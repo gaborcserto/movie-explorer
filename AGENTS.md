@@ -30,37 +30,51 @@ Do not introduce monorepo complexity that the project does not need.
 
 ## Common Commands
 
-Until root workspace tooling is introduced, run commands from the
-relevant app directory.
+Install dependencies once from the repository root:
+
+``` bash
+npm install
+```
+
+Use root workspace commands for repository-wide operations:
+
+``` bash
+npm run dev
+npm run build
+npm run test
+npm run lint
+npm run typecheck
+npm run test:e2e
+```
+
+Run commands from a specific app directory when a narrower check is
+useful.
 
 Frontend:
 
 ``` bash
-cd apps/web
-npm install
 npm run dev
 npm run build
 npm run lint
+npm run typecheck
 npm test
 ```
 
 Backend:
 
 ``` bash
-cd apps/api
-npm install
 npm run start:dev
 npm run build
 npm run test
 npm run test:e2e
+npm run typecheck
 ```
 
 Use `npm run lint:typescript`, `npm run lint:eslint`, or
 `npm run lint:styles` in `apps/web` when a narrower frontend check is
 useful.
 
-After root workspace tooling is introduced, prefer documented root-level
-scripts for repository-wide operations.
+Prefer documented root-level scripts for repository-wide operations.
 
 ## Coding Conventions
 
