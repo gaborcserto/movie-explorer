@@ -1,7 +1,7 @@
 @use '../../assets/scss/index' as *;
 
 .modal {
-  span[role="alert"] {
+  :where(span)[role='alert'] {
     color: $alert;
     font-weight: 600;
     text-transform: none;
@@ -83,8 +83,11 @@
         &--open {
           .custom-select__container {
             background: rgb(35 35 35 / 0.918);
-            box-shadow: 0 0 2px rgb(0 0 0 / 0.1), 0 2px 10px rgb(0 0 0 / 0.1),
-              0 10px 20px rgb(0 0 0 / 0.1), 0 10px 50px rgb(0 0 0 / 0.1);
+            box-shadow:
+              0 0 2px rgb(0 0 0 / 0.1),
+              0 2px 10px rgb(0 0 0 / 0.1),
+              0 10px 20px rgb(0 0 0 / 0.1),
+              0 10px 50px rgb(0 0 0 / 0.1);
             backdrop-filter: blur(13.5914px);
             left: 0;
             top: 57px;

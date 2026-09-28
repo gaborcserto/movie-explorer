@@ -26,7 +26,7 @@
   }
 
   &__type {
-    color: rgb(255 255 255 / .5);
+    color: rgb(255 255 255 / 0.5);
 
     &__link {
       font-size: 14px;
@@ -95,8 +95,10 @@
     height: 480px;
 
     &__img {
-      box-shadow: rgb(0 0 0 / 0.19) 0 10px 20px, rgb(0 0 0 / 0.23) 0 6px 6px;
-      image-rendering: optimizeQuality;
+      box-shadow:
+        rgb(0 0 0 / 0.19) 0 10px 20px,
+        rgb(0 0 0 / 0.23) 0 6px 6px;
+      image-rendering: optimizequality;
     }
   }
 
@@ -110,7 +112,9 @@
     right: 14px;
     z-index: 120;
     padding-top: 40px;
-    box-shadow: rgb(0 0 0 / 0.19) 0 10px 20px, rgb(0 0 0 / 0.23) 0 6px 6px;
+    box-shadow:
+      rgb(0 0 0 / 0.19) 0 10px 20px,
+      rgb(0 0 0 / 0.23) 0 6px 6px;
 
     &__btn {
       color: $white;
