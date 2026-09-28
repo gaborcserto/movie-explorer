@@ -14,7 +14,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test:e2e": "turbo run test:e2e --filter @movie-explorer/api",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",
