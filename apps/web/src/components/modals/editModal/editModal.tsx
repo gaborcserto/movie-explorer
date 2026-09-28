@@ -33,7 +33,7 @@ function EditModal({
   };
 
   return (
-    <Form handleClick={handleUpdate} movieData={movieData} title="Edit Movie" />
+    <Form onSubmit={handleUpdate} movieData={movieData} title="Edit Movie" />
   );
 }
 

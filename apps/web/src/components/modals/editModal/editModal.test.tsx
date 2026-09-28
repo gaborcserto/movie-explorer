@@ -36,7 +36,6 @@ describe('EditModal component', () => {
   it('should call the putMovie API on form submission', async () => {
     render(<EditModal {...defaultProps} />);
 
-    // For simplicity, I'm assuming your form has a submit button with "Save" as its text
     const saveButton = screen.getByText('Submit');
     fireEvent.click(saveButton);
 

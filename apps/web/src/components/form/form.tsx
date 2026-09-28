@@ -1,48 +1,32 @@
-import { useEffect } from 'react';
 import './form.scss';
-import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import type { MovieMutationPayload } from '@movie-explorer/contracts';
 import CustomSelect from '../utility/customSelect';
 import { genreTypes, urlPattern } from '../../data';
 
-interface ComponentProps {
-  handleClick: (data: MovieMutationPayload) => void;
+interface MovieFormProps {
+  onSubmit: (data: MovieMutationPayload) => void;
   title: string;
   movieData?: MovieMutationPayload;
 }
 
-function Form({ handleClick, title, movieData }: ComponentProps) {
+function Form({ onSubmit, title, movieData }: MovieFormProps) {
   const {
     handleSubmit,
     control,
     register,
-    setValue,
     reset,
     formState: { errors },
-  } = useForm<MovieMutationPayload>();
+  } = useForm<MovieMutationPayload>({
+    defaultValues: movieData ?? { genres: [] },
+  });
 
   const handleReset = () => {
     reset();
   };
 
-  const onSubmit: SubmitHandler<MovieMutationPayload> = (data) => {
-    handleClick(data);
-  };
-
-  useEffect(() => {
-    if (movieData) {
-      setValue('title', movieData.title);
-      setValue('releaseDate', movieData.releaseDate);
-      setValue('posterUrl', movieData.posterUrl);
-      setValue('rating', movieData.rating);
-      setValue('genres', movieData.genres);
-      setValue('runtimeMinutes', movieData.runtimeMinutes);
-      setValue('description', movieData.description);
-    }
-  }, [movieData, setValue]);
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)} autoComplete="off">
+    <form onSubmit={handleSubmit((data) => onSubmit(data))} autoComplete="off">
       <h2 className="modal__header" id="modal-title">
         {title}
       </h2>
@@ -51,7 +35,6 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
           <input
             type="hidden"
             id="id"
-            value={movieData.id}
             {...register('id', { required: true, valueAsNumber: true })}
           />
         ) : null}
@@ -66,7 +49,6 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
                 type="text"
                 autoComplete="off"
                 aria-invalid={errors.title ? 'true' : 'false'}
-                defaultValue={movieData ? movieData.title : ''}
                 {...register('title', { required: true })}
               />
             </label>
@@ -81,7 +63,6 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
                 placeholder="Release Date"
                 type="date"
                 aria-invalid={errors.releaseDate ? 'true' : 'false'}
-                defaultValue={movieData ? movieData.releaseDate : ''}
                 {...register('releaseDate', { required: true })}
               />
             </label>
@@ -101,7 +82,6 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
                 type="text"
                 autoComplete="off"
                 aria-invalid={errors.posterUrl ? 'true' : 'false'}
-                defaultValue={movieData ? movieData.posterUrl : ''}
                 {...register('posterUrl', {
                   required: 'Movie url is required',
                   pattern: {
@@ -128,7 +108,6 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
                 max="10"
                 autoComplete="off"
                 aria-invalid={errors.rating ? 'true' : 'false'}
-                defaultValue={movieData ? movieData.rating : ''}
                 {...register('rating', {
                   required: true,
                   valueAsNumber: true,
@@ -147,14 +126,13 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
               <Controller
                 name="genres"
                 control={control}
-                defaultValue={movieData ? movieData.genres : []}
                 aria-invalid={errors.genres ? 'true' : 'false'}
                 rules={{ required: 'Genre is required' }}
                 render={({ field }) => (
                   <CustomSelect
                     options={genreTypes}
                     placeholder="Select Genre"
-                    selectedOptions={movieData?.genres}
+                    selectedOptions={field.value}
                     onChange={(selectedOptions) => {
                       if (selectedOptions !== null) {
                         field.onChange(selectedOptions);
@@ -178,7 +156,6 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
                 className="modal__input"
                 placeholder="Movie runtime"
                 type="number"
-                defaultValue={movieData ? movieData.runtimeMinutes : ''}
                 aria-invalid={errors.runtimeMinutes ? 'true' : 'false'}
                 {...register('runtimeMinutes', {
                   required: true,
@@ -197,7 +174,6 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
             id="description"
             className="modal__input modal__input--textarea"
             placeholder="Movie description"
-            defaultValue={movieData ? movieData.description : ''}
             aria-invalid={errors.description ? 'true' : 'false'}
             {...register('description', {
               required: true,

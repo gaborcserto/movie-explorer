@@ -1,5 +1,5 @@
 import type { MovieDetails } from '@movie-explorer/contracts';
-import CustomImage from '../utility/customImage';
+import MovieImage from '../utility/customImage';
 
 interface DetailsProps {
   movieData: MovieDetails;
@@ -16,14 +16,14 @@ function DetailsContent({ movieData }: DetailsProps) {
   } = movieData;
 
   const releaseYear = releaseDate.substring(0, 4);
-  const genresData = genres?.join(', ');
+  const genresData = genres.join(', ');
 
   return (
     <div className="movie-details__container">
-      <CustomImage
-        img_path={posterUrl}
-        img_title={title}
-        img_style="movie-details__image"
+      <MovieImage
+        src={posterUrl}
+        alt={title}
+        className="movie-details__image"
       />
       <div className="movie-details__content">
         <div className="movie-details__title__wrapper">

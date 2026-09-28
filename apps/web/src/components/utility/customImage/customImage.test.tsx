@@ -1,19 +1,21 @@
 import { render, waitFor } from '@testing-library/react';
-import CustomImage from './customImage';
+import MovieImage from './customImage';
 import mockImage from '../../../assets/img/noimage.png';
 
-describe('<CustomImage />', () => {
-  it('renders placeholder image if no img_path is provided', () => {
+describe('<MovieImage />', () => {
+  it('renders the placeholder when no source is provided', () => {
     const placeholderImage = mockImage;
-    const { getByAltText } = render(<CustomImage img_title="Sample Image" />);
+    const { getByAltText } = render(
+      <MovieImage alt="Sample Image" className="movie-image" />
+    );
     const imgElement = getByAltText('Sample Image');
     expect(imgElement).toBeInTheDocument();
     expect(imgElement).toHaveAttribute('src', placeholderImage);
   });
 
-  it('loads and displays image from img_path', async () => {
+  it('loads and displays the provided source', async () => {
     const { getByAltText } = render(
-      <CustomImage img_path={mockImage} img_title="Sample Image" />
+      <MovieImage src={mockImage} alt="Sample Image" className="movie-image" />
     );
 
     const imgElement = getByAltText('Sample Image');

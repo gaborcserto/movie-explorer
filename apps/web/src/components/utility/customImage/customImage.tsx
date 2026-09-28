@@ -1,41 +1,41 @@
 import { useState, useEffect } from 'react';
 import placeholderImage from '../../../assets/img/noimage.png';
 
-interface ImgProps {
-  img_path?: string;
-  img_title?: string;
-  img_style?: string;
+interface MovieImageProps {
+  src?: string;
+  alt: string;
+  className: string;
 }
 
-function CustomImage({ img_path, img_title, img_style }: ImgProps) {
-  const [isImage, setIsImage] = useState(placeholderImage);
+function MovieImage({ src, alt, className }: MovieImageProps) {
+  const [displayedSrc, setDisplayedSrc] = useState(placeholderImage);
 
   useEffect(() => {
     let isCurrent = true;
 
-    setIsImage(placeholderImage);
-    if (img_path) {
+    setDisplayedSrc(placeholderImage);
+    if (src) {
       const image = new Image();
-      image.src = img_path;
+      image.src = src;
       image.onload = () => {
-        if (isCurrent) setIsImage(img_path);
+        if (isCurrent) setDisplayedSrc(src);
       };
       image.onerror = () => {
-        if (isCurrent) setIsImage(placeholderImage);
+        if (isCurrent) setDisplayedSrc(placeholderImage);
       };
     }
 
     return () => {
       isCurrent = false;
     };
-  }, [img_path]);
+  }, [src]);
 
   return (
-    <div className={img_style}>
+    <div className={className}>
       <img
-        src={isImage}
-        alt={img_title}
-        className={`${img_style}__img`}
+        src={displayedSrc}
+        alt={alt}
+        className={`${className}__img`}
         loading="lazy"
         decoding="async"
       />
@@ -43,4 +43,4 @@ function CustomImage({ img_path, img_title, img_style }: ImgProps) {
   );
 }
 
-export default CustomImage;
+export default MovieImage;

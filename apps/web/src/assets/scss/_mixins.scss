@@ -1,6 +1,5 @@
 @use 'sass:color';
 
-// btn-variant
 @mixin btn-variant($background, $color, $border) {
   background-color: $background;
   border-color: $border;
@@ -22,23 +21,15 @@
   }
 }
 
-// transform
-@mixin transform($transform-property) {
-  transform: $transform-property;
-}
-
-// positions
 @mixin center-align($position) {
-  @include transform(translate(-50%, -50%));
-
+  transform: translate(-50%, -50%);
   position: $position;
   left: 50%;
   top: 50%;
 }
 
 @mixin vertical-align($position) {
-  @include transform(translateY(-50%));
-
+  transform: translateY(-50%);
   position: $position;
   top: 50%;
 }

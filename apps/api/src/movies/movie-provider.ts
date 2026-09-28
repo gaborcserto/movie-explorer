@@ -4,10 +4,8 @@ import type {
   MovieQueryParams,
 } from '@movie-explorer/contracts';
 
-export type MovieSearchQuery = MovieQueryParams;
-
 export interface MovieProvider {
-  findAll(query: MovieSearchQuery): Promise<MovieListResponse>;
+  findAll(query: MovieQueryParams): Promise<MovieListResponse>;
   findOne(id: number): Promise<MovieDetails | undefined>;
 }
 

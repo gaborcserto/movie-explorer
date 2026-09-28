@@ -23,7 +23,7 @@ function AddModal({ onLoadingChange, onError, onSuccess }: AddModalProps) {
     }
   };
 
-  return <Form handleClick={handleAdd} title="Add Movie" />;
+  return <Form onSubmit={handleAdd} title="Add Movie" />;
 }
 
 export default AddModal;

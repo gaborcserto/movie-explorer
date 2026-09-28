@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-labelledby="title desc">
+  <title id="title">Movie Explorer</title>
+  <desc id="desc">Red film-strip M with a play symbol</desc>
+  <defs>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff3344"/>
+      <stop offset="0.55" stop-color="#e50924"/>
+      <stop offset="1" stop-color="#8f0718"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7b0615"/>
+      <stop offset="1" stop-color="#d20a24"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Film-strip pillars -->
+  <path d="M3.5 5.2C3.5 3.98 4.48 3 5.7 3h3.05v24.9L5.7 29C4.48 29 3.5 28.02 3.5 26.8V5.2Z" fill="url(#red)"/>
+  <path d="M23.25 3h3.05c1.22 0 2.2.98 2.2 2.2v21.6c0 1.22-.98 2.2-2.2 2.2l-3.05-1.1V3Z" fill="url(#red)"/>
+
+  <!-- Film perforations -->
+  <g fill="#090909">
+    <rect x="4.65" y="5.3" width="1.55" height="2.55" rx=".45"/>
+    <rect x="4.65" y="9.8" width="1.55" height="2.55" rx=".45"/>
+    <rect x="4.65" y="14.3" width="1.55" height="2.55" rx=".45"/>
+    <rect x="4.65" y="18.8" width="1.55" height="2.55" rx=".45"/>
+    <rect x="4.65" y="23.3" width="1.55" height="2.55" rx=".45"/>
+    <rect x="25.8" y="5.3" width="1.55" height="2.55" rx=".45"/>
+    <rect x="25.8" y="9.8" width="1.55" height="2.55" rx=".45"/>
+    <rect x="25.8" y="14.3" width="1.55" height="2.55" rx=".45"/>
+    <rect x="25.8" y="18.8" width="1.55" height="2.55" rx=".45"/>
+    <rect x="25.8" y="23.3" width="1.55" height="2.55" rx=".45"/>
+  </g>
+
+  <!-- Folded M ribbons -->
+  <path d="M7.7 3.15 16 11.45 24.3 3.15v6.15L16 17.6 7.7 9.3V3.15Z" fill="url(#fold)"/>
+  <path d="M7.7 3.15 16 11.45l-3.1 3.1L7.7 9.3V3.15Z" fill="#ff2639"/>
+  <path d="M24.3 3.15 16 11.45l3.1 3.1 5.2-5.25V3.15Z" fill="#b4071d"/>
+
+  <!-- Play symbol -->
+  <path d="M12.25 18.15c0-.82.9-1.32 1.6-.89l6.35 3.9a1.04 1.04 0 0 1 0 1.78l-6.35 3.9c-.7.43-1.6-.07-1.6-.89v-7.8Z" fill="#ff1f35"/>
+</svg>

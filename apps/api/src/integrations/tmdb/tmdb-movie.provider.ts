@@ -2,13 +2,11 @@ import { BadGatewayException, Injectable } from '@nestjs/common';
 import type {
   MovieDetails,
   MovieListResponse,
+  MovieQueryParams,
   MovieSortField,
   MovieSortOrder,
 } from '@movie-explorer/contracts';
-import type {
-  MovieProvider,
-  MovieSearchQuery,
-} from '../../movies/movie-provider';
+import type { MovieProvider } from '../../movies/movie-provider';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbMovieMapper } from './tmdb-movie.mapper';
 import {
@@ -33,7 +31,7 @@ export class TmdbMovieProvider implements MovieProvider {
     this.mapper = new TmdbMovieMapper(config.imageBaseUrl);
   }
 
-  public async findAll(query: MovieSearchQuery): Promise<MovieListResponse> {
+  public async findAll(query: MovieQueryParams): Promise<MovieListResponse> {
     const offset = Number(query.offset ?? 0);
     const limit = Number(query.limit ?? 10);
 
@@ -75,7 +73,7 @@ export class TmdbMovieProvider implements MovieProvider {
     return movie ? this.mapper.toMovieDetails(movie) : undefined;
   }
 
-  private async getTotal(query: MovieSearchQuery): Promise<number> {
+  private async getTotal(query: MovieQueryParams): Promise<number> {
     if (query.search && query.genre) {
       const response = await this.findSearchResultsWithLocalGenreFilter(
         query,
@@ -90,7 +88,7 @@ export class TmdbMovieProvider implements MovieProvider {
   }
 
   private async findSearchResultsWithLocalGenreFilter(
-    query: MovieSearchQuery,
+    query: MovieQueryParams,
     offset: number,
     limit: number,
   ): Promise<MovieListResponse> {
@@ -132,7 +130,7 @@ export class TmdbMovieProvider implements MovieProvider {
   }
 
   private async fetchMoviePage(
-    query: MovieSearchQuery,
+    query: MovieQueryParams,
     page: number,
   ): Promise<TmdbPagedResponse<TmdbMovieListItem>> {
     if (query.search) {

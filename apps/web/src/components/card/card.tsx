@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import './card.scss';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { MovieDetails, MovieSummary } from '@movie-explorer/contracts';
-import CustomImage from '../utility/customImage';
+import MovieImage from '../utility/customImage';
 import { getMovie } from '../../util/apiUtils';
 
 interface CardProps {
@@ -97,11 +97,7 @@ function Card({
           aria-label={`Menu for ${title}`}
           aria-expanded={isMenuOpen}
         />
-        <CustomImage
-          img_path={posterUrl}
-          img_title={title}
-          img_style="card__image"
-        />
+        <MovieImage src={posterUrl} alt={title} className="card__image" />
       </div>
       <div className="card__footer">
         <div className="card__footer__part">

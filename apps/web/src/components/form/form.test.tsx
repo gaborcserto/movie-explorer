@@ -14,7 +14,7 @@ describe('<Form />', () => {
   });
 
   it('renders without crashing', () => {
-    render(<Form handleClick={mockHandleClick} title="Add Movie" />);
+    render(<Form onSubmit={mockHandleClick} title="Add Movie" />);
   });
 
   it('sets initial state correctly when movieData prop is passed', () => {
@@ -31,7 +31,7 @@ describe('<Form />', () => {
 
     render(
       <Form
-        handleClick={mockHandleClick}
+        onSubmit={mockHandleClick}
         title="Edit Movie"
         movieData={movieData}
       />
@@ -46,10 +46,8 @@ describe('<Form />', () => {
   });
 
   it('shows validation messages when trying to submit an empty form', async () => {
-    render(<Form handleClick={mockHandleClick} title="Add Movie" />);
-    // await act(async () => {
+    render(<Form onSubmit={mockHandleClick} title="Add Movie" />);
     await userEvent.click(screen.getByText(/submit/i));
-    // });
 
     await waitFor(() => {
       const alerts = screen.queryAllByRole('alert');
@@ -57,8 +55,8 @@ describe('<Form />', () => {
     });
   });
 
-  it('calls the handleClick function with correct data on valid form submission', async () => {
-    render(<Form handleClick={mockHandleClick} title="Add Movie" />);
+  it('submits valid movie data', async () => {
+    render(<Form onSubmit={mockHandleClick} title="Add Movie" />);
 
     await userEvent.type(screen.getByLabelText(/title/i), 'Test Movie');
     await userEvent.type(screen.getByLabelText(/release date/i), '2021-01-01');
@@ -90,15 +88,11 @@ describe('<Form />', () => {
   });
 
   it('resets the form correctly when clicking the Reset button', async () => {
-    render(<Form handleClick={mockHandleClick} title="Add Movie" />);
+    const user = userEvent.setup();
+    render(<Form onSubmit={mockHandleClick} title="Add Movie" />);
 
-    await waitFor(() => {
-      userEvent.type(screen.getByLabelText(/title/i), 'Test Movie');
-    });
-
-    await waitFor(() => {
-      userEvent.click(screen.getByText(/reset/i));
-    });
+    await user.type(screen.getByLabelText(/title/i), 'Test Movie');
+    await user.click(screen.getByText(/reset/i));
 
     expect((screen.getByLabelText(/title/i) as HTMLInputElement).value).toBe(
       ''

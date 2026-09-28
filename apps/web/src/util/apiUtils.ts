@@ -21,11 +21,21 @@ class ApiRequestError extends Error {
   }
 }
 
-const request = async <T>(
+function request<T>(
+  url: string,
+  init?: RequestInit,
+  parseResponse?: true
+): Promise<T>;
+function request(
+  url: string,
+  init: RequestInit,
+  parseResponse: false
+): Promise<void>;
+async function request<T>(
   url: string,
   init: RequestInit = {},
   parseResponse = true
-): Promise<T | undefined> => {
+): Promise<T | void> {
   const response = await fetch(url, init);
 
   if (!response.ok) {
@@ -37,14 +47,14 @@ const request = async <T>(
   }
 
   return (await response.json()) as T;
-};
+}
 
 export const isNotFoundError = (error: unknown): boolean => {
   return error instanceof ApiRequestError && error.status === 404;
 };
 
 export const postMovie = async (data: MovieMutationPayload): Promise<void> => {
-  await request<void>(
+  await request(
     moviesUrl,
     {
       method: 'POST',
@@ -56,21 +66,21 @@ export const postMovie = async (data: MovieMutationPayload): Promise<void> => {
 };
 
 export const deleteMovie = async (id: number): Promise<void> => {
-  await request<void>(`${moviesUrl}/${id}`, { method: 'DELETE' }, false);
+  await request(`${moviesUrl}/${id}`, { method: 'DELETE' }, false);
 };
 
 export const putMovie = async (
   data: MovieMutationPayload
 ): Promise<MovieDetails> => {
-  return (await request<MovieDetails>(moviesUrl, {
+  return request<MovieDetails>(moviesUrl, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-  })) as MovieDetails;
+  });
 };
 
 export const getMovie = async (id: number): Promise<MovieDetails> => {
-  return (await request<MovieDetails>(`${moviesUrl}/${id}`)) as MovieDetails;
+  return request<MovieDetails>(`${moviesUrl}/${id}`);
 };
 
 export const sortParams = (data: string | undefined | null): MovieSortField => {
@@ -115,7 +125,5 @@ export const getMovies = async (
     )
   );
 
-  return (await request<MovieListResponse>(
-    `${moviesUrl}?${query}`
-  )) as MovieListResponse;
+  return request<MovieListResponse>(`${moviesUrl}?${query}`);
 };

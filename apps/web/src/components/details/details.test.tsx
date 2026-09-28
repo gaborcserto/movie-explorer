@@ -40,10 +40,7 @@ describe('<Details />', () => {
 
   it('displays the loading component while fetching data', async () => {
     useParams.mockReturnValue({ movieId: '1234' });
-    getMovie.mockReturnValueOnce(
-      // eslint-disable-next-line no-promise-executor-return
-      new Promise((res) => setTimeout(() => res(mockData), 1000))
-    );
+    getMovie.mockReturnValueOnce(new Promise(() => {}));
 
     render(<Details />);
 
@@ -82,10 +79,7 @@ describe('<Details />', () => {
   it('shows a not-found state for missing movies', async () => {
     useParams.mockReturnValue({ movieId: '404' });
     isNotFoundError.mockReturnValue(true);
-    getMovie.mockRejectedValueOnce({
-      isAxiosError: true,
-      response: { status: 404 },
-    });
+    getMovie.mockRejectedValueOnce(new Error('Movie not found'));
 
     render(<Details />);
 

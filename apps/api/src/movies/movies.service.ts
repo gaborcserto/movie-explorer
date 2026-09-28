@@ -30,13 +30,13 @@ export class MoviesService {
   public async update(
     _id: number,
     _movie: MovieMutationPayload,
-  ): Promise<MovieDetails> {
+  ): Promise<MovieDetails | undefined> {
     void _id;
     void _movie;
     throw this.getMutationNotSupportedError();
   }
 
-  public async delete(_id: number): Promise<MovieDetails> {
+  public async delete(_id: number): Promise<MovieDetails | undefined> {
     void _id;
     throw this.getMutationNotSupportedError();
   }

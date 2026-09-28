@@ -58,15 +58,9 @@ export class MoviesController {
   @ApiNotFoundResponse({ description: 'Movie not found' })
   @ApiParam({ name: 'id', description: 'Movie unique identifier' })
   public async getMovie(
-    @Param('id', ParseIntPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
   ): Promise<MovieDetails> {
-    const movieId = parseInt(id, 10);
-
-    if (isNaN(movieId)) {
-      throw new HttpException('ID must be a number', HttpStatus.BAD_REQUEST);
-    }
-
-    const movie = await this.moviesService.findOne(movieId);
+    const movie = await this.moviesService.findOne(id);
 
     if (!movie) {
       throw new HttpException('Movie not found', HttpStatus.NOT_FOUND);
@@ -140,10 +134,9 @@ export class MoviesController {
       throw new HttpException('ID must be a number', HttpStatus.BAD_REQUEST);
     }
 
-    const result = await this.moviesService.delete(movieId);
-    if (!result) {
+    const deletedMovie = await this.moviesService.delete(movieId);
+    if (!deletedMovie) {
       throw new HttpException('Movie not found', HttpStatus.NOT_FOUND);
     }
-    return;
   }
 }
