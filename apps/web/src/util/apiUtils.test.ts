@@ -1,4 +1,3 @@
-import axios from 'axios';
 import type {
   MovieDetails,
   MovieListResponse,
@@ -13,6 +12,14 @@ import {
   sortParams,
 } from './apiUtils';
 import type { URLParams } from '../types';
+
+function response(body?: unknown, status = 200): Response {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: vi.fn().mockResolvedValue(body),
+  } as unknown as Response;
+}
 
 const mockMovieData: MovieDetails = {
   id: 1234,
@@ -32,9 +39,8 @@ const mockMoviesData: MovieListResponse = {
   limit: 0,
 };
 
-vi.mock('axios');
-const mockedAxios = vi.mocked(axios);
-const mockedIsAxiosError = vi.mocked(mockedAxios.isAxiosError);
+const fetchMock = vi.fn();
+vi.stubGlobal('fetch', fetchMock);
 
 describe('API functions', () => {
   afterEach(() => {
@@ -42,64 +48,59 @@ describe('API functions', () => {
   });
 
   it('should post movie data', async () => {
-    mockedAxios.post.mockResolvedValue(undefined);
+    fetchMock.mockResolvedValue(response());
 
     await expect(postMovie(mockMovieData)).resolves.toBeUndefined();
-    expect(mockedAxios.post).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:4000/movies',
-      mockMovieData
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(mockMovieData),
+      })
     );
   });
 
   it('should delete movie data by id', async () => {
-    const { id } = mockMovieData;
-    mockedAxios.delete.mockResolvedValue(undefined);
+    fetchMock.mockResolvedValue(response());
 
-    await expect(deleteMovie(id)).resolves.toBeUndefined();
-    expect(mockedAxios.delete).toHaveBeenCalledWith(
-      'http://localhost:4000/movies/1234'
+    await expect(deleteMovie(mockMovieData.id)).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/movies/1234',
+      { method: 'DELETE' }
     );
   });
 
-  it('should update movie data', async () => {
-    mockedAxios.put.mockResolvedValue({ data: mockMovieData });
+  it('should update a movie', async () => {
+    fetchMock.mockResolvedValue(response(mockMovieData));
 
-    const response = await putMovie(mockMovieData);
-    expect(response).toEqual(mockMovieData);
-    expect(mockedAxios.put).toHaveBeenCalledWith(
+    await expect(putMovie(mockMovieData)).resolves.toEqual(mockMovieData);
+    expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:4000/movies',
-      mockMovieData
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify(mockMovieData),
+      })
     );
   });
 
   it('should get movie by id', async () => {
-    const { id } = mockMovieData;
-    mockedAxios.get.mockResolvedValue({ data: mockMovieData });
+    fetchMock.mockResolvedValue(response(mockMovieData));
 
-    const response = await getMovie(id);
-    expect(response).toEqual(mockMovieData);
-    expect(mockedAxios.get).toHaveBeenCalledWith(
-      'http://localhost:4000/movies/1234'
+    await expect(getMovie(mockMovieData.id)).resolves.toEqual(mockMovieData);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/movies/1234',
+      {}
     );
   });
 
   it('should get movies with URL parameters', async () => {
-    const params: URLParams = {
-      genres: null,
-      sort: null,
-    };
-    mockedAxios.get.mockResolvedValueOnce({ data: mockMoviesData });
+    const params: URLParams = { genres: null, sort: null };
+    fetchMock.mockResolvedValue(response(mockMoviesData));
 
-    const response = await getMovies(params);
-    expect(response).toEqual(mockMoviesData);
-    expect(mockedAxios.get).toHaveBeenCalledWith(
-      'http://localhost:4000/movies',
-      {
-        params: {
-          sort: 'title',
-          sortOrder: 'asc',
-        },
-      }
+    await expect(getMovies(params)).resolves.toEqual(mockMoviesData);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/movies?sort=title&sortOrder=asc',
+      {}
     );
   });
 
@@ -109,20 +110,13 @@ describe('API functions', () => {
       sort: 'releaseDate',
       search: 'zodiac',
     };
-    mockedAxios.get.mockResolvedValueOnce({ data: mockMoviesData });
+    fetchMock.mockResolvedValue(response(mockMoviesData));
 
     await getMovies(params);
 
-    expect(mockedAxios.get).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({
-        params: {
-          sort: 'releaseDate',
-          sortOrder: 'asc',
-          genre: 'crime',
-          search: 'zodiac',
-        },
-      })
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/movies?sort=releaseDate&sortOrder=asc&search=zodiac&genre=crime',
+      {}
     );
   });
 
@@ -133,18 +127,30 @@ describe('API functions', () => {
     expect(sortParams('Title')).toBe('title');
   });
 
-  it('should identify 404 API errors as not found', () => {
-    const error = { response: { status: 404 } };
-    mockedIsAxiosError.mockReturnValueOnce(true);
+  it('should identify 404 API errors as not found', async () => {
+    fetchMock.mockResolvedValue(response(undefined, 404));
+
+    let error: unknown;
+    try {
+      await getMovie(1234);
+    } catch (caughtError) {
+      error = caughtError;
+    }
 
     expect(isNotFoundError(error)).toBe(true);
-    expect(mockedIsAxiosError).toHaveBeenCalledWith(error);
   });
 
-  it('should not treat non-404 or non-Axios errors as not found', () => {
-    mockedIsAxiosError.mockReturnValueOnce(true).mockReturnValueOnce(false);
+  it('should not treat non-404 or non-API errors as not found', async () => {
+    fetchMock.mockResolvedValue(response(undefined, 500));
 
-    expect(isNotFoundError({ response: { status: 500 } })).toBe(false);
+    let error: unknown;
+    try {
+      await getMovie(1234);
+    } catch (caughtError) {
+      error = caughtError;
+    }
+
+    expect(isNotFoundError(error)).toBe(false);
     expect(isNotFoundError(new Error('boom'))).toBe(false);
   });
 });

@@ -1,4 +1,3 @@
-import axios from 'axios';
 import type {
   MovieDetails,
   MovieListResponse,
@@ -15,30 +14,63 @@ const apiBaseUrl = (configuredApiBaseUrl ?? 'http://localhost:4000').replace(
 );
 const moviesUrl = `${apiBaseUrl}/movies`;
 
+class ApiRequestError extends Error {
+  constructor(public readonly status: number) {
+    super(`API request failed with status ${status}`);
+    this.name = 'ApiRequestError';
+  }
+}
+
+const request = async <T>(
+  url: string,
+  init: RequestInit = {},
+  parseResponse = true
+): Promise<T | undefined> => {
+  const response = await fetch(url, init);
+
+  if (!response.ok) {
+    throw new ApiRequestError(response.status);
+  }
+
+  if (!parseResponse) {
+    return undefined;
+  }
+
+  return (await response.json()) as T;
+};
+
 export const isNotFoundError = (error: unknown): boolean => {
-  return axios.isAxiosError(error) && error.response?.status === 404;
+  return error instanceof ApiRequestError && error.status === 404;
 };
 
 export const postMovie = async (data: MovieMutationPayload): Promise<void> => {
-  await axios.post<void>(moviesUrl, data);
+  await request<void>(
+    moviesUrl,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    },
+    false
+  );
 };
 
 export const deleteMovie = async (id: number): Promise<void> => {
-  await axios.delete<void>(`${moviesUrl}/${id}`);
+  await request<void>(`${moviesUrl}/${id}`, { method: 'DELETE' }, false);
 };
 
 export const putMovie = async (
   data: MovieMutationPayload
 ): Promise<MovieDetails> => {
-  const response = await axios.put<MovieDetails>(moviesUrl, data);
-
-  return response.data;
+  return (await request<MovieDetails>(moviesUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })) as MovieDetails;
 };
 
 export const getMovie = async (id: number): Promise<MovieDetails> => {
-  const response = await axios.get<MovieDetails>(`${moviesUrl}/${id}`);
-
-  return response.data;
+  return (await request<MovieDetails>(`${moviesUrl}/${id}`)) as MovieDetails;
 };
 
 export const sortParams = (data: string | undefined | null): MovieSortField => {
@@ -71,7 +103,19 @@ export const getMovies = async (
     params.genre = urlParams.genres;
   }
 
-  const response = await axios.get<MovieListResponse>(moviesUrl, { params });
+  const query = new URLSearchParams(
+    Object.entries(params).reduce<Record<string, string>>(
+      (entries, [key, value]) => {
+        if (value !== undefined) {
+          entries[key] = value;
+        }
+        return entries;
+      },
+      {}
+    )
+  );
 
-  return response.data;
+  return (await request<MovieListResponse>(
+    `${moviesUrl}?${query}`
+  )) as MovieListResponse;
 };
