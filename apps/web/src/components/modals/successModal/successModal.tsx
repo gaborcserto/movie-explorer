@@ -1,10 +1,10 @@
 import './successModal.scss';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../store/store';
 
-function SuccessModal() {
-  const modalMessage = useSelector((state: RootState) => state.modal.message);
+interface SuccessModalProps {
+  message: string;
+}
 
+function SuccessModal({ message }: SuccessModalProps) {
   return (
     <div className="modal__content modal__content--success">
       <div className="modal__icon success-icon">
@@ -13,7 +13,7 @@ function SuccessModal() {
       <div className="modal__header modal__header--success">
         Congratulations !
       </div>
-      <div>{modalMessage}</div>
+      <div>{message}</div>
     </div>
   );
 }

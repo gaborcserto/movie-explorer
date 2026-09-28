@@ -77,11 +77,10 @@ describe('API functions', () => {
     expect(response).toEqual(mockMoviesData);
   });
 
-  it('should preserve releaseDate sort and keep reload hash out of API parameters', async () => {
+  it('should preserve releaseDate sort in API parameters', async () => {
     const params: URLParams = {
       genres: 'crime',
       sort: 'releaseDate',
-      hash: '#reload',
     };
     mockedAxios.get.mockResolvedValueOnce({ data: mockMoviesData });
 

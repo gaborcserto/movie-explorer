@@ -1,75 +1,62 @@
 import { render, fireEvent } from '@testing-library/react';
-import {
-  useSelector as originalUseSelector,
-  useDispatch as originalUseDispatch,
-} from 'react-redux';
+import type { MovieModalState } from '../../../types';
 import CustomModal from './customModal';
 
-const useSelector = originalUseSelector as jest.Mock;
-const useDispatch = originalUseDispatch as jest.Mock;
+const closedModalState: MovieModalState = {
+  open: false,
+  type: 'add',
+  loading: false,
+  error: false,
+  movie: undefined,
+  message: '',
+};
 
-jest.mock('react-redux', () => ({
-  useSelector: jest.fn(),
-  useDispatch: jest.fn(),
-}));
+const renderModal = (modalState: MovieModalState = closedModalState) => {
+  const setModalState = jest.fn();
+  const onClose = jest.fn();
+  const onMoviesChanged = jest.fn();
 
-const mockDispatch = jest.fn();
+  const view = render(
+    <CustomModal
+      modalState={modalState}
+      setModalState={setModalState}
+      onClose={onClose}
+      onMoviesChanged={onMoviesChanged}
+    />
+  );
+
+  return { ...view, setModalState, onClose, onMoviesChanged };
+};
 
 describe('<CustomModal />', () => {
-  beforeEach(() => {
-    useSelector.mockImplementation((callback) => {
-      return callback({
-        modal: {
-          open: false,
-          type: 'add',
-          loading: false,
-          error: false,
-        },
-      });
-    });
-    useDispatch.mockReturnValue(mockDispatch);
-  });
-
   afterEach(() => {
     jest.clearAllMocks();
   });
 
   it('renders correctly', () => {
-    const { container } = render(<CustomModal />);
+    const { container } = renderModal();
     expect(container).toMatchSnapshot();
   });
 
   it('displays the correct modal based on modal type delete', () => {
-    useSelector.mockImplementation((callback) => {
-      return callback({
-        modal: {
-          open: true,
-          type: 'delete',
-          loading: false,
-          error: false,
-        },
-      });
+    const { queryByText } = renderModal({
+      ...closedModalState,
+      open: true,
+      type: 'delete',
     });
-
-    const { queryByText } = render(<CustomModal />);
 
     expect(queryByText('Delete Movie')).toBeInTheDocument();
   });
 
   it('closes the modal when close button is clicked', () => {
-    useSelector.mockImplementation((callback) => {
-      return callback({
-        modal: {
-          open: true,
-          type: 'add',
-          loading: false,
-          error: false,
-        },
-      });
+    const { container, onClose } = renderModal({
+      ...closedModalState,
+      open: true,
     });
+    const closeButton = container.querySelector('.modal__close');
 
-    const { getByText } = render(<CustomModal />);
-    fireEvent.click(getByText('✖'));
-    expect(mockDispatch).toHaveBeenCalledWith(expect.any(Object));
+    expect(closeButton).not.toBeNull();
+    fireEvent.click(closeButton as Element);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

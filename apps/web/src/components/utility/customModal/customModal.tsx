@@ -1,72 +1,113 @@
-import { useState, useEffect } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
+import type { MovieDetails } from '@movie-explorer/contracts';
 import './customModal.scss';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../../store/store';
-import {
-  setModalOpen,
-  setModalError,
-  setModalLoading,
-} from '../../../reducer/modalSlice';
 import AddModal from '../../modals/addModal';
 import EditModal from '../../modals/editModal';
 import DeleteModal from '../../modals/deleteModal';
 import SuccessModal from '../../modals/successModal';
 import ErrorModal from '../../modals/errorModal';
 import LoadingModal from '../../modals/loadingModal';
-import { setHash } from '../../../reducer/moviesSlice';
+import type { MovieModalState } from '../../../types';
 
-function CustomModal() {
-  const modalOpen = useSelector((state: RootState) => state.modal.open);
-  const modalType = useSelector((state: RootState) => state.modal.type);
-  const modalLoading = useSelector((state: RootState) => state.modal.loading);
-  const modalError = useSelector((state: RootState) => state.modal.error);
+interface CustomModalProps {
+  modalState: MovieModalState;
+  setModalState: Dispatch<SetStateAction<MovieModalState>>;
+  onClose: () => void;
+  onMoviesChanged: () => void;
+}
 
-  const [isModalOpen, setIsModalOpen] = useState(modalOpen);
-  const [isModalType, setIsModalType] = useState(modalType);
-  const [isModalLoading, setIsModalLoading] = useState(modalLoading);
-  const [isModalError, setIsModalError] = useState(modalError);
+const isMovieDetails = (
+  movie: MovieModalState['movie']
+): movie is MovieDetails => {
+  return Boolean(movie && 'description' in movie && 'runtimeMinutes' in movie);
+};
 
-  const dispatch = useDispatch();
+function CustomModal({
+  modalState,
+  setModalState,
+  onClose,
+  onMoviesChanged,
+}: CustomModalProps) {
+  const { open, type, loading, error, movie, message } = modalState;
 
   const closeModal = () => {
-    setIsModalOpen(false);
-    dispatch(setModalOpen(false));
-    dispatch(setModalError(false));
-    dispatch(setModalLoading(false));
-    dispatch(setHash('#reload'));
+    onClose();
   };
 
-  useEffect(() => {
-    setIsModalOpen(modalOpen);
-    setIsModalType(modalType);
-    setIsModalError(modalError);
-    setIsModalLoading(modalLoading);
-  }, [modalOpen, modalType, modalError, modalLoading]);
+  const setLoading = (nextLoading: boolean) => {
+    setModalState((currentState) => ({
+      ...currentState,
+      loading: nextLoading,
+    }));
+  };
 
-  let content = <AddModal />;
+  const setError = (nextError: string) => {
+    setModalState((currentState) => ({
+      ...currentState,
+      loading: false,
+      error: nextError,
+    }));
+  };
 
-  switch (isModalType) {
+  const setSuccess = (nextMessage: string) => {
+    setModalState((currentState) => ({
+      ...currentState,
+      type: 'success',
+      loading: false,
+      message: nextMessage,
+    }));
+    onMoviesChanged();
+  };
+
+  let content = (
+    <AddModal
+      onLoadingChange={setLoading}
+      onError={setError}
+      onSuccess={setSuccess}
+    />
+  );
+
+  switch (type) {
     case 'delete':
-      content = <DeleteModal />;
+      content = (
+        <DeleteModal
+          movieData={movie}
+          onLoadingChange={setLoading}
+          onError={setError}
+          onSuccess={setSuccess}
+        />
+      );
       break;
     case 'success':
-      content = <SuccessModal />;
+      content = <SuccessModal message={message} />;
       break;
     case 'add':
-      content = <AddModal />;
+      content = (
+        <AddModal
+          onLoadingChange={setLoading}
+          onError={setError}
+          onSuccess={setSuccess}
+        />
+      );
       break;
     case 'edit':
-      content = <EditModal />;
+      content = (
+        <EditModal
+          movieData={isMovieDetails(movie) ? movie : undefined}
+          onLoadingChange={setLoading}
+          onError={setError}
+          onSuccess={setSuccess}
+        />
+      );
       break;
     default:
-      content = <AddModal />;
       break;
   }
 
-  if (isModalError) content = <ErrorModal />;
-  if (isModalLoading) content = <LoadingModal />;
+  if (error) content = <ErrorModal message={error} />;
+  if (loading) content = <LoadingModal />;
 
-  return isModalOpen ? (
+  return open ? (
     <div className="modal__overlay">
       <section className="modal">
         <button onClick={closeModal} className="modal__close" type="button">

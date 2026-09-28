@@ -1,24 +1,13 @@
 import { render, screen } from '@testing-library/react';
-import { Provider } from 'react-redux';
 import {
   MemoryRouter,
   Route,
   Routes,
   useParams as originalUseParams,
 } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
 import Header from './header';
-import moviesReducer from '../../reducer/moviesSlice';
-import modalReducer from '../../reducer/modalSlice';
 
 const useParams = originalUseParams as jest.Mock;
-
-const mockStore = configureStore({
-  reducer: {
-    movies: moviesReducer,
-    modal: modalReducer,
-  },
-});
 
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
@@ -34,13 +23,14 @@ describe('Header component', () => {
     useParams.mockReturnValue({ movieId: '1234' });
 
     render(
-      <Provider store={mockStore}>
-        <MemoryRouter initialEntries={['/movies/1234']}>
-          <Routes>
-            <Route path="/movies/:movieId" element={<Header />} />
-          </Routes>
-        </MemoryRouter>
-      </Provider>
+      <MemoryRouter initialEntries={['/movies/1234']}>
+        <Routes>
+          <Route
+            path="/movies/:movieId"
+            element={<Header onAddMovie={jest.fn()} />}
+          />
+        </Routes>
+      </MemoryRouter>
     );
 
     expect(screen.getByTestId('details-component')).toBeInTheDocument();
@@ -51,13 +41,11 @@ describe('Header component', () => {
     useParams.mockReturnValue({});
 
     render(
-      <Provider store={mockStore}>
-        <MemoryRouter initialEntries={['/']}>
-          <Routes>
-            <Route path="*" element={<Header />} />
-          </Routes>
-        </MemoryRouter>
-      </Provider>
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="*" element={<Header onAddMovie={jest.fn()} />} />
+        </Routes>
+      </MemoryRouter>
     );
 
     expect(screen.getByTestId('search-component')).toBeInTheDocument();

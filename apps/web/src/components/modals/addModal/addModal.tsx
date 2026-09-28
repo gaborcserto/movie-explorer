@@ -1,32 +1,26 @@
-import { useDispatch } from 'react-redux';
 import type { MovieMutationPayload } from '@movie-explorer/contracts';
 import { postMovie } from '../../../util/apiUtils';
-import {
-  setModalType,
-  setModalError,
-  setModalLoading,
-  setModalMessage,
-} from '../../../reducer/modalSlice';
 import Form from '../../form';
-import { setHash } from '../../../reducer/moviesSlice';
 
-function AddModal() {
-  const dispatch = useDispatch();
+interface AddModalProps {
+  onLoadingChange: (loading: boolean) => void;
+  onError: (error: string) => void;
+  onSuccess: (message: string) => void;
+}
 
+function AddModal({ onLoadingChange, onError, onSuccess }: AddModalProps) {
   const handleAdd = async (data: MovieMutationPayload) => {
-    dispatch(setModalLoading(true));
+    onLoadingChange(true);
 
     postMovie(data)
       .then(() => {
-        dispatch(setModalType('success'));
-        dispatch(setModalMessage('Movie add successful'));
+        onSuccess('Movie add successful');
       })
       .catch((error) => {
-        dispatch(setModalError(`Error: ${error.message}`));
+        onError(`Error: ${error.message}`);
       })
       .finally(() => {
-        dispatch(setModalLoading(false));
-        dispatch(setHash('#reload'));
+        onLoadingChange(false);
       });
   };
 

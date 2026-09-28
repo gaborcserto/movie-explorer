@@ -17,9 +17,8 @@
     "test:coverage": "jest a --coverage"
   },
   "dependencies": {
-    "@movie-explorer/contracts": "0.0.0",
     "@hookform/resolvers": "^3.3.1",
-    "@reduxjs/toolkit": "^1.9.5",
+    "@movie-explorer/contracts": "0.0.0",
     "@types/jest": "^29.5.4",
     "@types/node": "^20.5.7",
     "@types/react": "^18.2.15",
@@ -28,7 +27,6 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.45.4",
-    "react-redux": "^8.1.2",
     "react-router-dom": "^6.15.0",
     "scss-reset": "^1.4.2"
   },

@@ -1,22 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
 import './card.scss';
-import { useDispatch } from 'react-redux';
 import { Link, useSearchParams } from 'react-router-dom';
-import type { MovieSummary } from '@movie-explorer/contracts';
+import type { MovieDetails, MovieSummary } from '@movie-explorer/contracts';
 import CustomImage from '../utility/customImage';
-import {
-  setModalOpen,
-  setModalType,
-  setModalMovie,
-  setModalError,
-} from '../../reducer/modalSlice';
 import { getMovie } from '../../util/apiUtils';
 
 interface CardProps {
   movie: MovieSummary;
+  onEditMovie: (movie: MovieDetails) => void;
+  onDeleteMovie: (movie: MovieSummary) => void;
+  onMovieActionError: (error: string) => void;
 }
 
-function Card({ movie }: CardProps) {
+function Card({
+  movie,
+  onEditMovie,
+  onDeleteMovie,
+  onMovieActionError,
+}: CardProps) {
   const { id, title, releaseDate, posterUrl, genres } = movie;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -25,13 +26,10 @@ function Card({ movie }: CardProps) {
 
   const filter = searchParams.get('filter');
   const sort = searchParams.get('sorting');
-
-  const dispatch = useDispatch();
   const releaseYear = releaseDate.substring(0, 4);
 
   const handleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
-    dispatch(setModalMovie(movie));
   };
 
   const handleCloseMenu = () => {
@@ -59,17 +57,14 @@ function Card({ movie }: CardProps) {
   const handleOpenModal = async () => {
     try {
       const movieDetails = await getMovie(id);
-      dispatch(setModalMovie(movieDetails));
-      dispatch(setModalOpen(true));
-      dispatch(setModalType('edit'));
+      onEditMovie(movieDetails);
     } catch (error) {
-      dispatch(setModalError(`Error: ${error}`));
+      onMovieActionError(`Error: ${error}`);
     }
   };
 
   const handleDeleteModal = () => {
-    dispatch(setModalOpen(true));
-    dispatch(setModalType('delete'));
+    onDeleteMovie(movie);
   };
 
   const genreLinks = genres

@@ -1,14 +1,30 @@
 import { render, waitFor, screen } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { MemoryRouter as Router } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import List from './list';
 import { getMovies as originalGetMovies } from '../../util/apiUtils';
-import moviesReducer from '../../reducer/moviesSlice';
-import modalReducer from '../../reducer/modalSlice';
 
 const getMovies = originalGetMovies as jest.Mock;
 jest.mock('../../util/apiUtils');
+
+const defaultProps = {
+  refreshKey: 0,
+  onEditMovie: jest.fn(),
+  onDeleteMovie: jest.fn(),
+  onMovieActionError: jest.fn(),
+};
+
+const renderList = (initialEntry = '/search') => {
+  render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <Routes>
+        <Route
+          path="/search/:searchQuery?"
+          element={<List {...defaultProps} />}
+        />
+      </Routes>
+    </MemoryRouter>
+  );
+};
 
 describe('<List />', () => {
   beforeEach(() => {
@@ -18,17 +34,7 @@ describe('<List />', () => {
   test('it displays a loading indicator while fetching data', () => {
     getMovies.mockReturnValue(new Promise(() => {}));
 
-    render(
-      <Provider
-        store={configureStore({
-          reducer: { movies: moviesReducer, modal: modalReducer },
-        })}
-      >
-        <Router>
-          <List />
-        </Router>
-      </Provider>
-    );
+    renderList();
 
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
@@ -62,28 +68,7 @@ describe('<List />', () => {
 
     getMovies.mockResolvedValue(mockMovies);
 
-    render(
-      <Provider
-        store={configureStore({
-          reducer: { movies: moviesReducer, modal: modalReducer },
-          preloadedState: {
-            movies: { search: 'Movie', hash: '#loaded' },
-            modal: {
-              open: false,
-              type: 'form',
-              loading: false,
-              error: null,
-              movie: undefined,
-              message: '',
-            },
-          },
-        })}
-      >
-        <Router initialEntries={['/search?filter=crime&sorting=Release Date']}>
-          <List />
-        </Router>
-      </Provider>
-    );
+    renderList('/search/Movie?filter=crime&sorting=Release Date');
 
     await waitFor(() => {
       const h2Element = screen.getByText(/movies found/i);
@@ -101,24 +86,13 @@ describe('<List />', () => {
       sort: 'Release Date',
       search: 'Movie',
       genres: 'crime',
-      hash: '#loaded',
     });
   });
 
   test('it displays an error message when the fetch fails', async () => {
     getMovies.mockRejectedValue(new Error('Failed to fetch movies'));
 
-    render(
-      <Provider
-        store={configureStore({
-          reducer: { movies: moviesReducer, modal: modalReducer },
-        })}
-      >
-        <Router>
-          <List />
-        </Router>
-      </Provider>
-    );
+    renderList();
 
     await waitFor(() =>
       expect(

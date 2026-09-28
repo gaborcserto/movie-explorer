@@ -1,44 +1,50 @@
 import { useMemo, useState, useEffect } from 'react';
 import './list.scss';
-import { useDispatch, useSelector, shallowEqual } from 'react-redux';
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import type {
+  MovieDetails,
   MovieListResponse,
   MovieSummary,
 } from '@movie-explorer/contracts';
 import Card from '../card/card';
-import { RootState } from '../../store/store';
 import Error from '../../layouts/error';
 import Loading from '../../layouts/loading';
 import { getMovies } from '../../util/apiUtils';
-import { setHash } from '../../reducer/moviesSlice';
 
-function List() {
-  const { search, hash } = useSelector(
-    (state: RootState) => state.movies,
-    shallowEqual
-  );
+interface ListProps {
+  refreshKey: number;
+  onEditMovie: (movie: MovieDetails) => void;
+  onDeleteMovie: (movie: MovieSummary) => void;
+  onMovieActionError: (error: string) => void;
+}
+
+function List({
+  refreshKey,
+  onEditMovie,
+  onDeleteMovie,
+  onMovieActionError,
+}: ListProps) {
   const [moviesData, setMoviesData] = useState<MovieListResponse>();
   const [loadingData, setLoadingData] = useState(true);
-  const [errorData, setErrorData] = useState();
+  const [errorData, setErrorData] = useState<unknown>();
 
   const [searchParams] = useSearchParams();
-  const dispatch = useDispatch();
+  const { searchQuery } = useParams();
   const filter = searchParams.get('filter');
   const sort = searchParams.get('sorting');
 
   const params = useMemo(
     () => ({
       sort,
-      search,
+      search: searchQuery,
       genres: filter,
-      hash,
     }),
-    [sort, search, filter, hash]
+    [sort, searchQuery, filter]
   );
 
   useEffect(() => {
     setLoadingData(true);
+    setErrorData(undefined);
     getMovies(params)
       .then((movies) => {
         setMoviesData(movies);
@@ -48,9 +54,8 @@ function List() {
       })
       .finally(() => {
         setLoadingData(false);
-        dispatch(setHash('#loaded'));
       });
-  }, [dispatch, params]);
+  }, [params, refreshKey]);
 
   const capitalizeFirstLetter = (data: string) => {
     return data.charAt(0).toUpperCase() + data.slice(1);
@@ -86,7 +91,13 @@ function List() {
       </h2>
       <div className="list__items">
         {moviesList?.map((movieData: MovieSummary) => (
-          <Card key={movieData.id} movie={movieData} />
+          <Card
+            key={movieData.id}
+            movie={movieData}
+            onEditMovie={onEditMovie}
+            onDeleteMovie={onDeleteMovie}
+            onMovieActionError={onMovieActionError}
+          />
         ))}
       </div>
     </section>

@@ -1,38 +1,37 @@
 import './deleteModal.scss';
-import { useSelector, useDispatch } from 'react-redux';
+import type { MovieDetails, MovieSummary } from '@movie-explorer/contracts';
 import { deleteMovie } from '../../../util/apiUtils';
-import { RootState } from '../../../store/store';
-import {
-  setModalError,
-  setModalLoading,
-  setModalType,
-  setModalMessage,
-} from '../../../reducer/modalSlice';
-import { setHash } from '../../../reducer/moviesSlice';
 
-function DeleteModal() {
-  const modalData = useSelector((state: RootState) => state.modal.movie);
-  const dispatch = useDispatch();
+interface DeleteModalProps {
+  movieData?: MovieDetails | MovieSummary;
+  onLoadingChange: (loading: boolean) => void;
+  onError: (error: string) => void;
+  onSuccess: (message: string) => void;
+}
 
+function DeleteModal({
+  movieData,
+  onLoadingChange,
+  onError,
+  onSuccess,
+}: DeleteModalProps) {
   const handleDelete = async (id: number) => {
     try {
       await deleteMovie(id);
-      dispatch(setModalLoading(false));
-      dispatch(setModalType('success'));
-      dispatch(setModalMessage('Delete Successful'));
-      dispatch(setHash('#reload'));
+      onLoadingChange(false);
+      onSuccess('Delete Successful');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
 
-      dispatch(setModalLoading(false));
-      dispatch(setModalError(`Error: ${message}`));
+      onLoadingChange(false);
+      onError(`Error: ${message}`);
     }
   };
 
   const handleConfirm = () => {
-    if (modalData) {
-      dispatch(setModalLoading(true));
-      handleDelete(modalData.id).then();
+    if (movieData) {
+      onLoadingChange(true);
+      handleDelete(movieData.id).then();
     }
   };
 

@@ -1,28 +1,11 @@
 import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { Provider, useDispatch as originalUseDispatch } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import type { MovieDetails } from '@movie-explorer/contracts';
-import modalReducer, {
-  setModalOpen,
-  setModalType,
-} from '../../reducer/modalSlice';
 import { getMovie as originalGetMovie } from '../../util/apiUtils';
 import Card from './card';
 
-const useDispatch = originalUseDispatch as jest.Mock;
 const getMovie = originalGetMovie as jest.Mock;
 
-const mockStore = configureStore({
-  reducer: {
-    modal: modalReducer,
-  },
-});
-
-jest.mock('react-redux', () => ({
-  ...jest.requireActual('react-redux'),
-  useDispatch: jest.fn(),
-}));
 jest.mock('../../util/apiUtils');
 
 const mockMovie: MovieDetails = {
@@ -37,11 +20,14 @@ const mockMovie: MovieDetails = {
 };
 
 describe('<Card />', () => {
-  let mockDispatch: jest.Mock;
+  let onEditMovie: jest.Mock;
+  let onDeleteMovie: jest.Mock;
+  let onMovieActionError: jest.Mock;
 
   beforeEach(() => {
-    mockDispatch = jest.fn();
-    useDispatch.mockReturnValue(mockDispatch);
+    onEditMovie = jest.fn();
+    onDeleteMovie = jest.fn();
+    onMovieActionError = jest.fn();
     getMovie.mockResolvedValue(mockMovie);
   });
 
@@ -51,11 +37,14 @@ describe('<Card />', () => {
 
   it('renders the card title', () => {
     render(
-      <Provider store={mockStore}>
-        <MemoryRouter>
-          <Card movie={mockMovie} />
-        </MemoryRouter>
-      </Provider>
+      <MemoryRouter>
+        <Card
+          movie={mockMovie}
+          onEditMovie={onEditMovie}
+          onDeleteMovie={onDeleteMovie}
+          onMovieActionError={onMovieActionError}
+        />
+      </MemoryRouter>
     );
 
     expect(screen.getByText(mockMovie.title)).toBeInTheDocument();
@@ -63,11 +52,14 @@ describe('<Card />', () => {
 
   it('opens the menu when the menu button is clicked', () => {
     render(
-      <Provider store={mockStore}>
-        <MemoryRouter>
-          <Card movie={mockMovie} />
-        </MemoryRouter>
-      </Provider>
+      <MemoryRouter>
+        <Card
+          movie={mockMovie}
+          onEditMovie={onEditMovie}
+          onDeleteMovie={onDeleteMovie}
+          onMovieActionError={onMovieActionError}
+        />
+      </MemoryRouter>
     );
 
     const menuButton = screen.getByRole('button', { name: /menu/i });
@@ -79,11 +71,14 @@ describe('<Card />', () => {
 
   it('opens the edit modal when handleOpenModal is called', async () => {
     render(
-      <Provider store={mockStore}>
-        <MemoryRouter>
-          <Card movie={mockMovie} />
-        </MemoryRouter>
-      </Provider>
+      <MemoryRouter>
+        <Card
+          movie={mockMovie}
+          onEditMovie={onEditMovie}
+          onDeleteMovie={onDeleteMovie}
+          onMovieActionError={onMovieActionError}
+        />
+      </MemoryRouter>
     );
 
     const menuButton = screen.getByRole('button', { name: /menu/i });
@@ -94,18 +89,20 @@ describe('<Card />', () => {
 
     expect(getMovie).toHaveBeenCalledWith(1234);
     await waitFor(() => {
-      expect(mockDispatch).toHaveBeenCalledWith(setModalOpen(true));
-      expect(mockDispatch).toHaveBeenCalledWith(setModalType('edit'));
+      expect(onEditMovie).toHaveBeenCalledWith(mockMovie);
     });
   });
 
   it('opens the delete modal when handleDeleteModal is called', () => {
     render(
-      <Provider store={mockStore}>
-        <MemoryRouter>
-          <Card movie={mockMovie} />
-        </MemoryRouter>
-      </Provider>
+      <MemoryRouter>
+        <Card
+          movie={mockMovie}
+          onEditMovie={onEditMovie}
+          onDeleteMovie={onDeleteMovie}
+          onMovieActionError={onMovieActionError}
+        />
+      </MemoryRouter>
     );
 
     const menuButton = screen.getByRole('button', { name: /menu/i });
@@ -114,7 +111,6 @@ describe('<Card />', () => {
     const deleteButton = screen.getByText('Delete');
     fireEvent.click(deleteButton);
 
-    expect(mockDispatch).toHaveBeenCalledWith(setModalOpen(true));
-    expect(mockDispatch).toHaveBeenCalledWith(setModalType('delete'));
+    expect(onDeleteMovie).toHaveBeenCalledWith(mockMovie);
   });
 });

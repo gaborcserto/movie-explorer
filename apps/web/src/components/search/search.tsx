@@ -1,32 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import './search.scss';
-import { setMoviesSearch } from '../../reducer/moviesSlice';
-import {
-  setModalOpen,
-  setModalType,
-  setModalMovie,
-} from '../../reducer/modalSlice';
 
-function Search() {
+interface SearchProps {
+  onAddMovie: () => void;
+}
+
+function Search({ onAddMovie }: SearchProps) {
   const { searchQuery } = useParams();
   const [searchData, setSearchData] = useState('');
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     if (searchQuery) {
       setSearchData(searchQuery);
-      dispatch(setMoviesSearch(searchQuery));
     }
 
     if (location.pathname === '/search' && !searchQuery) {
       setSearchData('');
-      dispatch(setMoviesSearch(''));
     }
-  }, [dispatch, location.pathname, searchQuery]);
+  }, [location.pathname, searchQuery]);
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchData(event.target.value);
@@ -34,14 +28,7 @@ function Search() {
 
   const handleFormSubmit = (e: { preventDefault: () => void }) => {
     if (e) e.preventDefault();
-    dispatch(setMoviesSearch(searchData));
     navigate(`/search/${searchData}`);
-  };
-
-  const openAddMovieModal = () => {
-    dispatch(setModalOpen(true));
-    dispatch(setModalType('add'));
-    dispatch(setModalMovie(undefined));
   };
 
   return (
@@ -53,7 +40,7 @@ function Search() {
           </Link>
           <button
             className="btn--transparent btn"
-            onClick={openAddMovieModal}
+            onClick={onAddMovie}
             type="button"
           >
             + Add movie
