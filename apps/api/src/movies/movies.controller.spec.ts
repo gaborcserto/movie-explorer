@@ -27,9 +27,7 @@ const movieMutation: MovieMutationDto = {
 
 describe('MoviesController', () => {
   let controller: MoviesController;
-  let service: jest.Mocked<
-    Pick<MoviesService, 'findAll' | 'findOne' | 'create' | 'update' | 'delete'>
-  >;
+  let service: jest.Mocked<MoviesService>;
 
   beforeEach(async () => {
     service = {
@@ -38,7 +36,7 @@ describe('MoviesController', () => {
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
-    };
+    } as unknown as jest.Mocked<MoviesService>;
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MoviesController],
@@ -56,21 +54,21 @@ describe('MoviesController', () => {
       limit: 10,
     };
     const query = { search: 'Movie' };
-    service.findAll.mockReturnValue(response as MoviesResponse);
+    service.findAll.mockResolvedValue(response as MoviesResponse);
 
     await expect(controller.getAllMovies(query)).resolves.toBe(response);
     expect(service.findAll).toHaveBeenCalledWith(query);
   });
 
   it('returns a movie by id', async () => {
-    service.findOne.mockReturnValue(movie);
+    service.findOne.mockResolvedValue(movie);
 
     await expect(controller.getMovie('1')).resolves.toBe(movie);
     expect(service.findOne).toHaveBeenCalledWith(1);
   });
 
   it('throws not found when a movie does not exist', async () => {
-    service.findOne.mockReturnValue(undefined);
+    service.findOne.mockResolvedValue(undefined);
 
     await expect(controller.getMovie('999')).rejects.toMatchObject({
       status: HttpStatus.NOT_FOUND,
@@ -96,6 +94,17 @@ describe('MoviesController', () => {
     });
   });
 
+  it('preserves HTTP exceptions from the service', async () => {
+    service.create.mockRejectedValue(
+      new HttpException('Not implemented', HttpStatus.NOT_IMPLEMENTED),
+    );
+
+    await expect(controller.createMovie(movieMutation)).rejects.toMatchObject({
+      status: HttpStatus.NOT_IMPLEMENTED,
+      message: 'Not implemented',
+    });
+  });
+
   it('updates a movie through the service', async () => {
     service.update.mockResolvedValue(movie);
 
@@ -104,7 +113,7 @@ describe('MoviesController', () => {
   });
 
   it('deletes an existing movie', async () => {
-    service.delete.mockReturnValue(movie);
+    service.delete.mockResolvedValue(movie);
 
     await expect(controller.deleteMovie('1')).resolves.toBeUndefined();
     expect(service.delete).toHaveBeenCalledWith(1);

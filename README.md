@@ -16,6 +16,11 @@ Install dependencies once from the repository root:
 npm install
 ```
 
+The backend reads movie data from TMDB. Use `apps/api/.env.example` as
+the reference for required environment variables and provide
+`TMDB_ACCESS_TOKEN` in the backend runtime environment before running
+`apps/api`.
+
 ## Root Commands
 
 ```bash

@@ -73,9 +73,9 @@ export class MoviesController {
   @Post()
   @ApiOperation({ summary: 'Create a movie' })
   @ApiResponse({
-    status: 201,
-    description: 'The movie has been successfully created.',
-    type: () => MovieDetails,
+    status: 501,
+    description:
+      'Movie mutations are not supported by the configured movie provider.',
   })
   @ApiResponse({
     status: 400,
@@ -85,8 +85,15 @@ export class MoviesController {
     try {
       await this.moviesService.create(movie);
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      const message =
+        error instanceof Error ? error.message : 'Unknown validation error';
+
       throw new HttpException(
-        'Error creating movie: ' + error.message,
+        'Error creating movie: ' + message,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -95,11 +102,10 @@ export class MoviesController {
   @Put()
   @ApiOperation({ summary: 'Update a movie by ID' })
   @ApiResponse({
-    status: 200,
-    description: 'The movie has been successfully updated.',
-    type: MovieDetails,
+    status: 501,
+    description:
+      'Movie mutations are not supported by the configured movie provider.',
   })
-  @ApiNotFoundResponse({ description: 'Movie not found' })
   @ApiResponse({
     status: 400,
     description: 'Bad request, possibly due to invalid input data.',
@@ -118,10 +124,10 @@ export class MoviesController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a movie by ID' })
   @ApiResponse({
-    status: 204,
-    description: 'The movie has been successfully deleted.',
+    status: 501,
+    description:
+      'Movie mutations are not supported by the configured movie provider.',
   })
-  @ApiNotFoundResponse({ description: 'Movie not found' })
   @ApiParam({ name: 'id', description: 'Movie unique identifier' })
   public async deleteMovie(@Param('id') id: string): Promise<void> {
     const movieId = parseInt(id, 10);
@@ -130,7 +136,7 @@ export class MoviesController {
       throw new HttpException('ID must be a number', HttpStatus.BAD_REQUEST);
     }
 
-    const result = this.moviesService.delete(movieId);
+    const result = await this.moviesService.delete(movieId);
     if (!result) {
       throw new HttpException('Movie not found', HttpStatus.NOT_FOUND);
     }

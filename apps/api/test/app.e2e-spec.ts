@@ -2,6 +2,32 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
+import { MOVIE_PROVIDER } from './../src/movies/movie-provider';
+
+const movies = [
+  {
+    id: 269149,
+    title: 'Zootopia',
+    releaseDate: '2016-02-11',
+    posterUrl: 'https://example.com/posters/zootopia.jpg',
+    genres: ['Animation', 'Adventure', 'Family', 'Comedy'],
+  },
+];
+
+const movieProvider = {
+  findAll: jest.fn().mockResolvedValue({
+    movies,
+    total: 1,
+    offset: 0,
+    limit: 10,
+  }),
+  findOne: jest.fn().mockResolvedValue({
+    ...movies[0],
+    rating: 7.7,
+    runtimeMinutes: 108,
+    description: 'Determined to prove herself, Officer Judy Hopps...',
+  }),
+};
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -9,7 +35,10 @@ describe('AppController (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(MOVIE_PROVIDER)
+      .useValue(movieProvider)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
@@ -67,6 +96,13 @@ describe('AppController (e2e)', () => {
   });
 
   it('/movies (GET) supports search and pagination query parameters', () => {
+    movieProvider.findAll.mockResolvedValueOnce({
+      movies,
+      total: 1,
+      offset: 0,
+      limit: 1,
+    });
+
     return request(app.getHttpServer())
       .get('/movies')
       .query({ search: 'Zootopia', limit: 1, offset: 0 })
