@@ -256,6 +256,16 @@ future feature development
     Major new features and external integrations come after that
     baseline.
 
+## Agent Efficiency
+
+- Inspect only files relevant to the requested change before expanding scope.
+- Reuse existing repository conventions instead of rediscovering or redesigning them.
+- Avoid reading generated output, caches, dependencies, or unrelated files unless necessary.
+- Use focused checks during implementation; avoid repeatedly running the full verification suite after minor edits.
+- Prefer continuing within the current task context for small follow-up changes instead of repeating repository discovery.
+- Do not ask for confirmation when the answer can be derived safely from the repository or these instructions.
+- Keep final reports concise and avoid restating the task specification.
+
 ## Operational Notes
 
 -   Do not edit generated output directories such as `dist`, `coverage`,
