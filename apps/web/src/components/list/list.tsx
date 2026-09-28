@@ -37,8 +37,8 @@ function List() {
   useEffect(() => {
     setLoadingData(true);
     getMovies(params)
-      .then((response) => {
-        setMoviesData(response.data);
+      .then((movies) => {
+        setMoviesData(movies);
       })
       .catch((error) => {
         setErrorData(error);

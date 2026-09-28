@@ -34,7 +34,7 @@ describe('<Details />', () => {
     useParams.mockReturnValue({ movieId: '1234' });
     getMovie.mockReturnValueOnce(
       // eslint-disable-next-line no-promise-executor-return
-      new Promise((res) => setTimeout(() => res({ data: mockData }), 1000))
+      new Promise((res) => setTimeout(() => res(mockData), 1000))
     );
 
     render(<Details />);
@@ -44,7 +44,7 @@ describe('<Details />', () => {
 
   it('displays movie data once it is fetched', async () => {
     useParams.mockReturnValue({ movieId: '1234' });
-    getMovie.mockResolvedValueOnce({ data: mockData });
+    getMovie.mockResolvedValueOnce(mockData);
 
     render(<Details />);
 

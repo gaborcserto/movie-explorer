@@ -21,10 +21,11 @@ function DeleteModal() {
       dispatch(setModalType('success'));
       dispatch(setModalMessage('Delete Successful'));
       dispatch(setHash('#reload'));
-      // eslint-disable-next-line
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+
       dispatch(setModalLoading(false));
-      dispatch(setModalError(`Error: ${error.message}`));
+      dispatch(setModalError(`Error: ${message}`));
     }
   };
 

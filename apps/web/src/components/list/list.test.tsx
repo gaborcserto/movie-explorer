@@ -39,29 +39,25 @@ describe('<List />', () => {
 
   test('it displays movies when the fetch is successful', async () => {
     const mockMovies = {
-      data: {
-        movies: [
-          {
-            id: 1,
-            title: 'Movie 1',
-            releaseDate: '2022-01-01',
-            posterUrl: '/movie-1.jpg',
-            genres: ['test'],
-          },
-          {
-            id: 2,
-            title: 'Movie 2',
-            releaseDate: '2023-01-01',
-            posterUrl: '/movie-2.jpg',
-            genres: ['test', 'crime'],
-          },
-        ],
-        total: 2,
-      },
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {},
+      movies: [
+        {
+          id: 1,
+          title: 'Movie 1',
+          releaseDate: '2022-01-01',
+          posterUrl: '/movie-1.jpg',
+          genres: ['test'],
+        },
+        {
+          id: 2,
+          title: 'Movie 2',
+          releaseDate: '2023-01-01',
+          posterUrl: '/movie-2.jpg',
+          genres: ['test', 'crime'],
+        },
+      ],
+      total: 2,
+      offset: 0,
+      limit: 10,
     };
 
     getMovies.mockResolvedValue(mockMovies);

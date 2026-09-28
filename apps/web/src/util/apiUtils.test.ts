@@ -35,25 +35,23 @@ describe('API functions', () => {
   });
 
   it('should post movie data', async () => {
-    mockedAxios.post.mockResolvedValue({ data: mockMovieData });
+    mockedAxios.post.mockResolvedValue(undefined);
 
-    const response = await postMovie(mockMovieData);
-    expect(response.data).toEqual(mockMovieData);
+    await expect(postMovie(mockMovieData)).resolves.toBeUndefined();
   });
 
   it('should delete movie data by id', async () => {
     const { id } = mockMovieData;
-    mockedAxios.delete.mockResolvedValue({ status: 200 });
+    mockedAxios.delete.mockResolvedValue(undefined);
 
-    const response = await deleteMovie(id);
-    expect(response.status).toBe(200);
+    await expect(deleteMovie(id)).resolves.toBeUndefined();
   });
 
   it('should update movie data', async () => {
     mockedAxios.put.mockResolvedValue({ data: mockMovieData });
 
     const response = await putMovie(mockMovieData);
-    expect(response.data).toEqual(mockMovieData);
+    expect(response).toEqual(mockMovieData);
   });
 
   it('should get movie by id', async () => {
@@ -61,7 +59,7 @@ describe('API functions', () => {
     mockedAxios.get.mockResolvedValue({ data: mockMovieData });
 
     const response = await getMovie(id);
-    expect(response.data).toEqual(mockMovieData);
+    expect(response).toEqual(mockMovieData);
   });
 
   it('should get movies with URL parameters', async () => {
@@ -72,7 +70,7 @@ describe('API functions', () => {
     mockedAxios.get.mockResolvedValueOnce({ data: mockMoviesData });
 
     const response = await getMovies(params);
-    expect(response.data).toEqual(mockMoviesData);
+    expect(response).toEqual(mockMoviesData);
   });
 
   it('should preserve releaseDate sort and keep reload hash out of API parameters', async () => {
@@ -89,7 +87,6 @@ describe('API functions', () => {
       expect.any(String),
       expect.objectContaining({
         params: {
-          search: '',
           sort: 'releaseDate',
           sortOrder: 'asc',
           genre: 'crime',

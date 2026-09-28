@@ -19,8 +19,8 @@ function Details() {
   useEffect(() => {
     setIsLoading(true);
     getMovie(movieId)
-      .then((response) => {
-        setMovieData(response.data);
+      .then((movie) => {
+        setMovieData(movie);
       })
       .catch((error) => {
         setIsError(error);

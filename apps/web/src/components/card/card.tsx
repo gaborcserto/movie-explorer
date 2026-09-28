@@ -58,8 +58,8 @@ function Card({ movie }: CardProps) {
 
   const handleOpenModal = async () => {
     try {
-      const response = await getMovie(id);
-      dispatch(setModalMovie(response.data));
+      const movieDetails = await getMovie(id);
+      dispatch(setModalMovie(movieDetails));
       dispatch(setModalOpen(true));
       dispatch(setModalType('edit'));
     } catch (error) {

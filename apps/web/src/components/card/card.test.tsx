@@ -42,7 +42,7 @@ describe('<Card />', () => {
   beforeEach(() => {
     mockDispatch = jest.fn();
     useDispatch.mockReturnValue(mockDispatch);
-    getMovie.mockResolvedValue({ data: mockMovie });
+    getMovie.mockResolvedValue(mockMovie);
   });
 
   afterEach(() => {
