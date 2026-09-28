@@ -13,7 +13,7 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "test:e2e": "turbo run test:e2e --filter movies-api",
+    "test:e2e": "turbo run test:e2e --filter @movie-explorer/api",
     "prepare": "husky install"
   },
   "devDependencies": {
