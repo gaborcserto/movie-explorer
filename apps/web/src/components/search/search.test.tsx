@@ -58,7 +58,7 @@ describe('Search Component', () => {
     renderSearch();
     const input = screen.getByPlaceholderText('What do you want to watch?');
     fireEvent.change(input, { target: { value: 'Inception' } });
-    fireEvent.submit(input);
+    fireEvent.submit(screen.getByRole('search'));
 
     expect(screen.getByTestId('location')).toHaveTextContent(
       '/search/Inception'

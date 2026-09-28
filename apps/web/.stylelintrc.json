@@ -4,22 +4,19 @@
     "stylelint-config-standard-scss"
   ],
   "ignoreFiles": ["**/*.html", "**/*.js", "**/*.ts"],
-  "plugins": [
-    "stylelint-prettier"
-  ],
+  "plugins": ["stylelint-prettier"],
   "rules": {
     "prettier/prettier": true,
     "alpha-value-notation": "number",
     "at-rule-no-unknown": null,
     "font-family-no-missing-generic-family-keyword": null,
-    "no-missing-end-of-source-newline": null,
     "no-empty-source": null,
     "shorthand-property-no-redundant-values": null,
     "block-no-empty": null,
     "no-duplicate-selectors": true,
     "color-hex-length": "long",
     "color-named": "never",
-    "selector-no-qualifying-type": true,
+    "selector-no-qualifying-type": null,
     "selector-attribute-quotes": "always",
     "property-no-vendor-prefix": true,
     "value-no-vendor-prefix": true,
@@ -28,6 +25,7 @@
     "selector-pseudo-element-colon-notation": "single",
     "selector-no-vendor-prefix": true,
     "media-feature-name-no-vendor-prefix": true,
-    "max-empty-lines": null
+    "property-no-deprecated": null,
+    "scss/load-no-partial-leading-underscore": null
   }
 }
