@@ -43,7 +43,9 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} autoComplete="off">
-      <div className="modal__header">{title}</div>
+      <h2 className="modal__header" id="modal-title">
+        {title}
+      </h2>
       <div className="modal__content">
         {movieData ? (
           <input
@@ -161,6 +163,7 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
                     isMultiSelect
                     styleName="modal__input modal__input--select"
                     styleId="genre"
+                    accessibleLabel="Select genres"
                   />
                 )}
               />

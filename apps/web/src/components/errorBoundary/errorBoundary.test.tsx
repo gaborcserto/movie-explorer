@@ -5,6 +5,7 @@ interface MockProps {
   shouldThrow: boolean;
   message: string;
 }
+
 function MockComponent({ shouldThrow, message }: MockProps) {
   if (shouldThrow) {
     throw new Error(message);
@@ -14,12 +15,12 @@ function MockComponent({ shouldThrow, message }: MockProps) {
 
 describe('<ErrorBoundary />', () => {
   beforeEach(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
     // eslint-disable-next-line no-console
-    (console.error as jest.Mock).mockRestore();
+    vi.mocked(console.error).mockRestore();
   });
 
   it('should catch errors and display the fallback UI', () => {
@@ -29,7 +30,7 @@ describe('<ErrorBoundary />', () => {
       </ErrorBoundary>
     );
 
-    expect(getByText('⚠️ Sorry.. there was an error ⚠️')).toBeInTheDocument();
+    expect(getByText('Sorry, there was an error.')).toBeInTheDocument();
   });
 
   it('should render children if there are no errors', () => {

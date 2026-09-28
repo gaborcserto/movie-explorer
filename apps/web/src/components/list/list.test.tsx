@@ -4,14 +4,14 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import List from './list';
 import { getMovies as originalGetMovies } from '../../util/apiUtils';
 
-const getMovies = originalGetMovies as jest.Mock;
-jest.mock('../../util/apiUtils');
+const getMovies = vi.mocked(originalGetMovies);
+vi.mock('../../util/apiUtils');
 
 const defaultProps = {
   refreshKey: 0,
-  onEditMovie: jest.fn(),
-  onDeleteMovie: jest.fn(),
-  onMovieActionError: jest.fn(),
+  onEditMovie: vi.fn(),
+  onDeleteMovie: vi.fn(),
+  onMovieActionError: vi.fn(),
 };
 
 const renderList = (initialEntry = '/search') => {
@@ -29,7 +29,7 @@ const renderList = (initialEntry = '/search') => {
 
 describe('<List />', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   test('it displays a loading indicator while fetching data', () => {
@@ -41,7 +41,7 @@ describe('<List />', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('it displays movies when the fetch is successful', async () => {

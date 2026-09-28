@@ -4,8 +4,13 @@
   box-sizing: border-box;
 
   &__header {
+    background: transparent;
+    border: 0;
+    color: inherit;
     cursor: pointer;
+    display: block;
     position: relative;
+    text-align: left;
 
     &:after {
       background-color: $red-1;
@@ -35,7 +40,14 @@
   }
 
   &__item {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    display: block;
+    font: inherit;
     list-style: none;
     cursor: pointer;
+    text-align: left;
+    width: 100%;
   }
 }

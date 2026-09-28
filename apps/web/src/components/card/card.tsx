@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import './card.scss';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { MovieDetails, MovieSummary } from '@movie-explorer/contracts';
@@ -29,30 +29,33 @@ function Card({
   const releaseYear = releaseDate.substring(0, 4);
 
   const handleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+    setIsMenuOpen((isOpen) => !isOpen);
   };
 
   const handleCloseMenu = () => {
     setIsMenuOpen(false);
   };
 
-  const handleOutsideClick = (event: MouseEvent) => {
-    if (
-      menuRef.current &&
-      !menuRef.current.contains(event.target as Node) &&
-      hoverBtnRef.current &&
-      !hoverBtnRef.current.contains(event.target as Node)
-    ) {
-      setIsMenuOpen(false);
-    }
-  };
-
   useEffect(() => {
+    if (!isMenuOpen) return undefined;
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      const { target } = event;
+
+      if (
+        target instanceof Node &&
+        !menuRef.current?.contains(target) &&
+        !hoverBtnRef.current?.contains(target)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
     document.addEventListener('click', handleOutsideClick);
     return () => {
       document.removeEventListener('click', handleOutsideClick);
     };
-  }, []);
+  }, [isMenuOpen]);
 
   const handleOpenModal = async () => {
     try {
@@ -67,28 +70,21 @@ function Card({
     onDeleteMovie(movie);
   };
 
-  const genreLinks = genres
-    .map((genre) => {
-      return (
-        <span key={genre}>
-          <Link
-            to={`?filter=${genre.toLowerCase().replace(/ /g, '+')}${
-              sort ? `&sorting=${sort}` : ''
-            }`}
-            className="card__type__link"
-          >
-            {genre}
-          </Link>
-        </span>
-      );
-    })
-    .reduce((prev, curr) => (
-      <>
-        {prev}
-        {', '}
-        {curr}
-      </>
-    ));
+  const genreLinks = genres.map((genre, index) => (
+    <Fragment key={genre}>
+      {index > 0 && ', '}
+      <span>
+        <Link
+          to={`?filter=${genre.toLowerCase().replace(/ /g, '+')}${
+            sort ? `&sorting=${sort}` : ''
+          }`}
+          className="card__type__link"
+        >
+          {genre}
+        </Link>
+      </span>
+    </Fragment>
+  ));
 
   return (
     <div className="card">
@@ -131,7 +127,7 @@ function Card({
             type="button"
             aria-label="Close movie actions"
           >
-            x
+            <span className="visually-hidden">Close movie actions</span>
           </button>
           <button
             className="card__menu__btn"

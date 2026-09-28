@@ -15,29 +15,27 @@ function DeleteModal({
   onError,
   onSuccess,
 }: DeleteModalProps) {
-  const handleDelete = async (id: number) => {
+  const handleConfirm = async () => {
+    if (!movieData) return;
+
+    onLoadingChange(true);
+
     try {
-      await deleteMovie(id);
-      onLoadingChange(false);
+      await deleteMovie(movieData.id);
       onSuccess('Delete Successful');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-
-      onLoadingChange(false);
       onError(`Error: ${message}`);
-    }
-  };
-
-  const handleConfirm = () => {
-    if (movieData) {
-      onLoadingChange(true);
-      handleDelete(movieData.id).then();
+    } finally {
+      onLoadingChange(false);
     }
   };
 
   return (
     <div className="modal__content modal__content--delete">
-      <div className="modal__header">Delete Movie</div>
+      <h2 className="modal__header" id="modal-title">
+        Delete Movie
+      </h2>
       <div>Are you sure you want to delete this movie?</div>
       <div className="modal__footer">
         <button

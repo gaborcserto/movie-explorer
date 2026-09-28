@@ -22,50 +22,9 @@
   }
 }
 
-// box sizing
-@mixin box-sizing($box-property) {
-  box-sizing: $box-property;
-}
-
-// box shadow
-@mixin box-shadow($shadow-property) {
-  box-shadow: $shadow-property;
-}
-
-// border radius
-@mixin border-top-left-radius($radius) {
-  border-top-left-radius: $radius;
-  background-clip: padding-box;
-}
-
-@mixin border-top-right-radius($radius) {
-  border-top-right-radius: $radius;
-  background-clip: padding-box;
-}
-
-@mixin border-bottom-left-radius($radius) {
-  border-bottom-left-radius: $radius;
-  background-clip: padding-box;
-}
-
-@mixin border-bottom-right-radius($radius) {
-  border-bottom-right-radius: $radius;
-  background-clip: padding-box;
-}
-
-@mixin border-radius($radius) {
-  border-radius: $radius;
-  background-clip: padding-box;
-}
-
 // transform
 @mixin transform($transform-property) {
   transform: $transform-property;
-}
-
-// transition
-@mixin transition($transition-property...) {
-  transition: $transition-property;
 }
 
 // positions
@@ -82,11 +41,4 @@
 
   position: $position;
   top: 50%;
-}
-
-@mixin horizontal-align($position) {
-  @include transform(translateX(-50%));
-
-  position: $position;
-  left: 50%;
 }

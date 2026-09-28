@@ -12,9 +12,9 @@ const closedModalState: MovieModalState = {
 };
 
 const renderModal = (modalState: MovieModalState = closedModalState) => {
-  const setModalState = jest.fn();
-  const onClose = jest.fn();
-  const onMoviesChanged = jest.fn();
+  const setModalState = vi.fn();
+  const onClose = vi.fn();
+  const onMoviesChanged = vi.fn();
 
   const view = render(
     <CustomModal
@@ -30,7 +30,7 @@ const renderModal = (modalState: MovieModalState = closedModalState) => {
 
 describe('<CustomModal />', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders correctly', () => {
@@ -57,6 +57,17 @@ describe('<CustomModal />', () => {
 
     expect(closeButton).not.toBeNull();
     fireEvent.click(closeButton as Element);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the modal when Escape is pressed', () => {
+    const { onClose } = renderModal({
+      ...closedModalState,
+      open: true,
+    });
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

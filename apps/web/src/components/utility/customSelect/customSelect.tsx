@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import './customSelect.scss';
 
 type CustomSelectProps = {
@@ -9,6 +9,7 @@ type CustomSelectProps = {
   placeholder?: string;
   styleName?: string;
   styleId?: string;
+  accessibleLabel?: string;
 };
 
 function CustomSelect({
@@ -19,29 +20,26 @@ function CustomSelect({
   placeholder,
   styleName,
   styleId,
+  accessibleLabel,
 }: CustomSelectProps) {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
+  const optionsId = useId();
   const [internalSelectedOptions, setInternalSelectedOptions] = useState<
     string[] | null
-  >(selectedOptions || null);
+  >(selectedOptions ?? null);
 
-  const toggling = () => setIsOpen(!isOpen);
+  const toggleOptions = () => setIsOpen((open) => !open);
 
   const onOptionClicked = (value: string) => () => {
     if (isMultiSelect) {
       const isSelected = internalSelectedOptions?.includes(value);
-      let newSelectedOptions: string[] | null;
-
-      if (isSelected) {
-        newSelectedOptions =
-          internalSelectedOptions?.filter((option) => option !== value) || null;
-      } else {
-        newSelectedOptions = [...(internalSelectedOptions || []), value];
-      }
+      const newSelectedOptions = isSelected
+        ? (internalSelectedOptions?.filter((option) => option !== value) ?? [])
+        : [...(internalSelectedOptions ?? []), value];
 
       setInternalSelectedOptions(newSelectedOptions);
-      onChange?.(newSelectedOptions || []);
+      onChange?.(newSelectedOptions);
     } else {
       const newSelectedOptions = [value];
       setInternalSelectedOptions(newSelectedOptions);
@@ -50,23 +48,31 @@ function CustomSelect({
     }
   };
 
-  const handleOutsideClick = (event: MouseEvent) => {
-    if (
-      selectRef.current &&
-      !selectRef.current.contains(event.target as Node) &&
-      selectRef.current &&
-      !selectRef.current.contains(event.target as Node)
-    ) {
-      setIsOpen(false);
-    }
-  };
-
   useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        event.target instanceof Node &&
+        !selectRef.current?.contains(event.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
     document.addEventListener('click', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
     return () => {
       document.removeEventListener('click', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
     };
-  }, []);
+  }, [isOpen]);
 
   useEffect(() => {
     if (selectedOptions !== undefined) {
@@ -84,38 +90,40 @@ function CustomSelect({
       ${styleName ? ` ${styleName}` : ''}
       ${isOpen ? ' custom-select__wrapper--open' : ''}`}
     >
-      <div
+      <button
+        type="button"
         className="custom-select__header"
-        onClick={toggling}
-        onKeyDown={toggling}
-        role="button"
-        tabIndex={0}
+        onClick={toggleOptions}
+        aria-label={accessibleLabel}
+        aria-expanded={isOpen}
+        aria-controls={optionsId}
       >
         {internalSelectedOptions?.length
           ? internalSelectedOptions.join(', ')
           : placeholder}
-      </div>
+      </button>
       {isOpen && (
         <div className="custom-select__container">
-          <div className="custom-select">
+          <ul className="custom-select" id={optionsId}>
             {options.map((option) => (
-              <div
-                key={option}
-                onClick={onOptionClicked(option)}
-                onKeyDown={onOptionClicked(option)}
-                role="button"
-                tabIndex={0}
-                className={`custom-select__item${
-                  internalSelectedOptions &&
-                  internalSelectedOptions.includes(option)
-                    ? ' custom-select__item--selected'
-                    : ''
-                }`}
-              >
-                {option}
-              </div>
+              <li key={option}>
+                <button
+                  type="button"
+                  onClick={onOptionClicked(option)}
+                  aria-pressed={Boolean(
+                    internalSelectedOptions?.includes(option)
+                  )}
+                  className={`custom-select__item${
+                    internalSelectedOptions?.includes(option)
+                      ? ' custom-select__item--selected'
+                      : ''
+                  }`}
+                >
+                  {option}
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       )}
     </div>

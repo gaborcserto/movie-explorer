@@ -12,9 +12,7 @@ interface State {
 class ErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = {
-      hasError: false,
-    };
+    this.state = { hasError: false };
   }
 
   // eslint-disable-next-line
@@ -33,9 +31,9 @@ class ErrorBoundary extends React.Component<Props, State> {
 
     if (hasError) {
       return (
-        <div className="error">
-          <h1 className="error__title">⚠️ Sorry.. there was an error ⚠️</h1>
-        </div>
+        <main className="error" role="alert">
+          <h1 className="error__title">Sorry, there was an error.</h1>
+        </main>
       );
     }
 

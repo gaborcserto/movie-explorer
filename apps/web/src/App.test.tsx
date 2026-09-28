@@ -11,10 +11,10 @@ import {
   getMovies as originalGetMovies,
 } from './util/apiUtils';
 
-jest.mock('./util/apiUtils');
+vi.mock('./util/apiUtils');
 
-const getMovie = originalGetMovie as jest.Mock;
-const getMovies = originalGetMovies as jest.Mock;
+const getMovie = vi.mocked(originalGetMovie);
+const getMovies = vi.mocked(originalGetMovies);
 
 const movie: MovieDetails = {
   id: 1234,
@@ -44,7 +44,7 @@ const renderApp = (initialEntry = '/search') => {
 
 describe('<App />', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     getMovies.mockResolvedValue(moviesResponse);
     getMovie.mockResolvedValue(movie);
   });
@@ -55,6 +55,9 @@ describe('<App />', () => {
     expect(
       screen.getByPlaceholderText('What do you want to watch?')
     ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('link', { name: 'Movie Explorer' })
+    ).toHaveLength(2);
     expect(await screen.findByText('Sample Movie')).toBeInTheDocument();
   });
 

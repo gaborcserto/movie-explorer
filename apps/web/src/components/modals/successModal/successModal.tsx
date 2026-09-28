@@ -10,9 +10,9 @@ function SuccessModal({ message }: SuccessModalProps) {
       <div className="modal__icon success-icon">
         <div className="success-icon__inner" />
       </div>
-      <div className="modal__header modal__header--success">
+      <h2 className="modal__header modal__header--success" id="modal-title">
         Congratulations !
-      </div>
+      </h2>
       <div>{message}</div>
     </div>
   );

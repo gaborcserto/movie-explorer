@@ -1,12 +1,13 @@
 import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import type { MovieDetails } from '@movie-explorer/contracts';
+import type { MovieDetails, MovieSummary } from '@movie-explorer/contracts';
+import type { Mock } from 'vitest';
 import { getMovie as originalGetMovie } from '../../util/apiUtils';
 import Card from './card';
 
-const getMovie = originalGetMovie as jest.Mock;
+const getMovie = vi.mocked(originalGetMovie);
 
-jest.mock('../../util/apiUtils');
+vi.mock('../../util/apiUtils');
 
 const mockMovie: MovieDetails = {
   id: 1234,
@@ -20,19 +21,19 @@ const mockMovie: MovieDetails = {
 };
 
 describe('<Card />', () => {
-  let onEditMovie: jest.Mock;
-  let onDeleteMovie: jest.Mock;
-  let onMovieActionError: jest.Mock;
+  let onEditMovie: Mock<(movie: MovieDetails) => void>;
+  let onDeleteMovie: Mock<(movie: MovieSummary) => void>;
+  let onMovieActionError: Mock<(error: string) => void>;
 
   beforeEach(() => {
-    onEditMovie = jest.fn();
-    onDeleteMovie = jest.fn();
-    onMovieActionError = jest.fn();
+    onEditMovie = vi.fn();
+    onDeleteMovie = vi.fn();
+    onMovieActionError = vi.fn();
     getMovie.mockResolvedValue(mockMovie);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders the card title', () => {

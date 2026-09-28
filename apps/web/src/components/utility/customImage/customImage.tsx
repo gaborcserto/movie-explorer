@@ -11,17 +11,23 @@ function CustomImage({ img_path, img_title, img_style }: ImgProps) {
   const [isImage, setIsImage] = useState(placeholderImage);
 
   useEffect(() => {
+    let isCurrent = true;
+
     setIsImage(placeholderImage);
     if (img_path) {
       const image = new Image();
       image.src = img_path;
       image.onload = () => {
-        setIsImage(img_path);
+        if (isCurrent) setIsImage(img_path);
       };
       image.onerror = () => {
-        setIsImage(placeholderImage);
+        if (isCurrent) setIsImage(placeholderImage);
       };
     }
+
+    return () => {
+      isCurrent = false;
+    };
   }, [img_path]);
 
   return (

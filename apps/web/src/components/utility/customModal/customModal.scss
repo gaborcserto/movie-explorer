@@ -38,11 +38,35 @@
   }
 
   &__close {
+    background: transparent;
+    border: 0;
     color: $white;
+    cursor: pointer;
+    height: 30px;
     position: absolute;
     right: 30px;
     top: 30px;
     font-size: 30px;
+    width: 30px;
+
+    &:before,
+    &:after {
+      background-color: currentcolor;
+      content: '';
+      height: 2px;
+      left: 2px;
+      position: absolute;
+      top: 14px;
+      width: 26px;
+    }
+
+    &:before {
+      transform: rotate(45deg);
+    }
+
+    &:after {
+      transform: rotate(-45deg);
+    }
   }
 
   &__icon {

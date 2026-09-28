@@ -3,9 +3,9 @@ import userEvent from '@testing-library/user-event';
 import EditModal from './editModal';
 import { putMovie as originalPutMovie } from '../../../util/apiUtils';
 
-const putMovie = originalPutMovie as jest.Mock;
+const putMovie = vi.mocked(originalPutMovie);
 
-jest.mock('../../../util/apiUtils');
+vi.mock('../../../util/apiUtils');
 
 describe('EditModal component', () => {
   const mockMovieData = {
@@ -20,17 +20,17 @@ describe('EditModal component', () => {
   };
   const defaultProps = {
     movieData: mockMovieData,
-    onLoadingChange: jest.fn(),
-    onError: jest.fn(),
-    onSuccess: jest.fn(),
+    onLoadingChange: vi.fn(),
+    onError: vi.fn(),
+    onSuccess: vi.fn(),
   };
 
   beforeEach(() => {
-    putMovie.mockResolvedValueOnce({});
+    putMovie.mockResolvedValueOnce(mockMovieData);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should call the putMovie API on form submission', async () => {

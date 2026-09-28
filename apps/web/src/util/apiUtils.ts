@@ -8,8 +8,7 @@ import type {
 } from '@movie-explorer/contracts';
 import type { URLParams } from '../types';
 
-const configuredApiBaseUrl =
-  typeof process !== 'undefined' ? process.env.VITE_API_BASE_URL : undefined;
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const apiBaseUrl = (configuredApiBaseUrl ?? 'http://localhost:4000').replace(
   /\/+$/,
   ''

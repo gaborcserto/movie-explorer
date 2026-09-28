@@ -1,14 +1,16 @@
 import './loadingModal.scss';
 
-const loadingModal = () => {
+function LoadingModal() {
   return (
     <div className="modal__content modal__content--error">
-      <div className="modal__header modal__header--loading">Loading</div>
+      <h2 className="modal__header modal__header--loading" id="modal-title">
+        Loading
+      </h2>
       <div className="modal__content">
         <span className="loader" data-testid="loader-span" />
       </div>
     </div>
   );
-};
+}
 
-export default loadingModal;
+export default LoadingModal;

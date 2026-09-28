@@ -3,7 +3,7 @@ import Error from './error';
 
 describe('Error Component', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should render the provided error message', () => {

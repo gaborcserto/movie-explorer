@@ -7,16 +7,18 @@ import {
 } from 'react-router-dom';
 import Header from './header';
 
-const useParams = originalUseParams as jest.Mock;
+const useParams = vi.mocked(originalUseParams);
 
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  useParams: jest.fn(),
+vi.mock('react-router-dom', async () => ({
+  ...(await vi.importActual<typeof import('react-router-dom')>(
+    'react-router-dom'
+  )),
+  useParams: vi.fn(),
 }));
 
 describe('Header component', () => {
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   it('renders the Details component if movieId is present', () => {
@@ -27,7 +29,7 @@ describe('Header component', () => {
         <Routes>
           <Route
             path="/movies/:movieId"
-            element={<Header onAddMovie={jest.fn()} />}
+            element={<Header onAddMovie={vi.fn()} />}
           />
         </Routes>
       </MemoryRouter>
@@ -43,7 +45,7 @@ describe('Header component', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <Routes>
-          <Route path="*" element={<Header onAddMovie={jest.fn()} />} />
+          <Route path="*" element={<Header onAddMovie={vi.fn()} />} />
         </Routes>
       </MemoryRouter>
     );

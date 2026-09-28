@@ -1,22 +1,24 @@
-import { defineConfig, loadEnv } from 'vite'
-import react from '@vitejs/plugin-react'
-import autoprefixer from 'autoprefixer'
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+import autoprefixer from 'autoprefixer';
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), 'VITE_')
-
-  return {
-    plugins: [react()],
-    define: {
-      'process.env.VITE_API_BASE_URL': JSON.stringify(env.VITE_API_BASE_URL),
+export default defineConfig({
+  plugins: [react()],
+  css: {
+    postcss: {
+      plugins: [autoprefixer({})],
     },
-    css: {
-      postcss: {
-        plugins: [
-          autoprefixer({})
-        ],
-      }
-    }
-  }
-})
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/setupTests.ts',
+    coverage: {
+      provider: 'v8',
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{js,jsx,ts,tsx}'],
+      exclude: ['src/index.tsx', 'src/vite-env.d.ts'],
+    },
+  },
+});

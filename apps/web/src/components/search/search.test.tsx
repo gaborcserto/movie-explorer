@@ -9,7 +9,7 @@ function LocationDisplay() {
 }
 
 const renderSearch = (initialEntry = '/search') => {
-  const onAddMovie = jest.fn();
+  const onAddMovie = vi.fn();
 
   render(
     <MemoryRouter initialEntries={[initialEntry]}>
@@ -32,7 +32,7 @@ const renderSearch = (initialEntry = '/search') => {
 
 describe('Search Component', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('renders Search component', () => {

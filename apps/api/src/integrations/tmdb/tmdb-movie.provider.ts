@@ -102,15 +102,22 @@ export class TmdbMovieProvider implements MovieProvider {
       firstPage.total_pages,
       TMDB_SEARCH_GENRE_PAGE_LIMIT,
     );
-    const remainingPages: TmdbPagedResponse<TmdbMovieListItem>[] = [];
+    const remainingPages = await Promise.all(
+      Array.from({ length: Math.max(0, pagesToFetch - 1) }, (_, index) =>
+        this.fetchMoviePage(searchQuery, index + 2),
+      ),
+    );
 
-    for (let page = 2; page <= pagesToFetch; page += 1) {
-      remainingPages.push(await this.fetchMoviePage(searchQuery, page));
-    }
+    const genreNamesById = new Map(
+      genres.map((genre) => [genre.id, genre.name.toLowerCase()]),
+    );
+    const requestedGenres = new Set(genreNames);
 
     const movies = [firstPage, ...remainingPages]
       .flatMap((response) => response.results)
-      .filter((movie) => this.movieMatchesGenres(movie, genres, genreNames));
+      .filter((movie) =>
+        this.movieMatchesGenres(movie, genreNamesById, requestedGenres),
+      );
 
     this.sortMoviesLocally(movies, query.sort, query.sortOrder);
 
@@ -202,19 +209,17 @@ export class TmdbMovieProvider implements MovieProvider {
 
   private movieMatchesGenres(
     movie: TmdbMovieListItem,
-    genres: TmdbGenre[],
-    requestedGenres: string[],
+    genreNamesById: ReadonlyMap<number, string>,
+    requestedGenres: ReadonlySet<string>,
   ): boolean {
-    if (requestedGenres.length === 0) {
+    if (requestedGenres.size === 0) {
       return true;
     }
 
-    const movieGenreNames = movie.genre_ids
-      .map((genreId) => genres.find((genre) => genre.id === genreId)?.name)
-      .filter((genreName): genreName is string => Boolean(genreName))
-      .map((genreName) => genreName.toLowerCase());
-
-    return requestedGenres.some((genre) => movieGenreNames.includes(genre));
+    return movie.genre_ids.some((genreId) => {
+      const genreName = genreNamesById.get(genreId);
+      return genreName ? requestedGenres.has(genreName) : false;
+    });
   }
 
   private getTmdbSort(

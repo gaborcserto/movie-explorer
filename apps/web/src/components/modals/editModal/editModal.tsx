@@ -21,16 +21,15 @@ function EditModal({
   const handleUpdate = async (data: MovieMutationPayload) => {
     onLoadingChange(true);
 
-    putMovie(data)
-      .then(() => {
-        onSuccess('Movie update successful');
-      })
-      .catch((error) => {
-        onError(`Error: ${error.message}`);
-      })
-      .finally(() => {
-        onLoadingChange(false);
-      });
+    try {
+      await putMovie(data);
+      onSuccess('Movie update successful');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      onError(`Error: ${message}`);
+    } finally {
+      onLoadingChange(false);
+    }
   };
 
   return (

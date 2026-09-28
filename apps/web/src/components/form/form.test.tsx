@@ -2,7 +2,7 @@ import { render, waitFor, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Form from './form';
 
-const mockHandleClick = jest.fn();
+const mockHandleClick = vi.fn();
 
 describe('<Form />', () => {
   beforeEach(() => {
@@ -10,7 +10,7 @@ describe('<Form />', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders without crashing', () => {

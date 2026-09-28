@@ -12,16 +12,15 @@ function AddModal({ onLoadingChange, onError, onSuccess }: AddModalProps) {
   const handleAdd = async (data: MovieMutationPayload) => {
     onLoadingChange(true);
 
-    postMovie(data)
-      .then(() => {
-        onSuccess('Movie add successful');
-      })
-      .catch((error) => {
-        onError(`Error: ${error.message}`);
-      })
-      .finally(() => {
-        onLoadingChange(false);
-      });
+    try {
+      await postMovie(data);
+      onSuccess('Movie add successful');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      onError(`Error: ${message}`);
+    } finally {
+      onLoadingChange(false);
+    }
   };
 
   return <Form handleClick={handleAdd} title="Add Movie" />;

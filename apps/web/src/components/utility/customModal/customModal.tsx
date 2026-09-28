@@ -1,4 +1,5 @@
-import type { Dispatch, SetStateAction } from 'react';
+import { useEffect } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import type { MovieDetails } from '@movie-explorer/contracts';
 import './customModal.scss';
 import AddModal from '../../modals/addModal';
@@ -18,9 +19,8 @@ interface CustomModalProps {
 
 const isMovieDetails = (
   movie: MovieModalState['movie']
-): movie is MovieDetails => {
-  return Boolean(movie && 'description' in movie && 'runtimeMinutes' in movie);
-};
+): movie is MovieDetails =>
+  Boolean(movie && 'description' in movie && 'runtimeMinutes' in movie);
 
 function CustomModal({
   modalState,
@@ -30,9 +30,18 @@ function CustomModal({
 }: CustomModalProps) {
   const { open, type, loading, error, movie, message } = modalState;
 
-  const closeModal = () => {
-    onClose();
-  };
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [onClose, open]);
 
   const setLoading = (nextLoading: boolean) => {
     setModalState((currentState) => ({
@@ -59,13 +68,7 @@ function CustomModal({
     onMoviesChanged();
   };
 
-  let content = (
-    <AddModal
-      onLoadingChange={setLoading}
-      onError={setError}
-      onSuccess={setSuccess}
-    />
-  );
+  let content: ReactNode;
 
   switch (type) {
     case 'delete':
@@ -81,15 +84,6 @@ function CustomModal({
     case 'success':
       content = <SuccessModal message={message} />;
       break;
-    case 'add':
-      content = (
-        <AddModal
-          onLoadingChange={setLoading}
-          onError={setError}
-          onSuccess={setSuccess}
-        />
-      );
-      break;
     case 'edit':
       content = (
         <EditModal
@@ -100,8 +94,17 @@ function CustomModal({
         />
       );
       break;
-    default:
+    case 'add':
+      content = (
+        <AddModal
+          onLoadingChange={setLoading}
+          onError={setError}
+          onSuccess={setSuccess}
+        />
+      );
       break;
+    default:
+      content = null;
   }
 
   if (error) content = <ErrorModal message={error} />;
@@ -109,9 +112,19 @@ function CustomModal({
 
   return open ? (
     <div className="modal__overlay">
-      <section className="modal">
-        <button onClick={closeModal} className="modal__close" type="button">
-          ✖
+      <section
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
+        <button
+          onClick={onClose}
+          className="modal__close"
+          type="button"
+          aria-label="Close dialog"
+        >
+          <span className="visually-hidden">Close dialog</span>
         </button>
         {content}
       </section>

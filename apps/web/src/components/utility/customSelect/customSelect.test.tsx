@@ -3,7 +3,7 @@ import CustomSelect from './customSelect';
 
 describe('CustomSelect', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders placeholder when no option is selected', () => {
@@ -20,7 +20,7 @@ describe('CustomSelect', () => {
   });
 
   it('selects an option when clicked', () => {
-    const mockOnChange = jest.fn();
+    const mockOnChange = vi.fn();
 
     render(
       <CustomSelect
@@ -47,8 +47,17 @@ describe('CustomSelect', () => {
     expect(screen.getByText('Option 2')).toBeVisible();
   });
 
+  it('closes the dropdown with Escape', () => {
+    render(<CustomSelect options={['Option 1', 'Option 2']} />);
+
+    fireEvent.click(screen.getByRole('button'));
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(screen.queryByText('Option 1')).not.toBeInTheDocument();
+  });
+
   it('selects multiple options in multiselect mode', () => {
-    const mockOnChange = jest.fn();
+    const mockOnChange = vi.fn();
 
     render(
       <CustomSelect

@@ -27,7 +27,7 @@ function DetailsContent({ movieData }: DetailsProps) {
       />
       <div className="movie-details__content">
         <div className="movie-details__title__wrapper">
-          <h2 className="movie-details__title">{title}</h2>
+          <h1 className="movie-details__title">{title}</h1>
           <div className="movie-details__rating">{rating}</div>
         </div>
         <div className="movie-details__genre">{genresData}</div>

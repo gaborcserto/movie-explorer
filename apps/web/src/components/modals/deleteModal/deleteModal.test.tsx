@@ -2,9 +2,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import DeleteModal from './deleteModal';
 import { deleteMovie as originalDeleteMovie } from '../../../util/apiUtils';
 
-const deleteMovie = originalDeleteMovie as jest.Mock;
+const deleteMovie = vi.mocked(originalDeleteMovie);
 
-jest.mock('../../../util/apiUtils');
+vi.mock('../../../util/apiUtils');
 
 describe('DeleteModal component', () => {
   const defaultProps = {
@@ -15,17 +15,17 @@ describe('DeleteModal component', () => {
       posterUrl: '',
       genres: [],
     },
-    onLoadingChange: jest.fn(),
-    onError: jest.fn(),
-    onSuccess: jest.fn(),
+    onLoadingChange: vi.fn(),
+    onError: vi.fn(),
+    onSuccess: vi.fn(),
   };
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should call the deleteMovie API on confirm button click', async () => {
-    deleteMovie.mockResolvedValueOnce({});
+    deleteMovie.mockResolvedValueOnce(undefined);
 
     render(<DeleteModal {...defaultProps} />);
 

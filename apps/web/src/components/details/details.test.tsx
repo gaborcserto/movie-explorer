@@ -8,9 +8,9 @@ import {
   isNotFoundError as originalIsNotFoundError,
 } from '../../util/apiUtils';
 
-const getMovie = originalGetMovie as jest.Mock;
-const isNotFoundError = originalIsNotFoundError as jest.Mock;
-const useParams = originalUseParams as jest.Mock;
+const getMovie = vi.mocked(originalGetMovie);
+const isNotFoundError = vi.mocked(originalIsNotFoundError);
+const useParams = vi.mocked(originalUseParams);
 
 const mockData: MovieDetails = {
   id: 1234,
@@ -23,16 +23,18 @@ const mockData: MovieDetails = {
   description: 'A sample movie for testing purposes.',
 };
 
-jest.mock('../../util/apiUtils');
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  useParams: jest.fn(),
-  Link: jest.fn(() => null),
+vi.mock('../../util/apiUtils');
+vi.mock('react-router-dom', async () => ({
+  ...(await vi.importActual<typeof import('react-router-dom')>(
+    'react-router-dom'
+  )),
+  useParams: vi.fn(),
+  Link: vi.fn(() => null),
 }));
 
 describe('<Details />', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     isNotFoundError.mockReturnValue(false);
   });
 

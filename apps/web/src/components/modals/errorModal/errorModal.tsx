@@ -10,7 +10,9 @@ function ErrorModal({ message }: ErrorModalProps) {
       <div className="modal__icon error-icon">
         <div className="error-icon__inner" />
       </div>
-      <div className="modal__header modal__header--error">Error</div>
+      <h2 className="modal__header modal__header--error" id="modal-title">
+        Error
+      </h2>
       <div className="modal__content">
         <p>{message}</p>
       </div>

@@ -32,13 +32,13 @@ const mockMoviesData: MovieListResponse = {
   limit: 0,
 };
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const mockedIsAxiosError = mockedAxios.isAxiosError as unknown as jest.Mock;
+vi.mock('axios');
+const mockedAxios = vi.mocked(axios);
+const mockedIsAxiosError = vi.mocked(mockedAxios.isAxiosError);
 
 describe('API functions', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should post movie data', async () => {

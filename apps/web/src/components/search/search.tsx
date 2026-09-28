@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import './search.scss';
 
 interface SearchProps {
@@ -10,24 +11,17 @@ function Search({ onAddMovie }: SearchProps) {
   const { searchQuery } = useParams();
   const [searchData, setSearchData] = useState('');
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    if (searchQuery) {
-      setSearchData(searchQuery);
-    }
+    setSearchData(searchQuery ?? '');
+  }, [searchQuery]);
 
-    if (location.pathname === '/search' && !searchQuery) {
-      setSearchData('');
-    }
-  }, [location.pathname, searchQuery]);
-
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchData(event.target.value);
   };
 
-  const handleFormSubmit = (e: { preventDefault: () => void }) => {
-    if (e) e.preventDefault();
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     navigate(`/search/${searchData}`);
   };
 
@@ -36,7 +30,7 @@ function Search({ onAddMovie }: SearchProps) {
       <div className="header__container container">
         <div className="header__top">
           <Link to="/search" className="header__brand brand">
-            <strong>Movie</strong> Roulette
+            <strong>Movie</strong> Explorer
           </Link>
           <button
             className="btn--transparent btn"

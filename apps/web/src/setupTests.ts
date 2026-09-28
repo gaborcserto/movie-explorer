@@ -1,5 +1,5 @@
 import { TextDecoder, TextEncoder } from 'node:util';
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 
 Object.defineProperties(globalThis, {
   TextDecoder: { value: TextDecoder },

@@ -98,7 +98,7 @@ function Details() {
       <div className="movie-details container">
         <div className="movie-details__top">
           <Link to="/search" className="movie-details__brand brand">
-            <strong>Movie</strong> Roulette
+            <strong>Movie</strong> Explorer
           </Link>
           <Link className="movie-details__btn" type="button" to="/search">
             search

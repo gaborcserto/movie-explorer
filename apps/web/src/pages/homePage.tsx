@@ -62,7 +62,6 @@ function HomePage() {
 
   const closeModal = () => {
     setModalState(initialModalState);
-    refreshMovies();
   };
 
   return (

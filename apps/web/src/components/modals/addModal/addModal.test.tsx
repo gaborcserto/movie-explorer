@@ -3,23 +3,23 @@ import userEvent from '@testing-library/user-event';
 import AddModal from './addModal';
 import { postMovie as originalPostMovie } from '../../../util/apiUtils';
 
-const postMovie = originalPostMovie as jest.Mock;
+const postMovie = vi.mocked(originalPostMovie);
 
-jest.mock('../../../util/apiUtils');
+vi.mock('../../../util/apiUtils');
 
 const defaultProps = {
-  onLoadingChange: jest.fn(),
-  onError: jest.fn(),
-  onSuccess: jest.fn(),
+  onLoadingChange: vi.fn(),
+  onError: vi.fn(),
+  onSuccess: vi.fn(),
 };
 
 describe('AddModal component', () => {
   beforeEach(() => {
-    postMovie.mockResolvedValueOnce({});
+    postMovie.mockResolvedValueOnce(undefined);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should call the postMovie API on form submission', async () => {
