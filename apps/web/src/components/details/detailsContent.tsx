@@ -1,8 +1,8 @@
+import type { MovieDetails } from '@movie-explorer/contracts';
 import CustomImage from '../utility/customImage';
-import { Movie } from '../../types';
 
 interface DetailsProps {
-  movieData: Movie;
+  movieData: MovieDetails;
 }
 function DetailsContent({ movieData }: DetailsProps) {
   const {

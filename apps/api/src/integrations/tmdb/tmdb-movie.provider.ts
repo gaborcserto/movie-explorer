@@ -2,12 +2,12 @@ import { BadGatewayException, Injectable } from '@nestjs/common';
 import type {
   MovieDetails,
   MovieListResponse,
+  MovieSortField,
+  MovieSortOrder,
 } from '@movie-explorer/contracts';
 import type {
   MovieProvider,
   MovieSearchQuery,
-  MovieSortField,
-  MovieSortOrder,
 } from '../../movies/movie-provider';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbMovieMapper } from './tmdb-movie.mapper';

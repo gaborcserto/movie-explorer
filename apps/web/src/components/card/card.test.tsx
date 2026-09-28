@@ -2,13 +2,13 @@ import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { Provider, useDispatch as originalUseDispatch } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
+import type { MovieDetails } from '@movie-explorer/contracts';
 import modalReducer, {
   setModalOpen,
   setModalType,
 } from '../../reducer/modalSlice';
 import { getMovie as originalGetMovie } from '../../util/apiUtils';
 import Card from './card';
-import { Movie } from '../../types';
 
 const useDispatch = originalUseDispatch as jest.Mock;
 const getMovie = originalGetMovie as jest.Mock;
@@ -25,7 +25,7 @@ jest.mock('react-redux', () => ({
 }));
 jest.mock('../../util/apiUtils');
 
-const mockMovie: Movie = {
+const mockMovie: MovieDetails = {
   id: 1234,
   title: 'Sample Movie',
   releaseDate: '2021-01-01',

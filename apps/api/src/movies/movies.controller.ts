@@ -21,10 +21,14 @@ import {
 import { MoviesService } from './movies.service';
 import {
   GetMoviesQuery,
-  MovieDetails,
+  MovieDetails as MovieDetailsDto,
   MovieMutationDto,
   MoviesResponse,
 } from './movies.dto';
+import type {
+  MovieDetails,
+  MovieListResponse,
+} from '@movie-explorer/contracts';
 
 @ApiTags('movies')
 @Controller('movies')
@@ -40,7 +44,7 @@ export class MoviesController {
   })
   public async getAllMovies(
     @Query() query: GetMoviesQuery,
-  ): Promise<MoviesResponse> {
+  ): Promise<MovieListResponse> {
     return this.moviesService.findAll(query);
   }
 
@@ -49,7 +53,7 @@ export class MoviesController {
   @ApiResponse({
     status: 200,
     description: 'Return a single movie.',
-    type: () => MovieDetails,
+    type: () => MovieDetailsDto,
   })
   @ApiNotFoundResponse({ description: 'Movie not found' })
   @ApiParam({ name: 'id', description: 'Movie unique identifier' })

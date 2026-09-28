@@ -3,8 +3,8 @@ import type {
   MovieDetails,
   MovieListResponse,
   MovieMutationPayload,
+  MovieQueryParams,
 } from '@movie-explorer/contracts';
-import { GetMoviesQuery } from './movies.dto';
 import { MOVIE_PROVIDER, MovieProvider } from './movie-provider';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class MoviesService {
     private readonly movieProvider: MovieProvider,
   ) {}
 
-  public findAll(query: GetMoviesQuery): Promise<MovieListResponse> {
+  public findAll(query: MovieQueryParams): Promise<MovieListResponse> {
     return this.movieProvider.findAll(query);
   }
 

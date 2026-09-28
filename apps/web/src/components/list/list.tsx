@@ -2,9 +2,12 @@ import { useMemo, useState, useEffect } from 'react';
 import './list.scss';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
+import type {
+  MovieListResponse,
+  MovieSummary,
+} from '@movie-explorer/contracts';
 import Card from '../card/card';
 import { RootState } from '../../store/store';
-import { Movies, MovieSummary } from '../../types';
 import Error from '../../layouts/error';
 import Loading from '../../layouts/loading';
 import { getMovies } from '../../util/apiUtils';
@@ -15,7 +18,7 @@ function List() {
     (state: RootState) => state.movies,
     shallowEqual
   );
-  const [moviesData, setMoviesData] = useState<Movies>();
+  const [moviesData, setMoviesData] = useState<MovieListResponse>();
   const [loadingData, setLoadingData] = useState(true);
   const [errorData, setErrorData] = useState();
 

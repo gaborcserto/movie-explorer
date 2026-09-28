@@ -1,19 +1,10 @@
 import type {
   MovieDetails,
   MovieListResponse,
+  MovieQueryParams,
 } from '@movie-explorer/contracts';
 
-export type MovieSortField = 'title' | 'releaseDate' | 'rating';
-export type MovieSortOrder = 'asc' | 'desc';
-
-export interface MovieSearchQuery {
-  sort?: MovieSortField;
-  sortOrder?: MovieSortOrder;
-  search?: string;
-  genre?: string | string[];
-  offset?: number;
-  limit?: number;
-}
+export type MovieSearchQuery = MovieQueryParams;
 
 export interface MovieProvider {
   findAll(query: MovieSearchQuery): Promise<MovieListResponse>;

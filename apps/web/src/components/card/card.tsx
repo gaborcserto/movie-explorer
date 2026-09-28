@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import './card.scss';
 import { useDispatch } from 'react-redux';
 import { Link, useSearchParams } from 'react-router-dom';
+import type { MovieSummary } from '@movie-explorer/contracts';
 import CustomImage from '../utility/customImage';
-import { MovieSummary } from '../../types';
 import {
   setModalOpen,
   setModalType,

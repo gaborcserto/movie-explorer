@@ -14,29 +14,38 @@ import type {
   MovieDetails as MovieDetailsContract,
   MovieListResponse as MovieListResponseContract,
   MovieMutationPayload,
+  MovieQueryParams,
   MovieSummary as MovieSummaryContract,
+  MovieSortField,
+  MovieSortOrder,
 } from '@movie-explorer/contracts';
 
-export type MovieSummaryContractType = MovieSummaryContract;
-export type MovieDetailsContractType = MovieDetailsContract;
-export type MovieListResponseContractType = MovieListResponseContract;
+const MOVIE_SORT_FIELDS = [
+  'title',
+  'releaseDate',
+  'rating',
+] as const satisfies readonly MovieSortField[];
+const MOVIE_SORT_ORDERS = [
+  'asc',
+  'desc',
+] as const satisfies readonly MovieSortOrder[];
 
-export class GetMoviesQuery {
+export class GetMoviesQuery implements MovieQueryParams {
   @ApiPropertyOptional({
-    enum: ['title', 'releaseDate', 'rating'],
+    enum: MOVIE_SORT_FIELDS,
     description: 'Field to sort by',
   })
   @IsOptional()
-  @IsIn(['title', 'releaseDate', 'rating'])
-  sort?: 'title' | 'releaseDate' | 'rating';
+  @IsIn(MOVIE_SORT_FIELDS)
+  sort?: MovieQueryParams['sort'];
 
   @ApiPropertyOptional({
-    enum: ['asc', 'desc'],
+    enum: MOVIE_SORT_ORDERS,
     description: 'Sort direction',
   })
   @IsOptional()
-  @IsIn(['asc', 'desc'])
-  sortOrder?: 'asc' | 'desc';
+  @IsIn(MOVIE_SORT_ORDERS)
+  sortOrder?: MovieQueryParams['sortOrder'];
 
   @ApiPropertyOptional({ description: 'Movie title search value' })
   @IsOptional()

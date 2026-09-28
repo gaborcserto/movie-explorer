@@ -1,15 +1,12 @@
 import axios from 'axios';
-import { Movie, MovieData, Movies, URLParams } from '../types';
-
-type MovieSort = 'title' | 'releaseDate' | 'rating';
-type SortOrder = 'asc' | 'desc';
-
-interface MoviesQueryParams {
-  search?: string;
-  sort: MovieSort;
-  sortOrder: SortOrder;
-  genre?: string;
-}
+import type {
+  MovieDetails,
+  MovieListResponse,
+  MovieMutationPayload,
+  MovieQueryParams,
+  MovieSortField,
+} from '@movie-explorer/contracts';
+import type { URLParams } from '../types';
 
 const configuredApiBaseUrl =
   typeof process !== 'undefined' ? process.env.VITE_API_BASE_URL : undefined;
@@ -19,7 +16,7 @@ const apiBaseUrl = (configuredApiBaseUrl ?? 'http://localhost:4000').replace(
 );
 const moviesUrl = `${apiBaseUrl}/movies`;
 
-export const postMovie = async (data: MovieData): Promise<void> => {
+export const postMovie = async (data: MovieMutationPayload): Promise<void> => {
   await axios.post<void>(moviesUrl, data);
 };
 
@@ -27,19 +24,21 @@ export const deleteMovie = async (id: number): Promise<void> => {
   await axios.delete<void>(`${moviesUrl}/${id}`);
 };
 
-export const putMovie = async (data: MovieData): Promise<Movie> => {
-  const response = await axios.put<Movie>(moviesUrl, data);
+export const putMovie = async (
+  data: MovieMutationPayload
+): Promise<MovieDetails> => {
+  const response = await axios.put<MovieDetails>(moviesUrl, data);
 
   return response.data;
 };
 
-export const getMovie = async (id: number): Promise<Movie> => {
-  const response = await axios.get<Movie>(`${moviesUrl}/${id}`);
+export const getMovie = async (id: number): Promise<MovieDetails> => {
+  const response = await axios.get<MovieDetails>(`${moviesUrl}/${id}`);
 
   return response.data;
 };
 
-export const sortParams = (data: string | undefined | null): MovieSort => {
+export const sortParams = (data: string | undefined | null): MovieSortField => {
   if (!data) return 'title';
 
   if (data === 'Release Date' || data === 'releaseDate') {
@@ -53,8 +52,10 @@ export const sortParams = (data: string | undefined | null): MovieSort => {
   return 'title';
 };
 
-export const getMovies = async (urlParams: URLParams): Promise<Movies> => {
-  const params: MoviesQueryParams = {
+export const getMovies = async (
+  urlParams: URLParams
+): Promise<MovieListResponse> => {
+  const params: MovieQueryParams = {
     sort: sortParams(urlParams.sort),
     sortOrder: 'asc',
   };
@@ -67,7 +68,7 @@ export const getMovies = async (urlParams: URLParams): Promise<Movies> => {
     params.genre = urlParams.genres;
   }
 
-  const response = await axios.get<Movies>(moviesUrl, { params });
+  const response = await axios.get<MovieListResponse>(moviesUrl, { params });
 
   return response.data;
 };

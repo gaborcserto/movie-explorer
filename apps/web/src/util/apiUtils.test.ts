@@ -1,4 +1,8 @@
 import axios from 'axios';
+import type {
+  MovieDetails,
+  MovieListResponse,
+} from '@movie-explorer/contracts';
 import {
   postMovie,
   deleteMovie,
@@ -6,9 +10,9 @@ import {
   getMovie,
   getMovies,
 } from './apiUtils';
-import { Movies, Movie, URLParams } from '../types';
+import type { URLParams } from '../types';
 
-const mockMovieData: Movie = {
+const mockMovieData: MovieDetails = {
   id: 1234,
   title: 'Sample Movie',
   releaseDate: '2021-01-01',
@@ -19,7 +23,7 @@ const mockMovieData: Movie = {
   description: 'A sample movie for testing purposes.',
 };
 
-const mockMoviesData: Movies = {
+const mockMoviesData: MovieListResponse = {
   total: 1,
   movies: [mockMovieData],
   offset: 0,

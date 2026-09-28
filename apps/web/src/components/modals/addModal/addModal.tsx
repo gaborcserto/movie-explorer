@@ -1,4 +1,5 @@
 import { useDispatch } from 'react-redux';
+import type { MovieMutationPayload } from '@movie-explorer/contracts';
 import { postMovie } from '../../../util/apiUtils';
 import {
   setModalType,
@@ -6,14 +7,13 @@ import {
   setModalLoading,
   setModalMessage,
 } from '../../../reducer/modalSlice';
-import { MovieData } from '../../../types';
 import Form from '../../form';
 import { setHash } from '../../../reducer/moviesSlice';
 
 function AddModal() {
   const dispatch = useDispatch();
 
-  const handleAdd = async (data: MovieData) => {
+  const handleAdd = async (data: MovieMutationPayload) => {
     dispatch(setModalLoading(true));
 
     postMovie(data)

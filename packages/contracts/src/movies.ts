@@ -1,5 +1,17 @@
 export type MovieId = number;
 
+export type MovieSortField = 'title' | 'releaseDate' | 'rating';
+export type MovieSortOrder = 'asc' | 'desc';
+
+export interface MovieQueryParams {
+  sort?: MovieSortField;
+  sortOrder?: MovieSortOrder;
+  search?: string;
+  genre?: string | string[];
+  offset?: number;
+  limit?: number;
+}
+
 export interface MovieSummary {
   id: MovieId;
   title: string;

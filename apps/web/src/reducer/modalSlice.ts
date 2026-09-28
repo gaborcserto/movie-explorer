@@ -1,13 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { Movie } from '../types';
+import type { MovieDetails } from '@movie-explorer/contracts';
 
 interface InitialStateType {
   open: boolean;
   type: string;
   loading: boolean;
-  // eslint-disable-next-line
-  error: any | null;
-  movie?: Movie;
+  error: string | false | null;
+  movie?: MovieDetails;
   message: string;
 }
 

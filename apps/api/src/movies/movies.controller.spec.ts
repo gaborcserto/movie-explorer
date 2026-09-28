@@ -1,6 +1,10 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { MovieDetails, MovieMutationDto, MoviesResponse } from './movies.dto';
+import type {
+  MovieDetails,
+  MovieListResponse,
+  MovieMutationPayload,
+} from '@movie-explorer/contracts';
 import { MoviesController } from './movies.controller';
 import { MoviesService } from './movies.service';
 
@@ -15,7 +19,7 @@ const movie: MovieDetails = {
   description: 'Overview 1',
 };
 
-const movieMutation: MovieMutationDto = {
+const movieMutation: MovieMutationPayload = {
   title: 'Movie 1',
   releaseDate: '2020-01-01',
   posterUrl: 'https://example.com/movie-1.jpg',
@@ -47,14 +51,14 @@ describe('MoviesController', () => {
   });
 
   it('returns movies from the service using query filters', async () => {
-    const response: MoviesResponse = {
+    const response: MovieListResponse = {
       movies: [movie],
       total: 1,
       offset: 0,
       limit: 10,
     };
     const query = { search: 'Movie' };
-    service.findAll.mockResolvedValue(response as MoviesResponse);
+    service.findAll.mockResolvedValue(response);
 
     await expect(controller.getAllMovies(query)).resolves.toBe(response);
     expect(service.findAll).toHaveBeenCalledWith(query);

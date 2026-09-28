@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
 import './form.scss';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import type { MovieMutationPayload } from '@movie-explorer/contracts';
 import CustomSelect from '../utility/customSelect';
-import { MovieData } from '../../types';
 import { genreTypes, urlPattern } from '../../data';
 
 interface ComponentProps {
-  handleClick: (data: MovieData) => void;
+  handleClick: (data: MovieMutationPayload) => void;
   title: string;
-  movieData?: MovieData;
+  movieData?: MovieMutationPayload;
 }
 
 function Form({ handleClick, title, movieData }: ComponentProps) {
@@ -19,13 +19,13 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
     setValue,
     reset,
     formState: { errors },
-  } = useForm<MovieData>();
+  } = useForm<MovieMutationPayload>();
 
   const handleReset = () => {
     reset();
   };
 
-  const onSubmit: SubmitHandler<MovieData> = (data) => {
+  const onSubmit: SubmitHandler<MovieMutationPayload> = (data) => {
     handleClick(data);
   };
 

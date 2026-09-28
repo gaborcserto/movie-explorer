@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './details.scss';
 import { Link, useParams } from 'react-router-dom';
-import { Movie } from '../../types';
+import type { MovieDetails } from '@movie-explorer/contracts';
 import DetailsContent from './detailsContent';
 import Error from '../../layouts/error';
 import Loading from '../../layouts/loading';
@@ -14,7 +14,7 @@ function Details() {
 
   const movieId = Number(movieIdStr);
 
-  const [movieData, setMovieData] = useState<Movie | null>(null);
+  const [movieData, setMovieData] = useState<MovieDetails | null>(null);
 
   useEffect(() => {
     setIsLoading(true);

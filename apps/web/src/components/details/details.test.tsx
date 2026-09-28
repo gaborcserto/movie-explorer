@@ -1,13 +1,13 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { useParams as originalUseParams } from 'react-router-dom';
+import type { MovieDetails } from '@movie-explorer/contracts';
 import Details from './details';
 import { getMovie as originalGetMovie } from '../../util/apiUtils';
-import { Movie } from '../../types';
 
 const getMovie = originalGetMovie as jest.Mock;
 const useParams = originalUseParams as jest.Mock;
 
-const mockData: Movie = {
+const mockData: MovieDetails = {
   id: 1234,
   title: 'Sample Movie',
   releaseDate: '2021-01-01',
