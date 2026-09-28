@@ -15,7 +15,7 @@ async function bootstrap() {
   const file = fs.readFileSync('swagger.yaml', 'utf8');
   const config = yaml.parse(file);
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);

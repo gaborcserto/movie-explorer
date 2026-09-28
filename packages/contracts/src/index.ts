@@ -1,5 +1,8 @@
 export type {
-  Movie,
+  MovieDetails,
+  MovieId,
   MovieListResponse,
   MovieMutationPayload,
+  MovieSearchResponse,
+  MovieSummary,
 } from './movies';

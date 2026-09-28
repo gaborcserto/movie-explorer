@@ -32,12 +32,12 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
   useEffect(() => {
     if (movieData) {
       setValue('title', movieData.title);
-      setValue('release_date', movieData.release_date);
-      setValue('poster_path', movieData.poster_path);
-      setValue('vote_average', movieData.vote_average);
+      setValue('releaseDate', movieData.releaseDate);
+      setValue('posterUrl', movieData.posterUrl);
+      setValue('rating', movieData.rating);
       setValue('genres', movieData.genres);
-      setValue('runtime', movieData.runtime);
-      setValue('overview', movieData.overview);
+      setValue('runtimeMinutes', movieData.runtimeMinutes);
+      setValue('description', movieData.description);
     }
   }, [movieData, setValue]);
 
@@ -71,36 +71,36 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
             {errors.title && <span role="alert">Movie title is required</span>}
           </div>
           <div className="modal__row__part2">
-            <label htmlFor="release_date" className="modal__label">
+            <label htmlFor="releaseDate" className="modal__label">
               Release Date
               <input
-                id="release_date"
+                id="releaseDate"
                 className="modal__input"
                 placeholder="Release Date"
                 type="date"
-                aria-invalid={errors.release_date ? 'true' : 'false'}
-                defaultValue={movieData ? movieData.release_date : ''}
-                {...register('release_date', { required: true })}
+                aria-invalid={errors.releaseDate ? 'true' : 'false'}
+                defaultValue={movieData ? movieData.releaseDate : ''}
+                {...register('releaseDate', { required: true })}
               />
             </label>
-            {errors.release_date && (
+            {errors.releaseDate && (
               <span role="alert">Release Date is required</span>
             )}
           </div>
         </div>
         <div className="modal__row">
           <div className="modal__row__part1">
-            <label className="modal__label" htmlFor="poster_path">
+            <label className="modal__label" htmlFor="posterUrl">
               Movie url
               <input
-                id="poster_path"
+                id="posterUrl"
                 className="modal__input"
                 placeholder="Movie url"
                 type="text"
                 autoComplete="off"
-                aria-invalid={errors.poster_path ? 'true' : 'false'}
-                defaultValue={movieData ? movieData.poster_path : ''}
-                {...register('poster_path', {
+                aria-invalid={errors.posterUrl ? 'true' : 'false'}
+                defaultValue={movieData ? movieData.posterUrl : ''}
+                {...register('posterUrl', {
                   required: 'Movie url is required',
                   pattern: {
                     value: urlPattern,
@@ -109,8 +109,8 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
                 })}
               />
             </label>
-            {errors.poster_path && (
-              <span role="alert">{errors.poster_path.message}</span>
+            {errors.posterUrl && (
+              <span role="alert">{errors.posterUrl.message}</span>
             )}
           </div>
           <div className="modal__row__part2">
@@ -125,14 +125,14 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
                 min="0"
                 max="10"
                 autoComplete="off"
-                aria-invalid={errors.vote_average ? 'true' : 'false'}
-                defaultValue={movieData ? movieData.vote_average : ''}
-                {...register('vote_average', {
+                aria-invalid={errors.rating ? 'true' : 'false'}
+                defaultValue={movieData ? movieData.rating : ''}
+                {...register('rating', {
                   required: true,
                   valueAsNumber: true,
                 })}
               />
-              {errors.vote_average && (
+              {errors.rating && (
                 <span role="alert">Movie rating is required</span>
               )}
             </label>
@@ -168,41 +168,41 @@ function Form({ handleClick, title, movieData }: ComponentProps) {
             {errors.genres && <span role="alert">{errors.genres.message}</span>}
           </div>
           <div className="modal__row__part2">
-            <label className="modal__label" htmlFor="runtime">
+            <label className="modal__label" htmlFor="runtimeMinutes">
               Runtime
               <input
-                id="runtime"
+                id="runtimeMinutes"
                 className="modal__input"
                 placeholder="Movie runtime"
                 type="number"
-                defaultValue={movieData ? movieData.runtime : ''}
-                aria-invalid={errors.runtime ? 'true' : 'false'}
-                {...register('runtime', {
+                defaultValue={movieData ? movieData.runtimeMinutes : ''}
+                aria-invalid={errors.runtimeMinutes ? 'true' : 'false'}
+                {...register('runtimeMinutes', {
                   required: true,
                   valueAsNumber: true,
                 })}
               />
             </label>
-            {errors.runtime && (
+            {errors.runtimeMinutes && (
               <span role="alert">Movie runtime is required</span>
             )}
           </div>
         </div>
-        <label className="modal__label" htmlFor="overview">
+        <label className="modal__label" htmlFor="description">
           Overview
           <textarea
-            id="overview"
+            id="description"
             className="modal__input modal__input--textarea"
             placeholder="Movie description"
-            defaultValue={movieData ? movieData.overview : ''}
-            aria-invalid={errors.overview ? 'true' : 'false'}
-            {...register('overview', {
+            defaultValue={movieData ? movieData.description : ''}
+            aria-invalid={errors.description ? 'true' : 'false'}
+            {...register('description', {
               required: true,
               minLength: 5,
             })}
           />
         </label>
-        {errors.overview && (
+        {errors.description && (
           <span role="alert">Movie description is required</span>
         )}
       </div>

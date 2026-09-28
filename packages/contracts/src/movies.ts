@@ -1,33 +1,35 @@
-export interface Movie {
-  id: number;
+export type MovieId = number;
+
+export interface MovieSummary {
+  id: MovieId;
   title: string;
-  tagline: string;
-  vote_average: number;
-  vote_count: number;
-  release_date: string;
-  poster_path: string;
-  overview: string;
-  budget: number;
-  revenue: number;
-  runtime: number;
+  releaseDate: string;
+  posterUrl: string;
   genres: string[];
 }
 
+export interface MovieDetails extends MovieSummary {
+  rating: number;
+  runtimeMinutes: number;
+  description: string;
+}
+
 export interface MovieListResponse {
-  totalAmount: number;
-  data: Movie[];
+  movies: MovieSummary[];
+  total: number;
   offset: number;
   limit: number;
 }
 
-export type MovieMutationPayload = Pick<
-  Movie,
-  | 'title'
-  | 'release_date'
-  | 'poster_path'
-  | 'genres'
-  | 'vote_average'
-  | 'runtime'
-  | 'overview'
-> &
-  Partial<Pick<Movie, 'id' | 'tagline' | 'vote_count' | 'budget' | 'revenue'>>;
+export type MovieSearchResponse = MovieListResponse;
+
+export interface MovieMutationPayload {
+  id?: MovieId;
+  title: string;
+  releaseDate: string;
+  posterUrl: string;
+  genres: string[];
+  rating: number;
+  runtimeMinutes: number;
+  description: string;
+}

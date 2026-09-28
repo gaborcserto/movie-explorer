@@ -1,7 +1,8 @@
 export type {
-  Movie,
+  MovieDetails as Movie,
   MovieListResponse as Movies,
   MovieMutationPayload as MovieData,
+  MovieSummary,
 } from '@movie-explorer/contracts';
 
 export interface URLParams {

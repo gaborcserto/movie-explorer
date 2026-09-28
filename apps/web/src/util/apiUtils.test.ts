@@ -11,21 +11,17 @@ import { Movies, Movie, URLParams } from '../types';
 const mockMovieData: Movie = {
   id: 1234,
   title: 'Sample Movie',
-  tagline: 'Sample Tagline',
-  release_date: '2021-01-01',
-  poster_path: '/sample.jpg',
+  releaseDate: '2021-01-01',
+  posterUrl: '/sample.jpg',
   genres: ['Drama', 'Action'],
-  vote_average: 8.5,
-  vote_count: 100,
-  budget: 1000,
-  revenue: 1200,
-  runtime: 120,
-  overview: 'A sample movie for testing purposes.',
+  rating: 8.5,
+  runtimeMinutes: 120,
+  description: 'A sample movie for testing purposes.',
 };
 
 const mockMoviesData: Movies = {
-  totalAmount: 1,
-  data: [mockMovieData],
+  total: 1,
+  movies: [mockMovieData],
   offset: 0,
   limit: 0,
 };
@@ -77,5 +73,28 @@ describe('API functions', () => {
 
     const response = await getMovies(params);
     expect(response.data).toEqual(mockMoviesData);
+  });
+
+  it('should preserve releaseDate sort and keep reload hash out of API parameters', async () => {
+    const params: URLParams = {
+      genres: 'crime',
+      sort: 'releaseDate',
+      hash: '#reload',
+    };
+    mockedAxios.get.mockResolvedValueOnce({ data: mockMoviesData });
+
+    await getMovies(params);
+
+    expect(mockedAxios.get).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        params: {
+          search: '',
+          sort: 'releaseDate',
+          sortOrder: 'asc',
+          genre: 'crime',
+        },
+      })
+    );
   });
 });

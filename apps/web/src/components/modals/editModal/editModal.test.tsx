@@ -35,12 +35,12 @@ describe('EditModal component', () => {
   const mockMovieData = {
     id: 1,
     title: 'Mock Movie Title',
-    release_date: '2021-01-01',
-    poster_path: 'https://test.com/movie.jpg',
-    vote_average: 8,
+    releaseDate: '2021-01-01',
+    posterUrl: 'https://test.com/movie.jpg',
+    rating: 8,
     genres: ['Action', 'Drama'],
-    runtime: 120,
-    overview: 'Test overview',
+    runtimeMinutes: 120,
+    description: 'Test overview',
   };
 
   beforeEach(() => {

@@ -40,21 +40,23 @@ describe('<List />', () => {
   test('it displays movies when the fetch is successful', async () => {
     const mockMovies = {
       data: {
-        data: [
+        movies: [
           {
             id: 1,
             title: 'Movie 1',
-            release_date: '2022-01-01',
+            releaseDate: '2022-01-01',
+            posterUrl: '/movie-1.jpg',
             genres: ['test'],
           },
           {
             id: 2,
             title: 'Movie 2',
-            release_date: '2023-01-01',
+            releaseDate: '2023-01-01',
+            posterUrl: '/movie-2.jpg',
             genres: ['test', 'crime'],
           },
         ],
-        totalAmount: 2,
+        total: 2,
       },
       status: 200,
       statusText: 'OK',

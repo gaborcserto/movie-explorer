@@ -1,4 +1,4 @@
-import { render, fireEvent, screen } from '@testing-library/react';
+import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { Provider, useDispatch as originalUseDispatch } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
@@ -6,10 +6,12 @@ import modalReducer, {
   setModalOpen,
   setModalType,
 } from '../../reducer/modalSlice';
+import { getMovie as originalGetMovie } from '../../util/apiUtils';
 import Card from './card';
 import { Movie } from '../../types';
 
 const useDispatch = originalUseDispatch as jest.Mock;
+const getMovie = originalGetMovie as jest.Mock;
 
 const mockStore = configureStore({
   reducer: {
@@ -21,20 +23,17 @@ jest.mock('react-redux', () => ({
   ...jest.requireActual('react-redux'),
   useDispatch: jest.fn(),
 }));
+jest.mock('../../util/apiUtils');
 
 const mockMovie: Movie = {
   id: 1234,
   title: 'Sample Movie',
-  tagline: 'Sample Tagline',
-  release_date: '2021-01-01',
-  poster_path: '/sample.jpg',
+  releaseDate: '2021-01-01',
+  posterUrl: '/sample.jpg',
   genres: ['Drama', 'Action'],
-  vote_average: 8.5,
-  vote_count: 100,
-  budget: 1000,
-  revenue: 1200,
-  runtime: 120,
-  overview: 'A sample movie for testing purposes.',
+  rating: 8.5,
+  runtimeMinutes: 120,
+  description: 'A sample movie for testing purposes.',
 };
 
 describe('<Card />', () => {
@@ -43,6 +42,7 @@ describe('<Card />', () => {
   beforeEach(() => {
     mockDispatch = jest.fn();
     useDispatch.mockReturnValue(mockDispatch);
+    getMovie.mockResolvedValue({ data: mockMovie });
   });
 
   afterEach(() => {
@@ -77,7 +77,7 @@ describe('<Card />', () => {
     expect(screen.getByText('Delete')).toBeInTheDocument();
   });
 
-  it('opens the edit modal when handleOpenModal is called', () => {
+  it('opens the edit modal when handleOpenModal is called', async () => {
     render(
       <Provider store={mockStore}>
         <MemoryRouter>
@@ -92,8 +92,11 @@ describe('<Card />', () => {
     const editButton = screen.getByText('Edit');
     fireEvent.click(editButton);
 
-    expect(mockDispatch).toHaveBeenCalledWith(setModalOpen(true));
-    expect(mockDispatch).toHaveBeenCalledWith(setModalType('edit'));
+    expect(getMovie).toHaveBeenCalledWith(1234);
+    await waitFor(() => {
+      expect(mockDispatch).toHaveBeenCalledWith(setModalOpen(true));
+      expect(mockDispatch).toHaveBeenCalledWith(setModalType('edit'));
+    });
   });
 
   it('opens the delete modal when handleDeleteModal is called', () => {

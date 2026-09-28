@@ -19,7 +19,12 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { MoviesService } from './movies.service';
-import { GetMoviesFilter, MoviesResponse, Movie } from './movies.dto';
+import {
+  GetMoviesQuery,
+  MovieDetails,
+  MovieMutationDto,
+  MoviesResponse,
+} from './movies.dto';
 
 @ApiTags('movies')
 @Controller('movies')
@@ -34,9 +39,9 @@ export class MoviesController {
     type: () => MoviesResponse,
   })
   public async getAllMovies(
-    @Query() filter: GetMoviesFilter,
+    @Query() query: GetMoviesQuery,
   ): Promise<MoviesResponse> {
-    return this.moviesService.findAll(filter);
+    return this.moviesService.findAll(query);
   }
 
   @Get(':id')
@@ -44,11 +49,13 @@ export class MoviesController {
   @ApiResponse({
     status: 200,
     description: 'Return a single movie.',
-    type: () => Movie,
+    type: () => MovieDetails,
   })
   @ApiNotFoundResponse({ description: 'Movie not found' })
   @ApiParam({ name: 'id', description: 'Movie unique identifier' })
-  public async getMovie(@Param('id', ParseIntPipe) id: string): Promise<Movie> {
+  public async getMovie(
+    @Param('id', ParseIntPipe) id: string,
+  ): Promise<MovieDetails> {
     const movieId = parseInt(id, 10);
 
     if (isNaN(movieId)) {
@@ -68,13 +75,13 @@ export class MoviesController {
   @ApiResponse({
     status: 201,
     description: 'The movie has been successfully created.',
-    type: () => Movie,
+    type: () => MovieDetails,
   })
   @ApiResponse({
     status: 400,
     description: 'Bad request, possibly due to invalid input data.',
   })
-  public async createMovie(@Body() movie: Movie): Promise<void> {
+  public async createMovie(@Body() movie: MovieMutationDto): Promise<void> {
     try {
       await this.moviesService.create(movie);
     } catch (error) {
@@ -90,7 +97,7 @@ export class MoviesController {
   @ApiResponse({
     status: 200,
     description: 'The movie has been successfully updated.',
-    type: Movie,
+    type: MovieDetails,
   })
   @ApiNotFoundResponse({ description: 'Movie not found' })
   @ApiResponse({
@@ -99,8 +106,8 @@ export class MoviesController {
   })
   public async updateMovie(
     @Body('id', ParseIntPipe) id: number,
-    @Body() movie: Movie,
-  ): Promise<Movie> {
+    @Body() movie: MovieMutationDto,
+  ): Promise<MovieDetails> {
     const updatedMovie = await this.moviesService.update(id, movie);
     if (!updatedMovie) {
       throw new HttpException('Movie not found', HttpStatus.NOT_FOUND);

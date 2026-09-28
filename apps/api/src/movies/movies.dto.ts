@@ -1,56 +1,59 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
-  IsOptional,
+  IsArray,
   IsIn,
-  IsString,
   IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
   IsUrl,
-  ValidateIf,
   Min,
 } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type {
-  Movie as MovieContract,
-  MovieListResponse,
+  MovieDetails as MovieDetailsContract,
+  MovieListResponse as MovieListResponseContract,
+  MovieMutationPayload,
+  MovieSummary as MovieSummaryContract,
 } from '@movie-explorer/contracts';
 
-export type MovieResponseContract = MovieContract;
-export type MoviesResponseContract = MovieListResponse;
+export type MovieSummaryContractType = MovieSummaryContract;
+export type MovieDetailsContractType = MovieDetailsContract;
+export type MovieListResponseContractType = MovieListResponseContract;
 
-export class GetMoviesFilter {
-  @ApiPropertyOptional({ description: 'Field to sort by' })
+export class GetMoviesQuery {
+  @ApiPropertyOptional({
+    enum: ['title', 'releaseDate', 'rating'],
+    description: 'Field to sort by',
+  })
   @IsOptional()
-  @IsString()
-  sortBy?: string;
+  @IsIn(['title', 'releaseDate', 'rating'])
+  sort?: 'title' | 'releaseDate' | 'rating';
 
   @ApiPropertyOptional({
     enum: ['asc', 'desc'],
-    description: 'Value to define sort direction',
+    description: 'Sort direction',
   })
   @IsOptional()
   @IsIn(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc';
 
-  @ApiPropertyOptional({ description: 'Search value' })
+  @ApiPropertyOptional({ description: 'Movie title search value' })
   @IsOptional()
   @IsString()
   search?: string;
 
   @ApiPropertyOptional({
-    enum: ['title', 'genres'],
-    description: 'Type of search',
+    description: 'Genre filter',
+    oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }],
   })
   @IsOptional()
-  @IsIn(['title', 'genres'])
-  searchBy?: 'title' | 'genres';
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @ValidateIf((o) => o.filter && o.filter.length > 0)
   @IsString({ each: true })
-  filter?: string[];
+  genre?: string | string[];
 
   @ApiPropertyOptional({ description: 'Offset in result array for pagination' })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   offset?: number;
@@ -59,38 +62,60 @@ export class GetMoviesFilter {
     description: 'Limit amount of items in result array for pagination',
   })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   limit?: number = 10;
 }
 
-export class MoviesResponse {
-  @ApiProperty({
-    description: 'List of movies',
-    example: [
-      {
-        id: 313369,
-        title: 'La La Land',
-        tagline: "Here's to the fools who dream.",
-        vote_average: 7.9,
-        vote_count: 6782,
-        release_date: '2016-12-29',
-        poster_path:
-          'https://image.tmdb.org/t/p/w500/ylXCdC106IKiarftHkcacasaAcb.jpg',
-        overview: 'Mia, an aspiring actress...',
-        budget: 30000000,
-        revenue: 445435700,
-        runtime: 128,
-        genres: ['Comedy', 'Drama', 'Romance'],
-      },
-    ],
-  })
-  data: Movie[];
+export class MovieSummary implements MovieSummaryContract {
+  @ApiProperty({ description: 'Movie identifier', example: 313369 })
+  id: number;
+
+  @ApiProperty({ description: 'Movie title', example: 'La La Land' })
+  title: string;
+
+  @ApiProperty({ description: 'Movie release date', example: '2016-12-29' })
+  releaseDate: string;
 
   @ApiProperty({
-    description: 'Total number of movies',
+    description: 'URL to the poster image',
+    example: 'https://example.com/posters/la-la-land.jpg',
   })
-  totalAmount: number;
+  posterUrl: string;
+
+  @ApiProperty({
+    description: 'List of genres',
+    example: ['Comedy', 'Drama', 'Romance'],
+  })
+  genres: string[];
+}
+
+export class MovieDetails extends MovieSummary implements MovieDetailsContract {
+  @ApiProperty({ description: 'Movie rating', example: 7.9 })
+  rating: number;
+
+  @ApiProperty({ description: 'Movie duration in minutes', example: 128 })
+  runtimeMinutes: number;
+
+  @ApiProperty({
+    description: 'Short description of the movie',
+    example: 'Mia, an aspiring actress, serves lattes to movie stars...',
+  })
+  description: string;
+}
+
+export class MoviesResponse implements MovieListResponseContract {
+  @ApiProperty({
+    description: 'List of movies',
+    type: () => [MovieSummary],
+  })
+  movies: MovieSummary[];
+
+  @ApiProperty({
+    description: 'Total number of matching movies',
+  })
+  total: number;
 
   @ApiProperty({
     description: 'Offset in result array for pagination',
@@ -103,57 +128,47 @@ export class MoviesResponse {
   limit: number;
 }
 
-export class Movie {
-  @ApiProperty({ description: 'movies ID', example: 313369 })
+export class MovieMutationDto implements MovieMutationPayload {
+  @ApiPropertyOptional({ description: 'Movie identifier', example: 313369 })
+  @IsOptional()
+  @IsInt()
   id?: number;
 
-  @ApiProperty({ description: 'movies title', example: 'La La Land' })
-  title?: string;
+  @ApiProperty({ description: 'Movie title', example: 'La La Land' })
+  @IsString()
+  title: string;
 
-  @ApiProperty({
-    description: 'movies tagline',
-    example: "Here's to the fools who dream.",
-  })
-  tagline?: string;
-
-  @ApiProperty({ description: 'movies average rating', example: 7.9 })
-  vote_average?: number;
-
-  @ApiProperty({
-    description: 'Total count of votes for the movie',
-    example: 6782,
-  })
-  vote_count?: number;
-
-  @ApiProperty({ description: 'movies release date', example: '2016-12-29' })
-  release_date: string;
+  @ApiProperty({ description: 'Movie release date', example: '2016-12-29' })
+  @IsString()
+  releaseDate: string;
 
   @ApiProperty({
     description: 'URL to the poster image',
-    example: 'https://image.tmdb.org/t/p/w500/ylXCdC106IKiarftHkcacasaAcb.jpg',
+    example: 'https://example.com/posters/la-la-land.jpg',
   })
   @IsUrl()
-  poster_path: string;
-
-  @ApiProperty({
-    description: 'Short description of the movie',
-    example:
-      'Mia, an aspiring actress, serves lattes to movie stars in between auditions and Sebastian, a jazz musician, scrapes by playing cocktail party gigs in dingy bars, but as success mounts they are faced with decisions that begin to fray the fragile fabric of their love affair, and the dreams they worked so hard to maintain in each other threaten to rip them apart.',
-  })
-  overview: string;
-
-  @ApiProperty({ description: 'movies production budget', example: 30000000 })
-  budget?: number;
-
-  @ApiProperty({ description: 'movies revenue', example: 445435700 })
-  revenue?: number;
-
-  @ApiProperty({ description: 'movies duration time', example: 128 })
-  runtime: number;
+  posterUrl: string;
 
   @ApiProperty({
     description: 'List of genres',
     example: ['Comedy', 'Drama', 'Romance'],
   })
+  @IsArray()
+  @IsString({ each: true })
   genres: string[];
+
+  @ApiProperty({ description: 'Movie rating', example: 7.9 })
+  @IsNumber()
+  rating: number;
+
+  @ApiProperty({ description: 'Movie duration in minutes', example: 128 })
+  @IsInt()
+  runtimeMinutes: number;
+
+  @ApiProperty({
+    description: 'Short description of the movie',
+    example: 'Mia, an aspiring actress, serves lattes to movie stars...',
+  })
+  @IsString()
+  description: string;
 }

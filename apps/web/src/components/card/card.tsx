@@ -1,32 +1,33 @@
-import { useState, useRef, useEffect, useId } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './card.scss';
 import { useDispatch } from 'react-redux';
 import { Link, useSearchParams } from 'react-router-dom';
 import CustomImage from '../utility/customImage';
-import { Movie } from '../../types';
+import { MovieSummary } from '../../types';
 import {
   setModalOpen,
   setModalType,
   setModalMovie,
+  setModalError,
 } from '../../reducer/modalSlice';
+import { getMovie } from '../../util/apiUtils';
 
 interface CardProps {
-  movie: Movie;
+  movie: MovieSummary;
 }
 
 function Card({ movie }: CardProps) {
-  const { id, title, release_date, poster_path, genres } = movie;
+  const { id, title, releaseDate, posterUrl, genres } = movie;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const hoverBtnRef = useRef<HTMLDivElement>(null);
   const [searchParams] = useSearchParams();
-  const uniqueId = useId();
 
   const filter = searchParams.get('filter');
   const sort = searchParams.get('sorting');
 
   const dispatch = useDispatch();
-  const releaseYear = release_date.substring(0, 4);
+  const releaseYear = releaseDate.substring(0, 4);
 
   const handleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -55,9 +56,15 @@ function Card({ movie }: CardProps) {
     };
   }, []);
 
-  const handleOpenModal = () => {
-    dispatch(setModalOpen(true));
-    dispatch(setModalType('edit'));
+  const handleOpenModal = async () => {
+    try {
+      const response = await getMovie(id);
+      dispatch(setModalMovie(response.data));
+      dispatch(setModalOpen(true));
+      dispatch(setModalType('edit'));
+    } catch (error) {
+      dispatch(setModalError(`Error: ${error}`));
+    }
   };
 
   const handleDeleteModal = () => {
@@ -68,7 +75,7 @@ function Card({ movie }: CardProps) {
   const genreLinks = genres
     .map((genre) => {
       return (
-        <span key={uniqueId}>
+        <span key={genre}>
           <Link
             to={`?filter=${genre.toLowerCase().replace(/ /g, '+')}${
               sort ? `&sorting=${sort}` : ''
@@ -101,7 +108,7 @@ function Card({ movie }: CardProps) {
           aria-label="Menu"
         />
         <CustomImage
-          img_path={poster_path}
+          img_path={posterUrl}
           img_title={title}
           img_style="card__image"
         />

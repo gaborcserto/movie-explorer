@@ -4,7 +4,7 @@ import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import Card from '../card/card';
 import { RootState } from '../../store/store';
-import { Movie, Movies } from '../../types';
+import { Movies, MovieSummary } from '../../types';
 import Error from '../../layouts/error';
 import Loading from '../../layouts/loading';
 import { getMovies } from '../../util/apiUtils';
@@ -68,11 +68,11 @@ function List() {
     );
   }
 
-  const moviesList = moviesData?.data;
+  const moviesList = moviesData?.movies;
   return (
     <section className="list__container container">
       <h2 className="list__number">
-        <strong>{moviesData?.totalAmount}</strong> movies found
+        <strong>{moviesData?.total}</strong> movies found
         {filter && (
           <span>
             {' '}
@@ -82,7 +82,7 @@ function List() {
         )}
       </h2>
       <div className="list__items">
-        {moviesList?.map((movieData: Movie) => (
+        {moviesList?.map((movieData: MovieSummary) => (
           <Card key={movieData.id} movie={movieData} />
         ))}
       </div>

@@ -21,7 +21,13 @@ export const getMovie = (id: number) => {
 };
 
 export const sortParams = (data: string | undefined | null) => {
-  return data ? data.replace(/[ +]/g, '_').toLowerCase() : 'title';
+  if (!data) return 'title';
+
+  if (data === 'Release Date' || data === 'releaseDate') {
+    return 'releaseDate';
+  }
+
+  return data.toLowerCase();
 };
 
 const searchParams = (data: string | undefined) => {
@@ -32,11 +38,9 @@ export const getMovies = (urlParams: URLParams) => {
   return axios.get(URL, {
     params: {
       search: searchParams(urlParams.search),
-      searchBy: 'title',
-      sortBy: sortParams(urlParams.sort),
+      sort: sortParams(urlParams.sort),
       sortOrder: 'asc',
-      filter: urlParams.genres,
-      hash: urlParams.hash,
+      genre: urlParams.genres,
     },
   });
 };

@@ -7,35 +7,35 @@ interface DetailsProps {
 function DetailsContent({ movieData }: DetailsProps) {
   const {
     title,
-    release_date,
-    poster_path,
+    releaseDate,
+    posterUrl,
     genres,
-    vote_average,
-    runtime,
-    overview,
+    rating,
+    runtimeMinutes,
+    description,
   } = movieData;
 
-  const releaseYear = release_date.substring(0, 4);
+  const releaseYear = releaseDate.substring(0, 4);
   const genresData = genres?.join(', ');
 
   return (
     <div className="movie-details__container">
       <CustomImage
-        img_path={poster_path}
+        img_path={posterUrl}
         img_title={title}
         img_style="movie-details__image"
       />
       <div className="movie-details__content">
         <div className="movie-details__title__wrapper">
           <h2 className="movie-details__title">{title}</h2>
-          <div className="movie-details__rating">{vote_average}</div>
+          <div className="movie-details__rating">{rating}</div>
         </div>
         <div className="movie-details__genre">{genresData}</div>
         <div className="movie-details__data">
           <span className="movie-details__year">{releaseYear}</span>{' '}
-          <span>{runtime} min</span>
+          <span>{runtimeMinutes} min</span>
         </div>
-        <div className="movie-details__overview">{overview}</div>
+        <div className="movie-details__overview">{description}</div>
       </div>
     </div>
   );

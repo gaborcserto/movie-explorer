@@ -1,22 +1,28 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Movie, MoviesResponse } from './movies.dto';
+import { MovieDetails, MovieMutationDto, MoviesResponse } from './movies.dto';
 import { MoviesController } from './movies.controller';
 import { MoviesService } from './movies.service';
 
-const movie: Movie = {
+const movie: MovieDetails = {
   id: 1,
   title: 'Movie 1',
-  tagline: 'Tagline 1',
-  vote_average: 7.5,
-  vote_count: 100,
-  release_date: '2020-01-01',
-  poster_path: 'https://example.com/movie-1.jpg',
-  overview: 'Overview 1',
-  budget: 1000,
-  revenue: 2000,
-  runtime: 120,
+  releaseDate: '2020-01-01',
+  posterUrl: 'https://example.com/movie-1.jpg',
   genres: ['Drama'],
+  rating: 7.5,
+  runtimeMinutes: 120,
+  description: 'Overview 1',
+};
+
+const movieMutation: MovieMutationDto = {
+  title: 'Movie 1',
+  releaseDate: '2020-01-01',
+  posterUrl: 'https://example.com/movie-1.jpg',
+  genres: ['Drama'],
+  rating: 7.5,
+  runtimeMinutes: 120,
+  description: 'Overview 1',
 };
 
 describe('MoviesController', () => {
@@ -44,16 +50,16 @@ describe('MoviesController', () => {
 
   it('returns movies from the service using query filters', async () => {
     const response: MoviesResponse = {
-      data: [movie],
-      totalAmount: 1,
+      movies: [movie],
+      total: 1,
       offset: 0,
       limit: 10,
     };
-    const filter = { search: 'Movie', searchBy: 'title' as const };
-    service.findAll.mockReturnValue(response);
+    const query = { search: 'Movie' };
+    service.findAll.mockReturnValue(response as MoviesResponse);
 
-    await expect(controller.getAllMovies(filter)).resolves.toBe(response);
-    expect(service.findAll).toHaveBeenCalledWith(filter);
+    await expect(controller.getAllMovies(query)).resolves.toBe(response);
+    expect(service.findAll).toHaveBeenCalledWith(query);
   });
 
   it('returns a movie by id', async () => {
@@ -75,14 +81,16 @@ describe('MoviesController', () => {
   it('creates a movie through the service', async () => {
     service.create.mockResolvedValue(undefined);
 
-    await expect(controller.createMovie(movie)).resolves.toBeUndefined();
-    expect(service.create).toHaveBeenCalledWith(movie);
+    await expect(
+      controller.createMovie(movieMutation),
+    ).resolves.toBeUndefined();
+    expect(service.create).toHaveBeenCalledWith(movieMutation);
   });
 
   it('wraps create validation errors in a bad request response', async () => {
     service.create.mockRejectedValue(new Error('Validation failed!'));
 
-    await expect(controller.createMovie(movie)).rejects.toMatchObject({
+    await expect(controller.createMovie(movieMutation)).rejects.toMatchObject({
       status: HttpStatus.BAD_REQUEST,
       message: 'Error creating movie: Validation failed!',
     });
@@ -91,8 +99,8 @@ describe('MoviesController', () => {
   it('updates a movie through the service', async () => {
     service.update.mockResolvedValue(movie);
 
-    await expect(controller.updateMovie(1, movie)).resolves.toBe(movie);
-    expect(service.update).toHaveBeenCalledWith(1, movie);
+    await expect(controller.updateMovie(1, movieMutation)).resolves.toBe(movie);
+    expect(service.update).toHaveBeenCalledWith(1, movieMutation);
   });
 
   it('deletes an existing movie', async () => {

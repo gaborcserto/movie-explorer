@@ -10,16 +10,12 @@ const useParams = originalUseParams as jest.Mock;
 const mockData: Movie = {
   id: 1234,
   title: 'Sample Movie',
-  tagline: 'Sample Tagline',
-  release_date: '2021-01-01',
-  poster_path: '/sample.jpg',
+  releaseDate: '2021-01-01',
+  posterUrl: '/sample.jpg',
   genres: ['Drama', 'Action'],
-  vote_average: 8.5,
-  vote_count: 100,
-  budget: 1000,
-  revenue: 1200,
-  runtime: 120,
-  overview: 'A sample movie for testing purposes.',
+  rating: 8.5,
+  runtimeMinutes: 120,
+  description: 'A sample movie for testing purposes.',
 };
 
 jest.mock('../../util/apiUtils');

@@ -14,7 +14,10 @@ function Filter() {
   const searchParamsUrl = searchParams.toString();
 
   const replacer = (text: string) => {
-    return text.replace(/_/g, ' ');
+    return text
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/_/g, ' ')
+      .toLowerCase();
   };
 
   const handleSelectChange = (selectedOptions: string[] | null) => {

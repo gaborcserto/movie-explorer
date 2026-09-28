@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { NotFoundException } from '@nestjs/common';
-import { Movie } from './movies.dto';
+import type { MovieMutationPayload } from '@movie-explorer/contracts';
 import { MoviesService } from './movies.service';
 
 jest.mock('fs', () => ({
@@ -8,7 +8,7 @@ jest.mock('fs', () => ({
   writeFileSync: jest.fn(),
 }));
 
-const movies: Movie[] = [
+const movies = [
   {
     id: 1,
     title: 'Alpha',
@@ -65,8 +65,30 @@ describe('MoviesService', () => {
 
   it('returns movies with default pagination metadata', () => {
     expect(service.findAll({})).toEqual({
-      data: movies,
-      totalAmount: 3,
+      movies: [
+        {
+          id: 1,
+          title: 'Alpha',
+          releaseDate: '2020-01-01',
+          posterUrl: 'https://example.com/alpha.jpg',
+          genres: ['Drama', 'Comedy'],
+        },
+        {
+          id: 2,
+          title: 'Beta',
+          releaseDate: '2021-01-01',
+          posterUrl: 'https://example.com/beta.jpg',
+          genres: ['Action'],
+        },
+        {
+          id: 3,
+          title: 'Gamma',
+          releaseDate: '2022-01-01',
+          posterUrl: 'https://example.com/gamma.jpg',
+          genres: ['Drama'],
+        },
+      ],
+      total: 3,
       offset: 0,
       limit: 10,
     });
@@ -76,38 +98,55 @@ describe('MoviesService', () => {
     expect(
       service.findAll({
         search: 'a',
-        searchBy: 'title',
-        filter: ['Drama'],
-        sortBy: 'vote_average',
+        genre: ['Drama'],
+        sort: 'rating',
         sortOrder: 'desc',
         offset: 0,
         limit: 1,
       }),
     ).toEqual({
-      data: [movies[2]],
-      totalAmount: 2,
+      movies: [
+        {
+          id: 3,
+          title: 'Gamma',
+          releaseDate: '2022-01-01',
+          posterUrl: 'https://example.com/gamma.jpg',
+          genres: ['Drama'],
+        },
+      ],
+      total: 2,
       offset: 0,
       limit: 1,
     });
   });
 
   it('finds one movie by id', () => {
-    expect(service.findOne(2)).toEqual(movies[1]);
+    expect(service.findOne(2)).toEqual({
+      id: 2,
+      title: 'Beta',
+      releaseDate: '2021-01-01',
+      posterUrl: 'https://example.com/beta.jpg',
+      genres: ['Action'],
+      rating: 6,
+      runtimeMinutes: 110,
+      description: 'Beta overview',
+    });
   });
 
   it('creates a valid movie and persists it', async () => {
-    const newMovie: Movie = {
+    const newMovie: MovieMutationPayload = {
       title: 'Delta',
-      release_date: '2023-01-01',
-      poster_path: 'https://example.com/delta.jpg',
-      overview: 'Delta overview',
-      runtime: 130,
+      releaseDate: '2023-01-01',
+      posterUrl: 'https://example.com/delta.jpg',
+      description: 'Delta overview',
+      runtimeMinutes: 130,
       genres: ['Adventure'],
+      rating: 7,
     };
 
     await service.create(newMovie);
 
-    expect(service.findAll({}).totalAmount).toBe(4);
+    expect(service.findAll({}).total).toBe(4);
     expect(mockedFs.writeFileSync).toHaveBeenCalledTimes(1);
   });
 
@@ -115,11 +154,12 @@ describe('MoviesService', () => {
     await expect(
       service.create({
         title: 'Invalid',
-        release_date: '2023-01-01',
-        poster_path: 'not-a-url',
-        overview: 'Invalid overview',
-        runtime: 90,
+        releaseDate: '2023-01-01',
+        posterUrl: 'not-a-url',
+        description: 'Invalid overview',
+        runtimeMinutes: 90,
         genres: ['Drama'],
+        rating: 5,
       }),
     ).rejects.toThrow('Validation failed!');
 
@@ -128,7 +168,15 @@ describe('MoviesService', () => {
 
   it('updates an existing movie and persists it', async () => {
     await expect(
-      service.update(1, { title: 'Updated Alpha' } as Movie),
+      service.update(1, {
+        title: 'Updated Alpha',
+        releaseDate: '2020-01-01',
+        posterUrl: 'https://example.com/alpha.jpg',
+        description: 'Alpha overview',
+        runtimeMinutes: 100,
+        genres: ['Drama', 'Comedy'],
+        rating: 8,
+      }),
     ).resolves.toMatchObject({
       id: 1,
       title: 'Updated Alpha',
@@ -138,14 +186,33 @@ describe('MoviesService', () => {
     expect(mockedFs.writeFileSync).toHaveBeenCalledTimes(1);
   });
 
-  it('throws when updating a missing movie', () => {
-    expect(() => service.update(999, movies[0])).toThrow(NotFoundException);
+  it('throws when updating a missing movie', async () => {
+    await expect(
+      service.update(999, {
+        title: 'Missing',
+        releaseDate: '2020-01-01',
+        posterUrl: 'https://example.com/missing.jpg',
+        description: 'Missing overview',
+        runtimeMinutes: 100,
+        genres: ['Drama'],
+        rating: 8,
+      }),
+    ).rejects.toThrow(NotFoundException);
 
     expect(mockedFs.writeFileSync).not.toHaveBeenCalled();
   });
 
   it('deletes an existing movie and persists it', () => {
-    expect(service.delete(2)).toEqual(movies[1]);
+    expect(service.delete(2)).toEqual({
+      id: 2,
+      title: 'Beta',
+      releaseDate: '2021-01-01',
+      posterUrl: 'https://example.com/beta.jpg',
+      genres: ['Action'],
+      rating: 6,
+      runtimeMinutes: 110,
+      description: 'Beta overview',
+    });
     expect(service.findOne(2)).toBeUndefined();
     expect(mockedFs.writeFileSync).toHaveBeenCalledTimes(1);
   });

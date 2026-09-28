@@ -1,13 +1,34 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { GetMoviesFilter, MoviesResponse, Movie } from './movies.dto';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import * as fs from 'fs';
 import * as path from 'path';
+import type {
+  MovieDetails,
+  MovieListResponse,
+  MovieMutationPayload,
+  MovieSummary,
+} from '@movie-explorer/contracts';
+import { GetMoviesQuery, MovieMutationDto } from './movies.dto';
+
+interface LocalMovieRecord {
+  id: number;
+  title: string;
+  tagline?: string;
+  vote_average?: number;
+  vote_count?: number;
+  release_date: string;
+  poster_path: string;
+  overview: string;
+  budget?: number;
+  revenue?: number;
+  runtime: number;
+  genres: string[];
+}
 
 @Injectable()
 export class MoviesService {
-  private movies: Movie[] = [];
+  private movies: LocalMovieRecord[] = [];
 
   private readonly moviesFilePath = path.join(
     __dirname,
@@ -18,51 +39,98 @@ export class MoviesService {
     this.movies = JSON.parse(fs.readFileSync(this.moviesFilePath, 'utf-8'));
   }
 
-  public findAll(filterDto: GetMoviesFilter): MoviesResponse {
+  public findAll(query: GetMoviesQuery): MovieListResponse {
     let movies = [...this.movies];
 
-    movies = this.filterBySearch(movies, filterDto.search, filterDto.searchBy);
-    movies = this.filterByGenre(movies, filterDto.filter);
-    movies = this.sortByField(movies, filterDto.sortBy, filterDto.sortOrder);
-    const totalAmount = movies.length;
-    movies = this.paginate(movies, filterDto.offset, filterDto.limit);
+    movies = this.filterBySearch(movies, query.search);
+    movies = this.filterByGenre(movies, query.genre);
+    movies = this.sortByField(movies, query.sort, query.sortOrder);
+
+    const total = movies.length;
+    const offset = Number(query.offset ?? 0);
+    const limit = Number(query.limit ?? 10);
+    movies = this.paginate(movies, offset, limit);
 
     return {
-      data: movies,
-      totalAmount,
-      offset: filterDto.offset || 0,
-      limit: filterDto.limit || 10,
+      movies: movies.map((movie) => this.toMovieSummary(movie)),
+      total,
+      offset,
+      limit,
     };
   }
 
-  private filterBySearch(
-    movies: Movie[],
-    search: string,
-    searchBy: 'title' | 'genres',
-  ): Movie[] {
-    if (!search || !searchBy) return movies;
-    const lowerCaseSearch = search.toLowerCase();
+  public findOne(id: number): MovieDetails | undefined {
+    const movie = this.movies.find((movie) => movie.id === id);
 
-    if (searchBy === 'title') {
-      return movies.filter((movie) =>
-        movie.title.toLowerCase().includes(lowerCaseSearch),
-      );
-    } else if (searchBy === 'genres') {
-      return movies.filter((movie) =>
-        movie.genres.some((genre) =>
-          genre.toLowerCase().includes(lowerCaseSearch),
-        ),
-      );
-    }
-
-    return movies;
+    return movie ? this.toMovieDetails(movie) : undefined;
   }
 
-  private filterByGenre(movies: Movie[], filter: string | string[]): Movie[] {
-    if (!filter || !filter.length) return movies;
+  public async create(movie: MovieMutationPayload): Promise<void> {
+    const movieInstance = plainToInstance(MovieMutationDto, movie);
+    const errors = await validate(movieInstance);
 
-    const genreFilter: string[] =
-      typeof filter === 'string' ? [filter] : filter;
+    if (errors.length > 0) {
+      throw new Error('Validation failed!');
+    }
+
+    const newMovie = this.toLocalMovieRecord({
+      ...movieInstance,
+      id: Date.now(),
+    });
+    this.movies.push(newMovie);
+    this.saveMoviesToFile();
+  }
+
+  public async update(
+    id: number,
+    movie: MovieMutationPayload,
+  ): Promise<MovieDetails> {
+    const index = this.movies.findIndex((m) => m.id === id);
+
+    if (index === -1) {
+      throw new NotFoundException(`Movie with ID ${id} not found`);
+    }
+
+    const updatedMovie = {
+      ...this.movies[index],
+      ...this.toLocalMovieRecord({ ...movie, id }),
+    };
+    this.movies[index] = updatedMovie;
+
+    this.saveMoviesToFile();
+
+    return this.toMovieDetails(updatedMovie);
+  }
+
+  public delete(id: number): MovieDetails | null {
+    const movieToDelete = this.movies.find((movie) => movie.id === id);
+    if (!movieToDelete) {
+      return null;
+    }
+    this.movies = this.movies.filter((movie) => movie.id !== id);
+    this.saveMoviesToFile();
+    return this.toMovieDetails(movieToDelete);
+  }
+
+  private filterBySearch(
+    movies: LocalMovieRecord[],
+    search?: string,
+  ): LocalMovieRecord[] {
+    if (!search) return movies;
+    const lowerCaseSearch = search.toLowerCase();
+
+    return movies.filter((movie) =>
+      movie.title.toLowerCase().includes(lowerCaseSearch),
+    );
+  }
+
+  private filterByGenre(
+    movies: LocalMovieRecord[],
+    genre?: string | string[],
+  ): LocalMovieRecord[] {
+    if (!genre || !genre.length) return movies;
+
+    const genreFilter = typeof genre === 'string' ? [genre] : genre;
 
     return movies.filter((movie) =>
       genreFilter.some((genre) =>
@@ -74,68 +142,67 @@ export class MoviesService {
   }
 
   private sortByField(
-    movies: Movie[],
-    sortBy: string,
-    sortOrder: 'asc' | 'desc',
-  ): Movie[] {
-    if (!sortBy) return movies;
+    movies: LocalMovieRecord[],
+    sort?: 'title' | 'releaseDate' | 'rating',
+    sortOrder: 'asc' | 'desc' = 'asc',
+  ): LocalMovieRecord[] {
+    if (!sort) return movies;
+
+    const sortFieldByContractField = {
+      title: 'title',
+      releaseDate: 'release_date',
+      rating: 'vote_average',
+    } satisfies Record<string, keyof LocalMovieRecord>;
+
+    const sortField = sortFieldByContractField[sort];
 
     return movies.sort((a, b) => {
       if (sortOrder === 'desc') {
-        return a[sortBy] > b[sortBy] ? -1 : 1;
-      } else {
-        return a[sortBy] > b[sortBy] ? 1 : -1;
+        return a[sortField] > b[sortField] ? -1 : 1;
       }
+
+      return a[sortField] > b[sortField] ? 1 : -1;
     });
   }
 
-  private paginate(movies: Movie[], offset?: number, limit?: number): Movie[] {
-    const currentOffset = offset !== undefined ? offset : 0;
-    const currentLimit = limit !== undefined ? limit : 10;
-
-    return movies.slice(currentOffset, currentOffset + currentLimit);
+  private paginate(
+    movies: LocalMovieRecord[],
+    offset: number,
+    limit: number,
+  ): LocalMovieRecord[] {
+    return movies.slice(offset, offset + limit);
   }
 
-  public findOne(id: number): Movie {
-    return this.movies.find((movie) => movie.id === id);
+  private toMovieSummary(movie: LocalMovieRecord): MovieSummary {
+    return {
+      id: movie.id,
+      title: movie.title,
+      releaseDate: movie.release_date,
+      posterUrl: movie.poster_path,
+      genres: movie.genres,
+    };
   }
 
-  public async create(movie: Movie): Promise<void> {
-    const movieInstance = plainToInstance(Movie, movie);
-    const errors = await validate(movieInstance);
-
-    if (errors.length > 0) {
-      throw new Error('Validation failed!');
-    }
-
-    const newMovie = { id: Date.now(), ...movieInstance };
-    this.movies.push(newMovie);
-    this.saveMoviesToFile();
+  private toMovieDetails(movie: LocalMovieRecord): MovieDetails {
+    return {
+      ...this.toMovieSummary(movie),
+      rating: movie.vote_average ?? 0,
+      runtimeMinutes: movie.runtime,
+      description: movie.overview,
+    };
   }
 
-  public update(id: number, movie: Movie): Promise<Movie> {
-    const index = this.movies.findIndex((m) => m.id === id);
-
-    if (index === -1) {
-      throw new NotFoundException(`Movie with ID ${id} not found`);
-    }
-
-    const updatedMovie = { ...this.movies[index], ...movie };
-    this.movies[index] = updatedMovie;
-
-    this.saveMoviesToFile();
-
-    return Promise.resolve(updatedMovie);
-  }
-
-  public delete(id: number): Movie | null {
-    const movieToDelete = this.movies.find((movie) => movie.id === id);
-    if (!movieToDelete) {
-      return null;
-    }
-    this.movies = this.movies.filter((movie) => movie.id !== id);
-    this.saveMoviesToFile();
-    return movieToDelete;
+  private toLocalMovieRecord(movie: MovieMutationPayload): LocalMovieRecord {
+    return {
+      id: movie.id,
+      title: movie.title,
+      release_date: movie.releaseDate,
+      poster_path: movie.posterUrl,
+      overview: movie.description,
+      runtime: movie.runtimeMinutes,
+      genres: movie.genres,
+      vote_average: movie.rating,
+    };
   }
 
   private saveMoviesToFile(): void {
