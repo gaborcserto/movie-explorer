@@ -80,6 +80,14 @@ describe('MoviesController', () => {
     });
   });
 
+  it('throws bad request for a non-numeric movie id', async () => {
+    await expect(controller.getMovie('abc')).rejects.toMatchObject({
+      status: HttpStatus.BAD_REQUEST,
+      message: 'ID must be a number',
+    });
+    expect(service.findOne).not.toHaveBeenCalled();
+  });
+
   it('creates a movie through the service', async () => {
     service.create.mockResolvedValue(undefined);
 
@@ -116,11 +124,31 @@ describe('MoviesController', () => {
     expect(service.update).toHaveBeenCalledWith(1, movieMutation);
   });
 
+  it('throws not found when updating a missing movie', async () => {
+    service.update.mockResolvedValue(undefined as unknown as MovieDetails);
+
+    await expect(
+      controller.updateMovie(999, movieMutation),
+    ).rejects.toMatchObject({
+      status: HttpStatus.NOT_FOUND,
+      message: 'Movie not found',
+    });
+  });
+
   it('deletes an existing movie', async () => {
     service.delete.mockResolvedValue(movie);
 
     await expect(controller.deleteMovie('1')).resolves.toBeUndefined();
     expect(service.delete).toHaveBeenCalledWith(1);
+  });
+
+  it('throws not found when deleting a missing movie', async () => {
+    service.delete.mockResolvedValue(undefined as unknown as MovieDetails);
+
+    await expect(controller.deleteMovie('999')).rejects.toMatchObject({
+      status: HttpStatus.NOT_FOUND,
+      message: 'Movie not found',
+    });
   });
 
   it('throws bad request for a non-numeric delete id', async () => {

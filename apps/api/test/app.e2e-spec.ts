@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { MOVIE_PROVIDER } from './../src/movies/movie-provider';
@@ -15,18 +15,8 @@ const movies = [
 ];
 
 const movieProvider = {
-  findAll: jest.fn().mockResolvedValue({
-    movies,
-    total: 1,
-    offset: 0,
-    limit: 10,
-  }),
-  findOne: jest.fn().mockResolvedValue({
-    ...movies[0],
-    rating: 7.7,
-    runtimeMinutes: 108,
-    description: 'Determined to prove herself, Officer Judy Hopps...',
-  }),
+  findAll: jest.fn(),
+  findOne: jest.fn(),
 };
 
 describe('AppController (e2e)', () => {
@@ -41,11 +31,27 @@ describe('AppController (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ transform: true }));
     await app.init();
   });
 
   afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(() => {
+    movieProvider.findAll.mockResolvedValue({
+      movies,
+      total: 1,
+      offset: 0,
+      limit: 10,
+    });
+    movieProvider.findOne.mockResolvedValue({
+      ...movies[0],
+      rating: 7.7,
+      runtimeMinutes: 108,
+      description: 'Determined to prove herself, Officer Judy Hopps...',
+    });
   });
 
   it('/movies (GET)', () => {
@@ -123,6 +129,48 @@ describe('AppController (e2e)', () => {
           limit: 1,
         });
         expect(response.body.total).toBeGreaterThan(0);
+      });
+  });
+
+  it('/movies (GET) rejects invalid query parameters', () => {
+    return request(app.getHttpServer())
+      .get('/movies')
+      .query({ sort: 'popularity' })
+      .expect(400);
+  });
+
+  it('/movies/:id (GET) returns 404 when the provider cannot find the movie', () => {
+    movieProvider.findOne.mockResolvedValueOnce(undefined);
+
+    return request(app.getHttpServer())
+      .get('/movies/999')
+      .expect(404)
+      .expect((response) => {
+        expect(response.body.message).toBe('Movie not found');
+      });
+  });
+
+  it('/movies/:id (GET) rejects non-numeric IDs', () => {
+    return request(app.getHttpServer()).get('/movies/not-a-number').expect(400);
+  });
+
+  it('/movies (POST) reports read-only provider behavior', () => {
+    return request(app.getHttpServer())
+      .post('/movies')
+      .send({
+        title: 'New Movie',
+        releaseDate: '2024-01-01',
+        posterUrl: 'https://example.com/posters/new-movie.jpg',
+        genres: ['Drama'],
+        rating: 7,
+        runtimeMinutes: 100,
+        description: 'New movie overview',
+      })
+      .expect(501)
+      .expect((response) => {
+        expect(response.body.message).toBe(
+          'Movie mutations are not supported by the configured movie provider',
+        );
       });
   });
 });

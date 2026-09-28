@@ -1,5 +1,6 @@
 import { BadGatewayException } from '@nestjs/common';
 import { TmdbMovieProvider } from './tmdb-movie.provider';
+import type { TmdbMovieListItem } from './tmdb.types';
 
 const config = {
   accessToken: 'test-token',
@@ -134,6 +135,46 @@ describe('TmdbMovieProvider', () => {
     expect(fetchMock).toHaveBeenCalledTimes(6);
   });
 
+  it('sorts combined search and genre results locally when TMDB cannot filter both', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(genreResponse))
+      .mockResolvedValueOnce(
+        moviePage(1, 1, [
+          movieListItem(1, [18], { vote_average: 6 }),
+          movieListItem(2, [18], { vote_average: 9 }),
+          movieListItem(3, [35], { vote_average: 10 }),
+        ]),
+      );
+
+    const provider = new TmdbMovieProvider(config);
+
+    await expect(
+      provider.findAll({
+        search: 'Alpha',
+        genre: 'Drama',
+        sort: 'rating',
+        sortOrder: 'desc',
+      }),
+    ).resolves.toMatchObject({
+      movies: [{ id: 2 }, { id: 1 }],
+      total: 2,
+    });
+  });
+
+  it('returns an empty list without a discover request when the requested genre is unknown', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(genreResponse));
+
+    const provider = new TmdbMovieProvider(config);
+
+    await expect(provider.findAll({ genre: 'Noir' })).resolves.toEqual({
+      movies: [],
+      total: 0,
+      offset: 0,
+      limit: 10,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('returns undefined when TMDB returns 404 for details', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: false,
@@ -169,6 +210,21 @@ describe('TmdbMovieProvider', () => {
       name: BadGatewayException.name,
     });
   });
+
+  it('throws a generic gateway error when TMDB returns invalid JSON', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockRejectedValue(new Error('invalid json')),
+    });
+
+    const provider = new TmdbMovieProvider(config);
+
+    await expect(provider.findOne(1)).rejects.toMatchObject({
+      message: 'Movie provider response was invalid',
+      name: BadGatewayException.name,
+    });
+  });
 });
 
 function jsonResponse(body: unknown): Response {
@@ -192,7 +248,11 @@ function moviePage(
   });
 }
 
-function movieListItem(id: number, genreIds: number[]) {
+function movieListItem(
+  id: number,
+  genreIds: number[],
+  overrides: Partial<TmdbMovieListItem> = {},
+): TmdbMovieListItem {
   return {
     id,
     title: `Alpha ${id}`,
@@ -201,5 +261,6 @@ function movieListItem(id: number, genreIds: number[]) {
     genre_ids: genreIds,
     vote_average: 8,
     overview: `Alpha ${id} overview`,
+    ...overrides,
   };
 }
