@@ -5,6 +5,16 @@ frontend presents searchable, filterable movie results and movie details; the
 backend provides the application API and integrates with The Movie Database
 (TMDB) for movie data and poster images.
 
+## Screenshots
+
+### Home
+
+![Movie Explorer home page](docs/screenshots/home.png)
+
+### Movie Details
+
+![Movie Explorer movie details page](docs/screenshots/details.png)
+
 ## Architecture
 
 This repository is an npm workspace monorepo orchestrated by Turborepo:
