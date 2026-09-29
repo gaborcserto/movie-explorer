@@ -77,6 +77,68 @@ describe('TmdbMovieProvider', () => {
     );
   });
 
+  it('uses the total from the active unfiltered discovery request', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        moviePage(1, 500, [movieListItem(1, [18])], 20_001),
+      )
+      .mockResolvedValueOnce(jsonResponse(genreResponse));
+
+    const provider = new TmdbMovieProvider(config);
+
+    await expect(
+      provider.findAll({ sort: 'popularity', sortOrder: 'desc' }),
+    ).resolves.toMatchObject({ total: 20_001 });
+  });
+
+  it('uses the total from the active genre-filtered discovery request', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(genreResponse))
+      .mockResolvedValueOnce(moviePage(1, 42, [movieListItem(1, [18])], 837));
+
+    const provider = new TmdbMovieProvider(config);
+
+    await expect(
+      provider.findAll({
+        genre: 'Drama',
+        sort: 'popularity',
+        sortOrder: 'desc',
+      }),
+    ).resolves.toMatchObject({ total: 837 });
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        pathname: '/3/discover/movie',
+        search: expect.stringContaining('with_genres=18'),
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it('uses the total from the active search request', async () => {
+    fetchMock
+      .mockResolvedValueOnce(moviePage(1, 7, [movieListItem(1, [18])], 126))
+      .mockResolvedValueOnce(jsonResponse(genreResponse));
+
+    const provider = new TmdbMovieProvider(config);
+
+    await expect(provider.findAll({ search: 'Alpha' })).resolves.toMatchObject({
+      total: 126,
+    });
+  });
+
+  it('keeps the matching total when sorting discovery results by rating', async () => {
+    fetchMock
+      .mockResolvedValueOnce(moviePage(1, 42, [movieListItem(1, [18])], 837))
+      .mockResolvedValueOnce(jsonResponse(genreResponse));
+
+    const provider = new TmdbMovieProvider(config);
+
+    await expect(
+      provider.findAll({ sort: 'rating', sortOrder: 'desc' }),
+    ).resolves.toMatchObject({ total: 837 });
+  });
+
   it('maps TMDB details to the public movie details contract', async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({
@@ -126,6 +188,8 @@ describe('TmdbMovieProvider', () => {
     ['title', 'desc', 'title.desc'],
     ['releaseDate', 'asc', 'primary_release_date.asc'],
     ['releaseDate', 'desc', 'primary_release_date.desc'],
+    ['rating', 'asc', 'vote_average.asc'],
+    ['rating', 'desc', 'vote_average.desc'],
   ] as const)(
     'maps %s %s sorting to TMDB discovery',
     async (sort, sortOrder, tmdbSort) => {
@@ -334,12 +398,13 @@ function moviePage(
   page: number,
   totalPages: number,
   results: ReturnType<typeof movieListItem>[],
+  totalResults = totalPages,
 ): Response {
   return jsonResponse({
     page,
     results,
     total_pages: totalPages,
-    total_results: totalPages,
+    total_results: totalResults,
   });
 }
 

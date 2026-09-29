@@ -85,6 +85,8 @@ describe('API functions', () => {
     ['title', 'desc', 'sort=title&sortOrder=desc'],
     ['releaseDate', 'asc', 'sort=releaseDate&sortOrder=asc'],
     ['releaseDate', 'desc', 'sort=releaseDate&sortOrder=desc'],
+    ['rating', 'asc', 'sort=rating&sortOrder=asc'],
+    ['rating', 'desc', 'sort=rating&sortOrder=desc'],
   ])('maps %s %s sorting explicitly', async (sort, sortOrder, query) => {
     fetchMock.mockResolvedValue(response(mockMoviesData));
 

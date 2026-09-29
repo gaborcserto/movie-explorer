@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { useParams as originalUseParams } from 'react-router-dom';
 import type { MovieDetails } from '@movie-explorer/contracts';
 import Details from './details';
-import DetailsContent from './detailsContent';
+import DetailsContent, { DetailsLowerContent } from './detailsContent';
 import {
   getMovie as originalGetMovie,
   isNotFoundError as originalIsNotFoundError,
@@ -89,6 +89,45 @@ describe('<Details />', () => {
     expect(screen.queryByRole('heading', { name: 'Overview' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Credits' })).toBeNull();
     expect(screen.queryByLabelText(/rating/i)).toBeNull();
+  });
+
+  it('uses thumbnails in the photo grid and full images in lightbox navigation', async () => {
+    const user = userEvent.setup();
+    render(
+      <DetailsLowerContent
+        movieData={{
+          ...mockData,
+          photos: [
+            {
+              thumbnailUrl: '/first-thumbnail.jpg',
+              fullUrl: '/first-original.jpg',
+            },
+            {
+              thumbnailUrl: '/second-thumbnail.jpg',
+              fullUrl: '/second-original.jpg',
+            },
+          ],
+        }}
+      />
+    );
+
+    const firstThumbnail = screen.getByRole('img', {
+      name: 'Sample Movie still 1',
+    });
+    expect(firstThumbnail).toHaveAttribute('src', '/first-thumbnail.jpg');
+    expect(document.querySelector('img[src="/first-original.jpg"]')).toBeNull();
+
+    await user.click(firstThumbnail);
+    expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
+      'src',
+      '/first-original.jpg'
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Next photo' }));
+    expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
+      'src',
+      '/second-original.jpg'
+    );
   });
 
   it('handles errors and shows an error message when fetching fails', async () => {

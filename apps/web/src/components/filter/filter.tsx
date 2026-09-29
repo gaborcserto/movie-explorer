@@ -12,6 +12,7 @@ import {
 function getSelectedOption(sortField?: MovieSortField): string {
   if (sortField === 'releaseDate') return 'Release Date';
   if (sortField === 'title') return 'Title';
+  if (sortField === 'rating') return 'Rating';
   return 'Popularity';
 }
 

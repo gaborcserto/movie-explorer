@@ -109,19 +109,31 @@ function List() {
 
   const moviesList = moviesData?.movies ?? [];
   const movieTotal = moviesData?.total ?? 0;
+  const genre = filter ? capitalizeFirstLetter(filter) : null;
+  const hasActiveContext = Boolean(genre || searchQuery);
 
   return (
     <section className="list__container container">
-      <h2 className="list__number" aria-live="polite">
-        <strong>{movieTotal}</strong> movies found
-        {filter && (
-          <span>
-            {' '}
-            in genre:{' '}
-            <strong className="genre">{capitalizeFirstLetter(filter)}</strong>
-          </span>
+      <div className="list__summary" aria-live="polite">
+        <h2 className="list__number">
+          <strong>{movieTotal}</strong> movies found
+        </h2>
+        {hasActiveContext && (
+          <p className="list__context">
+            {genre && (
+              <span>
+                Showing: <strong>{genre}</strong>
+              </span>
+            )}
+            {genre && searchQuery && <span aria-hidden="true">; </span>}
+            {searchQuery && (
+              <span>
+                Search: <strong>&quot;{searchQuery}&quot;</strong>
+              </span>
+            )}
+          </p>
         )}
-      </h2>
+      </div>
       {moviesList.length === 0 && (
         <div className="list__state" role="status">
           {getEmptyMessage()}

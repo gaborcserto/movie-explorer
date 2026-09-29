@@ -134,7 +134,7 @@ export class MovieDetails extends MovieSummary implements MovieDetailsContract {
 
   @ApiPropertyOptional({
     type: () => [Object],
-    description: 'Movie still image URLs',
+    description: 'Movie still thumbnail and full-resolution image URLs',
   })
   photos?: MoviePhoto[];
 

@@ -6,14 +6,24 @@
     padding: 28px 60px 48px;
   }
 
+  &__summary {
+    padding-bottom: 24px;
+  }
+
   &__number {
     font-size: 20px;
     line-height: 24px;
-    padding-bottom: 24px;
+  }
 
-    .genre {
+  &__context {
+    color: rgb(255 255 255 / 0.65);
+    font-size: 14px;
+    line-height: 20px;
+    margin-top: 3px;
+
+    strong {
       color: $red-1;
-      text-transform: capitalize;
+      font-weight: 500;
     }
   }
 

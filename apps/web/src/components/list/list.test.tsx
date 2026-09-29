@@ -1,6 +1,6 @@
 import { render, waitFor, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import List from './list';
 import { getMovies as originalGetMovies } from '../../util/apiUtils';
 
@@ -16,6 +16,13 @@ const renderList = (initialEntry = '/search') => {
     </MemoryRouter>
   );
 };
+
+const emptyResponse = (total: number) => ({
+  movies: [],
+  total,
+  offset: 0,
+  limit: 10,
+});
 
 describe('<List />', () => {
   beforeEach(() => {
@@ -72,13 +79,110 @@ describe('<List />', () => {
 
     expect(screen.getByText('Movie 1')).toBeInTheDocument();
     expect(screen.getByText('Movie 2')).toBeInTheDocument();
-    expect(screen.getByText(/in genre:/i)).toHaveTextContent('Crime');
+    expect(screen.getByText(/showing:/i)).toHaveTextContent('Crime');
+    expect(screen.getByText(/search:/i)).toHaveTextContent('"Movie"');
     expect(getMovies).toHaveBeenCalledWith({
       sort: null,
       sortOrder: null,
       search: 'Movie',
       genres: 'crime',
     });
+  });
+
+  test('it displays the unfiltered result total', async () => {
+    getMovies.mockResolvedValue(emptyResponse(20_001));
+
+    renderList();
+
+    expect(
+      await screen.findByRole('heading', { name: '20001 movies found' })
+    ).toBeInTheDocument();
+  });
+
+  test('it displays the genre-filtered result total', async () => {
+    getMovies.mockResolvedValue(emptyResponse(837));
+
+    renderList('/search?filter=documentary');
+
+    expect(
+      await screen.findByRole('heading', { name: '837 movies found' })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/showing:/i)).toHaveTextContent(
+      'Showing: Documentary'
+    );
+  });
+
+  test('it displays the search result total', async () => {
+    getMovies.mockResolvedValue(emptyResponse(126));
+
+    renderList('/search/Alpha');
+
+    expect(
+      await screen.findByRole('heading', { name: '126 movies found' })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/search:/i)).toHaveTextContent('Search: "Alpha"');
+  });
+
+  test('it updates the total when a genre filter changes and is cleared', async () => {
+    const user = userEvent.setup();
+    getMovies
+      .mockResolvedValueOnce(emptyResponse(20_001))
+      .mockResolvedValueOnce(emptyResponse(837))
+      .mockResolvedValueOnce(emptyResponse(20_001));
+
+    render(
+      <MemoryRouter initialEntries={['/search']}>
+        <Link to="?filter=documentary">Documentary</Link>
+        <Link to="/search">All</Link>
+        <Routes>
+          <Route path="/search/:searchQuery?" element={<List />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: '20001 movies found' })
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('link', { name: 'Documentary' }));
+    expect(
+      await screen.findByRole('heading', { name: '837 movies found' })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/showing:/i)).toHaveTextContent(
+      'Showing: Documentary'
+    );
+
+    await user.click(screen.getByRole('link', { name: 'All' }));
+    expect(
+      await screen.findByRole('heading', { name: '20001 movies found' })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/showing:/i)).toBeNull();
+  });
+
+  test('it updates and clears the active search context', async () => {
+    const user = userEvent.setup();
+    getMovies
+      .mockResolvedValueOnce(emptyResponse(126))
+      .mockResolvedValueOnce(emptyResponse(20_001));
+
+    render(
+      <MemoryRouter initialEntries={['/search/Alien']}>
+        <Link to="/search">Clear search</Link>
+        <Routes>
+          <Route path="/search/:searchQuery?" element={<List />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText(/search:/i)).toHaveTextContent(
+      'Search: "Alien"'
+    );
+
+    await user.click(screen.getByRole('link', { name: 'Clear search' }));
+    expect(
+      await screen.findByRole('heading', { name: '20001 movies found' })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/search:/i)).toBeNull();
   });
 
   test('it displays an error message when the fetch fails', async () => {

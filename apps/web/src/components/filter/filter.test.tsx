@@ -96,6 +96,23 @@ describe('Filter component', () => {
     );
   });
 
+  it('supports Rating sorting in both directions', async () => {
+    renderFilter();
+
+    await selectSort('Rating');
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '?sorting=rating&order=desc'
+    );
+    expect(
+      screen.getByRole('button', { name: 'Sort field' })
+    ).toHaveTextContent('Rating');
+
+    await selectDirection('Ascending');
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '?sorting=rating&order=asc'
+    );
+  });
+
   it('preserves the current valid direction when changing sort field', async () => {
     renderFilter('/?sorting=popularity&order=asc');
 
@@ -109,7 +126,7 @@ describe('Filter component', () => {
     ).toHaveTextContent('Ascending');
   });
 
-  it.each([['popularity'], ['releaseDate'], ['title']])(
+  it.each([['popularity'], ['releaseDate'], ['title'], ['rating']])(
     'keeps direction visible for %s sorting',
     (sort) => {
       renderFilter(`/?sorting=${sort}&order=desc`);

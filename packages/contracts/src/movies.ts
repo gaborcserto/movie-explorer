@@ -31,7 +31,8 @@ export interface MovieCastMember {
 }
 
 export interface MoviePhoto {
-  imageUrl: string;
+  thumbnailUrl: string;
+  fullUrl: string;
   alt?: string;
 }
 

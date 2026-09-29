@@ -71,6 +71,29 @@ describe('TmdbMovieMapper', () => {
     });
   });
 
+  it('maps separate optimized and original photo URLs from the same image path', () => {
+    const movie = mapper.toMovieDetails({
+      id: 4,
+      title: 'Photos',
+      release_date: '2024-01-01',
+      poster_path: null,
+      genres: [],
+      vote_average: 7,
+      runtime: 90,
+      overview: '',
+      images: {
+        backdrops: [{ file_path: '/backdrop.jpg', width: 1920, height: 1080 }],
+      },
+    });
+
+    expect(movie.photos).toEqual([
+      {
+        thumbnailUrl: 'https://image.tmdb.org/t/p/w500/backdrop.jpg',
+        fullUrl: 'https://image.tmdb.org/t/p/original/backdrop.jpg',
+      },
+    ]);
+  });
+
   it('omits missing optional detail values and keeps an empty cast', () => {
     expect(
       mapper.toMovieDetails({

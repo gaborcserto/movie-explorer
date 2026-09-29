@@ -96,7 +96,9 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
   const visibleCast: MovieCastMember[] = castMembers.length
     ? castMembers
     : cast.map((name) => ({ name }));
-  const visiblePhotos = photos.filter((photo) => photo.imageUrl);
+  const visiblePhotos = photos.filter(
+    (photo) => photo.thumbnailUrl && photo.fullUrl
+  );
 
   useEffect(() => {
     if (selectedPhoto === null) return undefined;
@@ -166,11 +168,11 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
                     <button
                       type="button"
                       className="photo-tile"
-                      key={photo.imageUrl}
+                      key={photo.thumbnailUrl}
                       onClick={() => setSelectedPhoto(index)}
                     >
                       <img
-                        src={photo.imageUrl}
+                        src={photo.thumbnailUrl}
                         alt={photo.alt ?? `${title} still ${index + 1}`}
                         loading="lazy"
                       />
@@ -249,7 +251,7 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
               </>
             )}
             <img
-              src={visiblePhotos[selectedPhoto].imageUrl}
+              src={visiblePhotos[selectedPhoto].fullUrl}
               alt={
                 visiblePhotos[selectedPhoto].alt ??
                 `${title} still ${selectedPhoto + 1}`

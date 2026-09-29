@@ -8,7 +8,13 @@ import type {
 const MAIN_CAST_LIMIT = 6;
 
 export class TmdbMovieMapper {
-  constructor(private readonly imageBaseUrl: string) {}
+  private readonly originalImageBaseUrl: string;
+
+  constructor(private readonly imageBaseUrl: string) {
+    const imageBaseUrlParts = imageBaseUrl.split('/');
+    imageBaseUrlParts[imageBaseUrlParts.length - 1] = 'original';
+    this.originalImageBaseUrl = imageBaseUrlParts.join('/');
+  }
 
   public toMovieSummary(
     movie: TmdbMovieListItem,
@@ -45,8 +51,11 @@ export class TmdbMovieMapper {
     const cast = castMembers.map((credit) => credit.name);
     const photos = (movie.images?.backdrops ?? [])
       .slice(0, 12)
-      .map((image) => ({ imageUrl: this.toImageUrl(image.file_path) }))
-      .filter((image) => image.imageUrl);
+      .map((image) => ({
+        thumbnailUrl: this.toImageUrl(image.file_path),
+        fullUrl: this.toOriginalImageUrl(image.file_path),
+      }))
+      .filter((image) => image.thumbnailUrl && image.fullUrl);
     const videos = (movie.videos?.results ?? [])
       .filter((video) => video.site === 'YouTube' && video.key)
       .slice(0, 6)
@@ -95,5 +104,9 @@ export class TmdbMovieMapper {
 
   private toImageUrl(path: string | null): string {
     return path ? `${this.imageBaseUrl}${path}` : '';
+  }
+
+  private toOriginalImageUrl(path: string | null): string {
+    return path ? `${this.originalImageBaseUrl}${path}` : '';
   }
 }

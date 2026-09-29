@@ -7,8 +7,7 @@
   position: relative;
   transition:
     transform 0.24s ease,
-    filter 0.24s ease,
-    box-shadow 0.24s ease;
+    filter 0.24s ease;
   transform-origin: center top;
 
   &:focus-within {
@@ -89,6 +88,7 @@
     background-clip: padding-box;
     overflow: hidden;
     position: relative;
+    transition: box-shadow 0.24s ease;
   }
 
   &__image {
@@ -111,14 +111,25 @@
       filter: saturate(1.2);
       transform: scale(1.06);
       z-index: 3;
+    }
+
+    &:hover .card__image__wrapper {
       box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
     }
+  }
+
+  &:focus-within .card__image__wrapper {
+    box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .card {
     transition: none;
+
+    &__image__wrapper {
+      transition: none;
+    }
 
     @media (hover: hover) and (pointer: fine) {
       &:hover {
