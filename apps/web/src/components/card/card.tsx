@@ -32,7 +32,7 @@ function Card({ movie }: CardProps) {
   ));
 
   return (
-    <div className="card">
+    <article className="card">
       <div className="card__image__wrapper">
         <MovieImage src={posterUrl} alt={title} className="card__image" />
       </div>
@@ -52,7 +52,7 @@ function Card({ movie }: CardProps) {
           <p className="card__date">{releaseYear}</p>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 

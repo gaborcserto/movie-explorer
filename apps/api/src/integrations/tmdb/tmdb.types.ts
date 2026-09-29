@@ -27,6 +27,8 @@ export interface TmdbGenreListResponse {
 
 export interface TmdbMovieDetails {
   credits?: TmdbCredits;
+  images?: TmdbImages;
+  videos?: TmdbVideos;
   genres: TmdbGenre[];
   id: number;
   overview: string;
@@ -35,6 +37,7 @@ export interface TmdbMovieDetails {
   runtime: number | null;
   title: string;
   vote_average: number;
+  backdrop_path?: string | null;
 }
 
 export interface TmdbCredits {
@@ -45,9 +48,33 @@ export interface TmdbCredits {
 export interface TmdbCastMember {
   name: string;
   order: number;
+  character?: string;
+  profile_path?: string | null;
 }
 
 export interface TmdbCrewMember {
   job: string;
   name: string;
+}
+
+export interface TmdbImages {
+  backdrops: TmdbImage[];
+}
+
+export interface TmdbImage {
+  file_path: string;
+  width: number;
+  height: number;
+}
+
+export interface TmdbVideos {
+  results: TmdbVideo[];
+}
+
+export interface TmdbVideo {
+  key: string;
+  name: string;
+  site: string;
+  type: string;
+  official: boolean;
 }

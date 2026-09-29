@@ -69,7 +69,7 @@ export class TmdbMovieProvider implements MovieProvider {
 
   public async findOne(id: number): Promise<MovieDetails | undefined> {
     const movie = await this.request<TmdbMovieDetails>(`/movie/${id}`, {
-      append_to_response: 'credits',
+      append_to_response: 'credits,images,videos',
     });
 
     return movie ? this.mapper.toMovieDetails(movie) : undefined;

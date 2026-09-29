@@ -7,4 +7,7 @@ export type {
   MovieSummary,
   MovieSortField,
   MovieSortOrder,
+  MovieCastMember,
+  MoviePhoto,
+  MovieVideo,
 } from './movies';

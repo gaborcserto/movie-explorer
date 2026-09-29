@@ -33,25 +33,52 @@ export class TmdbMovieMapper {
     const director = directors?.length
       ? [...new Set(directors)].join(', ')
       : undefined;
-    const cast = [...(movie.credits?.cast ?? [])]
+    const castMembers = [...(movie.credits?.cast ?? [])]
       .sort((first, second) => first.order - second.order)
-      .map((credit) => credit.name.trim())
-      .filter(Boolean)
-      .slice(0, MAIN_CAST_LIMIT);
+      .filter((credit) => credit.name.trim())
+      .slice(0, MAIN_CAST_LIMIT)
+      .map((credit) => ({
+        name: credit.name.trim(),
+        character: credit.character?.trim() || undefined,
+        profileUrl: this.toImageUrl(credit.profile_path),
+      }));
+    const cast = castMembers.map((credit) => credit.name);
+    const photos = (movie.images?.backdrops ?? [])
+      .slice(0, 12)
+      .map((image) => ({ imageUrl: this.toImageUrl(image.file_path) }))
+      .filter((image) => image.imageUrl);
+    const videos = (movie.videos?.results ?? [])
+      .filter((video) => video.site === 'YouTube' && video.key)
+      .slice(0, 6)
+      .map((video) => ({
+        name: video.name,
+        url: `https://www.youtube.com/watch?v=${video.key}`,
+        thumbnailUrl: `https://img.youtube.com/vi/${video.key}/hqdefault.jpg`,
+      }));
 
-    return {
+    const details: MovieDetails = {
       id: movie.id,
       title: movie.title,
       releaseDate: movie.release_date,
       posterUrl: this.toPosterUrl(movie.poster_path),
       genres: movie.genres.map((genre) => genre.name),
       cast,
-      description: movie.overview.trim() || undefined,
-      director,
-      rating: movie.vote_average > 0 ? movie.vote_average : undefined,
-      runtimeMinutes:
-        movie.runtime && movie.runtime > 0 ? movie.runtime : undefined,
     };
+
+    if (castMembers.length && castMembers.some((member) => member.character || member.profileUrl)) {
+      details.castMembers = castMembers;
+    }
+    const description = movie.overview.trim();
+    const backdropUrl = this.toImageUrl(movie.backdrop_path);
+    if (description) details.description = description;
+    if (director) details.director = director;
+    if (movie.vote_average > 0) details.rating = movie.vote_average;
+    if (movie.runtime && movie.runtime > 0) details.runtimeMinutes = movie.runtime;
+    if (backdropUrl) details.backdropUrl = backdropUrl;
+    if (photos.length) details.photos = photos;
+    if (videos.length) details.videos = videos;
+
+    return details;
   }
 
   private toPosterUrl(posterPath: string | null): string {
@@ -59,6 +86,10 @@ export class TmdbMovieMapper {
       return '';
     }
 
-    return `${this.imageBaseUrl}${posterPath}`;
+    return this.toImageUrl(posterPath);
+  }
+
+  private toImageUrl(path: string | null): string {
+    return path ? `${this.imageBaseUrl}${path}` : '';
   }
 }

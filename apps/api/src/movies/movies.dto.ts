@@ -9,6 +9,7 @@ import type {
   MovieSortField,
   MovieSortOrder,
 } from '@movie-explorer/contracts';
+import type { MovieCastMember, MoviePhoto, MovieVideo } from '@movie-explorer/contracts';
 
 const MOVIE_SORT_FIELDS = [
   'popularity',
@@ -98,6 +99,9 @@ export class MovieDetails extends MovieSummary implements MovieDetailsContract {
   })
   cast: string[];
 
+  @ApiPropertyOptional({ description: 'Visual cast entries with roles and profile images' })
+  castMembers?: MovieCastMember[];
+
   @ApiPropertyOptional({ description: 'Movie rating', example: 7.9 })
   rating?: number;
 
@@ -118,6 +122,15 @@ export class MovieDetails extends MovieSummary implements MovieDetailsContract {
     example: 'Mia, an aspiring actress, serves lattes to movie stars...',
   })
   description?: string;
+
+  @ApiPropertyOptional({ description: 'Backdrop image URL' })
+  backdropUrl?: string;
+
+  @ApiPropertyOptional({ type: () => [Object], description: 'Movie still image URLs' })
+  photos?: MoviePhoto[];
+
+  @ApiPropertyOptional({ type: () => [Object], description: 'External movie video links' })
+  videos?: MovieVideo[];
 }
 
 export class MoviesResponse implements MovieListResponseContract {

@@ -120,6 +120,8 @@
   }
 
   &__rating {
+    background: $red-1;
+    color: $white;
     flex: 0 0 auto;
     font-style: normal;
     font-weight: 300;
@@ -129,7 +131,7 @@
     text-transform: uppercase;
     width: 60px;
     height: 60px;
-    border: 1px solid $white;
+    border: 0;
     border-radius: 30px;
   }
 

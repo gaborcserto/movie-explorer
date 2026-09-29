@@ -24,12 +24,33 @@ export interface MovieSummary {
   genres: string[];
 }
 
+export interface MovieCastMember {
+  name: string;
+  character?: string;
+  profileUrl?: string;
+}
+
+export interface MoviePhoto {
+  imageUrl: string;
+  alt?: string;
+}
+
+export interface MovieVideo {
+  name: string;
+  url: string;
+  thumbnailUrl?: string;
+}
+
 export interface MovieDetails extends MovieSummary {
   cast: string[];
+  castMembers?: MovieCastMember[];
   description?: string;
   director?: string;
   rating?: number;
   runtimeMinutes?: number;
+  backdropUrl?: string;
+  photos?: MoviePhoto[];
+  videos?: MovieVideo[];
 }
 
 export interface MovieListResponse {

@@ -113,7 +113,7 @@ describe('TmdbMovieProvider', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       expect.objectContaining({
         pathname: '/3/movie/1',
-        search: '?language=en-US&append_to_response=credits',
+        search: '?language=en-US&append_to_response=credits%2Cimages%2Cvideos',
       }),
       expect.any(Object),
     );

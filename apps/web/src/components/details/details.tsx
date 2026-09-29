@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect } from 'react';
 import './details.scss';
 import { Link, useParams } from 'react-router-dom';
 import type { MovieDetails } from '@movie-explorer/contracts';
-import DetailsContent from './detailsContent';
+import DetailsContent, { DetailsLowerContent } from './detailsContent';
 import Error from '../../layouts/error';
 import Loading from '../../layouts/loading';
 import { getMovie, isNotFoundError } from '../../util/apiUtils';
@@ -90,23 +90,28 @@ function Details() {
     return null;
   };
 
+  const isLoaded = detailsState === 'success' && movieData;
+
   return (
-    <header
-      className="header header--movie-details"
-      data-testid="details-component"
-    >
-      <div className="movie-details container">
-        <div className="movie-details__top">
-          <Link to="/search" className="movie-details__brand brand">
-            <strong>Movie</strong> Explorer
-          </Link>
-          <Link className="movie-details__btn" type="button" to="/search">
-            search
-          </Link>
+    <>
+      <header
+        className="header header--movie-details"
+        data-testid="details-component"
+      >
+        <div className="movie-details container">
+          <div className="movie-details__top">
+            <Link to="/search" className="movie-details__brand brand">
+              <strong>Movie</strong> Explorer
+            </Link>
+            <Link className="movie-details__btn" type="button" to="/search">
+              search
+            </Link>
+          </div>
+          {renderContent()}
         </div>
-        {renderContent()}
-      </div>
-    </header>
+      </header>
+      {isLoaded && <DetailsLowerContent movieData={movieData} />}
+    </>
   );
 }
 

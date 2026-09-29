@@ -5,6 +5,16 @@
   justify-self: center;
   max-width: 300px;
   position: relative;
+  transition:
+    transform 0.24s ease,
+    filter 0.24s ease,
+    box-shadow 0.24s ease;
+  transform-origin: center top;
+
+  &:focus-within {
+    z-index: 2;
+  }
+
   width: 100%;
 
   &__footer {
@@ -93,6 +103,27 @@
       image-rendering: optimizequality;
       object-fit: cover;
       width: 100%;
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      filter: saturate(1.2);
+      transform: scale(1.06);
+      z-index: 3;
+      box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        transform: none;
+      }
     }
   }
 }
