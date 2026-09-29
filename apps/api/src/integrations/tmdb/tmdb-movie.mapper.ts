@@ -65,7 +65,10 @@ export class TmdbMovieMapper {
       cast,
     };
 
-    if (castMembers.length && castMembers.some((member) => member.character || member.profileUrl)) {
+    if (
+      castMembers.length &&
+      castMembers.some((member) => member.character || member.profileUrl)
+    ) {
       details.castMembers = castMembers;
     }
     const description = movie.overview.trim();
@@ -73,7 +76,8 @@ export class TmdbMovieMapper {
     if (description) details.description = description;
     if (director) details.director = director;
     if (movie.vote_average > 0) details.rating = movie.vote_average;
-    if (movie.runtime && movie.runtime > 0) details.runtimeMinutes = movie.runtime;
+    if (movie.runtime && movie.runtime > 0)
+      details.runtimeMinutes = movie.runtime;
     if (backdropUrl) details.backdropUrl = backdropUrl;
     if (photos.length) details.photos = photos;
     if (videos.length) details.videos = videos;
