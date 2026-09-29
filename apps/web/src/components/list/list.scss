@@ -25,6 +25,17 @@
       color: $red-1;
       font-weight: 500;
     }
+
+    span + span:before {
+      color: rgb(255 255 255 / 0.35);
+      content: ' · ';
+    }
+  }
+
+  &__loaded {
+    color: rgb(255 255 255 / 0.65);
+    font-size: 14px;
+    margin-top: 3px;
   }
 
   &__items {
@@ -67,6 +78,27 @@
 
     p {
       padding-bottom: 20px;
+    }
+  }
+
+  &__more,
+  &__more-error {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    padding-top: 36px;
+  }
+
+  &__more .btn {
+    min-width: 210px;
+  }
+
+  &__more-error {
+    flex-wrap: wrap;
+    gap: 16px;
+
+    .btn {
+      min-width: 140px;
     }
   }
 

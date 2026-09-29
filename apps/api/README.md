@@ -14,6 +14,11 @@ npm run start:dev --workspace @movie-explorer/api
 The API listens on `http://localhost:4000`. OpenAPI documentation generated
 from the NestJS controllers and DTOs is available at `/api-docs`.
 
+`GET /movies` accepts page-based search, genre, release-year, minimum-rating,
+and sort parameters and returns TMDB pagination metadata in the public
+contract. `GET /movies/suggestions` provides compact title suggestions for the
+frontend autocomplete without exposing the TMDB access token.
+
 The workspace provides `build`, `lint`, `typecheck`, `test`, and `test:e2e`
 scripts. Its unit and e2e tests use Jest; the e2e suite uses a mocked provider
 and does not call TMDB.

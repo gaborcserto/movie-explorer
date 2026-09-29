@@ -17,12 +17,14 @@ import {
 import { MoviesService } from './movies.service';
 import {
   GetMoviesQuery,
+  GetMovieSuggestionsQuery,
   MovieDetails as MovieDetailsDto,
   MoviesResponse,
 } from './movies.dto';
 import type {
   MovieDetails,
   MovieListResponse,
+  MovieSuggestionsResponse,
 } from '@movie-explorer/contracts';
 
 @ApiTags('movies')
@@ -41,6 +43,14 @@ export class MoviesController {
     @Query() query: GetMoviesQuery,
   ): Promise<MovieListResponse> {
     return this.moviesService.findAll(query);
+  }
+
+  @Get('suggestions')
+  @ApiOperation({ summary: 'Get compact movie title suggestions' })
+  public async getMovieSuggestions(
+    @Query() query: GetMovieSuggestionsQuery,
+  ): Promise<MovieSuggestionsResponse> {
+    return this.moviesService.findSuggestions(query.query, query.limit ?? 6);
   }
 
   @Get(':id')

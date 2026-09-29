@@ -12,8 +12,9 @@ export interface MovieQueryParams {
   sortOrder?: MovieSortOrder;
   search?: string;
   genre?: string | string[];
-  offset?: number;
-  limit?: number;
+  releaseYear?: number;
+  minimumRating?: number;
+  page?: number;
 }
 
 export interface MovieSummary {
@@ -56,9 +57,20 @@ export interface MovieDetails extends MovieSummary {
 
 export interface MovieListResponse {
   movies: MovieSummary[];
-  total: number;
-  offset: number;
-  limit: number;
+  page: number;
+  totalPages: number;
+  totalResults: number;
 }
 
 export type MovieSearchResponse = MovieListResponse;
+
+export interface MovieSuggestion {
+  id: MovieId;
+  title: string;
+  releaseYear?: number;
+  posterUrl?: string;
+}
+
+export interface MovieSuggestionsResponse {
+  suggestions: MovieSuggestion[];
+}

@@ -30,9 +30,9 @@ const movie: MovieDetails = {
 
 const moviesResponse: MovieListResponse = {
   movies: [movie],
-  total: 1,
-  offset: 0,
-  limit: 10,
+  page: 1,
+  totalPages: 1,
+  totalResults: 1,
 };
 
 const renderApp = (initialEntry = '/search') => {
@@ -73,12 +73,18 @@ describe('<App />', () => {
     );
     await user.click(screen.getByRole('button', { name: /^search$/i }));
 
-    expect(getMovies).toHaveBeenLastCalledWith({
-      sort: null,
-      sortOrder: null,
-      search: 'Inception',
-      genres: null,
-    });
+    expect(getMovies).toHaveBeenLastCalledWith(
+      {
+        sort: null,
+        sortOrder: null,
+        search: 'Inception',
+        genres: null,
+        releaseYear: null,
+        minimumRating: null,
+        page: 1,
+      },
+      expect.any(AbortSignal)
+    );
   });
 
   test('renders movie details for movie routes', async () => {

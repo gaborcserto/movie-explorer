@@ -15,9 +15,9 @@ const moviesResponse: MovieListResponse = {
       genres: ['Drama', 'Comedy'],
     },
   ],
-  total: 1,
-  offset: 0,
-  limit: 10,
+  page: 1,
+  totalPages: 1,
+  totalResults: 1,
 };
 
 const movieDetails: MovieDetails = {
@@ -35,6 +35,7 @@ describe('MoviesService', () => {
   beforeEach(() => {
     movieProvider = {
       findAll: jest.fn(),
+      findSuggestions: jest.fn(),
       findOne: jest.fn(),
     };
     service = new MoviesService(movieProvider);
@@ -46,8 +47,7 @@ describe('MoviesService', () => {
       genre: ['Drama'],
       sort: 'rating' as const,
       sortOrder: 'desc' as const,
-      offset: 0,
-      limit: 10,
+      page: 1,
     };
     movieProvider.findAll.mockResolvedValue(moviesResponse);
 

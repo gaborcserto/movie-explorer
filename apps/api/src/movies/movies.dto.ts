@@ -1,5 +1,15 @@
 import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsIn,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type {
   MovieDetails as MovieDetailsContract,
@@ -56,21 +66,49 @@ export class GetMoviesQuery implements MovieQueryParams {
   @IsString({ each: true })
   genre?: string | string[];
 
-  @ApiPropertyOptional({ description: 'Offset in result array for pagination' })
+  @ApiPropertyOptional({ description: 'Release year', example: 2024 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(0)
-  offset?: number;
+  @Min(1874)
+  @Max(9999)
+  releaseYear?: number;
 
   @ApiPropertyOptional({
-    description: 'Limit amount of items in result array for pagination',
+    description: 'Minimum TMDB user rating',
+    minimum: 0,
+    maximum: 10,
   })
   @IsOptional()
   @Type(() => Number)
-  @IsInt()
+  @IsNumber()
   @Min(0)
-  limit?: number = 10;
+  @Max(10)
+  minimumRating?: number;
+
+  @ApiPropertyOptional({ description: 'TMDB result page', minimum: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  page?: number = 1;
+}
+
+export class GetMovieSuggestionsQuery {
+  @ApiProperty({ description: 'Movie title search value', minLength: 2 })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  query: string;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 10, default: 6 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  limit?: number = 6;
 }
 
 export class MovieSummary implements MovieSummaryContract {
@@ -152,18 +190,14 @@ export class MoviesResponse implements MovieListResponseContract {
   })
   movies: MovieSummary[];
 
-  @ApiProperty({
-    description: 'Total number of matching movies',
-  })
-  total: number;
+  @ApiProperty({ description: 'Current TMDB result page' })
+  page: number;
+
+  @ApiProperty({ description: 'Total number of available TMDB pages' })
+  totalPages: number;
 
   @ApiProperty({
-    description: 'Offset in result array for pagination',
+    description: 'Total number of results in the active TMDB result set',
   })
-  offset: number;
-
-  @ApiProperty({
-    description: 'Limit amount of items in result array for pagination',
-  })
-  limit: number;
+  totalResults: number;
 }

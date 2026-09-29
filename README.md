@@ -30,6 +30,23 @@ responses to application-owned contracts rather than exposing TMDB response
 shapes directly. Frontend tests use Vitest and React Testing Library; backend
 unit and e2e tests use Jest.
 
+## Search and result exploration
+
+Movie results support genre, release-year, and minimum-rating filters, TMDB
+sorting, URL-persisted search state, and incremental **Load more** pagination.
+The search input provides debounced, keyboard-accessible movie suggestions
+through the backend; TMDB credentials never reach the browser.
+
+The movie list API returns `page`, `totalPages`, and `totalResults` alongside
+the application-owned movie summaries. `GET /movies/suggestions` returns a
+small suggestion set for queries of at least two characters.
+
+TMDB's text-search endpoint supports release-year filtering but not genre or
+minimum-rating filtering. For combined text searches, those two filters are
+applied to each fetched TMDB page. The UI therefore labels the TMDB-wide count
+as text-search results and separately reports how many matching movies are
+currently loaded.
+
 ## Prerequisites
 
 - Node.js 24 or newer

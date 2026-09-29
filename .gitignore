@@ -18,3 +18,4 @@ npm-debug.log*
 # Local tooling
 .turbo
 .idea
+/.tmp-phase20-edge/

@@ -19,9 +19,9 @@ const renderList = (initialEntry = '/search') => {
 
 const emptyResponse = (total: number) => ({
   movies: [],
-  total,
-  offset: 0,
-  limit: 10,
+  totalResults: total,
+  page: 1,
+  totalPages: 1,
 });
 
 describe('<List />', () => {
@@ -59,9 +59,9 @@ describe('<List />', () => {
           genres: ['test', 'crime'],
         },
       ],
-      total: 2,
-      offset: 0,
-      limit: 10,
+      totalResults: 2,
+      page: 1,
+      totalPages: 1,
     };
 
     getMovies.mockResolvedValue(mockMovies);
@@ -69,7 +69,7 @@ describe('<List />', () => {
     renderList('/search/Movie?filter=crime&sorting=releaseDate&order=desc');
 
     await waitFor(() => {
-      const h2Element = screen.getByText(/movies found/i);
+      const h2Element = screen.getByText(/text search results/i);
       expect(h2Element).toBeInTheDocument();
 
       const strongElement = document.querySelector('strong');
@@ -79,14 +79,21 @@ describe('<List />', () => {
 
     expect(screen.getByText('Movie 1')).toBeInTheDocument();
     expect(screen.getByText('Movie 2')).toBeInTheDocument();
-    expect(screen.getByText(/showing:/i)).toHaveTextContent('Crime');
+    expect(screen.getByText('2 matching movies loaded')).toBeInTheDocument();
+    expect(screen.getByText(/genre:/i)).toHaveTextContent('Crime');
     expect(screen.getByText(/search:/i)).toHaveTextContent('"Movie"');
-    expect(getMovies).toHaveBeenCalledWith({
-      sort: null,
-      sortOrder: null,
-      search: 'Movie',
-      genres: 'crime',
-    });
+    expect(getMovies).toHaveBeenCalledWith(
+      {
+        sort: null,
+        sortOrder: null,
+        search: 'Movie',
+        genres: 'crime',
+        releaseYear: null,
+        minimumRating: null,
+        page: 1,
+      },
+      expect.any(AbortSignal)
+    );
   });
 
   test('it displays the unfiltered result total', async () => {
@@ -107,9 +114,7 @@ describe('<List />', () => {
     expect(
       await screen.findByRole('heading', { name: '837 movies found' })
     ).toBeInTheDocument();
-    expect(screen.getByText(/showing:/i)).toHaveTextContent(
-      'Showing: Documentary'
-    );
+    expect(screen.getByText(/genre:/i)).toHaveTextContent('Genre: Documentary');
   });
 
   test('it displays the search result total', async () => {
@@ -148,15 +153,13 @@ describe('<List />', () => {
     expect(
       await screen.findByRole('heading', { name: '837 movies found' })
     ).toBeInTheDocument();
-    expect(screen.getByText(/showing:/i)).toHaveTextContent(
-      'Showing: Documentary'
-    );
+    expect(screen.getByText(/genre:/i)).toHaveTextContent('Genre: Documentary');
 
     await user.click(screen.getByRole('link', { name: 'All' }));
     expect(
       await screen.findByRole('heading', { name: '20001 movies found' })
     ).toBeInTheDocument();
-    expect(screen.queryByText(/showing:/i)).toBeNull();
+    expect(screen.queryByText(/genre:/i)).toBeNull();
   });
 
   test('it updates and clears the active search context', async () => {
@@ -208,9 +211,9 @@ describe('<List />', () => {
       .mockRejectedValueOnce(new Error('Failed to fetch movies'))
       .mockResolvedValueOnce({
         movies: [],
-        total: 0,
-        offset: 0,
-        limit: 10,
+        totalResults: 0,
+        page: 1,
+        totalPages: 0,
       });
 
     renderList();
@@ -225,9 +228,9 @@ describe('<List />', () => {
   test('it displays an empty state for searches with no results', async () => {
     getMovies.mockResolvedValue({
       movies: [],
-      total: 0,
-      offset: 0,
-      limit: 10,
+      totalResults: 0,
+      page: 1,
+      totalPages: 0,
     });
 
     renderList('/search/Nope');
@@ -238,5 +241,77 @@ describe('<List />', () => {
     expect(
       screen.getByRole('heading', { name: '0 movies found' })
     ).toBeInTheDocument();
+  });
+
+  test('loads the next page, appends movies, and removes overlapping ids', async () => {
+    const user = userEvent.setup();
+    const firstMovie = {
+      id: 1,
+      title: 'First movie',
+      releaseDate: '2020-01-01',
+      posterUrl: '',
+      genres: ['Drama'],
+    };
+    const secondMovie = { ...firstMovie, id: 2, title: 'Second movie' };
+    getMovies
+      .mockResolvedValueOnce({
+        movies: [firstMovie],
+        page: 1,
+        totalPages: 2,
+        totalResults: 2,
+      })
+      .mockResolvedValueOnce({
+        movies: [firstMovie, secondMovie],
+        page: 2,
+        totalPages: 2,
+        totalResults: 2,
+      });
+
+    renderList();
+    await screen.findByText('First movie');
+    await user.click(screen.getByRole('button', { name: 'Load more' }));
+
+    expect(await screen.findByText('Second movie')).toBeInTheDocument();
+    expect(screen.getAllByText('First movie')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
+    expect(screen.getByText('2 movies loaded')).toBeInTheDocument();
+  });
+
+  test('keeps loaded movies and offers retry when a later page fails', async () => {
+    const user = userEvent.setup();
+    getMovies
+      .mockResolvedValueOnce({
+        movies: [
+          {
+            id: 1,
+            title: 'First movie',
+            releaseDate: '2020-01-01',
+            posterUrl: '',
+            genres: [],
+          },
+        ],
+        page: 1,
+        totalPages: 2,
+        totalResults: 2,
+      })
+      .mockRejectedValueOnce(new Error('page failed'))
+      .mockResolvedValueOnce({
+        movies: [],
+        page: 2,
+        totalPages: 2,
+        totalResults: 2,
+      });
+
+    renderList();
+    await user.click(await screen.findByRole('button', { name: 'Load more' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Unable to load more movies.'
+    );
+    expect(screen.getByText('First movie')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(getMovies).toHaveBeenCalledTimes(3));
+    expect(screen.getByText('First movie')).toBeInTheDocument();
   });
 });

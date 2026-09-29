@@ -17,6 +17,7 @@ const movies = [
 const movieProvider = {
   findAll: jest.fn(),
   findOne: jest.fn(),
+  findSuggestions: jest.fn(),
 };
 
 describe('AppController (e2e)', () => {
@@ -42,9 +43,9 @@ describe('AppController (e2e)', () => {
   beforeEach(() => {
     movieProvider.findAll.mockResolvedValue({
       movies,
-      total: 1,
-      offset: 0,
-      limit: 10,
+      page: 1,
+      totalPages: 1,
+      totalResults: 1,
     });
     movieProvider.findOne.mockResolvedValue({
       ...movies[0],
@@ -53,6 +54,7 @@ describe('AppController (e2e)', () => {
       runtimeMinutes: 108,
       description: 'Determined to prove herself, Officer Judy Hopps...',
     });
+    movieProvider.findSuggestions.mockResolvedValue({ suggestions: [] });
   });
 
   it('/movies (GET)', () => {
@@ -62,12 +64,11 @@ describe('AppController (e2e)', () => {
       .expect((response) => {
         expect(response.body).toEqual({
           movies: expect.any(Array),
-          total: expect.any(Number),
-          offset: 0,
-          limit: 10,
+          page: 1,
+          totalPages: 1,
+          totalResults: expect.any(Number),
         });
-        expect(response.body.movies.length).toBeLessThanOrEqual(10);
-        expect(response.body.total).toBeGreaterThan(0);
+        expect(response.body.totalResults).toBeGreaterThan(0);
         expect(response.body.movies[0]).toEqual({
           id: expect.any(Number),
           title: expect.any(String),
@@ -103,17 +104,23 @@ describe('AppController (e2e)', () => {
       });
   });
 
-  it('/movies (GET) supports search and pagination query parameters', () => {
+  it('/movies (GET) supports search, filters, and pagination parameters', () => {
     movieProvider.findAll.mockResolvedValueOnce({
       movies,
-      total: 1,
-      offset: 0,
-      limit: 1,
+      page: 2,
+      totalPages: 2,
+      totalResults: 21,
     });
 
     return request(app.getHttpServer())
       .get('/movies')
-      .query({ search: 'Zootopia', limit: 1, offset: 0 })
+      .query({
+        search: 'Zootopia',
+        genre: 'animation',
+        releaseYear: 2016,
+        minimumRating: 7,
+        page: 2,
+      })
       .expect(200)
       .expect((response) => {
         expect(response.body).toEqual({
@@ -126,11 +133,10 @@ describe('AppController (e2e)', () => {
               genres: expect.any(Array),
             },
           ],
-          total: expect.any(Number),
-          offset: 0,
-          limit: 1,
+          page: 2,
+          totalPages: 2,
+          totalResults: 21,
         });
-        expect(response.body.total).toBeGreaterThan(0);
       });
   });
 
@@ -152,6 +158,26 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/movies')
       .query({ sort: 'unknown' })
+      .expect(400);
+  });
+
+  it('/movies/suggestions (GET) validates and forwards compact searches', async () => {
+    movieProvider.findSuggestions.mockResolvedValueOnce({
+      suggestions: [{ id: 269149, title: 'Zootopia', releaseYear: 2016 }],
+    });
+
+    await request(app.getHttpServer())
+      .get('/movies/suggestions')
+      .query({ query: 'Zoo', limit: 5 })
+      .expect(200)
+      .expect({
+        suggestions: [{ id: 269149, title: 'Zootopia', releaseYear: 2016 }],
+      });
+    expect(movieProvider.findSuggestions).toHaveBeenCalledWith('Zoo', 5);
+
+    await request(app.getHttpServer())
+      .get('/movies/suggestions')
+      .query({ query: 'Z' })
       .expect(400);
   });
 

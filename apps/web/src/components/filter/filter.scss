@@ -1,28 +1,18 @@
 @use '../../assets/scss/index' as *;
 
-@mixin hover-filter($top) {
-  background-color: $red-1;
-  top: $top;
-  content: '';
-  display: block;
-  height: 2px;
-  width: 100%;
-  position: absolute;
-  z-index: 100;
-}
-
 .menu {
-  align-items: center;
+  align-items: flex-end;
   color: $grey-1;
   display: flex;
   flex-wrap: wrap;
-  font-weight: 500;
   font-size: 16px;
+  font-weight: 500;
+  gap: 24px;
   line-height: 20px;
   min-height: 20px;
-  gap: 24px;
   padding: 22px 60px 18px;
   position: relative;
+  z-index: 1;
 
   &:after {
     background-color: $grey-2;
@@ -31,30 +21,8 @@
     display: block;
     height: 2px;
     left: 0;
-    width: 100%;
     position: absolute;
-  }
-
-  &__link {
-    color: $white;
-    cursor: pointer;
-    position: relative;
-    padding: 5px 0 16px;
-    text-transform: uppercase;
-    text-decoration: none;
-    transition:
-      color 0.2s ease,
-      opacity 0.2s ease;
-
-    &:hover,
-    &:focus-visible,
-    &--active {
-      color: $red-1;
-
-      &:after {
-        @include hover-filter(42px);
-      }
-    }
+    width: 100%;
   }
 
   &__filters {
@@ -62,11 +30,29 @@
     display: flex;
     flex: 1 1 520px;
     flex-wrap: wrap;
-    gap: 8px clamp(16px, 3vw, 32px);
+    gap: 12px;
+  }
+
+  &__control {
+    display: grid;
+    flex: 1 1 145px;
+    gap: 4px;
+    max-width: 210px;
+
+    > span {
+      color: rgb(255 255 255 / 0.65);
+      font-size: 12px;
+      line-height: 16px;
+      text-transform: uppercase;
+    }
+
+    &--year {
+      max-width: 160px;
+    }
   }
 
   &__short {
-    align-items: center;
+    align-items: flex-end;
     display: flex;
     flex: 0 0 auto;
     flex-wrap: wrap;
@@ -76,9 +62,9 @@
 
     &__label {
       color: rgb(255 255 255 / 0.8);
-      font-weight: 400;
       font-size: 16px;
-      line-height: 30px;
+      font-weight: 400;
+      line-height: 42px;
       text-transform: uppercase;
       white-space: nowrap;
     }
@@ -86,15 +72,6 @@
 
   @media (width <= 900px) {
     padding: 1rem;
-
-    &__link {
-      &:hover,
-      &--active {
-        &:after {
-          @include hover-filter(35px);
-        }
-      }
-    }
 
     &__short {
       flex-basis: 100%;
@@ -104,73 +81,115 @@
   }
 
   @include media-size(md-down) {
-    &__link {
-      display: block;
-
-      &:hover {
-        color: $grey-1;
-
-        &:after {
-          display: none;
-        }
-      }
-
-      &--active {
-        color: $red-1;
-
-        &:after {
-          display: none;
-        }
-      }
+    &__filters {
+      flex-basis: 100%;
     }
 
-    &__filters {
-      gap: 8px 18px;
+    &__control {
+      max-width: none;
     }
   }
 }
 
+.menu__select,
 .menu__short__select {
-  flex: 0 1 160px;
   min-width: 0;
 
+  .custom-select__header {
+    background: transparent;
+    border: 0;
+    border-radius: 2px;
+    color: $white;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 20px;
+    min-height: 42px;
+    overflow: hidden;
+    padding: 10px 36px 10px 12px;
+    text-overflow: ellipsis;
+    text-transform: capitalize;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+    white-space: nowrap;
+    width: 100%;
+
+    &:after {
+      right: 10px;
+      top: 10px;
+    }
+
+    &:hover {
+      background: rgb(255 255 255 / 0.05);
+      color: $red-1;
+    }
+
+    &:focus-visible {
+      background: rgb(255 255 255 / 0.05);
+      box-shadow: none;
+      outline: 2px solid $red-1;
+      outline-offset: 1px;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+  }
+
+  .custom-select__container {
+    background: $black;
+    border: 1px solid rgb(255 255 255 / 0.18);
+    border-radius: 4px;
+    box-shadow: 0 10px 24px rgb(0 0 0 / 0.35);
+    margin-top: 4px;
+    max-height: 280px;
+    overflow-y: auto;
+    scrollbar-color: rgb(255 255 255 / 0.35) rgb(0 0 0 / 0.25);
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: rgb(0 0 0 / 0.25);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgb(255 255 255 / 0.32);
+      border: 2px solid $black;
+      border-radius: 8px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgb(255 255 255 / 0.48);
+    }
+  }
+
   .custom-select {
-    padding: 0 0 0 1em;
-    margin: 0;
     box-sizing: border-box;
     color: $white;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 500;
-
-    &:first-child {
-      padding-top: 0.8em;
-    }
-
-    &__header {
-      font-style: normal;
-      font-weight: 500;
-      font-size: 16px;
-      line-height: 20px;
-      color: $white;
-      padding: 5px 20px 5px 10px;
-      box-sizing: border-box;
-      max-width: 100%;
-      width: 160px;
-      text-transform: capitalize;
-      transition: color 0.2s ease;
-
-      &:after {
-        top: 5px;
-        right: 10px;
-      }
-    }
+    margin: 0;
+    padding: 6px;
 
     &__item {
-      margin-bottom: 0.8em;
-      transition: color 0.2s ease;
+      border-radius: 3px;
+      padding: 9px 8px;
+      transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
 
-      &:hover {
+      &:hover,
+      &:focus-visible {
+        background: rgb(246 82 97 / 0.12);
         color: $red-1;
+        outline: none;
       }
     }
 
@@ -178,20 +197,51 @@
       color: $red-1;
     }
   }
+}
 
-  &.custom-select__wrapper {
-    .custom-select__header,
-    .custom-select__container {
-      background: rgb(0 0 0 / 0);
-    }
+.menu__select {
+  width: 100%;
+}
 
-    &--open {
-      .custom-select__header,
-      .custom-select__container {
-        background: rgb(0 0 0 / 0.8);
-      }
+.menu__year-input {
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
+  color: $white;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  min-height: 42px;
+  padding: 10px 12px;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+  width: 100%;
+
+  &::placeholder {
+    color: $white;
+    opacity: 1;
+  }
+
+  &:hover {
+    background: rgb(255 255 255 / 0.05);
+    color: $red-1;
+
+    &::placeholder {
+      color: $red-1;
     }
   }
+
+  &:focus-visible {
+    background: rgb(255 255 255 / 0.05);
+    outline: 2px solid $red-1;
+    outline-offset: 1px;
+  }
+}
+
+.menu__short__select {
+  flex: 0 1 160px;
+  width: 160px;
 }
 
 @media (width <= 380px) {

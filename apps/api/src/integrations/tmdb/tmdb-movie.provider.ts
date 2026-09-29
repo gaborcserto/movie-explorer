@@ -5,6 +5,7 @@ import type {
   MovieQueryParams,
   MovieSortField,
   MovieSortOrder,
+  MovieSuggestionsResponse,
 } from '@movie-explorer/contracts';
 import type { MovieProvider } from '../../movies/movie-provider';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
@@ -16,9 +17,6 @@ import {
   TmdbMovieListItem,
   TmdbPagedResponse,
 } from './tmdb.types';
-
-const TMDB_PAGE_SIZE = 20;
-const TMDB_SEARCH_GENRE_PAGE_LIMIT = 5;
 
 @Injectable()
 export class TmdbMovieProvider implements MovieProvider {
@@ -32,38 +30,51 @@ export class TmdbMovieProvider implements MovieProvider {
   }
 
   public async findAll(query: MovieQueryParams): Promise<MovieListResponse> {
-    const offset = Number(query.offset ?? 0);
-    const limit = Number(query.limit ?? 10);
-
-    if (limit === 0) {
-      const total = await this.getTotal(query);
-      return { movies: [], total, offset, limit };
-    }
-
-    if (query.search && query.genre) {
-      return this.findSearchResultsWithLocalGenreFilter(query, offset, limit);
-    }
-
-    const page = Math.floor(offset / TMDB_PAGE_SIZE) + 1;
-    const startIndex = offset % TMDB_PAGE_SIZE;
-    const pageCount = Math.ceil((startIndex + limit) / TMDB_PAGE_SIZE);
-    const pages = await Promise.all(
-      Array.from({ length: pageCount }, (_, index) =>
-        this.fetchMoviePage(query, page + index),
-      ),
-    );
-
+    const page = Number(query.page ?? 1);
+    const response = await this.fetchMoviePage(query, page);
     const genres = await this.getGenres();
-    const movies = pages
-      .flatMap((response) => response.results)
-      .slice(startIndex, startIndex + limit)
+    const requestedGenres = new Set(this.normalizeGenreFilter(query.genre));
+    const genreNamesById = new Map(
+      genres.map((genre) => [genre.id, genre.name.toLowerCase()]),
+    );
+    const movies = response.results
+      .filter((movie) =>
+        query.search
+          ? this.movieMatchesSearchFilters(
+              movie,
+              query,
+              genreNamesById,
+              requestedGenres,
+            )
+          : true,
+      )
       .map((movie) => this.mapper.toMovieSummary(movie, genres));
 
     return {
       movies,
-      total: pages[0]?.total_results ?? 0,
-      offset,
-      limit,
+      page: response.page,
+      totalPages: response.total_pages,
+      totalResults: response.total_results,
+    };
+  }
+
+  public async findSuggestions(
+    query: string,
+    limit: number,
+  ): Promise<MovieSuggestionsResponse> {
+    const response = await this.request<TmdbPagedResponse<TmdbMovieListItem>>(
+      '/search/movie',
+      {
+        query: query.trim(),
+        include_adult: 'false',
+        page: '1',
+      },
+    );
+
+    return {
+      suggestions: (response?.results ?? [])
+        .slice(0, limit)
+        .map((movie) => this.mapper.toMovieSuggestion(movie)),
     };
   }
 
@@ -73,62 +84,6 @@ export class TmdbMovieProvider implements MovieProvider {
     });
 
     return movie ? this.mapper.toMovieDetails(movie) : undefined;
-  }
-
-  private async getTotal(query: MovieQueryParams): Promise<number> {
-    if (query.search && query.genre) {
-      const response = await this.findSearchResultsWithLocalGenreFilter(
-        query,
-        0,
-        0,
-      );
-      return response.total;
-    }
-
-    const response = await this.fetchMoviePage(query, 1);
-    return response.total_results;
-  }
-
-  private async findSearchResultsWithLocalGenreFilter(
-    query: MovieQueryParams,
-    offset: number,
-    limit: number,
-  ): Promise<MovieListResponse> {
-    const genres = await this.getGenres();
-    const genreNames = this.normalizeGenreFilter(query.genre);
-    const searchQuery = { ...query, genre: undefined };
-    const firstPage = await this.fetchMoviePage(searchQuery, 1);
-    const pagesToFetch = Math.min(
-      firstPage.total_pages,
-      TMDB_SEARCH_GENRE_PAGE_LIMIT,
-    );
-    const remainingPages = await Promise.all(
-      Array.from({ length: Math.max(0, pagesToFetch - 1) }, (_, index) =>
-        this.fetchMoviePage(searchQuery, index + 2),
-      ),
-    );
-
-    const genreNamesById = new Map(
-      genres.map((genre) => [genre.id, genre.name.toLowerCase()]),
-    );
-    const requestedGenres = new Set(genreNames);
-
-    const movies = [firstPage, ...remainingPages]
-      .flatMap((response) => response.results)
-      .filter((movie) =>
-        this.movieMatchesGenres(movie, genreNamesById, requestedGenres),
-      );
-
-    this.sortMoviesLocally(movies, query.sort, query.sortOrder);
-
-    return {
-      movies: movies
-        .slice(offset, offset + limit)
-        .map((movie) => this.mapper.toMovieSummary(movie, genres)),
-      total: movies.length,
-      offset,
-      limit,
-    };
   }
 
   private async fetchMoviePage(
@@ -142,11 +97,19 @@ export class TmdbMovieProvider implements MovieProvider {
           query: query.search,
           include_adult: 'false',
           page: String(page),
+          primary_release_year: query.releaseYear
+            ? String(query.releaseYear)
+            : undefined,
         },
       );
     }
 
-    if (query.genre || query.sort) {
+    if (
+      query.genre ||
+      query.releaseYear ||
+      query.minimumRating !== undefined ||
+      query.sort
+    ) {
       const genreIds = await this.getGenreIds(query.genre);
 
       if (query.genre && genreIds.length === 0) {
@@ -168,6 +131,13 @@ export class TmdbMovieProvider implements MovieProvider {
             query.sort === 'releaseDate' ? this.getToday() : undefined,
           sort_by: this.getTmdbSort(query.sort, query.sortOrder),
           with_genres: genreIds.join(',') || undefined,
+          primary_release_year: query.releaseYear
+            ? String(query.releaseYear)
+            : undefined,
+          'vote_average.gte':
+            query.minimumRating !== undefined
+              ? String(query.minimumRating)
+              : undefined,
         },
       );
     }
@@ -224,6 +194,22 @@ export class TmdbMovieProvider implements MovieProvider {
     });
   }
 
+  private movieMatchesSearchFilters(
+    movie: TmdbMovieListItem,
+    query: MovieQueryParams,
+    genreNamesById: ReadonlyMap<number, string>,
+    requestedGenres: ReadonlySet<string>,
+  ): boolean {
+    if (!this.movieMatchesGenres(movie, genreNamesById, requestedGenres)) {
+      return false;
+    }
+
+    return (
+      query.minimumRating === undefined ||
+      movie.vote_average >= query.minimumRating
+    );
+  }
+
   private getTmdbSort(
     sort?: MovieSortField,
     sortOrder?: MovieSortOrder,
@@ -239,32 +225,6 @@ export class TmdbMovieProvider implements MovieProvider {
     const direction = sortOrder ?? this.getDefaultSortOrder(sort);
 
     return `${field}.${direction}`;
-  }
-
-  private sortMoviesLocally(
-    movies: TmdbMovieListItem[],
-    sort?: MovieSortField,
-    sortOrder?: MovieSortOrder,
-  ): void {
-    if (!sort) {
-      return;
-    }
-
-    const getValue = (movie: TmdbMovieListItem): string | number => {
-      if (sort === 'popularity') return movie.popularity;
-      if (sort === 'releaseDate') return movie.release_date;
-      if (sort === 'rating') return movie.vote_average;
-      return movie.title;
-    };
-
-    movies.sort((a, b) => {
-      const first = getValue(a);
-      const second = getValue(b);
-      const result = first > second ? 1 : first < second ? -1 : 0;
-
-      const direction = sortOrder ?? this.getDefaultSortOrder(sort);
-      return direction === 'desc' ? result * -1 : result;
-    });
   }
 
   private getDefaultSortOrder(sort?: MovieSortField): MovieSortOrder {

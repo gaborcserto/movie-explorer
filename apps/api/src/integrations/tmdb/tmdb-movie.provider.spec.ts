@@ -59,9 +59,9 @@ describe('TmdbMovieProvider', () => {
           genres: ['Drama', 'Comedy'],
         },
       ],
-      total: 1,
-      offset: 0,
-      limit: 10,
+      page: 1,
+      totalPages: 1,
+      totalResults: 1,
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -88,7 +88,7 @@ describe('TmdbMovieProvider', () => {
 
     await expect(
       provider.findAll({ sort: 'popularity', sortOrder: 'desc' }),
-    ).resolves.toMatchObject({ total: 20_001 });
+    ).resolves.toMatchObject({ totalResults: 20_001, totalPages: 500 });
   });
 
   it('uses the total from the active genre-filtered discovery request', async () => {
@@ -104,7 +104,7 @@ describe('TmdbMovieProvider', () => {
         sort: 'popularity',
         sortOrder: 'desc',
       }),
-    ).resolves.toMatchObject({ total: 837 });
+    ).resolves.toMatchObject({ totalResults: 837, totalPages: 42 });
 
     expect(fetchMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -123,7 +123,7 @@ describe('TmdbMovieProvider', () => {
     const provider = new TmdbMovieProvider(config);
 
     await expect(provider.findAll({ search: 'Alpha' })).resolves.toMatchObject({
-      total: 126,
+      totalResults: 126,
     });
   });
 
@@ -136,7 +136,43 @@ describe('TmdbMovieProvider', () => {
 
     await expect(
       provider.findAll({ sort: 'rating', sortOrder: 'desc' }),
-    ).resolves.toMatchObject({ total: 837 });
+    ).resolves.toMatchObject({ totalResults: 837 });
+  });
+
+  it('passes release year, minimum rating, and page to TMDB discovery', async () => {
+    fetchMock
+      .mockResolvedValueOnce(moviePage(3, 8, [movieListItem(1, [18])], 150))
+      .mockResolvedValueOnce(jsonResponse(genreResponse));
+
+    const provider = new TmdbMovieProvider(config);
+    await provider.findAll({ releaseYear: 2024, minimumRating: 7, page: 3 });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pathname: '/3/discover/movie',
+        search: expect.stringMatching(
+          /page=3.*primary_release_year=2024.*vote_average.gte=7/,
+        ),
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it('returns compact suggestions with small poster images', async () => {
+    fetchMock.mockResolvedValueOnce(moviePage(1, 1, [movieListItem(1, [18])]));
+
+    const provider = new TmdbMovieProvider(config);
+
+    await expect(provider.findSuggestions('Alpha', 6)).resolves.toEqual({
+      suggestions: [
+        {
+          id: 1,
+          title: 'Alpha 1',
+          releaseYear: 2020,
+          posterUrl: 'https://image.tmdb.org/t/p/w92/alpha-1.jpg',
+        },
+      ],
+    });
   });
 
   it('maps TMDB details to the public movie details contract', async () => {
@@ -263,47 +299,21 @@ describe('TmdbMovieProvider', () => {
     );
   });
 
-  it('bounds TMDB requests for combined search and genre filters', async () => {
+  it('filters the current text-search page by genre and rating', async () => {
     fetchMock
-      .mockResolvedValueOnce(jsonResponse(genreResponse))
-      .mockResolvedValueOnce(moviePage(1, 500, [movieListItem(1, [18])]))
-      .mockResolvedValueOnce(moviePage(2, 500, [movieListItem(2, [35])]))
-      .mockResolvedValueOnce(moviePage(3, 500, [movieListItem(3, [18])]))
-      .mockResolvedValueOnce(moviePage(4, 500, [movieListItem(4, [35])]))
-      .mockResolvedValueOnce(moviePage(5, 500, [movieListItem(5, [18])]));
-
-    const provider = new TmdbMovieProvider(config);
-
-    await expect(
-      provider.findAll({
-        search: 'Alpha',
-        genre: 'Drama',
-        limit: 10,
-      }),
-    ).resolves.toMatchObject({
-      movies: [
-        { id: 1, genres: ['Drama'] },
-        { id: 3, genres: ['Drama'] },
-        { id: 5, genres: ['Drama'] },
-      ],
-      total: 3,
-      offset: 0,
-      limit: 10,
-    });
-
-    expect(fetchMock).toHaveBeenCalledTimes(6);
-  });
-
-  it('sorts combined search and genre results locally when TMDB cannot filter both', async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse(genreResponse))
       .mockResolvedValueOnce(
-        moviePage(1, 1, [
-          movieListItem(1, [18], { vote_average: 6 }),
-          movieListItem(2, [18], { vote_average: 9 }),
-          movieListItem(3, [35], { vote_average: 10 }),
-        ]),
-      );
+        moviePage(
+          2,
+          3,
+          [
+            movieListItem(1, [18], { vote_average: 8 }),
+            movieListItem(2, [35], { vote_average: 9 }),
+            movieListItem(3, [18], { vote_average: 6 }),
+          ],
+          45,
+        ),
+      )
+      .mockResolvedValueOnce(jsonResponse(genreResponse));
 
     const provider = new TmdbMovieProvider(config);
 
@@ -311,13 +321,17 @@ describe('TmdbMovieProvider', () => {
       provider.findAll({
         search: 'Alpha',
         genre: 'Drama',
-        sort: 'rating',
-        sortOrder: 'desc',
+        minimumRating: 7,
+        page: 2,
       }),
     ).resolves.toMatchObject({
-      movies: [{ id: 2 }, { id: 1 }],
-      total: 2,
+      movies: [{ id: 1, genres: ['Drama'] }],
+      page: 2,
+      totalPages: 3,
+      totalResults: 45,
     });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('returns an empty list without a discover request when the requested genre is unknown', async () => {
@@ -327,9 +341,9 @@ describe('TmdbMovieProvider', () => {
 
     await expect(provider.findAll({ genre: 'Noir' })).resolves.toEqual({
       movies: [],
-      total: 0,
-      offset: 0,
-      limit: 10,
+      page: 1,
+      totalPages: 0,
+      totalResults: 0,
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });

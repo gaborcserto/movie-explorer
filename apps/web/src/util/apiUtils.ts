@@ -4,6 +4,7 @@ import type {
   MovieQueryParams,
   MovieSortField,
   MovieSortOrder,
+  MovieSuggestionsResponse,
 } from '@movie-explorer/contracts';
 import type { URLParams } from '../types';
 
@@ -74,7 +75,8 @@ export const sortOrderParams = (
 };
 
 export const getMovies = async (
-  urlParams: URLParams
+  urlParams: URLParams,
+  signal?: AbortSignal
 ): Promise<MovieListResponse> => {
   const sort = urlParams.search ? undefined : sortParams(urlParams.sort);
   const params: MovieQueryParams = {};
@@ -92,6 +94,25 @@ export const getMovies = async (
     params.genre = urlParams.genres;
   }
 
+  const releaseYear = Number(urlParams.releaseYear);
+  if (Number.isInteger(releaseYear) && releaseYear >= 1874) {
+    params.releaseYear = releaseYear;
+  }
+
+  const minimumRating = Number(urlParams.minimumRating);
+  if (
+    urlParams.minimumRating &&
+    Number.isFinite(minimumRating) &&
+    minimumRating >= 0 &&
+    minimumRating <= 10
+  ) {
+    params.minimumRating = minimumRating;
+  }
+
+  if (urlParams.page && urlParams.page > 1) {
+    params.page = urlParams.page;
+  }
+
   const query = new URLSearchParams(
     Object.entries(params).reduce<Record<string, string>>(
       (entries, [key, value]) => {
@@ -106,6 +127,18 @@ export const getMovies = async (
 
   const queryString = query.toString();
   return request<MovieListResponse>(
-    queryString ? `${moviesUrl}?${queryString}` : moviesUrl
+    queryString ? `${moviesUrl}?${queryString}` : moviesUrl,
+    signal ? { signal } : {}
+  );
+};
+
+export const getMovieSuggestions = async (
+  query: string,
+  signal?: AbortSignal
+): Promise<MovieSuggestionsResponse> => {
+  const params = new URLSearchParams({ query, limit: '6' });
+  return request<MovieSuggestionsResponse>(
+    `${moviesUrl}/suggestions?${params.toString()}`,
+    signal ? { signal } : {}
   );
 };

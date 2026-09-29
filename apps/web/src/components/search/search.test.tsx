@@ -1,6 +1,10 @@
-import { render, fireEvent, screen } from '@testing-library/react';
+import { act, render, fireEvent, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import Search from './search';
+import { getMovieSuggestions as originalGetMovieSuggestions } from '../../util/apiUtils';
+
+vi.mock('../../util/apiUtils');
+const getMovieSuggestions = vi.mocked(originalGetMovieSuggestions);
 
 function LocationDisplay() {
   const location = useLocation();
@@ -21,6 +25,7 @@ const renderSearch = (initialEntry = '/search') => {
             </>
           }
         />
+        <Route path="/movie/:movieId" element={<LocationDisplay />} />
       </Routes>
     </MemoryRouter>
   );
@@ -29,6 +34,7 @@ const renderSearch = (initialEntry = '/search') => {
 describe('Search Component', () => {
   afterEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
   test('renders Search component', () => {
@@ -67,5 +73,67 @@ describe('Search Component', () => {
     expect(
       screen.getByPlaceholderText('What do you want to watch?')
     ).toHaveValue('avatar');
+  });
+
+  test('debounces suggestions and supports keyboard selection', async () => {
+    vi.useFakeTimers();
+    getMovieSuggestions.mockResolvedValue({
+      suggestions: [
+        { id: 42, title: 'Alien', releaseYear: 1979, posterUrl: '/alien.jpg' },
+        { id: 43, title: 'Aliens', releaseYear: 1986 },
+      ],
+    });
+    renderSearch();
+    const input = screen.getByRole('combobox', { name: 'Search movies' });
+
+    fireEvent.change(input, { target: { value: 'Al' } });
+    expect(getMovieSuggestions).not.toHaveBeenCalled();
+    await act(async () => vi.advanceTimersByTimeAsync(300));
+
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    expect(getMovieSuggestions).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(input).toHaveAttribute(
+      'aria-activedescendant',
+      'movie-suggestion-0'
+    );
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(input).toHaveAttribute(
+      'aria-activedescendant',
+      'movie-suggestion-1'
+    );
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/movie/43');
+  });
+
+  test('ignores stale autocomplete results and closes with Escape', async () => {
+    vi.useFakeTimers();
+    let resolveFirst:
+      | ((value: { suggestions: { id: number; title: string }[] }) => void)
+      | undefined;
+    getMovieSuggestions
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        })
+      )
+      .mockResolvedValueOnce({ suggestions: [{ id: 2, title: 'Alien' }] });
+    renderSearch();
+    const input = screen.getByRole('combobox', { name: 'Search movies' });
+
+    fireEvent.change(input, { target: { value: 'Al' } });
+    await act(async () => vi.advanceTimersByTimeAsync(300));
+    fireEvent.change(input, { target: { value: 'Alien' } });
+    await act(async () => vi.advanceTimersByTimeAsync(300));
+    expect(screen.getByText('Alien')).toBeInTheDocument();
+
+    await act(async () => {
+      resolveFirst?.({ suggestions: [{ id: 1, title: 'Stale' }] });
+      await Promise.resolve();
+    });
+    expect(screen.queryByText('Stale')).toBeNull();
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
   });
 });

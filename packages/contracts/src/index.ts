@@ -10,4 +10,6 @@ export type {
   MovieCastMember,
   MoviePhoto,
   MovieVideo,
+  MovieSuggestion,
+  MovieSuggestionsResponse,
 } from './movies';

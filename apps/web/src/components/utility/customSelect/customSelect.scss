@@ -29,7 +29,10 @@
 
   &__wrapper {
     position: relative;
-    z-index: 100;
+
+    &--open {
+      z-index: 2;
+    }
   }
 
   &__container {
@@ -37,7 +40,7 @@
     position: absolute;
     width: 100%;
     margin: 0 auto;
-    z-index: 900;
+    z-index: 1;
     transition: none;
   }
 

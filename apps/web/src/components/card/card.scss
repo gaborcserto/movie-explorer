@@ -16,6 +16,18 @@
 
   width: 100%;
 
+  &__link {
+    border-radius: 4px;
+    inset: 0;
+    position: absolute;
+    z-index: 1;
+
+    &:focus-visible {
+      outline: 2px solid $red-1;
+      outline-offset: 4px;
+    }
+  }
+
   &__footer {
     display: grid;
     gap: 16px;
@@ -49,10 +61,18 @@
     }
   }
 
+  &:hover .card__title,
+  &:focus-within .card__title {
+    color: $red-1;
+    opacity: 1;
+  }
+
   &__type {
     color: rgb(255 255 255 / 0.5);
     overflow-wrap: anywhere;
     line-height: 1.35;
+    position: relative;
+    z-index: 2;
 
     &__link {
       font-size: 14px;

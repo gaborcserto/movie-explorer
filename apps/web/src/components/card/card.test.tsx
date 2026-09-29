@@ -19,7 +19,9 @@ describe('<Card />', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('link', { name: mockMovie.title })).toBeVisible();
+    const movieLink = screen.getByRole('link', { name: mockMovie.title });
+    expect(movieLink).toBeVisible();
+    expect(movieLink).toHaveAttribute('href', '/movie/1234');
     expect(screen.getByText('1894')).toBeVisible();
     expect(screen.getByText('Documentary')).toBeVisible();
     expect(screen.getByText('Comedy')).toBeVisible();

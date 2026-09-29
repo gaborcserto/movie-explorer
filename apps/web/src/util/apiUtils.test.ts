@@ -2,7 +2,13 @@ import type {
   MovieDetails,
   MovieListResponse,
 } from '@movie-explorer/contracts';
-import { getMovie, getMovies, isNotFoundError, sortParams } from './apiUtils';
+import {
+  getMovie,
+  getMovies,
+  getMovieSuggestions,
+  isNotFoundError,
+  sortParams,
+} from './apiUtils';
 import type { URLParams } from '../types';
 
 function response(body?: unknown, status = 200): Response {
@@ -26,10 +32,10 @@ const mockMovieData: MovieDetails = {
 };
 
 const mockMoviesData: MovieListResponse = {
-  total: 1,
+  totalResults: 1,
   movies: [mockMovieData],
-  offset: 0,
-  limit: 0,
+  page: 1,
+  totalPages: 1,
 };
 
 const fetchMock = vi.fn();
@@ -106,6 +112,34 @@ describe('API functions', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:4000/movies?sort=popularity&sortOrder=desc&genre=crime',
       {}
+    );
+  });
+
+  it('maps advanced filters and pagination to API parameters', async () => {
+    fetchMock.mockResolvedValue(response(mockMoviesData));
+
+    await getMovies({
+      genres: 'science fiction',
+      releaseYear: '2024',
+      minimumRating: '7',
+      page: 3,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/movies?sort=popularity&sortOrder=desc&genre=science+fiction&releaseYear=2024&minimumRating=7&page=3',
+      {}
+    );
+  });
+
+  it('requests compact movie suggestions through the backend', async () => {
+    fetchMock.mockResolvedValue(response({ suggestions: [] }));
+    const controller = new AbortController();
+
+    await getMovieSuggestions('Alien', controller.signal);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/movies/suggestions?query=Alien&limit=6',
+      { signal: controller.signal }
     );
   });
 

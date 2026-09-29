@@ -1,4 +1,8 @@
-import type { MovieDetails, MovieSummary } from '@movie-explorer/contracts';
+import type {
+  MovieDetails,
+  MovieSuggestion,
+  MovieSummary,
+} from '@movie-explorer/contracts';
 import type {
   TmdbGenre,
   TmdbMovieDetails,
@@ -92,6 +96,22 @@ export class TmdbMovieMapper {
     if (videos.length) details.videos = videos;
 
     return details;
+  }
+
+  public toMovieSuggestion(movie: TmdbMovieListItem): MovieSuggestion {
+    const releaseYear = /^\d{4}/.test(movie.release_date)
+      ? Number(movie.release_date.slice(0, 4))
+      : undefined;
+    const posterUrl = movie.poster_path
+      ? `${this.imageBaseUrl.replace(/\/w\d+$/, '/w92')}${movie.poster_path}`
+      : undefined;
+
+    return {
+      id: movie.id,
+      title: movie.title,
+      ...(releaseYear !== undefined && { releaseYear }),
+      ...(posterUrl && { posterUrl }),
+    };
   }
 
   private toPosterUrl(posterPath: string | null): string {

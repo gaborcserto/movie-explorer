@@ -13,6 +13,9 @@ function Card({ movie }: CardProps) {
   const [searchParams] = useSearchParams();
 
   const releaseYear = releaseDate.substring(0, 4);
+  const movieUrl = `/movie/${id}${
+    searchParams.size ? `?${searchParams.toString()}` : ''
+  }`;
 
   const genreLinks = genres.map((genre, index) => (
     <Fragment key={genre}>
@@ -33,19 +36,13 @@ function Card({ movie }: CardProps) {
 
   return (
     <article className="card">
+      <Link to={movieUrl} className="card__link" aria-label={title} />
       <div className="card__image__wrapper">
         <MovieImage src={posterUrl} alt={title} className="card__image" />
       </div>
       <div className="card__footer">
         <div className="card__footer__part">
-          <Link
-            to={`/movie/${id}${
-              searchParams.size ? `?${searchParams.toString()}` : ''
-            }`}
-            className="card__title"
-          >
-            {title}
-          </Link>
+          <span className="card__title">{title}</span>
           <p className="card__type">{genreLinks}</p>
         </div>
         <div className="card__footer__part">

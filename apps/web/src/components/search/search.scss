@@ -5,7 +5,7 @@
   border-bottom: 10px solid $grey-1;
   min-height: 360px;
   position: relative;
-  z-index: 100;
+  z-index: 2;
 
   &:before {
     background-image: url('../../assets/img/movie-posters-background.jpg');
@@ -22,7 +22,12 @@
     position: absolute;
     top: 0;
     width: 100%;
-    z-index: 90;
+    z-index: 0;
+  }
+
+  &__container {
+    position: relative;
+    z-index: 1;
   }
 
   &__brand {
@@ -33,7 +38,6 @@
   &__top,
   &__search {
     position: relative;
-    z-index: 100;
   }
 
   &__top {
@@ -59,17 +63,23 @@
     padding: 20px clamp(32px, 8vw, 120px) 56px;
     width: 100%;
 
+    &__combobox {
+      flex: 1 1 auto;
+      min-width: 0;
+      position: relative;
+    }
+
     &__input {
       background-color: rgb(50 50 50 / 0.8);
       border: 1px solid rgb(255 255 255 / 0.08);
       border-radius: 4px;
       color: $white;
       display: flex;
-      flex: 1 1 auto;
       line-height: 57px;
       mix-blend-mode: normal;
       padding: 0 19px;
       min-width: 0;
+      width: 100%;
       transition:
         background-color 0.2s ease,
         border-color 0.2s ease,
@@ -84,6 +94,92 @@
         border-color: rgb(246 82 97 / 0.65);
         box-shadow: 0 0 0 3px rgb(246 82 97 / 0.18);
         outline: none;
+      }
+    }
+
+    .header__suggestions {
+      background: $grey-3;
+      border: 1px solid rgb(255 255 255 / 0.14);
+      border-radius: 0 0 4px 4px;
+      box-shadow: 0 12px 30px rgb(0 0 0 / 0.35);
+      left: 0;
+      max-height: 348px;
+      overflow-y: auto;
+      position: absolute;
+      right: 0;
+      scrollbar-color: rgb(255 255 255 / 0.35) rgb(0 0 0 / 0.25);
+      scrollbar-gutter: stable;
+      scrollbar-width: thin;
+      top: calc(100% + 4px);
+      z-index: 2;
+
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: rgb(0 0 0 / 0.25);
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: rgb(255 255 255 / 0.32);
+        border: 2px solid $grey-3;
+        border-radius: 8px;
+      }
+
+      &::-webkit-scrollbar-thumb:hover {
+        background: rgb(255 255 255 / 0.48);
+      }
+
+      li + li {
+        border-top: 1px solid rgb(255 255 255 / 0.08);
+      }
+
+      button {
+        align-items: center;
+        background: transparent;
+        border: 0;
+        color: $white;
+        cursor: pointer;
+        display: flex;
+        gap: 12px;
+        min-height: 68px;
+        padding: 6px 10px;
+        text-align: left;
+        width: 100%;
+
+        &:hover,
+        &:focus-visible,
+        &.is-active {
+          background: rgb(246 82 97 / 0.16);
+          outline: none;
+        }
+
+        img,
+        .header__suggestions__placeholder {
+          background: rgb(255 255 255 / 0.08);
+          border-radius: 2px;
+          flex: 0 0 40px;
+          height: 60px;
+          object-fit: cover;
+          width: 40px;
+        }
+
+        strong,
+        small {
+          display: block;
+        }
+
+        strong {
+          font-size: 16px;
+          line-height: 20px;
+        }
+
+        small {
+          color: rgb(255 255 255 / 0.65);
+          font-size: 13px;
+          margin-top: 3px;
+        }
       }
     }
 
@@ -108,7 +204,10 @@
 
       &__input {
         line-height: 42px;
-        width: 100%;
+      }
+
+      &__combobox {
+        flex-basis: 100%;
       }
 
       .btn {
