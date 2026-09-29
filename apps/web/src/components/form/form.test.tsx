@@ -1,101 +1,40 @@
-import { render, waitFor, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { FormEvent } from 'react';
 import Form from './form';
 
-const mockHandleClick = vi.fn();
-
 describe('<Form />', () => {
-  beforeEach(() => {
-    mockHandleClick.mockClear();
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('renders without crashing', () => {
-    render(<Form onSubmit={mockHandleClick} title="Add Movie" />);
-  });
-
-  it('sets initial state correctly when movieData prop is passed', () => {
-    const movieData = {
-      id: 1,
-      title: 'Test Movie',
-      releaseDate: '2021-01-01',
-      posterUrl: 'https://test.com/movie.jpg',
-      rating: 8,
-      genres: ['Action', 'Drama'],
-      runtimeMinutes: 120,
-      description: 'Test overview',
-    };
+  it('renders reusable form content and submits it', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn((event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+    });
 
     render(
-      <Form
-        onSubmit={mockHandleClick}
-        title="Edit Movie"
-        movieData={movieData}
-      />
+      <Form title="Advanced filters" onSubmit={onSubmit}>
+        <label htmlFor="keywords">
+          Keywords
+          <input id="keywords" name="keywords" />
+        </label>
+      </Form>
     );
 
-    expect((screen.getByLabelText(/title/i) as HTMLInputElement).value).toBe(
-      'Test Movie'
-    );
-    expect(
-      (screen.getByLabelText(/release date/i) as HTMLInputElement).value
-    ).toBe('2021-01-01');
+    expect(screen.getByLabelText('Keywords')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
-  it('shows validation messages when trying to submit an empty form', async () => {
-    render(<Form onSubmit={mockHandleClick} title="Add Movie" />);
-    await userEvent.click(screen.getByText(/submit/i));
-
-    await waitFor(() => {
-      const alerts = screen.queryAllByRole('alert');
-      expect(alerts[0]).toHaveTextContent('Movie title is require');
-    });
-  });
-
-  it('submits valid movie data', async () => {
-    render(<Form onSubmit={mockHandleClick} title="Add Movie" />);
-
-    await userEvent.type(screen.getByLabelText(/title/i), 'Test Movie');
-    await userEvent.type(screen.getByLabelText(/release date/i), '2021-01-01');
-    await userEvent.type(screen.getByLabelText(/movie url/i), 'example.com');
-    await userEvent.type(screen.getByLabelText(/rating/i), '5');
-    await userEvent.type(screen.getByLabelText(/runtime/i), '60');
-    await userEvent.type(
-      screen.getByLabelText(/overview/i),
-      'Test description'
-    );
-
-    await userEvent.click(screen.getByText('Select Genre'));
-
-    await userEvent.click(screen.getByText('Crime'));
-
-    await userEvent.click(screen.getByText(/submit/i));
-
-    await waitFor(() => {
-      expect(mockHandleClick).toHaveBeenCalledWith({
-        title: 'Test Movie',
-        releaseDate: '2021-01-01',
-        posterUrl: 'example.com',
-        rating: 5,
-        genres: ['Crime'],
-        runtimeMinutes: 60,
-        description: 'Test description',
-      });
-    });
-  });
-
-  it('resets the form correctly when clicking the Reset button', async () => {
+  it('renders an optional reset action', async () => {
     const user = userEvent.setup();
-    render(<Form onSubmit={mockHandleClick} title="Add Movie" />);
+    const onReset = vi.fn();
 
-    await user.type(screen.getByLabelText(/title/i), 'Test Movie');
-    await user.click(screen.getByText(/reset/i));
-
-    expect((screen.getByLabelText(/title/i) as HTMLInputElement).value).toBe(
-      ''
+    render(
+      <Form title="Filters" onSubmit={vi.fn()} onReset={onReset}>
+        <div>Fields</div>
+      </Form>
     );
+
+    await user.click(screen.getByRole('button', { name: 'Reset' }));
+    expect(onReset).toHaveBeenCalledTimes(1);
   });
 });

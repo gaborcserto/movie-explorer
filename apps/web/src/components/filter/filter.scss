@@ -15,6 +15,7 @@
   align-items: center;
   color: $grey-1;
   display: flex;
+  flex-wrap: wrap;
   font-weight: 500;
   font-size: 16px;
   line-height: 20px;
@@ -29,7 +30,8 @@
     content: '';
     display: block;
     height: 2px;
-    width: calc(100% - 120px);
+    left: 0;
+    width: 100%;
     position: absolute;
   }
 
@@ -58,36 +60,32 @@
   &__filters {
     color: $white;
     display: flex;
-    flex: 1 1 auto;
-    gap: clamp(16px, 3vw, 32px);
-    overflow-x: auto;
-    scrollbar-width: thin;
+    flex: 1 1 520px;
+    flex-wrap: wrap;
+    gap: 8px clamp(16px, 3vw, 32px);
   }
 
   &__short {
     align-items: center;
     display: flex;
     flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: 8px;
     justify-content: flex-end;
+    min-width: 0;
 
     &__label {
+      color: rgb(255 255 255 / 0.8);
       font-weight: 400;
       font-size: 16px;
       line-height: 30px;
       text-transform: uppercase;
-      opacity: 0.6;
-      margin-right: 20px;
       white-space: nowrap;
     }
   }
 
-  @include media-size(lg-down) {
-    display: block;
+  @media (width <= 900px) {
     padding: 1rem;
-
-    &:after {
-      width: calc(100% - 2rem);
-    }
 
     &__link {
       &:hover,
@@ -98,13 +96,9 @@
       }
     }
 
-    &__filters {
-      flex: 1;
-      padding-bottom: 4px;
-    }
-
     &__short {
-      flex: 1;
+      flex-basis: 100%;
+      justify-content: flex-start;
       margin-top: 10px;
     }
   }
@@ -131,24 +125,15 @@
     }
 
     &__filters {
-      display: flex;
-      gap: 18px;
-    }
-
-    &__short {
-      justify-content: space-between;
-    }
-  }
-
-  @include media-size(sm-down) {
-    &__short__label {
-      margin: 0;
-      padding: 0 10px;
+      gap: 8px 18px;
     }
   }
 }
 
 .menu__short__select {
+  flex: 0 1 160px;
+  min-width: 0;
+
   .custom-select {
     padding: 0 0 0 1em;
     margin: 0;
@@ -168,7 +153,9 @@
       line-height: 20px;
       color: $white;
       padding: 5px 20px 5px 10px;
-      width: 180px;
+      box-sizing: border-box;
+      max-width: 100%;
+      width: 160px;
       text-transform: capitalize;
       transition: color 0.2s ease;
 
@@ -204,5 +191,11 @@
         background: rgb(0 0 0 / 0.8);
       }
     }
+  }
+}
+
+@media (width <= 380px) {
+  .menu__short__label {
+    flex-basis: 100%;
   }
 }

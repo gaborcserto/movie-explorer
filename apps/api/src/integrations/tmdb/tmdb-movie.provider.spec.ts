@@ -35,6 +35,7 @@ describe('TmdbMovieProvider', () => {
               title: 'Alpha',
               release_date: '2020-01-01',
               poster_path: '/alpha.jpg',
+              popularity: 100,
               genre_ids: [18, 35],
               vote_average: 8,
               overview: 'Alpha overview',
@@ -87,6 +88,10 @@ describe('TmdbMovieProvider', () => {
         vote_average: 8,
         runtime: 100,
         overview: 'Alpha overview',
+        credits: {
+          cast: [{ name: 'Actor One', order: 0 }],
+          crew: [{ name: 'Director One', job: 'Director' }],
+        },
       }),
     );
 
@@ -101,7 +106,97 @@ describe('TmdbMovieProvider', () => {
       rating: 8,
       runtimeMinutes: 100,
       description: 'Alpha overview',
+      cast: ['Actor One'],
+      director: 'Director One',
     });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pathname: '/3/movie/1',
+        search: '?language=en-US&append_to_response=credits',
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it.each([
+    ['popularity', 'asc', 'popularity.asc'],
+    ['popularity', 'desc', 'popularity.desc'],
+    ['title', 'asc', 'title.asc'],
+    ['title', 'desc', 'title.desc'],
+    ['releaseDate', 'asc', 'primary_release_date.asc'],
+    ['releaseDate', 'desc', 'primary_release_date.desc'],
+  ] as const)(
+    'maps %s %s sorting to TMDB discovery',
+    async (sort, sortOrder, tmdbSort) => {
+      fetchMock
+        .mockResolvedValueOnce(moviePage(1, 1, [movieListItem(1, [18])]))
+        .mockResolvedValueOnce(jsonResponse(genreResponse));
+
+      const provider = new TmdbMovieProvider(config);
+      await provider.findAll({ sort, sortOrder });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pathname: '/3/discover/movie',
+          search: expect.stringContaining(`sort_by=${tmdbSort}`),
+        }),
+        expect.any(Object),
+      );
+    },
+  );
+
+  it('keeps genre discovery popularity-first when no explicit sort is set', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(genreResponse))
+      .mockResolvedValueOnce(moviePage(1, 1, [movieListItem(1, [18])]));
+
+    const provider = new TmdbMovieProvider(config);
+    await provider.findAll({ genre: 'Drama' });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pathname: '/3/discover/movie',
+        search: expect.stringContaining('sort_by=popularity.desc'),
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it('defaults an explicit release-date sort to newest first', async () => {
+    fetchMock
+      .mockResolvedValueOnce(moviePage(1, 1, [movieListItem(1, [18])]))
+      .mockResolvedValueOnce(jsonResponse(genreResponse));
+
+    const provider = new TmdbMovieProvider(config);
+    await provider.findAll({ sort: 'releaseDate' });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pathname: '/3/discover/movie',
+        search: expect.stringMatching(
+          /sort_by=primary_release_date.desc.*primary_release_date.lte=\d{4}-\d{2}-\d{2}|primary_release_date.lte=\d{4}-\d{2}-\d{2}.*sort_by=primary_release_date.desc/,
+        ),
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it('preserves TMDB relevance ordering for text search', async () => {
+    fetchMock
+      .mockResolvedValueOnce(moviePage(1, 1, [movieListItem(1, [18])]))
+      .mockResolvedValueOnce(jsonResponse(genreResponse));
+
+    const provider = new TmdbMovieProvider(config);
+    await provider.findAll({ search: 'Alpha' });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pathname: '/3/search/movie',
+        search: expect.not.stringContaining('sort_by'),
+      }),
+      expect.any(Object),
+    );
   });
 
   it('bounds TMDB requests for combined search and genre filters', async () => {
@@ -258,6 +353,7 @@ function movieListItem(
     title: `Alpha ${id}`,
     release_date: '2020-01-01',
     poster_path: `/alpha-${id}.jpg`,
+    popularity: 100 - id,
     genre_ids: genreIds,
     vote_average: 8,
     overview: `Alpha ${id} overview`,

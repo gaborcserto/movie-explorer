@@ -7,13 +7,9 @@ import {
 } from '@nestjs/swagger';
 import {
   Get,
-  Post,
-  Put,
   Controller,
   Param,
   ParseIntPipe,
-  Body,
-  Delete,
   Query,
   HttpException,
   HttpStatus,
@@ -22,7 +18,6 @@ import { MoviesService } from './movies.service';
 import {
   GetMoviesQuery,
   MovieDetails as MovieDetailsDto,
-  MovieMutationDto,
   MoviesResponse,
 } from './movies.dto';
 import type {
@@ -66,77 +61,5 @@ export class MoviesController {
       throw new HttpException('Movie not found', HttpStatus.NOT_FOUND);
     }
     return movie;
-  }
-
-  @Post()
-  @ApiOperation({ summary: 'Create a movie' })
-  @ApiResponse({
-    status: 501,
-    description:
-      'Movie mutations are not supported by the configured movie provider.',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request, possibly due to invalid input data.',
-  })
-  public async createMovie(@Body() movie: MovieMutationDto): Promise<void> {
-    try {
-      await this.moviesService.create(movie);
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      const message =
-        error instanceof Error ? error.message : 'Unknown validation error';
-
-      throw new HttpException(
-        'Error creating movie: ' + message,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  @Put()
-  @ApiOperation({ summary: 'Update a movie by ID' })
-  @ApiResponse({
-    status: 501,
-    description:
-      'Movie mutations are not supported by the configured movie provider.',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request, possibly due to invalid input data.',
-  })
-  public async updateMovie(
-    @Body('id', ParseIntPipe) id: number,
-    @Body() movie: MovieMutationDto,
-  ): Promise<MovieDetails> {
-    const updatedMovie = await this.moviesService.update(id, movie);
-    if (!updatedMovie) {
-      throw new HttpException('Movie not found', HttpStatus.NOT_FOUND);
-    }
-    return updatedMovie;
-  }
-
-  @Delete(':id')
-  @ApiOperation({ summary: 'Delete a movie by ID' })
-  @ApiResponse({
-    status: 501,
-    description:
-      'Movie mutations are not supported by the configured movie provider.',
-  })
-  @ApiParam({ name: 'id', description: 'Movie unique identifier' })
-  public async deleteMovie(@Param('id') id: string): Promise<void> {
-    const movieId = parseInt(id, 10);
-
-    if (isNaN(movieId)) {
-      throw new HttpException('ID must be a number', HttpStatus.BAD_REQUEST);
-    }
-
-    const deletedMovie = await this.moviesService.delete(movieId);
-    if (!deletedMovie) {
-      throw new HttpException('Movie not found', HttpStatus.NOT_FOUND);
-    }
   }
 }

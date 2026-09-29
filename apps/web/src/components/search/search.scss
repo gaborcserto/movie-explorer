@@ -39,8 +39,6 @@
   &__top {
     display: flex;
     font-size: 20px;
-    gap: 16px;
-    justify-content: space-between;
     padding: 24px 60px;
   }
 
@@ -58,7 +56,7 @@
     flex-wrap: nowrap;
     font-size: 20px;
     gap: 14px;
-    padding: 20px 120px 56px;
+    padding: 20px clamp(32px, 8vw, 120px) 56px;
     width: 100%;
 
     &__input {
@@ -94,23 +92,10 @@
     }
   }
 
-  @include media-size(lg-down) {
-    &__search {
-      .btn {
-        width: auto;
-      }
-    }
-  }
-
   @include media-size(md-down) {
     &__top {
       align-items: center;
       padding: 1rem 0;
-
-      .btn {
-        font-size: 15px;
-        padding: 10px 14px;
-      }
     }
 
     &__title {

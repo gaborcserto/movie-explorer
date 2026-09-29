@@ -5,6 +5,8 @@ import type {
   TmdbMovieListItem,
 } from './tmdb.types';
 
+const MAIN_CAST_LIMIT = 6;
+
 export class TmdbMovieMapper {
   constructor(private readonly imageBaseUrl: string) {}
 
@@ -24,15 +26,31 @@ export class TmdbMovieMapper {
   }
 
   public toMovieDetails(movie: TmdbMovieDetails): MovieDetails {
+    const directors = movie.credits?.crew
+      .filter((credit) => credit.job === 'Director')
+      .map((credit) => credit.name.trim())
+      .filter(Boolean);
+    const director = directors?.length
+      ? [...new Set(directors)].join(', ')
+      : undefined;
+    const cast = [...(movie.credits?.cast ?? [])]
+      .sort((first, second) => first.order - second.order)
+      .map((credit) => credit.name.trim())
+      .filter(Boolean)
+      .slice(0, MAIN_CAST_LIMIT);
+
     return {
       id: movie.id,
       title: movie.title,
       releaseDate: movie.release_date,
       posterUrl: this.toPosterUrl(movie.poster_path),
       genres: movie.genres.map((genre) => genre.name),
-      rating: movie.vote_average,
-      runtimeMinutes: movie.runtime ?? 0,
-      description: movie.overview,
+      cast,
+      description: movie.overview.trim() || undefined,
+      director,
+      rating: movie.vote_average > 0 ? movie.vote_average : undefined,
+      runtimeMinutes:
+        movie.runtime && movie.runtime > 0 ? movie.runtime : undefined,
     };
   }
 

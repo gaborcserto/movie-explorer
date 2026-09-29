@@ -9,8 +9,6 @@ function LocationDisplay() {
 }
 
 const renderSearch = (initialEntry = '/search') => {
-  const onAddMovie = vi.fn();
-
   render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
@@ -18,7 +16,7 @@ const renderSearch = (initialEntry = '/search') => {
           path="/search/:searchQuery?"
           element={
             <>
-              <Search onAddMovie={onAddMovie} />
+              <Search />
               <LocationDisplay />
             </>
           }
@@ -26,8 +24,6 @@ const renderSearch = (initialEntry = '/search') => {
       </Routes>
     </MemoryRouter>
   );
-
-  return { onAddMovie };
 };
 
 describe('Search Component', () => {
@@ -71,14 +67,5 @@ describe('Search Component', () => {
     expect(
       screen.getByPlaceholderText('What do you want to watch?')
     ).toHaveValue('avatar');
-  });
-
-  test('opens modal on + Add movie button click', () => {
-    const { onAddMovie } = renderSearch();
-
-    const button = screen.getByText('+ Add movie');
-    fireEvent.click(button);
-
-    expect(onAddMovie).toHaveBeenCalledTimes(1);
   });
 });

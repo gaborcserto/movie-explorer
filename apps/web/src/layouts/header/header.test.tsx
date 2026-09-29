@@ -27,10 +27,7 @@ describe('Header component', () => {
     render(
       <MemoryRouter initialEntries={['/movies/1234']}>
         <Routes>
-          <Route
-            path="/movies/:movieId"
-            element={<Header onAddMovie={vi.fn()} />}
-          />
+          <Route path="/movies/:movieId" element={<Header />} />
         </Routes>
       </MemoryRouter>
     );
@@ -45,7 +42,7 @@ describe('Header component', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <Routes>
-          <Route path="*" element={<Header onAddMovie={vi.fn()} />} />
+          <Route path="*" element={<Header />} />
         </Routes>
       </MemoryRouter>
     );

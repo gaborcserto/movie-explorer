@@ -18,7 +18,7 @@ $xxl-width: 1400px;
       @content;
     }
   } @else if $size == md-down {
-    @media (max-width: $sm-width - 0.02px) {
+    @media (max-width: $md-width - 0.02px) {
       @content;
     }
   } @else if $size == lg-up {

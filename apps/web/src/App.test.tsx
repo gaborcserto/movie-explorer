@@ -17,6 +17,7 @@ const getMovie = vi.mocked(originalGetMovie);
 const getMovies = vi.mocked(originalGetMovies);
 
 const movie: MovieDetails = {
+  cast: ['Actor One'],
   id: 1234,
   title: 'Sample Movie',
   releaseDate: '2021-01-01',
@@ -74,6 +75,7 @@ describe('<App />', () => {
 
     expect(getMovies).toHaveBeenLastCalledWith({
       sort: null,
+      sortOrder: null,
       search: 'Inception',
       genres: null,
     });

@@ -109,16 +109,18 @@
     line-height: 1.25;
     letter-spacing: 1px;
     text-transform: uppercase;
-    display: inline-block;
-    padding-right: 84px;
+    overflow-wrap: anywhere;
 
     &__wrapper {
-      position: relative;
+      align-items: start;
+      display: grid;
+      gap: 20px;
+      grid-template-columns: minmax(0, 1fr) auto;
     }
   }
 
   &__rating {
-    display: inline-block;
+    flex: 0 0 auto;
     font-style: normal;
     font-weight: 300;
     font-size: 20px;
@@ -129,9 +131,6 @@
     height: 60px;
     border: 1px solid $white;
     border-radius: 30px;
-    top: -2px;
-    position: absolute;
-    right: 0;
   }
 
   &__genre {
@@ -144,25 +143,52 @@
   }
 
   &__data {
+    align-items: center;
     color: $red-1;
+    display: flex;
+    flex-wrap: wrap;
     font-style: normal;
     font-weight: 300;
     font-size: 24px;
     line-height: 29px;
+    gap: 12px 50px;
   }
 
-  &__year {
-    padding-right: 50px;
-  }
-
-  &__overview {
+  &__section {
+    max-width: 720px;
     padding-top: 30px;
+  }
+
+  &__section-title {
+    color: $red-1;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    line-height: 20px;
+    padding-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  &__overview,
+  &__credits dd {
     font-style: normal;
     font-weight: 300;
     font-size: 20px;
-    line-height: 24px;
-    max-width: 720px;
-    opacity: 0.5;
+    line-height: 1.45;
+    opacity: 0.65;
+    overflow-wrap: anywhere;
+  }
+
+  &__credits {
+    display: grid;
+    gap: 16px;
+
+    dt {
+      font-size: 13px;
+      font-weight: 500;
+      padding-bottom: 3px;
+      text-transform: uppercase;
+    }
   }
 
   @include media-size(lg-down) {
@@ -182,15 +208,7 @@
     }
 
     &__title {
-      display: block;
       font-size: 30px;
-      padding-right: 0;
-    }
-
-    &__rating {
-      margin-top: 12px;
-      position: relative;
-      right: auto;
     }
   }
 
@@ -203,6 +221,9 @@
     }
 
     &__image {
+      display: block;
+      margin: 0 auto 24px;
+      max-width: 320px;
       width: 100%;
       min-height: auto;
 
@@ -213,6 +234,13 @@
 
     &__title {
       font-size: 24px;
+    }
+
+    &__rating {
+      font-size: 18px;
+      height: 52px;
+      line-height: 50px;
+      width: 52px;
     }
   }
 

@@ -48,6 +48,7 @@ describe('AppController (e2e)', () => {
     });
     movieProvider.findOne.mockResolvedValue({
       ...movies[0],
+      cast: ['Actor One'],
       rating: 7.7,
       runtimeMinutes: 108,
       description: 'Determined to prove herself, Officer Judy Hopps...',
@@ -97,6 +98,7 @@ describe('AppController (e2e)', () => {
           rating: expect.any(Number),
           runtimeMinutes: expect.any(Number),
           description: expect.any(String),
+          cast: expect.any(Array),
         });
       });
   });
@@ -132,10 +134,24 @@ describe('AppController (e2e)', () => {
       });
   });
 
+  it('/movies (GET) supports explicit popularity direction', async () => {
+    await request(app.getHttpServer())
+      .get('/movies')
+      .query({ sort: 'popularity', sortOrder: 'asc' })
+      .expect(200);
+
+    expect(movieProvider.findAll).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        sort: 'popularity',
+        sortOrder: 'asc',
+      }),
+    );
+  });
+
   it('/movies (GET) rejects invalid query parameters', () => {
     return request(app.getHttpServer())
       .get('/movies')
-      .query({ sort: 'popularity' })
+      .query({ sort: 'unknown' })
       .expect(400);
   });
 
@@ -154,23 +170,9 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer()).get('/movies/not-a-number').expect(400);
   });
 
-  it('/movies (POST) reports read-only provider behavior', () => {
-    return request(app.getHttpServer())
-      .post('/movies')
-      .send({
-        title: 'New Movie',
-        releaseDate: '2024-01-01',
-        posterUrl: 'https://example.com/posters/new-movie.jpg',
-        genres: ['Drama'],
-        rating: 7,
-        runtimeMinutes: 100,
-        description: 'New movie overview',
-      })
-      .expect(501)
-      .expect((response) => {
-        expect(response.body.message).toBe(
-          'Movie mutations are not supported by the configured movie provider',
-        );
-      });
+  it('does not expose movie mutation endpoints', async () => {
+    await request(app.getHttpServer()).post('/movies').send({}).expect(404);
+    await request(app.getHttpServer()).put('/movies').send({}).expect(404);
+    await request(app.getHttpServer()).delete('/movies/1').expect(404);
   });
 });

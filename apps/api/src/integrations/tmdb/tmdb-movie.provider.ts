@@ -68,7 +68,9 @@ export class TmdbMovieProvider implements MovieProvider {
   }
 
   public async findOne(id: number): Promise<MovieDetails | undefined> {
-    const movie = await this.request<TmdbMovieDetails>(`/movie/${id}`);
+    const movie = await this.request<TmdbMovieDetails>(`/movie/${id}`, {
+      append_to_response: 'credits',
+    });
 
     return movie ? this.mapper.toMovieDetails(movie) : undefined;
   }
@@ -162,6 +164,8 @@ export class TmdbMovieProvider implements MovieProvider {
           include_adult: 'false',
           include_video: 'false',
           page: String(page),
+          'primary_release_date.lte':
+            query.sort === 'releaseDate' ? this.getToday() : undefined,
           sort_by: this.getTmdbSort(query.sort, query.sortOrder),
           with_genres: genreIds.join(',') || undefined,
         },
@@ -222,16 +226,17 @@ export class TmdbMovieProvider implements MovieProvider {
 
   private getTmdbSort(
     sort?: MovieSortField,
-    sortOrder: MovieSortOrder = 'asc',
+    sortOrder?: MovieSortOrder,
   ): string {
     const sortByContractField = {
+      popularity: 'popularity',
       title: 'title',
       releaseDate: 'primary_release_date',
       rating: 'vote_average',
     } satisfies Record<MovieSortField, string>;
 
     const field = sort ? sortByContractField[sort] : 'popularity';
-    const direction = sort ? sortOrder : 'desc';
+    const direction = sortOrder ?? this.getDefaultSortOrder(sort);
 
     return `${field}.${direction}`;
   }
@@ -239,13 +244,14 @@ export class TmdbMovieProvider implements MovieProvider {
   private sortMoviesLocally(
     movies: TmdbMovieListItem[],
     sort?: MovieSortField,
-    sortOrder: MovieSortOrder = 'asc',
+    sortOrder?: MovieSortOrder,
   ): void {
     if (!sort) {
       return;
     }
 
     const getValue = (movie: TmdbMovieListItem): string | number => {
+      if (sort === 'popularity') return movie.popularity;
       if (sort === 'releaseDate') return movie.release_date;
       if (sort === 'rating') return movie.vote_average;
       return movie.title;
@@ -256,8 +262,17 @@ export class TmdbMovieProvider implements MovieProvider {
       const second = getValue(b);
       const result = first > second ? 1 : first < second ? -1 : 0;
 
-      return sortOrder === 'desc' ? result * -1 : result;
+      const direction = sortOrder ?? this.getDefaultSortOrder(sort);
+      return direction === 'desc' ? result * -1 : result;
     });
+  }
+
+  private getDefaultSortOrder(sort?: MovieSortField): MovieSortOrder {
+    return sort === 'title' ? 'asc' : 'desc';
+  }
+
+  private getToday(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 
   private async request<T>(

@@ -2,12 +2,16 @@
 
 .card {
   color: $white;
+  justify-self: center;
+  max-width: 300px;
   position: relative;
+  width: 100%;
 
   &__footer {
-    display: flex;
+    display: grid;
     gap: 16px;
-    justify-content: space-between;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
     padding: 14px 0 0;
 
     &__part {
@@ -22,6 +26,7 @@
     opacity: 0.86;
     padding-bottom: 8px;
     color: $white;
+    overflow-wrap: anywhere;
     text-align: left;
     text-decoration: none;
     transition:
@@ -37,6 +42,7 @@
 
   &__type {
     color: rgb(255 255 255 / 0.5);
+    overflow-wrap: anywhere;
     line-height: 1.35;
 
     &__link {
@@ -66,46 +72,6 @@
     white-space: nowrap;
   }
 
-  &__hover-btn {
-    border: 0;
-    display: block;
-    width: 36px;
-    height: 36px;
-    top: 14px;
-    right: 14px;
-    border-radius: 18px;
-    background-color: $grey-3;
-    position: absolute;
-    z-index: 110;
-    cursor: pointer;
-    opacity: 0;
-    padding: 0;
-    transition:
-      background-color 0.2s ease,
-      opacity 0.2s ease;
-
-    &:after {
-      @include center-align(absolute);
-
-      content: '';
-      background-color: $white;
-      width: 26px;
-      height: 26px;
-      display: inline-block;
-      mask-image: url('../../assets/img/ellipsis-v-icon.svg');
-      mask-size: contain;
-      mask-position: center;
-      mask-repeat: no-repeat;
-    }
-
-    &:hover,
-    &:focus-visible,
-    &[aria-expanded='true'] {
-      background-color: $red-1;
-      opacity: 1;
-    }
-  }
-
   &__image__wrapper {
     border-radius: 4px;
     aspect-ratio: 2 / 3;
@@ -113,12 +79,6 @@
     background-clip: padding-box;
     overflow: hidden;
     position: relative;
-
-    &:hover {
-      .card__hover-btn {
-        opacity: 1;
-      }
-    }
   }
 
   &__image {
@@ -133,86 +93,6 @@
       image-rendering: optimizequality;
       object-fit: cover;
       width: 100%;
-    }
-  }
-
-  &__menu {
-    background-color: $grey-3;
-    display: block;
-    position: absolute;
-    width: 190px;
-    height: 120px;
-    top: 14px;
-    right: 14px;
-    z-index: 120;
-    padding-top: 40px;
-    box-shadow:
-      rgb(0 0 0 / 0.19) 0 10px 20px,
-      rgb(0 0 0 / 0.23) 0 6px 6px;
-    border-radius: 4px;
-
-    &__btn {
-      background: transparent;
-      border: 0;
-      color: $white;
-      cursor: pointer;
-      display: block;
-      width: 100%;
-      line-height: 34px;
-      padding: 0 26px;
-      text-align: left;
-      transition: background-color 0.2s ease;
-
-      &:hover,
-      &:focus-visible {
-        background-color: $red-1;
-      }
-    }
-
-    &__close {
-      background: transparent;
-      border: 0;
-      color: $white;
-      cursor: pointer;
-      position: absolute;
-      right: 10px;
-      top: 10px;
-      font-size: 20px;
-      line-height: 1;
-      padding: 0;
-
-      &:before,
-      &:after {
-        background-color: currentcolor;
-        content: '';
-        height: 2px;
-        left: 0;
-        position: absolute;
-        top: 8px;
-        width: 18px;
-      }
-
-      &:before {
-        transform: rotate(45deg);
-      }
-
-      &:after {
-        transform: rotate(-45deg);
-      }
-    }
-  }
-
-  @include media-size(xl-down) {
-    &__image {
-      &__img {
-        width: 100%;
-      }
-    }
-  }
-
-  @include media-size(sm-down) {
-    &__hover-btn {
-      opacity: 1;
     }
   }
 }

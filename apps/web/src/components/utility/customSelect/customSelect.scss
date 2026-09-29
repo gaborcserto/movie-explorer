@@ -6,6 +6,7 @@
   &__header {
     background: transparent;
     border: 0;
+    box-sizing: border-box;
     color: inherit;
     cursor: pointer;
     display: block;
@@ -32,6 +33,7 @@
   }
 
   &__container {
+    box-sizing: border-box;
     position: absolute;
     width: 100%;
     margin: 0 auto;

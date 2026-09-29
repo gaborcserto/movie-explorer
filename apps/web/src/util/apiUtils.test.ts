@@ -2,15 +2,7 @@ import type {
   MovieDetails,
   MovieListResponse,
 } from '@movie-explorer/contracts';
-import {
-  postMovie,
-  deleteMovie,
-  putMovie,
-  getMovie,
-  getMovies,
-  isNotFoundError,
-  sortParams,
-} from './apiUtils';
+import { getMovie, getMovies, isNotFoundError, sortParams } from './apiUtils';
 import type { URLParams } from '../types';
 
 function response(body?: unknown, status = 200): Response {
@@ -22,6 +14,7 @@ function response(body?: unknown, status = 200): Response {
 }
 
 const mockMovieData: MovieDetails = {
+  cast: ['Actor One'],
   id: 1234,
   title: 'Sample Movie',
   releaseDate: '2021-01-01',
@@ -47,42 +40,6 @@ describe('API functions', () => {
     vi.clearAllMocks();
   });
 
-  it('should post movie data', async () => {
-    fetchMock.mockResolvedValue(response());
-
-    await expect(postMovie(mockMovieData)).resolves.toBeUndefined();
-    expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:4000/movies',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify(mockMovieData),
-      })
-    );
-  });
-
-  it('should delete movie data by id', async () => {
-    fetchMock.mockResolvedValue(response());
-
-    await expect(deleteMovie(mockMovieData.id)).resolves.toBeUndefined();
-    expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:4000/movies/1234',
-      { method: 'DELETE' }
-    );
-  });
-
-  it('should update a movie', async () => {
-    fetchMock.mockResolvedValue(response(mockMovieData));
-
-    await expect(putMovie(mockMovieData)).resolves.toEqual(mockMovieData);
-    expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:4000/movies',
-      expect.objectContaining({
-        method: 'PUT',
-        body: JSON.stringify(mockMovieData),
-      })
-    );
-  });
-
   it('should get movie by id', async () => {
     fetchMock.mockResolvedValue(response(mockMovieData));
 
@@ -94,20 +51,21 @@ describe('API functions', () => {
   });
 
   it('should get movies with URL parameters', async () => {
-    const params: URLParams = { genres: null, sort: null };
+    const params: URLParams = { genres: null, sort: null, sortOrder: null };
     fetchMock.mockResolvedValue(response(mockMoviesData));
 
     await expect(getMovies(params)).resolves.toEqual(mockMoviesData);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:4000/movies?sort=title&sortOrder=asc',
+      'http://localhost:4000/movies?sort=popularity&sortOrder=desc',
       {}
     );
   });
 
-  it('should map URL search, genre, and sort state to API query parameters', async () => {
+  it('preserves TMDB relevance when stale sort state accompanies search', async () => {
     const params: URLParams = {
       genres: 'crime',
       sort: 'releaseDate',
+      sortOrder: 'desc',
       search: 'zodiac',
     };
     fetchMock.mockResolvedValue(response(mockMoviesData));
@@ -115,7 +73,36 @@ describe('API functions', () => {
     await getMovies(params);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:4000/movies?sort=releaseDate&sortOrder=asc&search=zodiac&genre=crime',
+      'http://localhost:4000/movies?search=zodiac&genre=crime',
+      {}
+    );
+  });
+
+  it.each([
+    ['popularity', 'asc', 'sort=popularity&sortOrder=asc'],
+    ['popularity', 'desc', 'sort=popularity&sortOrder=desc'],
+    ['title', 'asc', 'sort=title&sortOrder=asc'],
+    ['title', 'desc', 'sort=title&sortOrder=desc'],
+    ['releaseDate', 'asc', 'sort=releaseDate&sortOrder=asc'],
+    ['releaseDate', 'desc', 'sort=releaseDate&sortOrder=desc'],
+  ])('maps %s %s sorting explicitly', async (sort, sortOrder, query) => {
+    fetchMock.mockResolvedValue(response(mockMoviesData));
+
+    await getMovies({ sort, sortOrder });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `http://localhost:4000/movies?${query}`,
+      {}
+    );
+  });
+
+  it('sends explicit popularity ordering for genre discovery', async () => {
+    fetchMock.mockResolvedValue(response(mockMoviesData));
+
+    await getMovies({ genres: 'crime' });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/movies?sort=popularity&sortOrder=desc&genre=crime',
       {}
     );
   });
@@ -123,7 +110,9 @@ describe('API functions', () => {
   it('should normalize display sort labels to API sort fields', () => {
     expect(sortParams('Release Date')).toBe('releaseDate');
     expect(sortParams('Rating')).toBe('rating');
-    expect(sortParams(null)).toBe('title');
+    expect(sortParams(null)).toBe('popularity');
+    expect(sortParams('Popularity')).toBe('popularity');
+    expect(sortParams('Relevance')).toBeUndefined();
     expect(sortParams('Title')).toBe('title');
   });
 

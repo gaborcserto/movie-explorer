@@ -1,35 +1,15 @@
 import { useEffect } from 'react';
-import type { Dispatch, ReactNode, SetStateAction } from 'react';
-import type { MovieDetails } from '@movie-explorer/contracts';
+import type { ReactNode } from 'react';
 import './customModal.scss';
-import AddModal from '../../modals/addModal';
-import EditModal from '../../modals/editModal';
-import DeleteModal from '../../modals/deleteModal';
-import SuccessModal from '../../modals/successModal';
-import ErrorModal from '../../modals/errorModal';
-import LoadingModal from '../../modals/loadingModal';
-import type { MovieModalState } from '../../../types';
 
 interface CustomModalProps {
-  modalState: MovieModalState;
-  setModalState: Dispatch<SetStateAction<MovieModalState>>;
+  children: ReactNode;
+  open: boolean;
   onClose: () => void;
-  onMoviesChanged: () => void;
+  titleId: string;
 }
 
-const isMovieDetails = (
-  movie: MovieModalState['movie']
-): movie is MovieDetails =>
-  Boolean(movie && 'description' in movie && 'runtimeMinutes' in movie);
-
-function CustomModal({
-  modalState,
-  setModalState,
-  onClose,
-  onMoviesChanged,
-}: CustomModalProps) {
-  const { open, type, loading, error, movie, message } = modalState;
-
+function CustomModal({ children, open, onClose, titleId }: CustomModalProps) {
   useEffect(() => {
     if (!open) return undefined;
 
@@ -43,80 +23,13 @@ function CustomModal({
     return () => document.removeEventListener('keydown', closeOnEscape);
   }, [onClose, open]);
 
-  const setLoading = (nextLoading: boolean) => {
-    setModalState((currentState) => ({
-      ...currentState,
-      loading: nextLoading,
-    }));
-  };
-
-  const setError = (nextError: string) => {
-    setModalState((currentState) => ({
-      ...currentState,
-      loading: false,
-      error: nextError,
-    }));
-  };
-
-  const setSuccess = (nextMessage: string) => {
-    setModalState((currentState) => ({
-      ...currentState,
-      type: 'success',
-      loading: false,
-      message: nextMessage,
-    }));
-    onMoviesChanged();
-  };
-
-  let content: ReactNode;
-
-  switch (type) {
-    case 'delete':
-      content = (
-        <DeleteModal
-          movieData={movie}
-          onLoadingChange={setLoading}
-          onError={setError}
-          onSuccess={setSuccess}
-        />
-      );
-      break;
-    case 'success':
-      content = <SuccessModal message={message} />;
-      break;
-    case 'edit':
-      content = (
-        <EditModal
-          movieData={isMovieDetails(movie) ? movie : undefined}
-          onLoadingChange={setLoading}
-          onError={setError}
-          onSuccess={setSuccess}
-        />
-      );
-      break;
-    case 'add':
-      content = (
-        <AddModal
-          onLoadingChange={setLoading}
-          onError={setError}
-          onSuccess={setSuccess}
-        />
-      );
-      break;
-    default:
-      content = null;
-  }
-
-  if (error) content = <ErrorModal message={error} />;
-  if (loading) content = <LoadingModal />;
-
   return open ? (
     <div className="modal__overlay">
       <section
         className="modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="modal-title"
+        aria-labelledby={titleId}
       >
         <button
           onClick={onClose}
@@ -126,7 +39,7 @@ function CustomModal({
         >
           <span className="visually-hidden">Close dialog</span>
         </button>
-        {content}
+        {children}
       </section>
     </div>
   ) : null;

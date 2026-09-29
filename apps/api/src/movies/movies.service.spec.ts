@@ -1,4 +1,3 @@
-import { NotImplementedException } from '@nestjs/common';
 import type {
   MovieDetails,
   MovieListResponse,
@@ -23,6 +22,7 @@ const moviesResponse: MovieListResponse = {
 
 const movieDetails: MovieDetails = {
   ...moviesResponse.movies[0],
+  cast: ['Actor One'],
   rating: 8,
   runtimeMinutes: 100,
   description: 'Alpha overview',
@@ -66,21 +66,5 @@ describe('MoviesService', () => {
     movieProvider.findOne.mockResolvedValue(undefined);
 
     await expect(service.findOne(999)).resolves.toBeUndefined();
-  });
-
-  it('rejects create because the configured provider is read-only', async () => {
-    await expect(service.create(movieDetails)).rejects.toThrow(
-      NotImplementedException,
-    );
-  });
-
-  it('rejects update because the configured provider is read-only', async () => {
-    await expect(service.update(1, movieDetails)).rejects.toThrow(
-      NotImplementedException,
-    );
-  });
-
-  it('rejects delete because the configured provider is read-only', async () => {
-    await expect(service.delete(1)).rejects.toThrow(NotImplementedException);
   });
 });

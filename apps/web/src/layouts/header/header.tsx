@@ -2,14 +2,10 @@ import { useParams } from 'react-router-dom';
 import Search from '../../components/search';
 import Details from '../../components/details';
 
-interface HeaderProps {
-  onAddMovie: () => void;
-}
-
-function Header({ onAddMovie }: HeaderProps) {
+function Header() {
   const { movieId } = useParams();
 
-  return movieId ? <Details /> : <Search onAddMovie={onAddMovie} />;
+  return movieId ? <Details /> : <Search />;
 }
 
 export default Header;

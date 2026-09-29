@@ -1,8 +1,7 @@
-import { Inject, Injectable, NotImplementedException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type {
   MovieDetails,
   MovieListResponse,
-  MovieMutationPayload,
   MovieQueryParams,
 } from '@movie-explorer/contracts';
 import { MOVIE_PROVIDER, MovieProvider } from './movie-provider';
@@ -20,30 +19,5 @@ export class MoviesService {
 
   public findOne(id: number): Promise<MovieDetails | undefined> {
     return this.movieProvider.findOne(id);
-  }
-
-  public async create(_movie: MovieMutationPayload): Promise<void> {
-    void _movie;
-    throw this.getMutationNotSupportedError();
-  }
-
-  public async update(
-    _id: number,
-    _movie: MovieMutationPayload,
-  ): Promise<MovieDetails | undefined> {
-    void _id;
-    void _movie;
-    throw this.getMutationNotSupportedError();
-  }
-
-  public async delete(_id: number): Promise<MovieDetails | undefined> {
-    void _id;
-    throw this.getMutationNotSupportedError();
-  }
-
-  private getMutationNotSupportedError(): NotImplementedException {
-    return new NotImplementedException(
-      'Movie mutations are not supported by the configured movie provider',
-    );
   }
 }

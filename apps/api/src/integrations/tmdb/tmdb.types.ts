@@ -10,6 +10,7 @@ export interface TmdbMovieListItem {
   id: number;
   overview: string;
   poster_path: string | null;
+  popularity: number;
   release_date: string;
   title: string;
   vote_average: number;
@@ -25,6 +26,7 @@ export interface TmdbGenreListResponse {
 }
 
 export interface TmdbMovieDetails {
+  credits?: TmdbCredits;
   genres: TmdbGenre[];
   id: number;
   overview: string;
@@ -33,4 +35,19 @@ export interface TmdbMovieDetails {
   runtime: number | null;
   title: string;
   vote_average: number;
+}
+
+export interface TmdbCredits {
+  cast: TmdbCastMember[];
+  crew: TmdbCrewMember[];
+}
+
+export interface TmdbCastMember {
+  name: string;
+  order: number;
+}
+
+export interface TmdbCrewMember {
+  job: string;
+  name: string;
 }

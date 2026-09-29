@@ -1,147 +1,28 @@
-import { render, fireEvent, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import type { MovieDetails, MovieSummary } from '@movie-explorer/contracts';
-import type { Mock } from 'vitest';
-import { getMovie as originalGetMovie } from '../../util/apiUtils';
+import type { MovieSummary } from '@movie-explorer/contracts';
 import Card from './card';
 
-const getMovie = vi.mocked(originalGetMovie);
-
-vi.mock('../../util/apiUtils');
-
-const mockMovie: MovieDetails = {
+const mockMovie: MovieSummary = {
   id: 1234,
-  title: 'Sample Movie',
-  releaseDate: '2021-01-01',
+  title: 'Glenroy Brothers (Comic Boxing)',
+  releaseDate: '1894-10-06',
   posterUrl: '/sample.jpg',
-  genres: ['Drama', 'Action'],
-  rating: 8.5,
-  runtimeMinutes: 120,
-  description: 'A sample movie for testing purposes.',
+  genres: ['Documentary', 'Comedy'],
 };
 
 describe('<Card />', () => {
-  let onEditMovie: Mock<(movie: MovieDetails) => void>;
-  let onDeleteMovie: Mock<(movie: MovieSummary) => void>;
-  let onMovieActionError: Mock<(error: string) => void>;
-
-  beforeEach(() => {
-    onEditMovie = vi.fn();
-    onDeleteMovie = vi.fn();
-    onMovieActionError = vi.fn();
-    getMovie.mockResolvedValue(mockMovie);
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('renders the card title', () => {
+  it('renders long titles, year, and genres without mutation actions', () => {
     render(
       <MemoryRouter>
-        <Card
-          movie={mockMovie}
-          onEditMovie={onEditMovie}
-          onDeleteMovie={onDeleteMovie}
-          onMovieActionError={onMovieActionError}
-        />
+        <Card movie={mockMovie} />
       </MemoryRouter>
     );
 
-    expect(screen.getByText(mockMovie.title)).toBeInTheDocument();
-  });
-
-  it('opens the menu when the menu button is clicked', () => {
-    render(
-      <MemoryRouter>
-        <Card
-          movie={mockMovie}
-          onEditMovie={onEditMovie}
-          onDeleteMovie={onDeleteMovie}
-          onMovieActionError={onMovieActionError}
-        />
-      </MemoryRouter>
-    );
-
-    const menuButton = screen.getByRole('button', { name: /menu/i });
-    fireEvent.click(menuButton);
-
-    expect(screen.getByText('Edit')).toBeInTheDocument();
-    expect(screen.getByText('Delete')).toBeInTheDocument();
-  });
-
-  it('opens the edit modal when handleOpenModal is called', async () => {
-    render(
-      <MemoryRouter>
-        <Card
-          movie={mockMovie}
-          onEditMovie={onEditMovie}
-          onDeleteMovie={onDeleteMovie}
-          onMovieActionError={onMovieActionError}
-        />
-      </MemoryRouter>
-    );
-
-    const menuButton = screen.getByRole('button', { name: /menu/i });
-    fireEvent.click(menuButton);
-
-    const editButton = screen.getByText('Edit');
-    fireEvent.click(editButton);
-
-    expect(getMovie).toHaveBeenCalledWith(1234);
-    await waitFor(() => {
-      expect(onEditMovie).toHaveBeenCalledWith(mockMovie);
-    });
-  });
-
-  it('shows a friendly error when edit movie details fail to load', async () => {
-    getMovie.mockRejectedValueOnce(new Error('Failed to fetch'));
-
-    render(
-      <MemoryRouter>
-        <Card
-          movie={mockMovie}
-          onEditMovie={onEditMovie}
-          onDeleteMovie={onDeleteMovie}
-          onMovieActionError={onMovieActionError}
-        />
-      </MemoryRouter>
-    );
-
-    const menuButton = screen.getByRole('button', { name: /menu/i });
-    fireEvent.click(menuButton);
-
-    const editButton = screen.getByText('Edit');
-    fireEvent.click(editButton);
-
-    await waitFor(() => {
-      expect(onMovieActionError).toHaveBeenCalledWith(
-        'Something went wrong while loading this movie.'
-      );
-    });
-    expect(onMovieActionError).not.toHaveBeenCalledWith(
-      expect.stringContaining('Failed to fetch')
-    );
-  });
-
-  it('opens the delete modal when handleDeleteModal is called', () => {
-    render(
-      <MemoryRouter>
-        <Card
-          movie={mockMovie}
-          onEditMovie={onEditMovie}
-          onDeleteMovie={onDeleteMovie}
-          onMovieActionError={onMovieActionError}
-        />
-      </MemoryRouter>
-    );
-
-    const menuButton = screen.getByRole('button', { name: /menu/i });
-    fireEvent.click(menuButton);
-
-    const deleteButton = screen.getByText('Delete');
-    fireEvent.click(deleteButton);
-
-    expect(onDeleteMovie).toHaveBeenCalledWith(mockMovie);
+    expect(screen.getByRole('link', { name: mockMovie.title })).toBeVisible();
+    expect(screen.getByText('1894')).toBeVisible();
+    expect(screen.getByText('Documentary')).toBeVisible();
+    expect(screen.getByText('Comedy')).toBeVisible();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 });

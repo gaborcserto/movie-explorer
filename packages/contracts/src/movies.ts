@@ -1,6 +1,10 @@
 export type MovieId = number;
 
-export type MovieSortField = 'title' | 'releaseDate' | 'rating';
+export type MovieSortField =
+  | 'popularity'
+  | 'title'
+  | 'releaseDate'
+  | 'rating';
 export type MovieSortOrder = 'asc' | 'desc';
 
 export interface MovieQueryParams {
@@ -21,9 +25,11 @@ export interface MovieSummary {
 }
 
 export interface MovieDetails extends MovieSummary {
-  rating: number;
-  runtimeMinutes: number;
-  description: string;
+  cast: string[];
+  description?: string;
+  director?: string;
+  rating?: number;
+  runtimeMinutes?: number;
 }
 
 export interface MovieListResponse {
@@ -34,14 +40,3 @@ export interface MovieListResponse {
 }
 
 export type MovieSearchResponse = MovieListResponse;
-
-export interface MovieMutationPayload {
-  id?: MovieId;
-  title: string;
-  releaseDate: string;
-  posterUrl: string;
-  genres: string[];
-  rating: number;
-  runtimeMinutes: number;
-  description: string;
-}

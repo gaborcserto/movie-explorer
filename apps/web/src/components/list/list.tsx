@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 import './list.scss';
 import { useParams, useSearchParams } from 'react-router-dom';
 import type {
-  MovieDetails,
   MovieListResponse,
   MovieSummary,
 } from '@movie-explorer/contracts';
@@ -11,19 +10,7 @@ import Error from '../../layouts/error';
 import Loading from '../../layouts/loading';
 import { getMovies } from '../../util/apiUtils';
 
-interface ListProps {
-  refreshKey: number;
-  onEditMovie: (movie: MovieDetails) => void;
-  onDeleteMovie: (movie: MovieSummary) => void;
-  onMovieActionError: (error: string) => void;
-}
-
-function List({
-  refreshKey,
-  onEditMovie,
-  onDeleteMovie,
-  onMovieActionError,
-}: ListProps) {
+function List() {
   const [moviesData, setMoviesData] = useState<MovieListResponse>();
   const [loadingData, setLoadingData] = useState(true);
   const [errorData, setErrorData] = useState<unknown>(null);
@@ -32,14 +19,16 @@ function List({
   const { searchQuery } = useParams();
   const filter = searchParams.get('filter');
   const sort = searchParams.get('sorting');
+  const sortOrder = searchParams.get('order');
 
   const params = useMemo(
     () => ({
-      sort,
+      sort: searchQuery ? null : sort,
+      sortOrder: searchQuery ? null : sortOrder,
       search: searchQuery,
       genres: filter,
     }),
-    [sort, searchQuery, filter]
+    [sort, sortOrder, searchQuery, filter]
   );
 
   const capitalizeFirstLetter = (data: string) => {
@@ -98,7 +87,7 @@ function List({
     return () => {
       isCurrent = false;
     };
-  }, [loadMovies, refreshKey]);
+  }, [loadMovies]);
 
   if (loadingData) {
     return (
@@ -140,13 +129,7 @@ function List({
       )}
       <div className="list__items">
         {moviesList.map((movieData: MovieSummary) => (
-          <Card
-            key={movieData.id}
-            movie={movieData}
-            onEditMovie={onEditMovie}
-            onDeleteMovie={onDeleteMovie}
-            onMovieActionError={onMovieActionError}
-          />
+          <Card key={movieData.id} movie={movieData} />
         ))}
       </div>
     </section>

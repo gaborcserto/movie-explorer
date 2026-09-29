@@ -1,31 +1,16 @@
-import { render, fireEvent } from '@testing-library/react';
-import type { MovieModalState } from '../../../types';
+import { render, fireEvent, screen } from '@testing-library/react';
 import CustomModal from './customModal';
 
-const closedModalState: MovieModalState = {
-  open: false,
-  type: 'add',
-  loading: false,
-  error: false,
-  movie: undefined,
-  message: '',
-};
-
-const renderModal = (modalState: MovieModalState = closedModalState) => {
-  const setModalState = vi.fn();
+const renderModal = (open = false) => {
   const onClose = vi.fn();
-  const onMoviesChanged = vi.fn();
 
   const view = render(
-    <CustomModal
-      modalState={modalState}
-      setModalState={setModalState}
-      onClose={onClose}
-      onMoviesChanged={onMoviesChanged}
-    />
+    <CustomModal open={open} onClose={onClose} titleId="test-modal-title">
+      <h2 id="test-modal-title">Test modal</h2>
+    </CustomModal>
   );
 
-  return { ...view, setModalState, onClose, onMoviesChanged };
+  return { ...view, onClose };
 };
 
 describe('<CustomModal />', () => {
@@ -38,21 +23,14 @@ describe('<CustomModal />', () => {
     expect(container).toMatchSnapshot();
   });
 
-  it('displays the correct modal based on modal type delete', () => {
-    const { queryByText } = renderModal({
-      ...closedModalState,
-      open: true,
-      type: 'delete',
-    });
+  it('renders reusable modal content when open', () => {
+    renderModal(true);
 
-    expect(queryByText('Delete Movie')).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Test modal');
   });
 
   it('closes the modal when close button is clicked', () => {
-    const { container, onClose } = renderModal({
-      ...closedModalState,
-      open: true,
-    });
+    const { container, onClose } = renderModal(true);
     const closeButton = container.querySelector('.modal__close');
 
     expect(closeButton).not.toBeNull();
@@ -61,10 +39,7 @@ describe('<CustomModal />', () => {
   });
 
   it('closes the modal when Escape is pressed', () => {
-    const { onClose } = renderModal({
-      ...closedModalState,
-      open: true,
-    });
+    const { onClose } = renderModal(true);
 
     fireEvent.keyDown(document, { key: 'Escape' });
 

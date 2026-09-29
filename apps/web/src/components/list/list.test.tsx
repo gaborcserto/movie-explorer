@@ -7,21 +7,11 @@ import { getMovies as originalGetMovies } from '../../util/apiUtils';
 const getMovies = vi.mocked(originalGetMovies);
 vi.mock('../../util/apiUtils');
 
-const defaultProps = {
-  refreshKey: 0,
-  onEditMovie: vi.fn(),
-  onDeleteMovie: vi.fn(),
-  onMovieActionError: vi.fn(),
-};
-
 const renderList = (initialEntry = '/search') => {
   render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
-        <Route
-          path="/search/:searchQuery?"
-          element={<List {...defaultProps} />}
-        />
+        <Route path="/search/:searchQuery?" element={<List />} />
       </Routes>
     </MemoryRouter>
   );
@@ -69,7 +59,7 @@ describe('<List />', () => {
 
     getMovies.mockResolvedValue(mockMovies);
 
-    renderList('/search/Movie?filter=crime&sorting=Release Date');
+    renderList('/search/Movie?filter=crime&sorting=releaseDate&order=desc');
 
     await waitFor(() => {
       const h2Element = screen.getByText(/movies found/i);
@@ -84,7 +74,8 @@ describe('<List />', () => {
     expect(screen.getByText('Movie 2')).toBeInTheDocument();
     expect(screen.getByText(/in genre:/i)).toHaveTextContent('Crime');
     expect(getMovies).toHaveBeenCalledWith({
-      sort: 'Release Date',
+      sort: null,
+      sortOrder: null,
       search: 'Movie',
       genres: 'crime',
     });

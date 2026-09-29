@@ -3,11 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import './search.scss';
 
-interface SearchProps {
-  onAddMovie: () => void;
-}
-
-function Search({ onAddMovie }: SearchProps) {
+function Search() {
   const { searchQuery } = useParams();
   const [searchData, setSearchData] = useState('');
   const navigate = useNavigate();
@@ -32,13 +28,6 @@ function Search({ onAddMovie }: SearchProps) {
           <Link to="/search" className="header__brand brand">
             <strong>Movie</strong> Explorer
           </Link>
-          <button
-            className="btn--transparent btn"
-            onClick={onAddMovie}
-            type="button"
-          >
-            + Add movie
-          </button>
         </div>
         <h1 className="header__title">FIND YOUR MOVIE</h1>
         <form

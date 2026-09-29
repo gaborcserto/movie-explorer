@@ -1,19 +1,9 @@
 import { Type } from 'class-transformer';
-import {
-  IsArray,
-  IsIn,
-  IsInt,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUrl,
-  Min,
-} from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type {
   MovieDetails as MovieDetailsContract,
   MovieListResponse as MovieListResponseContract,
-  MovieMutationPayload,
   MovieQueryParams,
   MovieSummary as MovieSummaryContract,
   MovieSortField,
@@ -21,6 +11,7 @@ import type {
 } from '@movie-explorer/contracts';
 
 const MOVIE_SORT_FIELDS = [
+  'popularity',
   'title',
   'releaseDate',
   'rating',
@@ -101,17 +92,32 @@ export class MovieSummary implements MovieSummaryContract {
 }
 
 export class MovieDetails extends MovieSummary implements MovieDetailsContract {
-  @ApiProperty({ description: 'Movie rating', example: 7.9 })
-  rating: number;
-
-  @ApiProperty({ description: 'Movie duration in minutes', example: 128 })
-  runtimeMinutes: number;
-
   @ApiProperty({
+    description: 'Primary billed cast names',
+    example: ['Emma Stone', 'Ryan Gosling'],
+  })
+  cast: string[];
+
+  @ApiPropertyOptional({ description: 'Movie rating', example: 7.9 })
+  rating?: number;
+
+  @ApiPropertyOptional({
+    description: 'Movie duration in minutes',
+    example: 128,
+  })
+  runtimeMinutes?: number;
+
+  @ApiPropertyOptional({
+    description: 'Movie director',
+    example: 'Damien Chazelle',
+  })
+  director?: string;
+
+  @ApiPropertyOptional({
     description: 'Short description of the movie',
     example: 'Mia, an aspiring actress, serves lattes to movie stars...',
   })
-  description: string;
+  description?: string;
 }
 
 export class MoviesResponse implements MovieListResponseContract {
@@ -135,49 +141,4 @@ export class MoviesResponse implements MovieListResponseContract {
     description: 'Limit amount of items in result array for pagination',
   })
   limit: number;
-}
-
-export class MovieMutationDto implements MovieMutationPayload {
-  @ApiPropertyOptional({ description: 'Movie identifier', example: 313369 })
-  @IsOptional()
-  @IsInt()
-  id?: number;
-
-  @ApiProperty({ description: 'Movie title', example: 'La La Land' })
-  @IsString()
-  title: string;
-
-  @ApiProperty({ description: 'Movie release date', example: '2016-12-29' })
-  @IsString()
-  releaseDate: string;
-
-  @ApiProperty({
-    description: 'URL to the poster image',
-    example: 'https://example.com/posters/la-la-land.jpg',
-  })
-  @IsUrl()
-  posterUrl: string;
-
-  @ApiProperty({
-    description: 'List of genres',
-    example: ['Comedy', 'Drama', 'Romance'],
-  })
-  @IsArray()
-  @IsString({ each: true })
-  genres: string[];
-
-  @ApiProperty({ description: 'Movie rating', example: 7.9 })
-  @IsNumber()
-  rating: number;
-
-  @ApiProperty({ description: 'Movie duration in minutes', example: 128 })
-  @IsInt()
-  runtimeMinutes: number;
-
-  @ApiProperty({
-    description: 'Short description of the movie',
-    example: 'Mia, an aspiring actress, serves lattes to movie stars...',
-  })
-  @IsString()
-  description: string;
 }

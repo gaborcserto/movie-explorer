@@ -19,8 +19,8 @@
 
   &__items {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-gap: 36px 56px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+    grid-gap: 36px 32px;
   }
 
   &__state {
@@ -66,14 +66,7 @@
     }
 
     &__items {
-      grid-template-columns: repeat(2, 1fr);
       grid-gap: 24px 20px;
-    }
-  }
-
-  @include media-size(md-down) {
-    &__items {
-      grid-template-columns: repeat(1, 1fr);
     }
   }
 }
