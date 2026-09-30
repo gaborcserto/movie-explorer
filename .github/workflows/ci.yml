@@ -2,9 +2,19 @@ name: CI
 
 on:
   pull_request:
+    paths-ignore:
+      - 'README.md'
+      - 'apps/api/README.md'
+      - 'apps/web/README.md'
+      - 'docs/**'
   push:
     branches:
       - main
+    paths-ignore:
+      - 'README.md'
+      - 'apps/api/README.md'
+      - 'apps/web/README.md'
+      - 'docs/**'
 
 permissions:
   contents: read

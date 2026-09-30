@@ -4,9 +4,19 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - 'README.md'
+      - 'apps/api/README.md'
+      - 'apps/web/README.md'
+      - 'docs/**'
   push:
     branches:
       - main
+    paths-ignore:
+      - 'README.md'
+      - 'apps/api/README.md'
+      - 'apps/web/README.md'
+      - 'docs/**'
   schedule:
     - cron: '30 2 * * 1'
 
