@@ -19,8 +19,7 @@ backend provides the application API and integrates with The Movie Database
 
 This repository is an npm workspace monorepo orchestrated by Turborepo:
 
-- `apps/web` - React 19, TypeScript, Vite, React Router, React Hook Form, and
-  SCSS frontend.
+- `apps/web` - React 19, TypeScript, Vite, React Router, and SCSS frontend.
 - `apps/api` - NestJS, TypeScript, class-validator, and Swagger/OpenAPI API.
   TMDB access is isolated in `src/integrations/tmdb`.
 - `packages/contracts` - shared public TypeScript contracts used by both apps.
