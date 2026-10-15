@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "vp run -r --parallel task:dev",
+    "dev": "vp run -r --parallel --log labeled task:dev",
     "build": "vp run -r task:build",
     "test": "vp run -r task:test",
     "coverage": "vp run -r task:coverage",
