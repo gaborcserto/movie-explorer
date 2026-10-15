@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
@@ -25,6 +25,15 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 
-  await app.listen(4000);
+  await app.listen(process.env.PORT ?? 4000, process.env.HOST);
+
+  const serverUrl = new URL(await app.getUrl());
+  if (serverUrl.hostname === '::' || serverUrl.hostname === '0.0.0.0') {
+    serverUrl.hostname = 'localhost';
+  }
+
+  const logger = new Logger('Bootstrap');
+  logger.log(`API: ${serverUrl.origin}`);
+  logger.log(`Swagger UI: ${serverUrl.origin}/api-docs`);
 }
 void bootstrap();
