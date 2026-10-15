@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { MovieCastMember, MovieDetails } from '@movie-explorer/contracts';
+import PhotoLightbox from './photoLightbox';
 import MovieImage from '../utility/customImage';
 import './media.scss';
 
@@ -95,38 +96,12 @@ export function DetailsHero({ movieData }: DetailsProps) {
 export function DetailsLowerContent({ movieData }: DetailsProps) {
   const { title, cast, castMembers = [], photos = [], videos = [] } = movieData;
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
   const visibleCast: MovieCastMember[] = castMembers.length
     ? castMembers
     : cast.map((name) => ({ name }));
   const visiblePhotos = photos.filter(
     (photo) => photo.thumbnailUrl && photo.fullUrl
   );
-
-  useEffect(() => {
-    if (selectedPhoto === null) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    dialogRef.current?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setSelectedPhoto(null);
-      if (event.key === 'ArrowLeft')
-        setSelectedPhoto((index) =>
-          index === null
-            ? null
-            : (index - 1 + visiblePhotos.length) % visiblePhotos.length
-        );
-      if (event.key === 'ArrowRight')
-        setSelectedPhoto((index) =>
-          index === null ? null : (index + 1) % visiblePhotos.length
-        );
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [selectedPhoto, visiblePhotos.length]);
 
   return (
     <div className="movie-details__lower">
@@ -211,57 +186,12 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
         )}
 
         {selectedPhoto !== null && (
-          <div
-            className="lightbox"
-            role="dialog"
-            aria-modal="true"
-            aria-label={`${title} photo viewer`}
-            tabIndex={-1}
-            ref={dialogRef}
-          >
-            <button
-              type="button"
-              className="lightbox__close"
-              aria-label="Close photo viewer"
-              onClick={() => setSelectedPhoto(null)}
-            >
-              ×
-            </button>
-            {visiblePhotos.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  className="lightbox__nav lightbox__nav--previous"
-                  aria-label="Previous photo"
-                  onClick={() =>
-                    setSelectedPhoto(
-                      (selectedPhoto - 1 + visiblePhotos.length) %
-                        visiblePhotos.length
-                    )
-                  }
-                >
-                  ‹
-                </button>
-                <button
-                  type="button"
-                  className="lightbox__nav lightbox__nav--next"
-                  aria-label="Next photo"
-                  onClick={() =>
-                    setSelectedPhoto((selectedPhoto + 1) % visiblePhotos.length)
-                  }
-                >
-                  ›
-                </button>
-              </>
-            )}
-            <img
-              src={visiblePhotos[selectedPhoto].fullUrl}
-              alt={
-                visiblePhotos[selectedPhoto].alt ??
-                `${title} still ${selectedPhoto + 1}`
-              }
-            />
-          </div>
+          <PhotoLightbox
+            photos={visiblePhotos}
+            initialIndex={selectedPhoto}
+            title={title}
+            onClose={() => setSelectedPhoto(null)}
+          />
         )}
       </div>
     </div>
