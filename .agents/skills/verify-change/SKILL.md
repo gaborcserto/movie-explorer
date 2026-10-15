@@ -1,3 +1,8 @@
+---
+name: verify-change
+description: Select and run the smallest useful repository checks after a code, tooling, or documentation change, widening checks when workspace boundaries are affected.
+---
+
 # Verify a change
 
 Use this skill to choose the smallest useful checks, then widen verification

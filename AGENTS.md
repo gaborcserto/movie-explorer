@@ -185,6 +185,14 @@ scope.
 Use `.agents/skills` for focused knowledge that is repeatedly useful for a
 type of change, and `.agents/workflows` for repeatable execution sequences.
 Keep those files short and refer back to this guide for commands and general
-rules. Available repository-specific guidance includes verification selection,
-shared contract changes, TMDB integration changes, feature changes,
-dependency updates, and final verification.
+rules. Route work to the focused skill below; `verify-change` alone owns
+verification selection.
+
+| Work | Skill |
+| --- | --- |
+| Select checks and verify a change | `.agents/skills/verify-change/SKILL.md` |
+| Change shared contracts or public API shapes | `.agents/skills/api-contract-change/SKILL.md` |
+| Change TMDB requests, mapping, configuration, or failures | `.agents/skills/tmdb-integration/SKILL.md` |
+| Implement React UI behavior and components | `.agents/skills/react-development/SKILL.md` |
+| Diagnose or improve measured React performance | `.agents/skills/react-performance/SKILL.md` |
+| Implement general NestJS API behavior | `.agents/skills/nestjs-development/SKILL.md` |

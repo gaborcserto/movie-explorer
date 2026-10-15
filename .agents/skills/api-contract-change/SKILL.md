@@ -1,3 +1,8 @@
+---
+name: api-contract-change
+description: Use when changing packages/contracts or a public Movie Explorer API shape; coordinate provider-neutral contracts, API implementation, frontend consumers, and relevant tests.
+---
+
 # Change an API contract safely
 
 Use this skill when changing `packages/contracts` or a public movie API shape.

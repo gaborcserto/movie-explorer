@@ -1,3 +1,8 @@
+---
+name: tmdb-integration
+description: Use when changing the API's TMDB integration, provider requests, configuration, response mapping, or related failure handling and tests.
+---
+
 # Change the TMDB integration
 
 Use this skill for changes under `apps/api/src/integrations/tmdb` or behavior
