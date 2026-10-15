@@ -75,6 +75,11 @@ safe defaults and can be changed for a different TMDB endpoint, image size,
 language, or region. `VITE_API_BASE_URL` controls the frontend API origin and
 defaults to `http://localhost:4000`. Never commit `.env` files or real tokens.
 
+API runtime environment variables override local file values. When launched
+from the repository root, `apps/api/.env` overrides the root `.env`; when
+launched from the API workspace, its `.env` is loaded directly. Local files
+are optional when the runtime supplies the TMDB configuration.
+
 ## Development
 
 Run the complete local application from the repository root:

@@ -32,6 +32,8 @@ import type {
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
 
+  // Intentionally public movie browsing; no authentication is required.
+  // nestjs-doctor-ignore-next-line security/require-guards-on-endpoints
   @Get()
   @ApiOperation({ summary: 'Get movies list' })
   @ApiResponse({
@@ -45,6 +47,8 @@ export class MoviesController {
     return this.moviesService.findAll(query);
   }
 
+  // Intentionally public autocomplete; no authentication is required.
+  // nestjs-doctor-ignore-next-line security/require-guards-on-endpoints
   @Get('suggestions')
   @ApiOperation({ summary: 'Get compact movie title suggestions' })
   public async getMovieSuggestions(
@@ -53,6 +57,8 @@ export class MoviesController {
     return this.moviesService.findSuggestions(query.query, query.limit ?? 6);
   }
 
+  // Intentionally public movie details; no authentication is required.
+  // nestjs-doctor-ignore-next-line security/require-guards-on-endpoints
   @Get(':id')
   @ApiOperation({ summary: 'Get movie by ID' })
   @ApiResponse({

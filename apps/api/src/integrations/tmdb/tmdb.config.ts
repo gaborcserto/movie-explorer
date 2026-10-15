@@ -10,36 +10,43 @@ export interface TmdbConfig {
 }
 
 function parseEnvFile(filePath: string): NodeJS.ProcessEnv {
-  if (!fs.existsSync(filePath)) {
-    return {};
+  let contents: string;
+
+  try {
+    // Singleton provider startup only; preserve local .env loading before serving requests.
+    // nestjs-doctor-ignore-next-line performance/no-sync-io
+    contents = fs.readFileSync(filePath, 'utf8');
+  } catch (error: unknown) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      return {};
+    }
+
+    throw error;
   }
 
-  return fs
-    .readFileSync(filePath, 'utf8')
-    .split(/\r?\n/)
-    .reduce<NodeJS.ProcessEnv>((env, line) => {
-      const trimmedLine = line.trim();
+  return contents.split(/\r?\n/).reduce<NodeJS.ProcessEnv>((env, line) => {
+    const trimmedLine = line.trim();
 
-      if (!trimmedLine || trimmedLine.startsWith('#')) {
-        return env;
-      }
-
-      const separatorIndex = trimmedLine.indexOf('=');
-
-      if (separatorIndex === -1) {
-        return env;
-      }
-
-      const key = trimmedLine.slice(0, separatorIndex).trim();
-      const rawValue = trimmedLine.slice(separatorIndex + 1).trim();
-
-      if (!key) {
-        return env;
-      }
-
-      env[key] = rawValue.replace(/^['"]|['"]$/g, '');
+    if (!trimmedLine || trimmedLine.startsWith('#')) {
       return env;
-    }, {});
+    }
+
+    const separatorIndex = trimmedLine.indexOf('=');
+
+    if (separatorIndex === -1) {
+      return env;
+    }
+
+    const key = trimmedLine.slice(0, separatorIndex).trim();
+    const rawValue = trimmedLine.slice(separatorIndex + 1).trim();
+
+    if (!key) {
+      return env;
+    }
+
+    env[key] = rawValue.replace(/^['"]|['"]$/g, '');
+    return env;
+  }, {});
 }
 
 function loadLocalEnv(): NodeJS.ProcessEnv {
