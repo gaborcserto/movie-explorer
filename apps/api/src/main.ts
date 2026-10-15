@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { lookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -28,8 +30,18 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 4000, process.env.HOST);
 
   const serverUrl = new URL(await app.getUrl());
-  if (serverUrl.hostname === '::' || serverUrl.hostname === '0.0.0.0') {
-    serverUrl.hostname = 'localhost';
+  const boundHostname = serverUrl.hostname.replace(/^\[|\]$/gu, '');
+  const isLoopbackAddress =
+    boundHostname === '::1' ||
+    (isIP(boundHostname) === 4 && boundHostname.startsWith('127.'));
+
+  if (!process.env.HOST && isLoopbackAddress) {
+    const localhostAddresses = await lookup('localhost', { all: true }).catch(
+      () => [],
+    );
+    if (localhostAddresses.some(({ address }) => address === boundHostname)) {
+      serverUrl.hostname = 'localhost';
+    }
   }
 
   const logger = new Logger('Bootstrap');

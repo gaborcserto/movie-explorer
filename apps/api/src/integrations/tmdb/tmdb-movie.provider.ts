@@ -81,9 +81,24 @@ export class TmdbMovieProvider implements MovieProvider {
   public async findOne(id: number): Promise<MovieDetails | undefined> {
     const movie = await this.request<TmdbMovieDetails>(`/movie/${id}`, {
       append_to_response: 'credits,images,videos',
+      // Images use ISO 639-1 language codes; also include language-neutral stills.
+      include_image_language: `${this.config.language.split('-')[0]},null`,
     });
 
-    return movie ? this.mapper.toMovieDetails(movie) : undefined;
+    if (!movie) return undefined;
+
+    // A successful details request can contain missing/failed appended resources.
+    // Reject partial responses rather than presenting failures as empty collections.
+    if (
+      !Array.isArray(movie.credits?.cast) ||
+      !Array.isArray(movie.credits?.crew) ||
+      !Array.isArray(movie.images?.backdrops) ||
+      !Array.isArray(movie.videos?.results)
+    ) {
+      throw new BadGatewayException('Movie provider response was incomplete');
+    }
+
+    return this.mapper.toMovieDetails(movie);
   }
 
   private async fetchMoviePage(

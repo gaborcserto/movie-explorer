@@ -1,6 +1,6 @@
 import { BadGatewayException } from '@nestjs/common';
 import { TmdbMovieProvider } from './tmdb-movie.provider';
-import type { TmdbMovieListItem } from './tmdb.types';
+import type { TmdbMovieDetails, TmdbMovieListItem } from './tmdb.types';
 
 const config = {
   accessToken: 'test-token',
@@ -14,6 +14,20 @@ const genreResponse = {
     { id: 18, name: 'Drama' },
     { id: 35, name: 'Comedy' },
   ],
+};
+
+const detailsResponse: TmdbMovieDetails = {
+  id: 969681,
+  title: 'Sample movie',
+  release_date: '2024-01-01',
+  poster_path: null,
+  genres: [],
+  vote_average: 0,
+  runtime: null,
+  overview: '',
+  credits: { cast: [], crew: [] },
+  images: { backdrops: [] },
+  videos: { results: [] },
 };
 
 describe('TmdbMovieProvider', () => {
@@ -188,6 +202,8 @@ describe('TmdbMovieProvider', () => {
         vote_average: 8,
         runtime: 100,
         overview: 'Alpha overview',
+        images: { backdrops: [] },
+        videos: { results: [] },
         credits: {
           cast: [{ name: 'Actor One', order: 0 }],
           crew: [{ name: 'Director One', job: 'Director' }],
@@ -215,7 +231,8 @@ describe('TmdbMovieProvider', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       expect.objectContaining({
         pathname: '/3/movie/1',
-        search: '?language=en-US&append_to_response=credits%2Cimages%2Cvideos',
+        search:
+          '?language=en-US&append_to_response=credits%2Cimages%2Cvideos&include_image_language=en%2Cnull',
       }),
       expect.any(Object),
     );
@@ -350,6 +367,96 @@ describe('TmdbMovieProvider', () => {
       totalResults: 0,
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['en-US', 'pt-BR', 'fr'])(
+    'includes localized and neutral images for %s in one request',
+    async (language) => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(detailsResponse));
+      const provider = new TmdbMovieProvider({ ...config, language });
+
+      const movie = await provider.findOne(969681);
+
+      expect(movie?.photos).toBeUndefined();
+      expect(movie?.videos).toBeUndefined();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const url = fetchMock.mock.calls[0][0] as URL;
+      expect(url.searchParams.get('language')).toBe(language);
+      expect(url.searchParams.get('include_image_language')).toBe(
+        `${language.split('-')[0]},null`,
+      );
+    },
+  );
+
+  it('keeps available photos and videos consistent across repeated loads', async () => {
+    fetchMock.mockImplementation(() =>
+      jsonResponse({
+        ...detailsResponse,
+        images: {
+          backdrops: [{ file_path: '/still.jpg', width: 1920, height: 1080 }],
+        },
+        videos: {
+          results: [{ site: 'YouTube', key: 'trailer', name: 'Trailer' }],
+        },
+      }),
+    );
+    const provider = new TmdbMovieProvider(config);
+    const first = await provider.findOne(969681);
+    const second = await provider.findOne(969681);
+
+    expect(first?.photos).toEqual([
+      {
+        thumbnailUrl: 'https://image.tmdb.org/t/p/w500/still.jpg',
+        fullUrl: 'https://image.tmdb.org/t/p/original/still.jpg',
+      },
+    ]);
+    expect(first?.videos).toEqual([
+      {
+        name: 'Trailer',
+        url: 'https://www.youtube.com/watch?v=trailer',
+        thumbnailUrl: 'https://img.youtube.com/vi/trailer/hqdefault.jpg',
+      },
+    ]);
+    expect(second).toEqual(first);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    { images: undefined },
+    { images: null },
+    { images: { success: false, status_code: 11 } },
+    { images: { backdrops: null } },
+    { videos: undefined },
+    { videos: { success: false, status_code: 11 } },
+    { videos: { results: {} } },
+    { credits: undefined },
+    { credits: { cast: [] } },
+  ])('rejects partial appended resources: %j', async (partial) => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ ...detailsResponse, ...partial }),
+    );
+    const provider = new TmdbMovieProvider(config);
+
+    await expect(provider.findOne(969681)).rejects.toMatchObject({
+      message: 'Movie provider response was incomplete',
+      name: BadGatewayException.name,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('recovers after a partial response without caching or automatic retries', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ ...detailsResponse, images: {} }))
+      .mockResolvedValueOnce(jsonResponse(detailsResponse));
+    const provider = new TmdbMovieProvider(config);
+
+    await expect(provider.findOne(969681)).rejects.toBeInstanceOf(
+      BadGatewayException,
+    );
+    await expect(provider.findOne(969681)).resolves.toMatchObject({
+      id: 969681,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('returns undefined when TMDB returns 404 for details', async () => {

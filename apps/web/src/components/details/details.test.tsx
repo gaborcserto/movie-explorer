@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useParams as originalUseParams } from 'react-router-dom';
 import type { MovieDetails } from '@movie-explorer/contracts';
@@ -233,5 +233,63 @@ describe('<Details />', () => {
 
     expect(await screen.findByText('Sample Movie')).toBeInTheDocument();
     expect(getMovie).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows a failed media response as an error and restores media on manual retry', async () => {
+    const user = userEvent.setup();
+    useParams.mockReturnValue({ movieId: '969681' });
+    getMovie
+      .mockRejectedValueOnce(new Error('API request failed with status 502'))
+      .mockResolvedValueOnce({
+        ...mockData,
+        photos: [{ thumbnailUrl: '/still.jpg', fullUrl: '/original.jpg' }],
+        videos: [{ name: 'Trailer', url: 'https://www.youtube.com/watch?v=1' }],
+      });
+
+    render(<Details />);
+
+    expect(await screen.findByText('Unable to load movie')).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Photos' })).toBeNull();
+    expect(getMovie).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole('button', { name: /try again/i }));
+
+    expect(
+      await screen.findByRole('heading', { name: 'Photos' })
+    ).toBeVisible();
+    expect(
+      screen.getByRole('heading', { name: 'Videos & Trailers' })
+    ).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Trailer' })).toBeVisible();
+    expect(getMovie).toHaveBeenCalledTimes(2);
+  });
+
+  it('ignores stale details when navigating to another movie', async () => {
+    let resolvePrevious: (movie: MovieDetails) => void = () => {};
+    useParams.mockReturnValue({ movieId: '1234' });
+    getMovie.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolvePrevious = resolve;
+      })
+    );
+    const { rerender } = render(<Details />);
+
+    useParams.mockReturnValue({ movieId: '969681' });
+    getMovie.mockResolvedValueOnce({
+      ...mockData,
+      id: 969681,
+      title: 'Current movie',
+      photos: [{ thumbnailUrl: '/current.jpg', fullUrl: '/original.jpg' }],
+    });
+    rerender(<Details />);
+    await screen.findByRole('heading', { name: 'Current movie' });
+
+    await act(async () => resolvePrevious(mockData));
+
+    expect(
+      screen.getByRole('heading', { name: 'Current movie' })
+    ).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Photos' })).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Sample Movie' })).toBeNull();
   });
 });
