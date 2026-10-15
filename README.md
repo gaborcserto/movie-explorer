@@ -17,7 +17,7 @@ backend provides the application API and integrates with The Movie Database
 
 ## Architecture
 
-This repository is an npm workspace monorepo orchestrated by Turborepo:
+This repository is an npm workspace monorepo orchestrated by Vite Task:
 
 - `apps/web` - React 19, TypeScript, Vite+, React Router, and SCSS frontend.
 - `apps/api` - NestJS, TypeScript, class-validator, and Swagger/OpenAPI API.
@@ -101,7 +101,7 @@ npm run start:dev --workspace @movie-explorer/api
 
 ## Verification commands
 
-Root scripts run the matching workspace tasks through Turborepo:
+Root scripts run the matching workspace tasks through Vite Task (`vp run`):
 
 ```bash
 npm run lint
@@ -111,6 +111,23 @@ npm run coverage
 npm run build
 npm run test:e2e
 ```
+
+Workspace scripts remain available directly. Explicit `task:*` entries in each
+workspace's `vite.config.*` wrap those scripts without name collisions. Build,
+lint, and typecheck tasks depend on the corresponding contracts task. Only
+development uses `--parallel`; e2e always runs after the API build.
+
+Task inputs include workspace sources, tests, configuration, shared contracts,
+and the root manifest and lockfile. Generated artifacts are excluded from
+inputs. Build caches restore `dist/**`; coverage caches restore `coverage/**`.
+`NODE_ENV` is fingerprinted, along with `TZ` for application checks and
+`VITE_*` for frontend tasks. Development and e2e are never cached and retain
+the runtime environment. API credentials are runtime inputs, not build inputs.
+
+The local cache lives under `node_modules/.vite/task-cache` and is removed by
+`npm ci`. To bypass caching, put the flag before the task name, for example
+`npx --no-install vp run -r --no-cache task:build`. Use
+`npx --no-install vp cache clean` to clear it. No remote cache is configured.
 
 The frontend uses `vp test run`; the backend uses Jest. The API e2e command
 builds the required workspaces and runs the NestJS e2e suite with a mocked
@@ -147,6 +164,6 @@ The frontend artifact can be served by a static host or previewed locally with
 ## Continuous integration
 
 GitHub Actions runs on pushes to `main` and pull requests. The CI workflow
-uses Node.js 24, `npm ci`, and the root Turborepo scripts for linting,
+uses Node.js 24, `npm ci`, and the root Vite Task scripts for linting,
 typechecking, unit tests, production builds, and API e2e tests. It uses the
 lockfile for npm caching and has read-only repository permissions.

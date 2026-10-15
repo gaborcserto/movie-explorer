@@ -1,7 +1,7 @@
 # Movie Explorer agent guide
 
 Movie Explorer is a full-stack movie search and browsing application. The
-repository is an npm workspace monorepo orchestrated by Turborepo. Preserve
+repository is an npm workspace monorepo orchestrated by Vite Task. Preserve
 working behavior and keep changes focused; this file is repository context,
 not a general development handbook.
 
@@ -27,7 +27,7 @@ TMDB access token or raw provider response shapes.
 ## Commands
 
 Install from the repository root with `npm install` (CI uses `npm ci`). Root
-commands run the matching workspace tasks through Turborepo:
+commands run the matching workspace tasks through Vite Task:
 
 ```text
 npm run dev
@@ -41,8 +41,8 @@ npm run test:e2e
 
 The root `test:e2e` command targets `@movie-explorer/api`; it builds required
 workspaces and runs the mocked-provider NestJS e2e suite. The CI quality gate
-runs lint, typecheck, coverage, build, and e2e checks. Turborepo task
-dependencies in `turbo.json` are part of that ordering.
+runs lint, typecheck, coverage, build, and e2e checks. Task dependencies in
+workspace `vite.config.*` files are part of that ordering.
 
 Useful narrower commands are:
 
