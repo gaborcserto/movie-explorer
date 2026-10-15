@@ -19,15 +19,15 @@ backend provides the application API and integrates with The Movie Database
 
 This repository is an npm workspace monorepo orchestrated by Turborepo:
 
-- `apps/web` - React 19, TypeScript, Vite, React Router, and SCSS frontend.
+- `apps/web` - React 19, TypeScript, Vite+, React Router, and SCSS frontend.
 - `apps/api` - NestJS, TypeScript, class-validator, and Swagger/OpenAPI API.
   TMDB access is isolated in `src/integrations/tmdb`.
 - `packages/contracts` - shared public TypeScript contracts used by both apps.
 
 The frontend calls the API through a small service boundary. The API maps TMDB
 responses to application-owned contracts rather than exposing TMDB response
-shapes directly. Frontend tests use Vitest and React Testing Library; backend
-unit and e2e tests use Jest.
+shapes directly. Frontend tests use Vite+'s Vitest and React Testing Library;
+backend unit and e2e tests use Jest.
 
 ## Search and result exploration
 
@@ -48,7 +48,7 @@ currently loaded.
 
 ## Prerequisites
 
-- Node.js 24 or newer
+- Node.js 24.11+ (24 LTS) or 26+
 - npm 11.6.2 or newer
 - A TMDB API read access token for local API development
 
@@ -107,13 +107,19 @@ Root scripts run the matching workspace tasks through Turborepo:
 npm run lint
 npm run typecheck
 npm test
+npm run coverage
 npm run build
 npm run test:e2e
 ```
 
-The frontend uses `vitest run`; the backend uses Jest. The API e2e command
+The frontend uses `vp test run`; the backend uses Jest. The API e2e command
 builds the required workspaces and runs the NestJS e2e suite with a mocked
 provider, so it does not require TMDB credentials.
+
+Lint runs Oxlint before ESLint, retaining Airbnb, React Hooks, accessibility,
+type-aware checks, and Stylelint. The API format command and staged formatter
+use Oxfmt; Prettier remains for frontend ESLint formatting checks, staged
+formatting, and Stylelint integration.
 
 For narrower checks, use workspace scripts such as
 `npm run lint:typescript --workspace @movie-explorer/web` or

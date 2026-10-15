@@ -1,0 +1,30 @@
+{
+  "plugins": [],
+  "categories": {
+    "correctness": "off"
+  },
+  "rules": {
+    "for-direction": "error",
+    "no-async-promise-executor": "error",
+    "no-compare-neg-zero": "error",
+    "no-control-regex": "error",
+    "no-debugger": "error",
+    "no-dupe-else-if": "error",
+    "no-duplicate-case": "error",
+    "no-empty-character-class": "error",
+    "no-ex-assign": "error",
+    "no-extra-boolean-cast": "error",
+    "no-invalid-regexp": "error",
+    "no-misleading-character-class": "error",
+    "no-prototype-builtins": "error",
+    "no-regex-spaces": "error",
+    "no-sparse-arrays": "error",
+    "no-template-curly-in-string": "error",
+    "no-unsafe-finally": "error",
+    "no-useless-backreference": "error",
+    "use-isnan": "error",
+    "no-case-declarations": "error",
+    "no-empty-pattern": "error",
+    "no-useless-catch": "error"
+  }
+}

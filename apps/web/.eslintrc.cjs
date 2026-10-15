@@ -1,3 +1,6 @@
+const oxlint = require('eslint-plugin-oxlint');
+const oxlintConfig = require('./.oxlintrc.json');
+
 module.exports = {
   root: true,
   env: {
@@ -49,6 +52,14 @@ module.exports = {
       },
     ],
     'prettier/prettier': ['error', { endOfLine: 'auto' }],
+    // Disable only the core rules explicitly enabled in Oxlint. Keep the
+    // option-sensitive Airbnb and type-aware rules in ESLint.
+    ...Object.fromEntries(
+      Object.keys(oxlintConfig.rules).map((rule) => [
+        rule,
+        oxlint.configs.all.rules[rule],
+      ])
+    ),
   },
   settings: {
     'import/resolver': {
