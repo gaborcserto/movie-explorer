@@ -1,169 +1,82 @@
 # Movie Explorer
 
-Movie Explorer is a full-stack movie search and browsing application. The
-frontend presents searchable, filterable movie results and movie details; the
-backend provides the application API and integrates with The Movie Database
-(TMDB) for movie data and poster images.
+Movie Explorer lets you search and browse movies, view details, and explore cast, photos, and videos. The React frontend uses the NestJS API for movie data so TMDB credentials stay on the server and provider responses are mapped to application contracts.
 
 ## Screenshots
 
-### Home
-
-![Movie Explorer home page](docs/screenshots/home.png)
-
-### Movie Details
+![Movie Explorer search page](docs/screenshots/home.png)
 
 ![Movie Explorer movie details page](docs/screenshots/details.png)
 
-## Architecture
+## Features
 
-This repository is an npm workspace monorepo orchestrated by Vite Task:
+- Search movies with keyboard accessible suggestions.
+- Filter and sort results, and load more results as you browse.
+- View movie details, cast, photos, and videos.
+- Open high resolution photos in a lightbox with fullscreen, zoom, pan, and touch gestures.
+- Browse a responsive interface with lazy loaded thumbnails and responsive images.
 
-- `apps/web` - React 19, TypeScript, Vite+, React Router, and SCSS frontend.
-- `apps/api` - NestJS, TypeScript, class-validator, and Swagger/OpenAPI API.
-  TMDB access is isolated in `src/integrations/tmdb`.
-- `packages/contracts` - shared public TypeScript contracts used by both apps.
+## Tech stack
 
-The frontend calls the API through a small service boundary. The API maps TMDB
-responses to application-owned contracts rather than exposing TMDB response
-shapes directly. Frontend tests use Vite+'s Vitest and React Testing Library;
-backend unit and e2e tests use Jest.
+- React 19, TypeScript, React Router, and SCSS
+- NestJS 11, class-validator, and Swagger/OpenAPI
+- npm Workspaces and Vite+ with Vite Task
+- Vitest and React Testing Library for frontend tests; Jest for API unit and e2e tests
+- Oxlint, ESLint, Stylelint, and TypeScript checks; Oxfmt for API formatting
 
-## Search and result exploration
+## Getting started
 
-Movie results support genre, release-year, and minimum-rating filters, TMDB
-sorting, URL-persisted search state, and incremental **Load more** pagination.
-The search input provides debounced, keyboard-accessible movie suggestions
-through the backend; TMDB credentials never reach the browser.
+Prerequisites: Node.js 24 and npm 11.6.2 or newer. These match the Node.js major version used in CI and the package manager declared by the repository.
 
-The movie list API returns `page`, `totalPages`, and `totalResults` alongside
-the application-owned movie summaries. `GET /movies/suggestions` returns a
-small suggestion set for queries of at least two characters.
+Install dependencies from the repository root and create the API environment file from its safe example:
 
-TMDB's text-search endpoint supports release-year filtering but not genre or
-minimum-rating filtering. For combined text searches, those two filters are
-applied to each fetched TMDB page. The UI therefore labels the TMDB-wide count
-as text-search results and separately reports how many matching movies are
-currently loaded.
-
-## Prerequisites
-
-- Node.js 24.11+ (24 LTS) or 26+
-- npm 11.6.2 or newer
-- A TMDB API read access token for local API development
-
-The repository declares npm 11.6.2 as its package manager. Install the
-matching version when reproducibility with CI is important.
-
-## Installation and environment
-
-Install all workspace dependencies from the repository root:
-
-```bash
-npm install
+```sh
+npm ci
+cp apps/api/.env.example apps/api/.env
 ```
 
-Copy the safe examples and provide local values:
+Set `TMDB_ACCESS_TOKEN` in `apps/api/.env` to a TMDB read access token. The other `TMDB_*` settings have defaults; their available names are listed in the example. The frontend's `VITE_API_BASE_URL` defaults to `http://localhost:4000` and only needs to be set when the API runs at another address. See the [API](apps/api/.env.example) and [web](apps/web/.env.example) environment examples for variable names and safe defaults. Do not commit `.env` files or credentials.
 
-```powershell
-Copy-Item apps/api/.env.example apps/api/.env
-Copy-Item apps/web/.env.example apps/web/.env
-```
+Start the frontend and API together:
 
-Set `TMDB_ACCESS_TOKEN` in `apps/api/.env`. The remaining API variables have
-safe defaults and can be changed for a different TMDB endpoint, image size,
-language, or region. `VITE_API_BASE_URL` controls the frontend API origin and
-defaults to `http://localhost:4000`. Never commit `.env` files or real tokens.
-
-API runtime environment variables override local file values. When launched
-from the repository root, `apps/api/.env` overrides the root `.env`; when
-launched from the API workspace, its `.env` is loaded directly. Local files
-are optional when the runtime supplies the TMDB configuration.
-
-## Development
-
-Run the complete local application from the repository root:
-
-```bash
+```sh
 npm run dev
 ```
 
-The API listens on `http://localhost:4000`; Vite serves the frontend on its
-default port, `http://localhost:5173`. The API's generated OpenAPI UI is
-available at `http://localhost:4000/api-docs`.
+The frontend is at [http://localhost:5173](http://localhost:5173) and the API listens at [http://localhost:4000](http://localhost:4000).
 
-Run only one workspace when needed:
+## Development and checks
 
-```bash
-npm run dev --workspace @movie-explorer/web
-npm run start:dev --workspace @movie-explorer/api
-```
+Run these scripts from the repository root. Vite Task coordinates the workspace tasks.
 
-## Verification commands
-
-Root scripts run the matching workspace tasks through Vite Task (`vp run`):
-
-```bash
+```sh
+npm run dev
+npm run build
 npm run lint
 npm run typecheck
 npm test
 npm run coverage
-npm run build
 npm run test:e2e
 ```
 
-Workspace scripts remain available directly. Explicit `task:*` entries in each
-workspace's `vite.config.*` wrap those scripts without name collisions. Build,
-lint, and typecheck tasks depend on the corresponding contracts task. Only
-development uses `--parallel`; e2e always runs after the API build.
+The API e2e task builds the API and runs its mocked provider suite; it does not need TMDB credentials. GitHub Actions runs lint, typecheck, coverage, build, and API e2e checks on pull requests and pushes to `main`. To run one app during development, use `npm run dev --workspace @movie-explorer/web` or `npm run start:dev --workspace @movie-explorer/api`.
 
-Task inputs include workspace sources, tests, configuration, shared contracts,
-and the root manifest and lockfile. Generated artifacts are excluded from
-inputs. Build caches restore `dist/**`; coverage caches restore `coverage/**`.
-`NODE_ENV` is fingerprinted, along with `TZ` for application checks and
-`VITE_*` for frontend tasks. Development and e2e are never cached and retain
-the runtime environment. API credentials are runtime inputs, not build inputs.
+## API documentation
 
-The local cache lives under `node_modules/.vite/task-cache` and is removed by
-`npm ci`. To bypass caching, put the flag before the task name, for example
-`npx --no-install vp run -r --no-cache task:build`. Use
-`npx --no-install vp cache clean` to clear it. No remote cache is configured.
+The running API serves its generated Swagger/OpenAPI documentation at [http://localhost:4000/api-docs](http://localhost:4000/api-docs). The API keeps TMDB integration details server side and returns the shared application contracts.
 
-The frontend uses `vp test run`; the backend uses Jest. The API e2e command
-builds the required workspaces and runs the NestJS e2e suite with a mocked
-provider, so it does not require TMDB credentials.
+## Project structure
 
-Lint runs Oxlint before ESLint, retaining Airbnb, React Hooks, accessibility,
-type-aware checks, and Stylelint. The API format command and staged formatter
-use Oxfmt; Prettier remains for frontend ESLint formatting checks, staged
-formatting, and Stylelint integration.
-
-For narrower checks, use workspace scripts such as
-`npm run lint:typescript --workspace @movie-explorer/web` or
-`npm test --workspace @movie-explorer/api`.
-
-## Production builds
-
-Create production artifacts with:
-
-```bash
-npm run build
+```text
+apps/
+  api/                 NestJS API and TMDB integration
+    src/movies/        Movie endpoints and application logic
+    src/integrations/  External provider integrations
+    test/              API end-to-end tests
+  web/                 React frontend
+    src/components/    Search, filters, movie cards, and details
+    src/pages/         Application pages
+    src/util/          Frontend API client and utilities
+packages/
+  contracts/           Shared TypeScript API contracts
 ```
-
-This builds the API into `apps/api/dist`, the frontend into `apps/web/dist`,
-and emits contract declarations. Provide the TMDB environment variables to the
-API runtime, then start the built API with:
-
-```bash
-npm run start:prod --workspace @movie-explorer/api
-```
-
-The frontend artifact can be served by a static host or previewed locally with
-`npm run preview --workspace @movie-explorer/web`.
-
-## Continuous integration
-
-GitHub Actions runs on pushes to `main` and pull requests. The CI workflow
-uses Node.js 24, `npm ci`, and the root Vite Task scripts for linting,
-typechecking, unit tests, production builds, and API e2e tests. It uses the
-lockfile for npm caching and has read-only repository permissions.
