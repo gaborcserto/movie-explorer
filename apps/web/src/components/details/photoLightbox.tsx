@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
+import {
+  FaChevronLeft,
+  FaChevronRight,
+  FaCompress,
+  FaExpand,
+  FaMagnifyingGlassMinus,
+  FaMagnifyingGlassPlus,
+  FaXmark,
+} from 'react-icons/fa6';
 import type { MoviePhoto } from '@movie-explorer/contracts';
 
 interface Props {
@@ -153,7 +162,7 @@ function PhotoView({
           disabled={status !== 'loaded' || view.scale === 1}
           onClick={() => update(view.scale - 0.5, view.x, view.y)}
         >
-          −
+          <FaMagnifyingGlassMinus aria-hidden="true" focusable="false" />
         </button>
         <button
           type="button"
@@ -169,7 +178,7 @@ function PhotoView({
           disabled={status !== 'loaded' || view.scale === MAX_ZOOM}
           onClick={() => update(view.scale + 0.5, view.x, view.y)}
         >
-          +
+          <FaMagnifyingGlassPlus aria-hidden="true" focusable="false" />
         </button>
       </div>
       <div
@@ -372,7 +381,11 @@ export default function PhotoLightbox({
           }
           onClick={toggleFullscreen}
         >
-          {fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          {fullscreen ? (
+            <FaCompress aria-hidden="true" focusable="false" />
+          ) : (
+            <FaExpand aria-hidden="true" focusable="false" />
+          )}
         </button>
         <button
           type="button"
@@ -380,7 +393,7 @@ export default function PhotoLightbox({
           aria-label="Close photo viewer"
           onClick={onClose}
         >
-          ×
+          <FaXmark aria-hidden="true" focusable="false" />
         </button>
       </div>
       {fullscreenError && (
@@ -402,7 +415,7 @@ export default function PhotoLightbox({
             aria-label="Previous photo"
             onClick={() => navigate(-1)}
           >
-            ‹
+            <FaChevronLeft aria-hidden="true" focusable="false" />
           </button>
           <button
             type="button"
@@ -410,7 +423,7 @@ export default function PhotoLightbox({
             aria-label="Next photo"
             onClick={() => navigate(1)}
           >
-            ›
+            <FaChevronRight aria-hidden="true" focusable="false" />
           </button>
         </>
       )}

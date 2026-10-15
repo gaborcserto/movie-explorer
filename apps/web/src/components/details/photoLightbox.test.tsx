@@ -84,6 +84,27 @@ afterEach(() => {
 });
 
 describe('photo lightbox', () => {
+  it('uses accessible icons for lightbox actions and keeps the zoom percentage visible', async () => {
+    const { dialog } = await open();
+
+    [
+      'Previous photo',
+      'Next photo',
+      'Close photo viewer',
+      'Enter fullscreen',
+      'Zoom in',
+      'Zoom out',
+    ].forEach((label) => {
+      const button = within(dialog).getByRole('button', { name: label });
+      expect(
+        button.querySelector('svg[aria-hidden="true"]')
+      ).toBeInTheDocument();
+    });
+    expect(
+      within(dialog).getByRole('button', { name: 'Reset zoom to fit' })
+    ).toHaveTextContent('100%');
+  });
+
   it('locks scrolling, traps focus, restores focus and survives repeated opening', async () => {
     document.body.style.overflow = 'auto';
     const { user, thumbnail, dialog } = await open();
