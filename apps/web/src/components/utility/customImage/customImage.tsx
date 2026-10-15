@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import placeholderImage from '../../../assets/img/noimage.png';
 
 interface MovieImageProps {
@@ -10,7 +10,7 @@ interface MovieImageProps {
   className: string;
 }
 
-function MovieImage({
+function MovieImageContent({
   src,
   srcSet,
   sizes,
@@ -20,11 +20,6 @@ function MovieImage({
 }: MovieImageProps) {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    setLoaded(false);
-    setFailed(false);
-  }, [src, srcSet]);
 
   const showFallback = !src || failed;
 
@@ -42,7 +37,6 @@ function MovieImage({
       }
     >
       <img
-        key={`${src}-${srcSet}`}
         src={showFallback ? placeholderImage : src}
         srcSet={showFallback ? undefined : srcSet}
         sizes={showFallback ? undefined : sizes}
@@ -55,6 +49,20 @@ function MovieImage({
         onError={showFallback ? undefined : () => setFailed(true)}
       />
     </div>
+  );
+}
+
+function MovieImage({ src, srcSet, sizes, ...props }: MovieImageProps) {
+  const sourceKey = JSON.stringify([src, srcSet, sizes]);
+
+  return (
+    <MovieImageContent
+      key={sourceKey}
+      src={src}
+      srcSet={srcSet}
+      sizes={sizes}
+      {...props}
+    />
   );
 }
 

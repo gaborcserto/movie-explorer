@@ -1,6 +1,26 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useLayoutEffect, useRef } from 'react';
 import MovieImage from './customImage';
 import placeholderImage from '../../../assets/img/noimage.png';
+
+function LoadImageDuringLayout() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const image = containerRef.current?.querySelector('img');
+    if (image) act(() => fireEvent.load(image));
+  }, []);
+
+  return (
+    <div ref={containerRef}>
+      <MovieImage
+        src="/cached.jpg"
+        alt="Cached poster"
+        className="movie-image"
+      />
+    </div>
+  );
+}
 
 describe('<MovieImage />', () => {
   it('renders the placeholder when no source is provided', () => {
@@ -28,6 +48,11 @@ describe('<MovieImage />', () => {
     expect(image).toHaveStyle({ opacity: '1' });
     expect(image.parentElement?.style.backgroundImage).toBe('');
     imageConstructor.mockRestore();
+  });
+
+  it('keeps a successful load that arrives before passive effects run', () => {
+    render(<LoadImageDuringLayout />);
+    expect(screen.getByAltText('Cached poster')).toHaveStyle({ opacity: '1' });
   });
 
   it('supports explicit eager loading and responsive candidates', () => {
@@ -66,31 +91,85 @@ describe('<MovieImage />', () => {
     expect(image).toHaveAttribute('src', placeholderImage);
   });
 
-  it('resets loading and errors when sources or candidates change', () => {
+  it('ignores stale events and recovers across rapid source and sizes changes', () => {
     const { rerender } = render(
       <MovieImage src="/first.jpg" alt="Poster" className="movie-image" />
     );
     const oldImage = screen.getByAltText('Poster');
     fireEvent.error(oldImage);
     rerender(
-      <MovieImage src="/next.jpg" alt="Poster" className="movie-image" />
-    );
-    expect(screen.getByAltText('Poster')).toHaveAttribute('src', '/next.jpg');
-    expect(screen.getByAltText('Poster')).toHaveStyle({ opacity: '0' });
-    fireEvent.load(screen.getByAltText('Poster'));
-    rerender(
       <MovieImage
         src="/next.jpg"
-        srcSet="/next-large.jpg 2x"
+        sizes="200px"
         alt="Poster"
         className="movie-image"
       />
     );
-    fireEvent.error(oldImage);
+    const nextImage = screen.getByAltText('Poster');
     expect(screen.getByAltText('Poster')).toHaveAttribute('src', '/next.jpg');
+    expect(screen.getByAltText('Poster')).toHaveStyle({ opacity: '0' });
+    rerender(
+      <MovieImage
+        src="/last.jpg"
+        sizes="300px"
+        alt="Poster"
+        className="movie-image"
+      />
+    );
+    const lastImage = screen.getByAltText('Poster');
+    fireEvent.load(nextImage);
+    expect(lastImage).toHaveStyle({ opacity: '0' });
+    fireEvent.load(lastImage);
+    expect(lastImage).toHaveStyle({ opacity: '1' });
+    rerender(
+      <MovieImage
+        src="/last.jpg"
+        srcSet="/last-large.jpg 2x"
+        sizes="300px"
+        alt="Poster"
+        className="movie-image"
+      />
+    );
+    const responsiveImage = screen.getByAltText('Poster');
+    fireEvent.error(responsiveImage);
+    expect(responsiveImage).toHaveAttribute('src', placeholderImage);
+    fireEvent.error(oldImage);
+    rerender(
+      <MovieImage
+        src="/recovered.jpg"
+        srcSet="/recovered-large.jpg 2x"
+        sizes="300px"
+        alt="Poster"
+        className="movie-image"
+      />
+    );
+    const recoveredImage = screen.getByAltText('Poster');
+    expect(recoveredImage).toHaveAttribute('src', '/recovered.jpg');
+    expect(recoveredImage).toHaveStyle({ opacity: '0' });
+    fireEvent.load(recoveredImage);
+    expect(recoveredImage).toHaveStyle({ opacity: '1' });
+    expect(recoveredImage).not.toHaveAttribute('src', placeholderImage);
     expect(screen.getByAltText('Poster')).toHaveAttribute(
       'srcset',
-      '/next-large.jpg 2x'
+      '/recovered-large.jpg 2x'
     );
+  });
+
+  it('resets loaded state when a source changes away and back quickly', () => {
+    const { rerender } = render(
+      <MovieImage src="/first.jpg" alt="Poster" className="movie-image" />
+    );
+    const firstImage = screen.getByAltText('Poster');
+    fireEvent.load(firstImage);
+    expect(firstImage).toHaveStyle({ opacity: '1' });
+
+    rerender(
+      <MovieImage src="/temporary.jpg" alt="Poster" className="movie-image" />
+    );
+    expect(screen.getByAltText('Poster')).toHaveStyle({ opacity: '0' });
+    rerender(
+      <MovieImage src="/first.jpg" alt="Poster" className="movie-image" />
+    );
+    expect(screen.getByAltText('Poster')).toHaveStyle({ opacity: '0' });
   });
 });
