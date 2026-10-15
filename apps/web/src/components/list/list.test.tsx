@@ -79,6 +79,8 @@ describe('<List />', () => {
 
     expect(screen.getByText('Movie 1')).toBeInTheDocument();
     expect(screen.getByText('Movie 2')).toBeInTheDocument();
+    expect(screen.getByAltText('Movie 1')).toHaveAttribute('loading', 'eager');
+    expect(screen.getByAltText('Movie 2')).toHaveAttribute('loading', 'lazy');
     expect(screen.getByText('2 matching movies loaded')).toBeInTheDocument();
     expect(screen.getByText(/genre:/i)).toHaveTextContent('Crime');
     expect(screen.getByText(/search:/i)).toHaveTextContent('"Movie"');

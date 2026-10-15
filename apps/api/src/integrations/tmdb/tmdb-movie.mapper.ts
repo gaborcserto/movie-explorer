@@ -29,6 +29,9 @@ export class TmdbMovieMapper {
       title: movie.title,
       releaseDate: movie.release_date,
       posterUrl: this.toPosterUrl(movie.poster_path),
+      ...(movie.poster_path && {
+        posterSrcSet: this.toPosterSrcSet(movie.poster_path),
+      }),
       genres: movie.genre_ids
         .map((genreId) => genres.find((genre) => genre.id === genreId)?.name)
         .filter((genreName): genreName is string => Boolean(genreName)),
@@ -51,6 +54,14 @@ export class TmdbMovieMapper {
         name: credit.name.trim(),
         character: credit.character?.trim() || undefined,
         profileUrl: this.toImageUrl(credit.profile_path),
+        ...(credit.profile_path && {
+          // h632 is height-based; density descriptors avoid inventing a width.
+          profileSrcSet: this.toSrcSet(credit.profile_path, [
+            ['w185', '1x'],
+            ['h632', '2x'],
+            ['original', '3x'],
+          ]),
+        }),
       }));
     const cast = castMembers.map((credit) => credit.name);
     const photos = (movie.images?.backdrops ?? [])
@@ -74,6 +85,9 @@ export class TmdbMovieMapper {
       title: movie.title,
       releaseDate: movie.release_date,
       posterUrl: this.toPosterUrl(movie.poster_path),
+      ...(movie.poster_path && {
+        posterSrcSet: this.toPosterSrcSet(movie.poster_path),
+      }),
       genres: movie.genres.map((genre) => genre.name),
       cast,
     };
@@ -120,6 +134,23 @@ export class TmdbMovieMapper {
     }
 
     return this.toImageUrl(posterPath);
+  }
+
+  private toPosterSrcSet(path: string): string {
+    // Live /configuration sizes: w342 covers 320 CSS px, w780 covers DPR 2.
+    // DPR 3 needs original: the next required width (960) exceeds w780.
+    return this.toSrcSet(path, [
+      ['w342', '1x'],
+      ['w780', '2x'],
+      ['original', '3x'],
+    ]);
+  }
+
+  private toSrcSet(path: string, candidates: [string, string][]): string {
+    const baseUrl = this.originalImageBaseUrl.replace(/\/original$/, '');
+    return candidates
+      .map(([size, descriptor]) => `${baseUrl}/${size}${path} ${descriptor}`)
+      .join(', ');
   }
 
   private toImageUrl(path: string | null): string {

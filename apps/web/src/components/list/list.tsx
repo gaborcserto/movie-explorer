@@ -201,8 +201,12 @@ function List() {
         </div>
       )}
       <div className="list__items">
-        {movies.map((movie) => (
-          <Card key={movie.id} movie={movie} />
+        {movies.map((movie, index) => (
+          <Card
+            key={movie.id}
+            movie={movie}
+            loading={index === 0 ? 'eager' : 'lazy'}
+          />
         ))}
       </div>
       {loadMoreError && (

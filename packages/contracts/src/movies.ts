@@ -22,6 +22,8 @@ export interface MovieSummary {
   title: string;
   releaseDate: string;
   posterUrl: string;
+  /** Provider-owned density candidates for posters rendered at up to 320px. */
+  posterSrcSet?: string;
   genres: string[];
 }
 
@@ -29,6 +31,8 @@ export interface MovieCastMember {
   name: string;
   character?: string;
   profileUrl?: string;
+  /** Density candidates for portraits rendered at up to 180px. */
+  profileSrcSet?: string;
 }
 
 export interface MoviePhoto {

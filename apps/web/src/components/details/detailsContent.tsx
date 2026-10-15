@@ -12,6 +12,7 @@ export function DetailsHero({ movieData }: DetailsProps) {
     title,
     releaseDate,
     posterUrl,
+    posterSrcSet,
     genres,
     rating,
     runtimeMinutes,
@@ -35,6 +36,8 @@ export function DetailsHero({ movieData }: DetailsProps) {
     <div className="movie-details__container">
       <MovieImage
         src={posterUrl}
+        srcSet={posterSrcSet}
+        loading="eager"
         alt={title}
         className="movie-details__image"
       />
@@ -141,6 +144,7 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
                 >
                   <MovieImage
                     src={member.profileUrl}
+                    srcSet={member.profileSrcSet}
                     alt={member.name}
                     className="cast-member__image"
                   />

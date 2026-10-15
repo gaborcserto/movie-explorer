@@ -26,6 +26,8 @@ describe('TmdbMovieMapper', () => {
       title: 'Alpha',
       releaseDate: '2020-01-01',
       posterUrl: 'https://image.tmdb.org/t/p/w500/alpha.jpg',
+      posterSrcSet:
+        'https://image.tmdb.org/t/p/w342/alpha.jpg 1x, https://image.tmdb.org/t/p/w780/alpha.jpg 2x, https://image.tmdb.org/t/p/original/alpha.jpg 3x',
       genres: ['Drama', 'Comedy'],
     });
   });
@@ -114,6 +116,31 @@ describe('TmdbMovieMapper', () => {
       posterUrl: '',
       genres: [],
     });
+  });
+
+  it('uses supported portrait densities and omits candidates for missing images', () => {
+    const movie = mapper.toMovieDetails({
+      id: 5,
+      title: 'Cast',
+      release_date: '',
+      poster_path: null,
+      genres: [],
+      vote_average: 0,
+      runtime: null,
+      overview: '',
+      credits: {
+        cast: [
+          { name: 'Actor', order: 0, profile_path: '/actor.jpg' },
+          { name: 'Missing', order: 1 },
+        ],
+        crew: [],
+      },
+    });
+    expect(movie.posterSrcSet).toBeUndefined();
+    expect(movie.castMembers?.[0].profileSrcSet).toBe(
+      'https://image.tmdb.org/t/p/w185/actor.jpg 1x, https://image.tmdb.org/t/p/h632/actor.jpg 2x, https://image.tmdb.org/t/p/original/actor.jpg 3x',
+    );
+    expect(movie.castMembers?.[1].profileSrcSet).toBeUndefined();
   });
 
   it('omits a zero runtime rather than presenting it as real metadata', () => {

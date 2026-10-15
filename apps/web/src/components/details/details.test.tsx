@@ -115,6 +115,7 @@ describe('<Details />', () => {
       name: 'Sample Movie still 1',
     });
     expect(firstThumbnail).toHaveAttribute('src', '/first-thumbnail.jpg');
+    expect(firstThumbnail).toHaveAttribute('loading', 'lazy');
     expect(document.querySelector('img[src="/first-original.jpg"]')).toBeNull();
 
     await user.click(firstThumbnail);
@@ -127,6 +128,57 @@ describe('<Details />', () => {
     expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
       'src',
       '/second-original.jpg'
+    );
+    expect(screen.getByRole('dialog').querySelector('img')).not.toHaveAttribute(
+      'srcset'
+    );
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
+      'src',
+      '/first-original.jpg'
+    );
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
+      'src',
+      '/second-original.jpg'
+    );
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('loads the hero eagerly and keeps responsive cast portraits lazy', () => {
+    render(
+      <>
+        <DetailsContent
+          movieData={{ ...mockData, posterSrcSet: '/poster-large.jpg 2x' }}
+        />
+        <DetailsLowerContent
+          movieData={{
+            ...mockData,
+            castMembers: [
+              {
+                name: 'Actor One',
+                profileUrl: '/actor.jpg',
+                profileSrcSet: '/actor-small.jpg 1x, /actor-large.jpg 2x',
+              },
+            ],
+          }}
+        />
+      </>
+    );
+    expect(screen.getByAltText('Sample Movie')).toHaveAttribute(
+      'loading',
+      'eager'
+    );
+    expect(screen.getByAltText('Sample Movie')).toHaveAttribute(
+      'srcset',
+      '/poster-large.jpg 2x'
+    );
+    expect(screen.getByAltText('Actor One')).toHaveAttribute('loading', 'lazy');
+    expect(screen.getByAltText('Actor One')).toHaveAttribute(
+      'srcset',
+      '/actor-small.jpg 1x, /actor-large.jpg 2x'
     );
   });
 

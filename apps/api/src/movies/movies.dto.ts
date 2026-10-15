@@ -127,6 +127,9 @@ export class MovieSummary implements MovieSummaryContract {
   })
   posterUrl: string;
 
+  @ApiPropertyOptional({ description: 'Responsive poster density candidates' })
+  posterSrcSet?: string;
+
   @ApiProperty({
     description: 'List of genres',
     example: ['Comedy', 'Drama', 'Romance'],

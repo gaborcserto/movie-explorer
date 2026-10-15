@@ -56,6 +56,8 @@ describe('TmdbMovieProvider', () => {
           title: 'Alpha',
           releaseDate: '2020-01-01',
           posterUrl: 'https://image.tmdb.org/t/p/w500/alpha.jpg',
+          posterSrcSet:
+            'https://image.tmdb.org/t/p/w342/alpha.jpg 1x, https://image.tmdb.org/t/p/w780/alpha.jpg 2x, https://image.tmdb.org/t/p/original/alpha.jpg 3x',
           genres: ['Drama', 'Comedy'],
         },
       ],
@@ -200,6 +202,8 @@ describe('TmdbMovieProvider', () => {
       title: 'Alpha',
       releaseDate: '2020-01-01',
       posterUrl: 'https://image.tmdb.org/t/p/w500/alpha.jpg',
+      posterSrcSet:
+        'https://image.tmdb.org/t/p/w342/alpha.jpg 1x, https://image.tmdb.org/t/p/w780/alpha.jpg 2x, https://image.tmdb.org/t/p/original/alpha.jpg 3x',
       genres: ['Drama'],
       rating: 8,
       runtimeMinutes: 100,

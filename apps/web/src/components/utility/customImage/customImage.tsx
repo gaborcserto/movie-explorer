@@ -3,41 +3,56 @@ import placeholderImage from '../../../assets/img/noimage.png';
 
 interface MovieImageProps {
   src?: string;
+  srcSet?: string;
+  sizes?: string;
+  loading?: 'lazy' | 'eager';
   alt: string;
   className: string;
 }
 
-function MovieImage({ src, alt, className }: MovieImageProps) {
-  const [displayedSrc, setDisplayedSrc] = useState(placeholderImage);
+function MovieImage({
+  src,
+  srcSet,
+  sizes,
+  loading = 'lazy',
+  alt,
+  className,
+}: MovieImageProps) {
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    let isCurrent = true;
+    setLoaded(false);
+    setFailed(false);
+  }, [src, srcSet]);
 
-    setDisplayedSrc(placeholderImage);
-    if (src) {
-      const image = new Image();
-      image.src = src;
-      image.onload = () => {
-        if (isCurrent) setDisplayedSrc(src);
-      };
-      image.onerror = () => {
-        if (isCurrent) setDisplayedSrc(placeholderImage);
-      };
-    }
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [src]);
+  const showFallback = !src || failed;
 
   return (
-    <div className={className}>
+    <div
+      className={className}
+      style={
+        !loaded && !showFallback
+          ? {
+              backgroundImage: `url(${placeholderImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }
+          : undefined
+      }
+    >
       <img
-        src={displayedSrc}
+        key={`${src}-${srcSet}`}
+        src={showFallback ? placeholderImage : src}
+        srcSet={showFallback ? undefined : srcSet}
+        sizes={showFallback ? undefined : sizes}
         alt={alt}
         className={`${className}__img`}
-        loading="lazy"
+        loading={loading}
         decoding="async"
+        style={{ opacity: loaded || showFallback ? 1 : 0 }}
+        onLoad={() => setLoaded(true)}
+        onError={showFallback ? undefined : () => setFailed(true)}
       />
     </div>
   );

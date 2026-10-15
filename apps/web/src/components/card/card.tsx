@@ -6,10 +6,11 @@ import MovieImage from '../utility/customImage';
 
 interface CardProps {
   movie: MovieSummary;
+  loading?: 'lazy' | 'eager';
 }
 
-function Card({ movie }: CardProps) {
-  const { id, title, releaseDate, posterUrl, genres } = movie;
+function Card({ movie, loading = 'lazy' }: CardProps) {
+  const { id, title, releaseDate, posterUrl, posterSrcSet, genres } = movie;
   const [searchParams] = useSearchParams();
 
   const releaseYear = releaseDate.substring(0, 4);
@@ -38,7 +39,13 @@ function Card({ movie }: CardProps) {
     <article className="card">
       <Link to={movieUrl} className="card__link" aria-label={title} />
       <div className="card__image__wrapper">
-        <MovieImage src={posterUrl} alt={title} className="card__image" />
+        <MovieImage
+          src={posterUrl}
+          srcSet={posterSrcSet}
+          loading={loading}
+          alt={title}
+          className="card__image"
+        />
       </div>
       <div className="card__footer">
         <div className="card__footer__part">

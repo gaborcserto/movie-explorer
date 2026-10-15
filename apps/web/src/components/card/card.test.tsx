@@ -8,6 +8,7 @@ const mockMovie: MovieSummary = {
   title: 'Glenroy Brothers (Comic Boxing)',
   releaseDate: '1894-10-06',
   posterUrl: '/sample.jpg',
+  posterSrcSet: '/small.jpg 1x, /large.jpg 2x, /original.jpg 3x',
   genres: ['Documentary', 'Comedy'],
 };
 
@@ -26,5 +27,9 @@ describe('<Card />', () => {
     expect(screen.getByText('Documentary')).toBeVisible();
     expect(screen.getByText('Comedy')).toBeVisible();
     expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.getByAltText(mockMovie.title)).toHaveAttribute(
+      'srcset',
+      mockMovie.posterSrcSet
+    );
   });
 });

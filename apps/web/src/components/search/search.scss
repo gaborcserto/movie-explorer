@@ -8,7 +8,7 @@
   z-index: 2;
 
   &:before {
-    background-image: url('../../assets/img/movie-posters-background.jpg');
+    background-image: url('../../assets/img/movie-posters-background.webp');
     background-blend-mode: darken;
     background-position: 50% 0;
     background-size: cover;
@@ -23,6 +23,10 @@
     top: 0;
     width: 100%;
     z-index: 0;
+
+    @include media-size(md-down) {
+      background-image: url('../../assets/img/movie-posters-background-mobile.webp');
+    }
   }
 
   &__container {
