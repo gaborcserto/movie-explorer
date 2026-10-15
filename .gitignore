@@ -16,6 +16,5 @@ npm-debug.log*
 !.env.example
 
 # Local tooling
-.turbo
 .idea
 /.tmp-phase20-edge/

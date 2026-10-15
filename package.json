@@ -8,13 +8,13 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "test": "turbo run test",
-    "coverage": "turbo run test:coverage",
-    "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck",
-    "test:e2e": "turbo run test:e2e --filter @movie-explorer/api",
+    "dev": "vp run -r --parallel task:dev",
+    "build": "vp run -r task:build",
+    "test": "vp run -r task:test",
+    "coverage": "vp run -r task:coverage",
+    "lint": "vp run -r task:lint",
+    "typecheck": "vp run -r task:typecheck",
+    "test:e2e": "vp run @movie-explorer/api#task:e2e",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -23,7 +23,6 @@
     "eslint-plugin-oxlint": "1.88.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
-    "turbo": "^2.11.5",
     "vite-plus": "1.2.0",
     "yaml": "^2.9.1"
   },
