@@ -262,7 +262,12 @@
     padding: 12px;
     position: absolute;
     text-align: center;
+    z-index: 2;
   }
+}
+
+.lightbox__viewport .lightbox__preview {
+  object-fit: contain;
 }
 
 .lightbox__viewport--zoomed {

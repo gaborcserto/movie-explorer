@@ -10,6 +10,8 @@ import Error from '../../layouts/error';
 import Loading from '../../layouts/loading';
 import { getMovies } from '../../util/apiUtils';
 
+const MOVIE_BATCH_SIZE = 10;
+
 function appendUniqueMovies(
   current: MovieSummary[],
   incoming: MovieSummary[]
@@ -22,6 +24,7 @@ function appendUniqueMovies(
 function List() {
   const [moviesData, setMoviesData] = useState<MovieListResponse>();
   const [movies, setMovies] = useState<MovieSummary[]>([]);
+  const [visibleMovieCount, setVisibleMovieCount] = useState(MOVIE_BATCH_SIZE);
   const [loadingData, setLoadingData] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [errorData, setErrorData] = useState<unknown>(null);
@@ -73,6 +76,7 @@ function List() {
           if (signal?.aborted) return;
           setMoviesData(response);
           setMovies(appendUniqueMovies([], response.movies));
+          setVisibleMovieCount(MOVIE_BATCH_SIZE);
         })
         .catch((error: unknown) => {
           if (signal?.aborted) return;
@@ -80,6 +84,7 @@ function List() {
             return;
           setMoviesData(undefined);
           setMovies([]);
+          setVisibleMovieCount(MOVIE_BATCH_SIZE);
           setErrorData(error);
         })
         .finally(() => {
@@ -101,8 +106,15 @@ function List() {
     if (
       !moviesData ||
       loadingMoreRef.current ||
-      moviesData.page >= moviesData.totalPages
+      (visibleMovieCount >= movies.length &&
+        moviesData.page >= moviesData.totalPages)
     ) {
+      return;
+    }
+
+    if (visibleMovieCount < movies.length) {
+      setVisibleMovieCount((current) => current + MOVIE_BATCH_SIZE);
+      setLoadMoreError(false);
       return;
     }
 
@@ -118,6 +130,7 @@ function List() {
       if (queryGeneration !== queryGenerationRef.current) return;
       setMoviesData(response);
       setMovies((current) => appendUniqueMovies(current, response.movies));
+      setVisibleMovieCount((current) => current + MOVIE_BATCH_SIZE);
     } catch {
       if (queryGeneration !== queryGenerationRef.current) return;
       setLoadMoreError(true);
@@ -153,11 +166,14 @@ function List() {
     genre || searchQuery || releaseYear || minimumRating
   );
   const hasMore = Boolean(
-    moviesData && moviesData.page < moviesData.totalPages
+    moviesData &&
+    (visibleMovieCount < movies.length ||
+      moviesData.page < moviesData.totalPages)
   );
   const hasPageLevelSearchFilters = Boolean(
     searchQuery && (filter || minimumRating)
   );
+  const visibleMovies = movies.slice(0, visibleMovieCount);
 
   return (
     <section className="list__container container">
@@ -167,8 +183,8 @@ function List() {
           {hasPageLevelSearchFilters ? 'text search results' : 'movies found'}
         </h2>
         <p className="list__loaded">
-          {movies.length} {hasPageLevelSearchFilters ? 'matching ' : ''}
-          {movies.length === 1 ? 'movie' : 'movies'} loaded
+          {visibleMovies.length} {hasPageLevelSearchFilters ? 'matching ' : ''}
+          {visibleMovies.length === 1 ? 'movie' : 'movies'} loaded
         </p>
         {hasActiveContext && (
           <p className="list__context">
@@ -201,7 +217,7 @@ function List() {
         </div>
       )}
       <div className="list__items">
-        {movies.map((movie, index) => (
+        {visibleMovies.map((movie, index) => (
           <Card
             key={movie.id}
             movie={movie}

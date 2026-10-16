@@ -203,10 +203,13 @@ export class TmdbMovieProvider implements MovieProvider {
       return true;
     }
 
-    return movie.genre_ids.some((genreId) => {
-      const genreName = genreNamesById.get(genreId);
-      return genreName ? requestedGenres.has(genreName) : false;
-    });
+    return (
+      movie.genre_ids !== undefined &&
+      movie.genre_ids.some((genreId) => {
+        const genreName = genreNamesById.get(genreId);
+        return genreName ? requestedGenres.has(genreName) : false;
+      })
+    );
   }
 
   private movieMatchesSearchFilters(

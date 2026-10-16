@@ -11,6 +11,7 @@ import {
   FaXmark,
 } from 'react-icons/fa6';
 import type { MoviePhoto } from '@movie-explorer/contracts';
+import ImagePreview from '../utility/customImage/imagePreview';
 
 interface Props {
   photos: MoviePhoto[];
@@ -210,15 +211,23 @@ function PhotoView({
           src={photo.fullUrl}
           alt={alt}
           draggable={false}
+          className="image-original--progressive"
+          decoding="async"
           style={{
             transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`,
-            visibility: status === 'loaded' ? 'visible' : 'hidden',
+            opacity: status === 'loaded' ? 1 : 0,
           }}
           onLoad={() => setStatus('loaded')}
           onError={() => {
             setStatus('error');
             setView(fit);
           }}
+        />
+        <ImagePreview
+          key={photo.thumbnailUrl}
+          src={photo.thumbnailUrl}
+          visible={status === 'loading'}
+          className="lightbox__preview"
         />
       </div>
     </>

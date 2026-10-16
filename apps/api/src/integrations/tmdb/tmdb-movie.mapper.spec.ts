@@ -32,6 +32,31 @@ describe('TmdbMovieMapper', () => {
     });
   });
 
+  it('preserves movie data when TMDB omits optional genre ids', () => {
+    expect(
+      mapper.toMovieSummary(
+        {
+          id: 1798695,
+          title: 'Kaalidas Collection',
+          release_date: '2025-01-01',
+          poster_path: '/kaalidas.jpg',
+          popularity: 0,
+          vote_average: 0,
+          overview: '',
+        },
+        [],
+      ),
+    ).toEqual({
+      id: 1798695,
+      title: 'Kaalidas Collection',
+      releaseDate: '2025-01-01',
+      posterUrl: 'https://image.tmdb.org/t/p/w500/kaalidas.jpg',
+      posterSrcSet:
+        'https://image.tmdb.org/t/p/w342/kaalidas.jpg 1x, https://image.tmdb.org/t/p/w780/kaalidas.jpg 2x, https://image.tmdb.org/t/p/original/kaalidas.jpg 3x',
+      genres: [],
+    });
+  });
+
   it('maps directors and limits cast to the first six billed names', () => {
     expect(
       mapper.toMovieDetails({
@@ -61,6 +86,7 @@ describe('TmdbMovieMapper', () => {
         },
       }),
     ).toMatchObject({
+      posterPreviewUrl: 'https://image.tmdb.org/t/p/w92/beta.jpg',
       cast: [
         'Actor One',
         'Actor Two',
@@ -101,7 +127,6 @@ describe('TmdbMovieMapper', () => {
       mapper.toMovieDetails({
         id: 2,
         title: 'Beta',
-        release_date: '',
         poster_path: null,
         genres: [],
         vote_average: 0,
@@ -112,7 +137,6 @@ describe('TmdbMovieMapper', () => {
       cast: [],
       id: 2,
       title: 'Beta',
-      releaseDate: '',
       posterUrl: '',
       genres: [],
     });
@@ -137,6 +161,7 @@ describe('TmdbMovieMapper', () => {
       },
     });
     expect(movie.posterSrcSet).toBeUndefined();
+    expect(movie.posterPreviewUrl).toBeUndefined();
     expect(movie.castMembers?.[0].profileSrcSet).toBe(
       'https://image.tmdb.org/t/p/w185/actor.jpg 1x, https://image.tmdb.org/t/p/h632/actor.jpg 2x, https://image.tmdb.org/t/p/original/actor.jpg 3x',
     );

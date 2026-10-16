@@ -14,6 +14,7 @@ export function DetailsHero({ movieData }: DetailsProps) {
     releaseDate,
     posterUrl,
     posterSrcSet,
+    posterPreviewUrl,
     genres,
     rating,
     runtimeMinutes,
@@ -21,7 +22,7 @@ export function DetailsHero({ movieData }: DetailsProps) {
     director,
     cast,
   } = movieData;
-  const releaseYear = /^\d{4}/.exec(releaseDate)?.[0];
+  const releaseYear = releaseDate ? /^\d{4}/.exec(releaseDate)?.[0] : undefined;
   const genresData = genres.map((genre) => genre.trim()).filter(Boolean);
   const overview = description?.trim();
   const directorName = director?.trim();
@@ -38,6 +39,7 @@ export function DetailsHero({ movieData }: DetailsProps) {
       <MovieImage
         src={posterUrl}
         srcSet={posterSrcSet}
+        previewSrc={posterPreviewUrl}
         loading="eager"
         alt={title}
         className="movie-details__image"

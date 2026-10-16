@@ -1,7 +1,9 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useLayoutEffect } from 'react';
 import type { MovieDetails } from '@movie-explorer/contracts';
 import { DetailsLowerContent } from './detailsContent';
+import PhotoLightbox from './photoLightbox';
 
 const movie: MovieDetails = {
   id: 1,
@@ -84,6 +86,73 @@ afterEach(() => {
 });
 
 describe('photo lightbox', () => {
+  it.each(['preview', 'final'])(
+    'handles %s completion first and enables zoom only for the original',
+    async (first) => {
+      const { dialog, image } = await open();
+      const preview = dialog.querySelector('.image-preview');
+      if (!preview) throw new Error('Missing preview');
+      expect(preview).toHaveAttribute('src', '/thumb1.jpg');
+      expect(preview).toHaveAttribute('aria-hidden', 'true');
+      expect(image).toHaveAttribute('src', '/original1.jpg');
+      expect(dialog.querySelectorAll('img')).toHaveLength(2);
+      fireEvent.load(first === 'preview' ? preview : image);
+      expect(
+        screen.getByRole('button', { name: 'Zoom in' }).hasAttribute('disabled')
+      ).toBe(first === 'preview');
+      expect(preview).toHaveStyle({ opacity: first === 'preview' ? '1' : '0' });
+      fireEvent.load(first === 'preview' ? image : preview);
+      expect(preview).toHaveStyle({ opacity: '0' });
+      expect(image).toHaveStyle({ opacity: '1' });
+      expect(screen.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
+    }
+  );
+
+  it('recovers from preview failure and ignores stale events during rapid navigation', async () => {
+    const { user, dialog, image } = await open();
+    const preview = dialog.querySelector('.image-preview');
+    if (!preview) throw new Error('Missing preview');
+    fireEvent.error(preview);
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.load(image);
+    expect(screen.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
+    await user.keyboard('{ArrowRight}{ArrowLeft}');
+    const current = within(dialog).getByRole('img', { hidden: true });
+    fireEvent.load(image);
+    fireEvent.load(preview);
+    fireEvent.error(image);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(current).toHaveStyle({ opacity: '0' });
+    expect(screen.getByRole('button', { name: 'Zoom in' })).toBeDisabled();
+    const currentPreview = dialog.querySelector('.image-preview');
+    if (!currentPreview) throw new Error('Missing preview');
+    fireEvent.load(currentPreview);
+    expect(currentPreview).toHaveStyle({ opacity: '1' });
+    fireEvent.error(current);
+    expect(currentPreview).toHaveStyle({ opacity: '0' });
+    expect(screen.getByRole('alert')).toHaveTextContent('Unable to load photo');
+  });
+
+  it('preserves cached original completion before passive effects run', () => {
+    function CachedPhoto() {
+      useLayoutEffect(() => {
+        const image = document.querySelector('img[src="/original1.jpg"]');
+        image?.dispatchEvent(new Event('load'));
+      }, []);
+      return (
+        <PhotoLightbox
+          photos={movie.photos ?? []}
+          initialIndex={0}
+          title="Movie"
+          onClose={() => {}}
+        />
+      );
+    }
+    render(<CachedPhoto />);
+    expect(screen.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
   it('uses accessible icons for lightbox actions and keeps the zoom percentage visible', async () => {
     const { dialog } = await open();
 

@@ -56,14 +56,15 @@
     aspect-ratio: 2 / 3;
     flex: 0 0 320px;
     width: 320px;
+    border-radius: 4px;
+    box-shadow:
+      rgb(0 0 0 / 0.19) 0 10px 20px,
+      rgb(0 0 0 / 0.23) 0 6px 6px;
 
     &__img {
       border-radius: 4px;
       background-clip: padding-box;
       overflow: hidden;
-      box-shadow:
-        rgb(0 0 0 / 0.19) 0 10px 20px,
-        rgb(0 0 0 / 0.23) 0 6px 6px;
       height: 100%;
       object-fit: cover;
       width: 100%;

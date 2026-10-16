@@ -98,6 +98,77 @@ describe('<List />', () => {
     );
   });
 
+  test('it keeps the results page rendered when a movie has no release date', async () => {
+    getMovies.mockResolvedValue({
+      movies: [
+        {
+          id: 1,
+          title: 'Undated Movie',
+          posterUrl: '',
+          genres: [],
+        },
+      ],
+      totalResults: 1,
+      page: 1,
+      totalPages: 1,
+    });
+
+    renderList();
+
+    expect(await screen.findByText('Undated Movie')).toBeInTheDocument();
+    expect(screen.getByText('1 movie loaded')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  test('shows results in batches of 10 and keeps the final partial batch', async () => {
+    const user = userEvent.setup();
+    const movieBatch = (start: number, count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        id: start + index,
+        title: `Movie ${start + index}`,
+        posterUrl: '',
+        genres: [],
+      }));
+    getMovies
+      .mockResolvedValueOnce({
+        movies: movieBatch(1, 20),
+        page: 1,
+        totalPages: 2,
+        totalResults: 25,
+      })
+      .mockResolvedValueOnce({
+        movies: movieBatch(21, 5),
+        page: 2,
+        totalPages: 2,
+        totalResults: 25,
+      });
+
+    renderList();
+
+    expect(await screen.findByText('Movie 10')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: '25 movies found' })
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Movie 11')).not.toBeInTheDocument();
+    expect(screen.getByText('10 movies loaded')).toBeInTheDocument();
+    expect(getMovies).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole('button', { name: 'Load more' }));
+    expect(screen.getByText('Movie 20')).toBeInTheDocument();
+    expect(screen.queryByText('Movie 21')).not.toBeInTheDocument();
+    expect(screen.getByText('20 movies loaded')).toBeInTheDocument();
+    expect(getMovies).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole('button', { name: 'Load more' }));
+    expect(await screen.findByText('Movie 25')).toBeInTheDocument();
+    expect(screen.getByText('25 movies loaded')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
+    expect(getMovies).toHaveBeenCalledTimes(2);
+    expect(getMovies).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 2 })
+    );
+  });
+
   test('it displays the unfiltered result total', async () => {
     getMovies.mockResolvedValue(emptyResponse(20_001));
 

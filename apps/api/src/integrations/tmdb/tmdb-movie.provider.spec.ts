@@ -218,6 +218,7 @@ describe('TmdbMovieProvider', () => {
       title: 'Alpha',
       releaseDate: '2020-01-01',
       posterUrl: 'https://image.tmdb.org/t/p/w500/alpha.jpg',
+      posterPreviewUrl: 'https://image.tmdb.org/t/p/w92/alpha.jpg',
       posterSrcSet:
         'https://image.tmdb.org/t/p/w342/alpha.jpg 1x, https://image.tmdb.org/t/p/w780/alpha.jpg 2x, https://image.tmdb.org/t/p/original/alpha.jpg 3x',
       genres: ['Drama'],
@@ -266,6 +267,79 @@ describe('TmdbMovieProvider', () => {
       );
     },
   );
+
+  it('maps ascending popularity results when TMDB omits genre ids', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        moviePage(
+          1,
+          1001,
+          [
+            movieListItem(1798695, [], {
+              title: 'Kaalidas Collection',
+              genre_ids: undefined,
+            }),
+          ],
+          20_001,
+        ),
+      )
+      .mockResolvedValueOnce(jsonResponse(genreResponse));
+
+    const provider = new TmdbMovieProvider(config);
+
+    await expect(
+      provider.findAll({ sort: 'popularity', sortOrder: 'asc' }),
+    ).resolves.toEqual({
+      movies: [
+        {
+          id: 1798695,
+          title: 'Kaalidas Collection',
+          releaseDate: '2020-01-01',
+          posterUrl: 'https://image.tmdb.org/t/p/w500/alpha-1798695.jpg',
+          posterSrcSet:
+            'https://image.tmdb.org/t/p/w342/alpha-1798695.jpg 1x, https://image.tmdb.org/t/p/w780/alpha-1798695.jpg 2x, https://image.tmdb.org/t/p/original/alpha-1798695.jpg 3x',
+          genres: [],
+        },
+      ],
+      page: 1,
+      totalPages: 1001,
+      totalResults: 20_001,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pathname: '/3/discover/movie',
+        search: expect.stringContaining('sort_by=popularity.asc'),
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it('does not match genre filters when a TMDB result omits genre ids', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        moviePage(
+          1,
+          1001,
+          [movieListItem(1798695, [], { genre_ids: undefined })],
+          20_001,
+        ),
+      )
+      .mockResolvedValueOnce(jsonResponse(genreResponse));
+
+    const provider = new TmdbMovieProvider(config);
+
+    await expect(
+      provider.findAll({
+        search: 'Alpha',
+        genre: 'Drama',
+      }),
+    ).resolves.toEqual({
+      movies: [],
+      page: 1,
+      totalPages: 1001,
+      totalResults: 20_001,
+    });
+  });
 
   it('keeps genre discovery popularity-first when no explicit sort is set', async () => {
     fetchMock

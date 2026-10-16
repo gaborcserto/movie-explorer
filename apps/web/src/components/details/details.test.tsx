@@ -151,7 +151,11 @@ describe('<Details />', () => {
     render(
       <>
         <DetailsContent
-          movieData={{ ...mockData, posterSrcSet: '/poster-large.jpg 2x' }}
+          movieData={{
+            ...mockData,
+            posterSrcSet: '/poster-large.jpg 2x',
+            posterPreviewUrl: '/poster-preview.jpg',
+          }}
         />
         <DetailsLowerContent
           movieData={{
@@ -176,6 +180,11 @@ describe('<Details />', () => {
       '/poster-large.jpg 2x'
     );
     expect(screen.getByAltText('Actor One')).toHaveAttribute('loading', 'lazy');
+    expect(document.querySelectorAll('.image-preview')).toHaveLength(1);
+    expect(document.querySelector('.image-preview')).toHaveAttribute(
+      'src',
+      '/poster-preview.jpg'
+    );
     expect(screen.getByAltText('Actor One')).toHaveAttribute(
       'srcset',
       '/actor-small.jpg 1x, /actor-large.jpg 2x'

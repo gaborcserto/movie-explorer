@@ -24,17 +24,26 @@ export class TmdbMovieMapper {
     movie: TmdbMovieListItem,
     genres: TmdbGenre[],
   ): MovieSummary {
+    // TMDB may omit genre_ids on an individual discovery result. The public
+    // contract represents unavailable genre metadata as an empty list.
+    const movieGenres =
+      movie.genre_ids === undefined
+        ? []
+        : movie.genre_ids
+            .map(
+              (genreId) => genres.find((genre) => genre.id === genreId)?.name,
+            )
+            .filter((genreName): genreName is string => Boolean(genreName));
+
     return {
       id: movie.id,
       title: movie.title,
-      releaseDate: movie.release_date,
+      ...(movie.release_date && { releaseDate: movie.release_date }),
       posterUrl: this.toPosterUrl(movie.poster_path),
       ...(movie.poster_path && {
         posterSrcSet: this.toPosterSrcSet(movie.poster_path),
       }),
-      genres: movie.genre_ids
-        .map((genreId) => genres.find((genre) => genre.id === genreId)?.name)
-        .filter((genreName): genreName is string => Boolean(genreName)),
+      genres: movieGenres,
     };
   }
 
@@ -83,10 +92,12 @@ export class TmdbMovieMapper {
     const details: MovieDetails = {
       id: movie.id,
       title: movie.title,
-      releaseDate: movie.release_date,
+      ...(movie.release_date && { releaseDate: movie.release_date }),
       posterUrl: this.toPosterUrl(movie.poster_path),
       ...(movie.poster_path && {
         posterSrcSet: this.toPosterSrcSet(movie.poster_path),
+        // w92 is included in TMDB /configuration poster_sizes.
+        posterPreviewUrl: `${this.originalImageBaseUrl.replace(/\/original$/, '/w92')}${movie.poster_path}`,
       }),
       genres: movie.genres.map((genre) => genre.name),
       cast,

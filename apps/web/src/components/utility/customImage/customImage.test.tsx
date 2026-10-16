@@ -1,20 +1,20 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { useLayoutEffect, useRef } from 'react';
 import MovieImage from './customImage';
-import placeholderImage from '../../../assets/img/noimage.png';
 
 function LoadImageDuringLayout() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const image = containerRef.current?.querySelector('img');
-    if (image) act(() => fireEvent.load(image));
+    image?.dispatchEvent(new Event('load'));
   }, []);
 
   return (
     <div ref={containerRef}>
       <MovieImage
         src="/cached.jpg"
+        previewSrc="/cached-preview.jpg"
         alt="Cached poster"
         className="movie-image"
       />
@@ -23,15 +23,109 @@ function LoadImageDuringLayout() {
 }
 
 describe('<MovieImage />', () => {
-  it('renders the placeholder when no source is provided', () => {
-    render(<MovieImage alt="Poster" className="movie-image" />);
-    expect(screen.getByAltText('Poster')).toHaveAttribute(
-      'src',
-      placeholderImage
+  it.each(['preview', 'final'])(
+    'handles %s loading first without delaying the final request',
+    (first) => {
+      const imageConstructor = vi.spyOn(window, 'Image');
+      const { container } = render(
+        <MovieImage
+          src="/poster.jpg"
+          previewSrc="/preview.jpg"
+          loading="eager"
+          alt="Poster"
+          className="movie-image"
+        />
+      );
+      const final = screen.getByAltText('Poster');
+      const preview = container.querySelector('.image-preview');
+      if (!preview) throw new Error('Missing preview');
+      expect(final).toHaveAttribute('src', '/poster.jpg');
+      expect(final).toHaveAttribute('loading', 'eager');
+      expect(final).toHaveAttribute('decoding', 'async');
+      expect(preview).toHaveAttribute('src', '/preview.jpg');
+      expect(preview).toHaveAttribute('aria-hidden', 'true');
+      expect(preview).toHaveAttribute('alt', '');
+      expect(imageConstructor).not.toHaveBeenCalled();
+      fireEvent.load(first === 'preview' ? preview : final);
+      expect(final).toHaveStyle({ opacity: first === 'final' ? '1' : '0' });
+      expect(preview).toHaveStyle({ opacity: first === 'preview' ? '1' : '0' });
+      fireEvent.load(first === 'preview' ? final : preview);
+      expect(final).toHaveStyle({ opacity: '1' });
+      expect(preview).toHaveStyle({ opacity: '0' });
+      imageConstructor.mockRestore();
+    }
+  );
+
+  it('keeps preview and final failures independent and preserves the fallback', () => {
+    const { container } = render(
+      <MovieImage
+        src="/poster.jpg"
+        srcSet="/large.jpg 2x"
+        previewSrc="/preview.jpg"
+        alt="Poster"
+        className="movie-image"
+      />
     );
+    const final = screen.getByAltText('Poster');
+    const preview = container.querySelector('.image-preview');
+    if (!preview) throw new Error('Missing preview');
+    fireEvent.error(preview);
+    expect(final).toHaveAttribute('src', '/poster.jpg');
+    expect(preview).toHaveStyle({ opacity: '0' });
+    fireEvent.load(final);
+    expect(final).toHaveStyle({ opacity: '1' });
+    fireEvent.error(final);
+    fireEvent.load(preview);
+    expect(screen.getByRole('img', { name: 'Poster' })).toHaveClass(
+      'image-placeholder'
+    );
+    expect(screen.queryByAltText('Poster')).toBeNull();
+    expect(container.querySelector('.image-preview')).toBeNull();
   });
 
-  it('loads directly with native lazy loading and a loading placeholder', () => {
+  it('isolates both image states across preview and final source changes', () => {
+    const props = {
+      src: '/poster.jpg',
+      alt: 'Poster',
+      className: 'movie-image',
+    };
+    const { container, rerender } = render(
+      <MovieImage {...props} previewSrc="/first.jpg" />
+    );
+    const first = container.querySelector('.image-preview');
+    if (!first) throw new Error('Missing preview');
+    fireEvent.load(first);
+    rerender(<MovieImage {...props} previewSrc="/second.jpg" />);
+    const second = container.querySelector('.image-preview');
+    if (!second) throw new Error('Missing preview');
+    fireEvent.load(first);
+    expect(second).toHaveStyle({ opacity: '0' });
+    fireEvent.load(second);
+    expect(second).toHaveStyle({ opacity: '1' });
+    rerender(<MovieImage {...props} src="/next.jpg" previewSrc="/third.jpg" />);
+    fireEvent.error(second);
+    expect(screen.getByAltText('Poster')).toHaveStyle({ opacity: '0' });
+    const third = container.querySelector('.image-preview');
+    if (!third) throw new Error('Missing preview');
+    fireEvent.load(third);
+    expect(third).toHaveStyle({ opacity: '1' });
+  });
+
+  it('renders the accessible icon placeholder when no source is provided', () => {
+    render(<MovieImage alt="Poster" className="movie-image" />);
+    const placeholder = screen.getByRole('img', { name: 'Poster' });
+    expect(placeholder).toHaveClass(
+      'movie-image__placeholder',
+      'image-placeholder'
+    );
+    expect(placeholder.querySelector('svg')).toHaveAttribute(
+      'aria-hidden',
+      'true'
+    );
+    expect(placeholder).not.toHaveTextContent(/no image available/i);
+  });
+
+  it('keeps the missing-image placeholder out of the loading state', () => {
     const imageConstructor = vi.spyOn(window, 'Image');
     render(
       <MovieImage src="/poster.jpg" alt="Poster" className="movie-image" />
@@ -41,12 +135,9 @@ describe('<MovieImage />', () => {
     expect(image).toHaveAttribute('loading', 'lazy');
     expect(image).toHaveAttribute('decoding', 'async');
     expect(imageConstructor).not.toHaveBeenCalled();
-    expect(image.parentElement).toHaveStyle({
-      backgroundImage: `url(${placeholderImage})`,
-    });
+    expect(screen.queryByRole('img', { name: 'Poster' })).toBe(image);
     fireEvent.load(image);
     expect(image).toHaveStyle({ opacity: '1' });
-    expect(image.parentElement?.style.backgroundImage).toBe('');
     imageConstructor.mockRestore();
   });
 
@@ -84,11 +175,9 @@ describe('<MovieImage />', () => {
     );
     const image = screen.getByAltText('Poster');
     fireEvent.error(image);
-    expect(image).toHaveAttribute('src', placeholderImage);
-    expect(image).not.toHaveAttribute('srcset');
-    expect(image).not.toHaveAttribute('sizes');
-    fireEvent.error(image);
-    expect(image).toHaveAttribute('src', placeholderImage);
+    const fallback = screen.getByRole('img', { name: 'Poster' });
+    expect(fallback).toHaveClass('image-placeholder');
+    expect(fallback.querySelector('svg')).toBeInTheDocument();
   });
 
   it('ignores stale events and recovers across rapid source and sizes changes', () => {
@@ -132,7 +221,9 @@ describe('<MovieImage />', () => {
     );
     const responsiveImage = screen.getByAltText('Poster');
     fireEvent.error(responsiveImage);
-    expect(responsiveImage).toHaveAttribute('src', placeholderImage);
+    expect(screen.getByRole('img', { name: 'Poster' })).toHaveClass(
+      'image-placeholder'
+    );
     fireEvent.error(oldImage);
     rerender(
       <MovieImage
@@ -148,7 +239,6 @@ describe('<MovieImage />', () => {
     expect(recoveredImage).toHaveStyle({ opacity: '0' });
     fireEvent.load(recoveredImage);
     expect(recoveredImage).toHaveStyle({ opacity: '1' });
-    expect(recoveredImage).not.toHaveAttribute('src', placeholderImage);
     expect(screen.getByAltText('Poster')).toHaveAttribute(
       'srcset',
       '/recovered-large.jpg 2x'

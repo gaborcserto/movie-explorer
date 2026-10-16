@@ -32,4 +32,18 @@ describe('<Card />', () => {
       mockMovie.posterSrcSet
     );
   });
+
+  it('renders a movie without optional release date metadata', () => {
+    const { releaseDate: _releaseDate, ...movieWithoutReleaseDate } = mockMovie;
+
+    render(
+      <MemoryRouter>
+        <Card movie={movieWithoutReleaseDate} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('link', { name: mockMovie.title })).toBeVisible();
+    expect(screen.getByText(mockMovie.title)).toBeVisible();
+    expect(screen.queryByText('1894')).not.toBeInTheDocument();
+  });
 });

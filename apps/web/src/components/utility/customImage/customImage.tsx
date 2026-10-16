@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import placeholderImage from '../../../assets/img/noimage.png';
+import { FaImage } from 'react-icons/fa6';
+import ImagePreview from './imagePreview';
+import './customImage.scss';
 
 interface MovieImageProps {
   src?: string;
   srcSet?: string;
+  previewSrc?: string;
   sizes?: string;
   loading?: 'lazy' | 'eager';
   alt: string;
@@ -13,6 +16,7 @@ interface MovieImageProps {
 function MovieImageContent({
   src,
   srcSet,
+  previewSrc,
   sizes,
   loading = 'lazy',
   alt,
@@ -23,37 +27,51 @@ function MovieImageContent({
 
   const showFallback = !src || failed;
 
+  if (showFallback) {
+    return (
+      <div className={className}>
+        <div
+          className={`${className}__placeholder image-placeholder`}
+          role="img"
+          aria-label={alt}
+        >
+          <FaImage aria-hidden="true" focusable="false" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
-      className={className}
-      style={
-        !loaded && !showFallback
-          ? {
-              backgroundImage: `url(${placeholderImage})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }
-          : undefined
-      }
+      className={`${className}${previewSrc ? ' movie-image--progressive' : ''}`}
     >
       <img
-        src={showFallback ? placeholderImage : src}
-        srcSet={showFallback ? undefined : srcSet}
-        sizes={showFallback ? undefined : sizes}
+        src={src}
+        srcSet={srcSet}
+        sizes={sizes}
         alt={alt}
-        className={`${className}__img`}
+        className={`${className}__img${previewSrc ? ' image-original--progressive' : ''}`}
         loading={loading}
         decoding="async"
-        style={{ opacity: loaded || showFallback ? 1 : 0 }}
+        style={{ opacity: loaded ? 1 : 0 }}
         onLoad={() => setLoaded(true)}
-        onError={showFallback ? undefined : () => setFailed(true)}
+        onError={() => setFailed(true)}
       />
+      {previewSrc && !showFallback && (
+        <ImagePreview src={previewSrc} visible={!loaded} />
+      )}
     </div>
   );
 }
 
-function MovieImage({ src, srcSet, sizes, ...props }: MovieImageProps) {
-  const sourceKey = JSON.stringify([src, srcSet, sizes]);
+function MovieImage({
+  src,
+  srcSet,
+  sizes,
+  previewSrc,
+  ...props
+}: MovieImageProps) {
+  const sourceKey = JSON.stringify([src, srcSet, sizes, previewSrc]);
 
   return (
     <MovieImageContent
@@ -61,6 +79,7 @@ function MovieImage({ src, srcSet, sizes, ...props }: MovieImageProps) {
       src={src}
       srcSet={srcSet}
       sizes={sizes}
+      previewSrc={previewSrc}
       {...props}
     />
   );

@@ -20,7 +20,7 @@ export interface MovieQueryParams {
 export interface MovieSummary {
   id: MovieId;
   title: string;
-  releaseDate: string;
+  releaseDate?: string;
   posterUrl: string;
   /** Provider-owned density candidates for posters rendered at up to 320px. */
   posterSrcSet?: string;
@@ -48,6 +48,8 @@ export interface MovieVideo {
 }
 
 export interface MovieDetails extends MovieSummary {
+  /** Small poster image for a decorative loading preview. */
+  posterPreviewUrl?: string;
   cast: string[];
   castMembers?: MovieCastMember[];
   description?: string;

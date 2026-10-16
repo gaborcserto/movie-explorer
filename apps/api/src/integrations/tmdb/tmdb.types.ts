@@ -6,12 +6,12 @@ export interface TmdbPagedResponse<T> {
 }
 
 export interface TmdbMovieListItem {
-  genre_ids: number[];
+  genre_ids?: number[];
   id: number;
   overview: string;
   poster_path: string | null;
   popularity: number;
-  release_date: string;
+  release_date?: string;
   title: string;
   vote_average: number;
 }
@@ -33,7 +33,7 @@ export interface TmdbMovieDetails {
   id: number;
   overview: string;
   poster_path: string | null;
-  release_date: string;
+  release_date?: string;
   runtime: number | null;
   title: string;
   vote_average: number;

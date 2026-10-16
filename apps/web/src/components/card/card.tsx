@@ -13,7 +13,7 @@ function Card({ movie, loading = 'lazy' }: CardProps) {
   const { id, title, releaseDate, posterUrl, posterSrcSet, genres } = movie;
   const [searchParams] = useSearchParams();
 
-  const releaseYear = releaseDate.substring(0, 4);
+  const releaseYear = releaseDate?.substring(0, 4);
   const movieUrl = `/movie/${id}${
     searchParams.size ? `?${searchParams.toString()}` : ''
   }`;
@@ -53,7 +53,7 @@ function Card({ movie, loading = 'lazy' }: CardProps) {
           <p className="card__type">{genreLinks}</p>
         </div>
         <div className="card__footer__part">
-          <p className="card__date">{releaseYear}</p>
+          {releaseYear && <p className="card__date">{releaseYear}</p>}
         </div>
       </div>
     </article>

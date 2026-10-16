@@ -118,8 +118,11 @@ export class MovieSummary implements MovieSummaryContract {
   @ApiProperty({ description: 'Movie title', example: 'La La Land' })
   title: string;
 
-  @ApiProperty({ description: 'Movie release date', example: '2016-12-29' })
-  releaseDate: string;
+  @ApiPropertyOptional({
+    description: 'Movie release date',
+    example: '2016-12-29',
+  })
+  releaseDate?: string;
 
   @ApiProperty({
     description: 'URL to the poster image',
@@ -138,6 +141,9 @@ export class MovieSummary implements MovieSummaryContract {
 }
 
 export class MovieDetails extends MovieSummary implements MovieDetailsContract {
+  @ApiPropertyOptional({ description: 'Small poster loading preview URL' })
+  posterPreviewUrl?: string;
+
   @ApiProperty({
     description: 'Primary billed cast names',
     example: ['Emma Stone', 'Ryan Gosling'],
