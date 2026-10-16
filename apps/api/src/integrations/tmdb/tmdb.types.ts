@@ -46,6 +46,7 @@ export interface TmdbCredits {
 }
 
 export interface TmdbCastMember {
+  id?: number;
   name: string;
   order: number;
   character?: string;
@@ -53,8 +54,22 @@ export interface TmdbCastMember {
 }
 
 export interface TmdbCrewMember {
+  id?: number;
+  profile_path?: string | null;
   job: string;
   name: string;
+}
+
+export interface TmdbPersonDetails {
+  id: number;
+  name: string;
+  known_for_department?: unknown;
+  birthday?: unknown;
+  deathday?: unknown;
+  place_of_birth?: unknown;
+  biography?: unknown;
+  profile_path?: unknown;
+  movie_credits: { cast: unknown[]; crew: unknown[] };
 }
 
 export interface TmdbImages {

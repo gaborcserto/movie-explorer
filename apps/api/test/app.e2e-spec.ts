@@ -1,5 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  BadGatewayException,
+  INestApplication,
+  ValidationPipe,
+} from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import type { MovieProvider } from '../src/movies/movie-provider';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { MOVIE_PROVIDER } from './../src/movies/movie-provider';
@@ -14,10 +20,11 @@ const movies = [
   },
 ];
 
-const movieProvider = {
+const movieProvider: jest.Mocked<MovieProvider> = {
   findAll: jest.fn(),
   findOne: jest.fn(),
   findSuggestions: jest.fn(),
+  findPerson: jest.fn(),
 };
 
 describe('AppController (e2e)', () => {
@@ -41,6 +48,12 @@ describe('AppController (e2e)', () => {
   });
 
   beforeEach(() => {
+    jest.clearAllMocks();
+    movieProvider.findPerson.mockResolvedValue({
+      id: 1,
+      name: 'Person',
+      filmography: [],
+    });
     movieProvider.findAll.mockResolvedValue({
       movies,
       page: 1,
@@ -77,6 +90,138 @@ describe('AppController (e2e)', () => {
           genres: expect.any(Array),
         });
       });
+  });
+
+  it('returns a person and normalized filmography from the provider', async () => {
+    const person = {
+      id: 1,
+      name: 'Person',
+      birthday: '1970-01-02',
+      filmography: [
+        {
+          ...movies[0],
+          actingCredits: ['Hero'],
+          crewCredits: [{ department: 'Directing', job: 'Director' }],
+        },
+      ],
+    };
+    movieProvider.findPerson.mockResolvedValueOnce(person);
+    await request(app.getHttpServer())
+      .get('/api/v1/persons/1')
+      .expect(200)
+      .expect(person);
+    expect(movieProvider.findPerson).toHaveBeenCalledWith(1);
+  });
+
+  it.each(['0', '-1', '1.5', 'abc', '1e3', '0x10', '9007199254740992'])(
+    'rejects invalid person ID %s before provider lookup',
+    async (id) => {
+      await request(app.getHttpServer())
+        .get(`/api/v1/persons/${id}`)
+        .expect(400);
+      expect(movieProvider.findPerson).not.toHaveBeenCalled();
+    },
+  );
+
+  it('returns 404 for missing persons', async () => {
+    movieProvider.findPerson.mockResolvedValueOnce(undefined);
+    await request(app.getHttpServer())
+      .get('/api/v1/persons/999')
+      .expect(404)
+      .expect((response) => {
+        expect(response.body.message).toBe('Person not found');
+      });
+  });
+
+  it('returns a sanitized 502 provider failure', async () => {
+    movieProvider.findPerson.mockRejectedValueOnce(
+      new BadGatewayException('Movie provider request failed'),
+    );
+    await request(app.getHttpServer())
+      .get('/api/v1/persons/1')
+      .expect(502)
+      .expect((response) => {
+        expect(response.body).toEqual({
+          statusCode: 502,
+          error: 'Bad Gateway',
+          message: 'Movie provider request failed',
+        });
+      });
+  });
+
+  it('documents person validation, response statuses, and explicit nested person and movie schemas', () => {
+    const document = SwaggerModule.createDocument(
+      app,
+      new DocumentBuilder().setTitle('Test API').setVersion('1').build(),
+    );
+    const operation = document.paths['/api/v1/persons/{id}'].get;
+    expect(Object.keys(operation.responses)).toEqual([
+      '200',
+      '400',
+      '404',
+      '502',
+    ]);
+    expect(operation.parameters).toContainEqual(
+      expect.objectContaining({
+        name: 'id',
+        required: true,
+        schema: {
+          type: 'integer',
+          minimum: 1,
+          maximum: Number.MAX_SAFE_INTEGER,
+        },
+      }),
+    );
+    const schemas = document.components.schemas;
+    expect(schemas.PersonDetailsDto).toMatchObject({
+      required: ['id', 'name', 'filmography'],
+      properties: {
+        filmography: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/PersonFilmographyEntryDto' },
+        },
+        birthday: { type: 'string', format: 'date' },
+      },
+    });
+    expect(schemas.PersonFilmographyEntryDto).toMatchObject({
+      properties: {
+        actingCredits: { type: 'array', items: { type: 'string' } },
+        crewCredits: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/PersonCrewCreditDto' },
+        },
+      },
+    });
+    expect(schemas.PersonCrewCreditDto).toMatchObject({
+      properties: { department: { type: 'string' }, job: { type: 'string' } },
+    });
+    expect(schemas.MovieDetails).toMatchObject({
+      properties: {
+        castMembers: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/MovieCastMemberDto' },
+        },
+        directors: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/MovieDirectorDto' },
+        },
+      },
+    });
+    expect(schemas.MovieCastMemberDto).toMatchObject({
+      properties: {
+        id: { type: 'integer' },
+        name: { type: 'string' },
+        character: { type: 'string' },
+        profileSrcSet: { type: 'string' },
+      },
+    });
+    expect(schemas.MovieDirectorDto).toMatchObject({
+      properties: {
+        id: { type: 'integer' },
+        name: { type: 'string' },
+        profileUrl: { type: 'string' },
+      },
+    });
   });
 
   it('/movies/:id (GET)', async () => {

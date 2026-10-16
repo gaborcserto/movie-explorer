@@ -20,7 +20,8 @@ import type {
   MovieSortOrder,
 } from '@movie-explorer/contracts';
 import type {
-  MovieCastMember,
+  MovieCastMember as MovieCastMemberContract,
+  MovieDirector as MovieDirectorContract,
   MoviePhoto,
   MovieVideo,
 } from '@movie-explorer/contracts';
@@ -140,6 +141,34 @@ export class MovieSummary implements MovieSummaryContract {
   genres: string[];
 }
 
+export class MovieDirectorDto implements MovieDirectorContract {
+  @ApiPropertyOptional({
+    description: 'TMDB person identifier',
+    type: 'integer',
+    minimum: 1,
+  })
+  id?: number;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiPropertyOptional()
+  profileUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'Responsive portrait density candidates',
+  })
+  profileSrcSet?: string;
+}
+
+export class MovieCastMemberDto
+  extends MovieDirectorDto
+  implements MovieCastMemberContract
+{
+  @ApiPropertyOptional()
+  character?: string;
+}
+
 export class MovieDetails extends MovieSummary implements MovieDetailsContract {
   @ApiPropertyOptional({ description: 'Small poster loading preview URL' })
   posterPreviewUrl?: string;
@@ -152,8 +181,12 @@ export class MovieDetails extends MovieSummary implements MovieDetailsContract {
 
   @ApiPropertyOptional({
     description: 'Visual cast entries with roles and profile images',
+    type: () => [MovieCastMemberDto],
   })
-  castMembers?: MovieCastMember[];
+  castMembers?: MovieCastMemberDto[];
+
+  @ApiPropertyOptional({ type: () => [MovieDirectorDto] })
+  directors?: MovieDirectorDto[];
 
   @ApiPropertyOptional({ description: 'Movie rating', example: 7.9 })
   rating?: number;

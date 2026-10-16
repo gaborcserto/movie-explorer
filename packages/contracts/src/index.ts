@@ -8,8 +8,14 @@ export type {
   MovieSortField,
   MovieSortOrder,
   MovieCastMember,
+  MovieDirector,
   MoviePhoto,
   MovieVideo,
   MovieSuggestion,
   MovieSuggestionsResponse,
 } from './movies';
+export type {
+  PersonDetails,
+  PersonFilmographyEntry,
+  PersonCrewCredit,
+} from './persons';

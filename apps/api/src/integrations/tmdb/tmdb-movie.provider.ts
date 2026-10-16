@@ -6,10 +6,12 @@ import type {
   MovieSortField,
   MovieSortOrder,
   MovieSuggestionsResponse,
+  PersonDetails,
 } from '@movie-explorer/contracts';
 import type { MovieProvider } from '../../movies/movie-provider';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbMovieMapper } from './tmdb-movie.mapper';
+import { isTmdbPersonDetails, TmdbPersonMapper } from './tmdb-person.mapper';
 import {
   TmdbGenre,
   TmdbGenreListResponse,
@@ -99,6 +101,19 @@ export class TmdbMovieProvider implements MovieProvider {
     }
 
     return this.mapper.toMovieDetails(movie);
+  }
+
+  public async findPerson(id: number): Promise<PersonDetails | undefined> {
+    const person = await this.request<unknown>(`/person/${id}`, {
+      append_to_response: 'movie_credits',
+    });
+    if (person === undefined) return undefined;
+    if (!isTmdbPersonDetails(person) || person.id !== id) {
+      throw new BadGatewayException('Person provider response was invalid');
+    }
+    return new TmdbPersonMapper(this.config.imageBaseUrl).toPersonDetails(
+      person,
+    );
   }
 
   private async fetchMoviePage(

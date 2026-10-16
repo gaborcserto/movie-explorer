@@ -3,6 +3,77 @@ import { TmdbMovieMapper } from './tmdb-movie.mapper';
 const mapper = new TmdbMovieMapper('https://image.tmdb.org/t/p/w500');
 
 describe('TmdbMovieMapper', () => {
+  it('preserves person identities and unknown cast roles, deduplicating before the cast limit', () => {
+    const result = mapper.toMovieDetails({
+      id: 1,
+      title: 'Credits',
+      poster_path: null,
+      genres: [],
+      vote_average: 0,
+      runtime: null,
+      overview: '',
+      credits: {
+        cast: [
+          { id: 10, name: 'Same Name', order: 0 },
+          { id: 10, name: 'Same Name', order: 1 },
+          { id: 11, name: 'Same Name', order: 2 },
+          { id: 0, name: 'No ID', order: 3 },
+          { id: -1, name: 'Another', order: 4 },
+          { name: 'Fifth', order: 5 },
+          {
+            id: 12,
+            name: 'Sixth',
+            order: 6,
+            character: ' Role ',
+            profile_path: '/actor.jpg',
+          },
+          { id: 13, name: 'Seventh', order: 7 },
+        ],
+        crew: [
+          {
+            id: 20,
+            name: 'Director',
+            job: 'Director',
+            profile_path: '/director.jpg',
+          },
+          { id: 20, name: 'Director', job: 'Director' },
+          { id: 21, name: 'Director', job: 'Director' },
+          { name: 'Unknown ID', job: 'Director' },
+          { id: 22, name: 'Writer', job: 'Writer' },
+        ],
+      },
+    });
+    expect(result.cast).toEqual([
+      'Same Name',
+      'Same Name',
+      'No ID',
+      'Another',
+      'Fifth',
+      'Sixth',
+    ]);
+    expect(result.castMembers).toHaveLength(6);
+    expect(result.castMembers[0]).toEqual({ id: 10, name: 'Same Name' });
+    expect(result.castMembers[1]).toEqual({ id: 11, name: 'Same Name' });
+    expect(result.castMembers[2]).toEqual({ name: 'No ID' });
+    expect(result.castMembers[5]).toMatchObject({
+      id: 12,
+      character: 'Role',
+      profileUrl: 'https://image.tmdb.org/t/p/w500/actor.jpg',
+    });
+    expect(result.director).toBe('Director, Unknown ID');
+    expect(result.directors).toEqual([
+      {
+        id: 20,
+        name: 'Director',
+        profileUrl: 'https://image.tmdb.org/t/p/w500/director.jpg',
+        profileSrcSet:
+          'https://image.tmdb.org/t/p/w185/director.jpg 1x, https://image.tmdb.org/t/p/h632/director.jpg 2x, https://image.tmdb.org/t/p/original/director.jpg 3x',
+      },
+      { id: 21, name: 'Director' },
+      { name: 'Unknown ID' },
+    ]);
+  });
+
   it('maps list items to the public movie summary contract', () => {
     expect(
       mapper.toMovieSummary(

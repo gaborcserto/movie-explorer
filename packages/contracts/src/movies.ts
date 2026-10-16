@@ -28,10 +28,18 @@ export interface MovieSummary {
 }
 
 export interface MovieCastMember {
+  id?: number;
   name: string;
   character?: string;
   profileUrl?: string;
   /** Density candidates for portraits rendered at up to 180px. */
+  profileSrcSet?: string;
+}
+
+export interface MovieDirector {
+  id?: number;
+  name: string;
+  profileUrl?: string;
   profileSrcSet?: string;
 }
 
@@ -54,6 +62,7 @@ export interface MovieDetails extends MovieSummary {
   castMembers?: MovieCastMember[];
   description?: string;
   director?: string;
+  directors?: MovieDirector[];
   rating?: number;
   runtimeMinutes?: number;
   backdropUrl?: string;

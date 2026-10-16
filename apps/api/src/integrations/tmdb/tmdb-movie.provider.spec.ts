@@ -226,7 +226,9 @@ describe('TmdbMovieProvider', () => {
       runtimeMinutes: 100,
       description: 'Alpha overview',
       cast: ['Actor One'],
+      castMembers: [{ name: 'Actor One' }],
       director: 'Director One',
+      directors: [{ name: 'Director One' }],
     });
 
     expect(fetchMock).toHaveBeenCalledWith(

@@ -2,6 +2,7 @@ import type {
   MovieDetails,
   MovieSuggestion,
   MovieSummary,
+  MovieDirector,
 } from '@movie-explorer/contracts';
 import type {
   TmdbGenre,
@@ -21,7 +22,12 @@ export class TmdbMovieMapper {
   }
 
   public toMovieSummary(
-    movie: TmdbMovieListItem,
+    movie:
+      | TmdbMovieListItem
+      | Pick<
+          TmdbMovieListItem,
+          'id' | 'title' | 'release_date' | 'poster_path' | 'genre_ids'
+        >,
     genres: TmdbGenre[],
   ): MovieSummary {
     // TMDB may omit genre_ids on an individual discovery result. The public
@@ -48,29 +54,33 @@ export class TmdbMovieMapper {
   }
 
   public toMovieDetails(movie: TmdbMovieDetails): MovieDetails {
-    const directors = movie.credits?.crew
-      .filter((credit) => credit.job === 'Director')
-      .map((credit) => credit.name.trim())
-      .filter(Boolean);
+    const directorIds = new Set<number>();
+    const directors: MovieDirector[] = (movie.credits?.crew ?? [])
+      .filter((credit) => {
+        if (credit.job !== 'Director' || !credit.name.trim()) return false;
+        if (!Number.isSafeInteger(credit.id) || credit.id <= 0) return true;
+        if (directorIds.has(credit.id)) return false;
+        directorIds.add(credit.id);
+        return true;
+      })
+      .map((credit) => this.toPersonReference(credit));
     const director = directors?.length
-      ? [...new Set(directors)].join(', ')
+      ? [...new Set(directors.map((credit) => credit.name))].join(', ')
       : undefined;
+    const castIds = new Set<number>();
     const castMembers = [...(movie.credits?.cast ?? [])]
       .sort((first, second) => first.order - second.order)
       .filter((credit) => credit.name.trim())
+      .filter((credit) => {
+        if (!Number.isSafeInteger(credit.id) || credit.id <= 0) return true;
+        if (castIds.has(credit.id)) return false;
+        castIds.add(credit.id);
+        return true;
+      })
       .slice(0, MAIN_CAST_LIMIT)
       .map((credit) => ({
-        name: credit.name.trim(),
+        ...this.toPersonReference(credit),
         character: credit.character?.trim() || undefined,
-        profileUrl: this.toImageUrl(credit.profile_path),
-        ...(credit.profile_path && {
-          // h632 is height-based; density descriptors avoid inventing a width.
-          profileSrcSet: this.toSrcSet(credit.profile_path, [
-            ['w185', '1x'],
-            ['h632', '2x'],
-            ['original', '3x'],
-          ]),
-        }),
       }));
     const cast = castMembers.map((credit) => credit.name);
     const photos = (movie.images?.backdrops ?? [])
@@ -103,16 +113,14 @@ export class TmdbMovieMapper {
       cast,
     };
 
-    if (
-      castMembers.length &&
-      castMembers.some((member) => member.character || member.profileUrl)
-    ) {
+    if (castMembers.length) {
       details.castMembers = castMembers;
     }
     const description = movie.overview.trim();
     const backdropUrl = this.toImageUrl(movie.backdrop_path);
     if (description) details.description = description;
     if (director) details.director = director;
+    if (directors.length) details.directors = directors;
     if (movie.vote_average > 0) details.rating = movie.vote_average;
     if (movie.runtime && movie.runtime > 0)
       details.runtimeMinutes = movie.runtime;
@@ -136,6 +144,26 @@ export class TmdbMovieMapper {
       title: movie.title,
       ...(releaseYear !== undefined && { releaseYear }),
       ...(posterUrl && { posterUrl }),
+    };
+  }
+
+  public toPersonReference(person: {
+    id?: number;
+    name: string;
+    profile_path?: string | null;
+  }): MovieDirector {
+    return {
+      ...(Number.isSafeInteger(person.id) &&
+        person.id > 0 && { id: person.id }),
+      name: person.name.trim(),
+      ...(person.profile_path && {
+        profileUrl: this.toImageUrl(person.profile_path),
+        profileSrcSet: this.toSrcSet(person.profile_path, [
+          ['w185', '1x'],
+          ['h632', '2x'],
+          ['original', '3x'],
+        ]),
+      }),
     };
   }
 

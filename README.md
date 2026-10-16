@@ -65,12 +65,19 @@ The API e2e task builds the API and runs its mocked provider suite; it does not 
 
 The running API serves its generated Swagger/OpenAPI documentation at [http://localhost:4000/api-docs](http://localhost:4000/api-docs). The API keeps TMDB integration details server side and returns the shared application contracts.
 
+`GET /api/v1/persons/:id` returns a person profile and movie filmography for a positive integer TMDB person ID. It returns 400 for invalid IDs, 404 for missing persons, and 502 for failed or incomplete provider responses. Optional metadata is omitted when unavailable; birthdays, death dates, and release dates remain date-only strings.
+
+Filmography merges acting and crew credits by movie ID in first-seen order (cast followed by crew), excluding explicitly adult records. `actingCredits` contains distinct character names; an empty array records acting with an unknown character, while an absent field means no acting credit. `crewCredits` contains distinct department/job pairs, with unavailable values omitted. Movie summaries use an empty poster URL for missing posters and an empty genres array because the appended credits do not supply genre names. No per-movie requests, sorting, or pagination are performed.
+
+Existing `/movies` endpoints are unchanged. Movie details retain `cast` and `director` and add structured `castMembers` and `directors` with optional person IDs and responsive portraits. Person pages and navigation are not yet implemented in the frontend.
+
 ## Project structure
 
 ```text
 apps/
   api/                 NestJS API and TMDB integration
     src/movies/        Movie endpoints and application logic
+    src/persons/       Person endpoint, DTOs, and application logic
     src/integrations/  External provider integrations
     test/              API end-to-end tests
   web/                 React frontend
