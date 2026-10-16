@@ -3,6 +3,41 @@ import { TmdbMovieMapper } from './tmdb-movie.mapper';
 const mapper = new TmdbMovieMapper('https://image.tmdb.org/t/p/w500');
 
 describe('TmdbMovieMapper', () => {
+  it('retains distinct characters for repeated person IDs before limiting cast', () => {
+    const result = mapper.toMovieDetails({
+      id: 1,
+      title: 'Multiple roles',
+      poster_path: null,
+      genres: [],
+      vote_average: 0,
+      runtime: null,
+      overview: '',
+      credits: {
+        cast: [
+          { id: 10, name: 'Actor', order: 0, character: ' Hero ' },
+          ...Array.from({ length: 6 }, (_, index) => ({
+            id: 20 + index,
+            name: `Actor ${index}`,
+            order: index + 1,
+          })),
+          { id: 10, name: 'Actor', order: 7, character: 'Narrator' },
+          { id: 10, name: 'Actor', order: 8, character: 'Hero' },
+          { name: 'No ID', order: 9, character: 'Other' },
+        ],
+        crew: [],
+      },
+    });
+    expect(result.castMembers).toHaveLength(6);
+    expect(result.castMembers[0]).toMatchObject({
+      id: 10,
+      name: 'Actor',
+      character: 'Hero / Narrator',
+    });
+    expect(result.castMembers.map((member) => member.id)).toEqual([
+      10, 20, 21, 22, 23, 24,
+    ]);
+  });
+
   it('preserves person identities and unknown cast roles, deduplicating before the cast limit', () => {
     const result = mapper.toMovieDetails({
       id: 1,
@@ -72,6 +107,59 @@ describe('TmdbMovieMapper', () => {
       { id: 21, name: 'Director' },
       { name: 'Unknown ID' },
     ]);
+  });
+
+  it('maps writing jobs and exact producers, combining jobs only for valid shared identities', () => {
+    const result = mapper.toMovieDetails({
+      id: 1,
+      title: 'Crew',
+      poster_path: null,
+      genres: [],
+      vote_average: 0,
+      runtime: null,
+      overview: '',
+      credits: {
+        cast: [],
+        crew: [
+          { id: 1, name: 'Shared', job: 'Director' },
+          { id: 1, name: 'Shared', job: 'Screenplay' },
+          { id: 1, name: 'Shared', job: 'Story', profile_path: '/writer.jpg' },
+          { id: 1, name: 'Shared', job: 'Story' },
+          { id: 2, name: 'Shared', job: 'Writer' },
+          { name: 'Unknown', job: 'Writer' },
+          { id: 0, name: 'Unknown', job: 'Story' },
+          { id: 1, name: 'Shared', job: 'Producer' },
+          { id: 3, name: 'Producer Two', job: 'Producer' },
+          { id: 3, name: 'Producer Two', job: 'Producer' },
+          { name: 'Unknown Producer', job: 'Producer' },
+          { id: -1, name: 'Invalid Producer', job: 'Producer' },
+          { id: 4, name: 'Executive', job: 'Executive Producer' },
+          { id: 5, name: 'Manager', job: 'Production Manager' },
+          { id: 6, name: 'Assistant', job: 'Assistant Director' },
+          { id: 7, name: '  ', job: 'Writer' },
+          { id: 8, name: '  ', job: 'Producer' },
+        ],
+      },
+    });
+    expect(result.writers).toEqual([
+      expect.objectContaining({
+        id: 1,
+        name: 'Shared',
+        roles: ['Screenplay', 'Story'],
+        profileUrl: 'https://image.tmdb.org/t/p/w500/writer.jpg',
+        profileSrcSet: expect.stringContaining('/w185/writer.jpg 1x'),
+      }),
+      { id: 2, name: 'Shared', roles: ['Writer'] },
+      { name: 'Unknown', roles: ['Writer'] },
+      { name: 'Unknown', roles: ['Story'] },
+    ]);
+    expect(result.producers).toEqual([
+      { id: 1, name: 'Shared', roles: ['Producer'] },
+      { id: 3, name: 'Producer Two', roles: ['Producer'] },
+      { name: 'Unknown Producer', roles: ['Producer'] },
+      { name: 'Invalid Producer', roles: ['Producer'] },
+    ]);
+    expect(result.directors).toEqual([{ id: 1, name: 'Shared' }]);
   });
 
   it('maps list items to the public movie summary contract', () => {

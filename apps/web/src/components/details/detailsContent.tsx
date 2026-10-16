@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type {
   MovieCastMember,
   MovieDetails,
+  MovieDirector,
   MovieVideo,
 } from '@movie-explorer/contracts';
 import PhotoLightbox from './photoLightbox';
@@ -11,6 +13,109 @@ import './media.scss';
 
 interface DetailsProps {
   movieData: MovieDetails;
+}
+
+interface PersonCredit extends MovieDirector {
+  key: string;
+  roles: string[];
+}
+
+function hasPersonId(id: number | undefined): id is number {
+  return id !== undefined && Number.isSafeInteger(id) && id > 0;
+}
+
+function getPersonCredits(movie: MovieDetails) {
+  const peopleById = new Map<number, PersonCredit>();
+  const directors: PersonCredit[] = [];
+  const writers: PersonCredit[] = [];
+  const producers: PersonCredit[] = [];
+  const cast: PersonCredit[] = [];
+  const addCredit = (person: MovieDirector, key: string, role?: string) => {
+    let credit = hasPersonId(person.id) ? peopleById.get(person.id) : undefined;
+    if (!credit) {
+      credit = { ...person, name: person.name.trim(), key, roles: [] };
+      if (hasPersonId(person.id)) {
+        credit.key = `person-${person.id}`;
+        peopleById.set(person.id, credit);
+      }
+    }
+    credit.profileUrl ||= person.profileUrl;
+    credit.profileSrcSet ||= person.profileSrcSet;
+    const label = role?.trim();
+    if (label && !credit.roles.includes(label)) credit.roles.push(label);
+    return credit;
+  };
+  (movie.directors ?? []).forEach((person, index) => {
+    if (!person.name.trim()) return;
+    const credit = addCredit(person, `director-${index}`, 'Director');
+    if (!directors.includes(credit)) directors.push(credit);
+  });
+  const addCrew = (
+    members: MovieDetails['writers'],
+    category: string,
+    target: PersonCredit[]
+  ) => {
+    (members ?? []).forEach((person, index) => {
+      if (!person.name.trim()) return;
+      const credit = addCredit(person, `${category}-${index}`);
+      person.roles.forEach((role) => {
+        const label = role.trim();
+        if (label && !credit.roles.includes(label)) credit.roles.push(label);
+      });
+      if (!target.includes(credit)) target.push(credit);
+    });
+  };
+  addCrew(movie.writers, 'writer', writers);
+  addCrew(movie.producers, 'producer', producers);
+  const structuredCast = (movie.castMembers ?? []).filter((person) =>
+    person.name.trim()
+  );
+  // Keep legacy names missing from a partial structured response as plain text.
+  // Consume occurrences only for display; names never supply or merge identities.
+  const legacyNames = movie.cast.map((name) => name.trim()).filter(Boolean);
+  structuredCast.forEach((person) => {
+    const index = legacyNames.indexOf(person.name.trim());
+    if (index >= 0) legacyNames.splice(index, 1);
+  });
+  const castMembers: MovieCastMember[] = [
+    ...structuredCast,
+    ...legacyNames.map((name) => ({ name })),
+  ];
+  castMembers.forEach((person, index) => {
+    if (!person.name.trim()) return;
+    const credit = addCredit(person, `cast-${index}`, person.character);
+    if (!cast.includes(credit)) cast.push(credit);
+  });
+  return {
+    directors,
+    writers,
+    producers,
+    cast,
+    cards: [
+      ...new Set([...cast.slice(0, 6), ...directors, ...writers, ...producers]),
+    ],
+  };
+}
+
+function CreditNames({
+  people,
+  separator = ' · ',
+}: {
+  people: PersonCredit[];
+  separator?: string;
+}) {
+  return people.map((person, index) => (
+    <Fragment key={person.key}>
+      {index > 0 && separator}
+      {hasPersonId(person.id) ? (
+        <Link to={`/person/${person.id}`} className="person-credit-link">
+          {person.name}
+        </Link>
+      ) : (
+        person.name
+      )}
+    </Fragment>
+  ));
 }
 
 type SupportedVideo = { video: MovieVideo; videoId: string };
@@ -60,13 +165,12 @@ export function DetailsHero({ movieData }: DetailsProps) {
     runtimeMinutes,
     description,
     director,
-    cast,
   } = movieData;
   const releaseYear = releaseDate ? /^\d{4}/.exec(releaseDate)?.[0] : undefined;
   const genresData = genres.map((genre) => genre.trim()).filter(Boolean);
   const overview = description?.trim();
   const directorName = director?.trim();
-  const castNames = cast.map((name) => name.trim()).filter(Boolean);
+  const { directors, writers, producers, cast } = getPersonCredits(movieData);
   const hasRuntime =
     runtimeMinutes !== undefined &&
     Number.isFinite(runtimeMinutes) &&
@@ -111,20 +215,48 @@ export function DetailsHero({ movieData }: DetailsProps) {
             <p className="movie-details__overview">{overview}</p>
           </section>
         )}
-        {(directorName || castNames.length > 0) && (
+        {(directors.length > 0 ||
+          directorName ||
+          writers.length > 0 ||
+          producers.length > 0 ||
+          cast.length > 0) && (
           <section className="movie-details__section">
             <h2 className="movie-details__section-title">Credits</h2>
             <dl className="movie-details__credits">
-              {directorName && (
-                <div>
-                  <dt>Director</dt>
-                  <dd>{directorName}</dd>
-                </div>
-              )}
-              {castNames.length > 0 && (
+              {cast.length > 0 && (
                 <div>
                   <dt>Cast</dt>
-                  <dd>{castNames.join(' · ')}</dd>
+                  <dd>
+                    <CreditNames people={cast} />
+                  </dd>
+                </div>
+              )}
+              {(directors.length > 0 || directorName) && (
+                <div>
+                  <dt>Director</dt>
+                  <dd>
+                    {directors.length > 0 ? (
+                      <CreditNames people={directors} separator=", " />
+                    ) : (
+                      directorName
+                    )}
+                  </dd>
+                </div>
+              )}
+              {writers.length > 0 && (
+                <div>
+                  <dt>Writer</dt>
+                  <dd>
+                    <CreditNames people={writers} separator=", " />
+                  </dd>
+                </div>
+              )}
+              {producers.length > 0 && (
+                <div>
+                  <dt>Producer</dt>
+                  <dd>
+                    <CreditNames people={producers} separator=", " />
+                  </dd>
                 </div>
               )}
             </dl>
@@ -136,12 +268,10 @@ export function DetailsHero({ movieData }: DetailsProps) {
 }
 
 export function DetailsLowerContent({ movieData }: DetailsProps) {
-  const { title, cast, castMembers = [], photos = [], videos = [] } = movieData;
+  const { title, photos = [], videos = [] } = movieData;
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<number | null>(null);
-  const visibleCast: MovieCastMember[] = castMembers.length
-    ? castMembers
-    : cast.map((name) => ({ name }));
+  const { cards } = getPersonCredits(movieData);
   const visiblePhotos = photos.filter(
     (photo) => photo.thumbnailUrl && photo.fullUrl
   );
@@ -154,29 +284,45 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
   return (
     <div className="movie-details__lower">
       <div className="container movie-details__lower-content">
-        {visibleCast.length > 0 && (
+        {cards.length > 0 && (
           <section className="details-section" aria-labelledby="cast-heading">
             <div className="details-section__heading">
               <h2 id="cast-heading">Cast &amp; Crew</h2>
             </div>
             <div className="cast-grid">
-              {visibleCast.map((member) => (
-                <article
-                  className="cast-member"
-                  key={`${member.name}-${member.character ?? ''}`}
-                >
-                  <MovieImage
-                    src={member.profileUrl}
-                    srcSet={member.profileSrcSet}
-                    alt={member.name}
-                    className="cast-member__image"
-                  />
-                  <div>
-                    <h3>{member.name}</h3>
-                    {member.character && <p>{member.character}</p>}
-                  </div>
-                </article>
-              ))}
+              {cards.map((member) => {
+                const content = (
+                  <>
+                    <MovieImage
+                      src={member.profileUrl}
+                      srcSet={member.profileSrcSet}
+                      alt={member.name}
+                      className="cast-member__image"
+                    />
+                    <div>
+                      <h3>{member.name}</h3>
+                      {member.roles.length > 0 && (
+                        <p>{member.roles.join(' · ')}</p>
+                      )}
+                    </div>
+                  </>
+                );
+                return (
+                  <article className="cast-member" key={member.key}>
+                    {hasPersonId(member.id) ? (
+                      <Link
+                        to={`/person/${member.id}`}
+                        className="cast-member__link"
+                        aria-label={member.name}
+                      >
+                        {content}
+                      </Link>
+                    ) : (
+                      content
+                    )}
+                  </article>
+                );
+              })}
             </div>
           </section>
         )}

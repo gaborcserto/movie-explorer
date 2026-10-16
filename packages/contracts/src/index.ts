@@ -9,6 +9,7 @@ export type {
   MovieSortOrder,
   MovieCastMember,
   MovieDirector,
+  MovieCrewMember,
   MoviePhoto,
   MovieVideo,
   MovieSuggestion,

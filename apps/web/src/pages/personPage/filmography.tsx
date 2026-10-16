@@ -10,6 +10,8 @@ import './filmography.scss';
 type View = 'acting' | 'crew';
 type Sort = 'newest' | 'oldest' | 'title';
 
+const FILMOGRAPHY_BATCH_SIZE = 12;
+
 function uniqueText(values: string[]) {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
@@ -70,7 +72,7 @@ function FilmographyResults({
   view: View;
   role: string;
 }) {
-  const [visibleCount, setVisibleCount] = useState(10);
+  const [visibleCount, setVisibleCount] = useState(FILMOGRAPHY_BATCH_SIZE);
   const countRef = useRef<HTMLParagraphElement>(null);
   const visibleMovies = movies.slice(0, visibleCount);
   return (
@@ -121,7 +123,7 @@ function FilmographyResults({
             type="button"
             className="btn btn--primary"
             onClick={() => {
-              const nextCount = visibleCount + 10;
+              const nextCount = visibleCount + FILMOGRAPHY_BATCH_SIZE;
               setVisibleCount(nextCount);
               // Keep focus on a useful, surviving element after the final batch.
               if (nextCount >= movies.length)

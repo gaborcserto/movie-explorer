@@ -43,6 +43,10 @@ export interface MovieDirector {
   profileSrcSet?: string;
 }
 
+export interface MovieCrewMember extends MovieDirector {
+  roles: string[];
+}
+
 export interface MoviePhoto {
   thumbnailUrl: string;
   fullUrl: string;
@@ -63,6 +67,8 @@ export interface MovieDetails extends MovieSummary {
   description?: string;
   director?: string;
   directors?: MovieDirector[];
+  writers?: MovieCrewMember[];
+  producers?: MovieCrewMember[];
   rating?: number;
   runtimeMinutes?: number;
   backdropUrl?: string;

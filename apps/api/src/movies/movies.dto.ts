@@ -22,6 +22,7 @@ import type {
 import type {
   MovieCastMember as MovieCastMemberContract,
   MovieDirector as MovieDirectorContract,
+  MovieCrewMember as MovieCrewMemberContract,
   MoviePhoto,
   MovieVideo,
 } from '@movie-explorer/contracts';
@@ -161,6 +162,14 @@ export class MovieDirectorDto implements MovieDirectorContract {
   profileSrcSet?: string;
 }
 
+export class MovieCrewMemberDto
+  extends MovieDirectorDto
+  implements MovieCrewMemberContract
+{
+  @ApiProperty({ type: [String], description: 'Credited crew roles' })
+  roles: string[];
+}
+
 export class MovieCastMemberDto
   extends MovieDirectorDto
   implements MovieCastMemberContract
@@ -187,6 +196,12 @@ export class MovieDetails extends MovieSummary implements MovieDetailsContract {
 
   @ApiPropertyOptional({ type: () => [MovieDirectorDto] })
   directors?: MovieDirectorDto[];
+
+  @ApiPropertyOptional({ type: () => [MovieCrewMemberDto] })
+  writers?: MovieCrewMemberDto[];
+
+  @ApiPropertyOptional({ type: () => [MovieCrewMemberDto] })
+  producers?: MovieCrewMemberDto[];
 
   @ApiPropertyOptional({ description: 'Movie rating', example: 7.9 })
   rating?: number;

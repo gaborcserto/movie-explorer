@@ -3,9 +3,11 @@ import type {
   MovieSuggestion,
   MovieSummary,
   MovieDirector,
+  MovieCrewMember,
 } from '@movie-explorer/contracts';
 import type {
   TmdbGenre,
+  TmdbCrewMember,
   TmdbMovieDetails,
   TmdbMovieListItem,
 } from './tmdb.types';
@@ -54,6 +56,9 @@ export class TmdbMovieMapper {
   }
 
   public toMovieDetails(movie: TmdbMovieDetails): MovieDetails {
+    const crew = movie.credits?.crew ?? [];
+    const writers = this.toCrewMembers(crew, ['Writer', 'Screenplay', 'Story']);
+    const producers = this.toCrewMembers(crew, ['Producer']);
     const directorIds = new Set<number>();
     const directors: MovieDirector[] = (movie.credits?.crew ?? [])
       .filter((credit) => {
@@ -68,9 +73,19 @@ export class TmdbMovieMapper {
       ? [...new Set(directors.map((credit) => credit.name))].join(', ')
       : undefined;
     const castIds = new Set<number>();
-    const castMembers = [...(movie.credits?.cast ?? [])]
+    const orderedCast = [...(movie.credits?.cast ?? [])]
       .sort((first, second) => first.order - second.order)
-      .filter((credit) => credit.name.trim())
+      .filter((credit) => credit.name.trim());
+    const charactersByPerson = new Map<number, Set<string>>();
+    orderedCast.forEach((credit) => {
+      const character = credit.character?.trim();
+      if (!Number.isSafeInteger(credit.id) || credit.id <= 0 || !character)
+        return;
+      const characters = charactersByPerson.get(credit.id) ?? new Set<string>();
+      characters.add(character);
+      charactersByPerson.set(credit.id, characters);
+    });
+    const castMembers = orderedCast
       .filter((credit) => {
         if (!Number.isSafeInteger(credit.id) || credit.id <= 0) return true;
         if (castIds.has(credit.id)) return false;
@@ -80,7 +95,10 @@ export class TmdbMovieMapper {
       .slice(0, MAIN_CAST_LIMIT)
       .map((credit) => ({
         ...this.toPersonReference(credit),
-        character: credit.character?.trim() || undefined,
+        character:
+          (charactersByPerson.has(credit.id)
+            ? [...(charactersByPerson.get(credit.id) ?? [])].join(' / ')
+            : credit.character?.trim()) || undefined,
       }));
     const cast = castMembers.map((credit) => credit.name);
     const photos = (movie.images?.backdrops ?? [])
@@ -121,6 +139,8 @@ export class TmdbMovieMapper {
     if (description) details.description = description;
     if (director) details.director = director;
     if (directors.length) details.directors = directors;
+    if (writers.length) details.writers = writers;
+    if (producers.length) details.producers = producers;
     if (movie.vote_average > 0) details.rating = movie.vote_average;
     if (movie.runtime && movie.runtime > 0)
       details.runtimeMinutes = movie.runtime;
@@ -129,6 +149,30 @@ export class TmdbMovieMapper {
     if (videos.length) details.videos = videos;
 
     return details;
+  }
+
+  private toCrewMembers(
+    crew: TmdbCrewMember[],
+    jobs: string[],
+  ): MovieCrewMember[] {
+    const people: MovieCrewMember[] = [];
+    const byId = new Map<number, MovieCrewMember>();
+    crew.forEach((credit) => {
+      if (!jobs.includes(credit.job) || !credit.name.trim()) return;
+      const person = this.toPersonReference(credit);
+      const existing = person.id ? byId.get(person.id) : undefined;
+      if (existing) {
+        if (!existing.roles.includes(credit.job))
+          existing.roles.push(credit.job);
+        existing.profileUrl ||= person.profileUrl;
+        existing.profileSrcSet ||= person.profileSrcSet;
+      } else {
+        const member = { ...person, roles: [credit.job] };
+        people.push(member);
+        if (person.id) byId.set(person.id, member);
+      }
+    });
+    return people;
   }
 
   public toMovieSuggestion(movie: TmdbMovieListItem): MovieSuggestion {

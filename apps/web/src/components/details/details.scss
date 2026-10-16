@@ -178,8 +178,15 @@
     font-weight: 300;
     font-size: 20px;
     line-height: 1.45;
-    opacity: 0.65;
     overflow-wrap: anywhere;
+  }
+
+  &__overview {
+    opacity: 0.65;
+  }
+
+  &__credits dd {
+    color: rgb(255 255 255 / 0.65);
   }
 
   &__credits {
