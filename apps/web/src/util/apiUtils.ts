@@ -5,6 +5,7 @@ import type {
   MovieSortField,
   MovieSortOrder,
   MovieSuggestionsResponse,
+  PersonDetails,
 } from '@movie-explorer/contracts';
 import type { URLParams } from '../types';
 
@@ -38,6 +39,16 @@ export const isNotFoundError = (error: unknown): boolean => {
 
 export const getMovie = async (id: number): Promise<MovieDetails> => {
   return request<MovieDetails>(`${moviesUrl}/${id}`);
+};
+
+export const getPerson = async (
+  id: number,
+  signal?: AbortSignal
+): Promise<PersonDetails> => {
+  return request<PersonDetails>(
+    `${apiBaseUrl}/api/v1/persons/${id}`,
+    signal ? { signal } : {}
+  );
 };
 
 export const sortParams = (

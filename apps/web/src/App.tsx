@@ -2,6 +2,7 @@ import './App.scss';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import HomePage from './pages/homePage';
 import ErrorPage from './pages/errorPage/errorPage';
+import PersonPage from './pages/personPage/personPage';
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Route path="/search/:searchQuery" element={<HomePage />} />
         <Route path="/search" element={<HomePage />} />
         <Route path="/movie/:movieId" element={<HomePage />} />
+        <Route path="/person/:id" element={<PersonPage />} />
         <Route path="*" element={<ErrorPage />} />
       </Routes>
     </div>
