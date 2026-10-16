@@ -1,11 +1,51 @@
 import { useState } from 'react';
-import type { MovieCastMember, MovieDetails } from '@movie-explorer/contracts';
+import type {
+  MovieCastMember,
+  MovieDetails,
+  MovieVideo,
+} from '@movie-explorer/contracts';
 import PhotoLightbox from './photoLightbox';
+import VideoLightbox from './videoLightbox';
 import MovieImage from '../utility/customImage';
 import './media.scss';
 
 interface DetailsProps {
   movieData: MovieDetails;
+}
+
+type SupportedVideo = { video: MovieVideo; videoId: string };
+
+function getYouTubeVideoId(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    const isYouTubeHost =
+      hostname === 'youtube.com' ||
+      hostname.endsWith('.youtube.com') ||
+      hostname === 'youtu.be';
+    if (!isYouTubeHost) return undefined;
+
+    const [firstSegment, secondSegment] = parsed.pathname
+      .split('/')
+      .filter(Boolean);
+    let candidate: string | null | undefined;
+    if (hostname === 'youtu.be') candidate = firstSegment;
+    else if (parsed.pathname === '/watch')
+      candidate = parsed.searchParams.get('v');
+    else if (['embed', 'shorts', 'live'].includes(firstSegment ?? ''))
+      candidate = secondSegment;
+
+    return candidate && /^[\w-]{11}$/.test(candidate) ? candidate : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function isSupportedVideo(entry: {
+  video: MovieVideo;
+  videoId: string | undefined;
+}): entry is SupportedVideo {
+  return entry.videoId !== undefined;
 }
 
 export function DetailsHero({ movieData }: DetailsProps) {
@@ -98,12 +138,18 @@ export function DetailsHero({ movieData }: DetailsProps) {
 export function DetailsLowerContent({ movieData }: DetailsProps) {
   const { title, cast, castMembers = [], photos = [], videos = [] } = movieData;
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<number | null>(null);
   const visibleCast: MovieCastMember[] = castMembers.length
     ? castMembers
     : cast.map((name) => ({ name }));
   const visiblePhotos = photos.filter(
     (photo) => photo.thumbnailUrl && photo.fullUrl
   );
+  const videoEntries = videos.map((video) => ({
+    video,
+    videoId: getYouTubeVideoId(video.url),
+  }));
+  const supportedVideos = videoEntries.filter(isSupportedVideo);
 
   return (
     <div className="movie-details__lower">
@@ -166,21 +212,46 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
               <div className="media-block">
                 <h3>Videos &amp; Trailers</h3>
                 <div className="video-grid">
-                  {videos.map((video) => (
-                    <a
-                      className="video-tile"
-                      href={video.url}
-                      title={video.name}
-                      target="_blank"
-                      rel="noreferrer"
-                      key={video.url}
-                    >
-                      {video.thumbnailUrl && (
-                        <img src={video.thumbnailUrl} alt="" loading="lazy" />
-                      )}
-                      <span>{video.name}</span>
-                    </a>
-                  ))}
+                  {videoEntries.map((entry) => {
+                    const { video, videoId } = entry;
+                    const label = video.name || 'Video';
+                    const playerIndex = videoId
+                      ? supportedVideos.findIndex(
+                          (supportedVideo) => supportedVideo === entry
+                        )
+                      : -1;
+                    const content = (
+                      <>
+                        {video.thumbnailUrl && (
+                          <img src={video.thumbnailUrl} alt="" loading="lazy" />
+                        )}
+                        <span>{label}</span>
+                      </>
+                    );
+
+                    return playerIndex >= 0 ? (
+                      <button
+                        type="button"
+                        className="video-tile"
+                        aria-label={`Play ${label}`}
+                        key={`${video.url}-${video.name}`}
+                        onClick={() => setSelectedVideo(playerIndex)}
+                      >
+                        {content}
+                      </button>
+                    ) : (
+                      <a
+                        className="video-tile"
+                        href={video.url}
+                        title={label}
+                        target="_blank"
+                        rel="noreferrer"
+                        key={`${video.url}-${video.name}`}
+                      >
+                        {content}
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -193,6 +264,14 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
             initialIndex={selectedPhoto}
             title={title}
             onClose={() => setSelectedPhoto(null)}
+          />
+        )}
+        {selectedVideo !== null && (
+          <VideoLightbox
+            videos={supportedVideos}
+            initialIndex={selectedVideo}
+            title={title}
+            onClose={() => setSelectedVideo(null)}
           />
         )}
       </div>
