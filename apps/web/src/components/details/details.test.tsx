@@ -1,4 +1,10 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useParams as originalUseParams } from 'react-router-dom';
 import type { MovieDetails } from '@movie-explorer/contracts';
@@ -32,6 +38,7 @@ vi.mock('react-router-dom', async () => ({
     'react-router-dom'
   )),
   useParams: vi.fn(),
+  useNavigate: vi.fn(() => vi.fn()),
   Link: vi.fn(() => null),
 }));
 
@@ -189,6 +196,36 @@ describe('<Details />', () => {
       'srcset',
       '/actor-small.jpg 1x, /actor-large.jpg 2x'
     );
+  });
+
+  it('opens the highest-resolution poster from the keyboard and restores focus', async () => {
+    const user = userEvent.setup();
+    render(
+      <DetailsContent
+        movieData={{
+          ...mockData,
+          posterSrcSet: '/poster-large.jpg 2x, /poster-original.jpg 3x',
+        }}
+      />
+    );
+    const poster = screen.getByRole('img', { name: 'Sample Movie' });
+    expect(poster).toHaveAttribute('srcset', '/poster-large.jpg 2x');
+    fireEvent.load(poster);
+    const trigger = screen.getByRole('button', { name: 'Sample Movie' });
+    trigger.focus();
+    await user.keyboard('{Enter}');
+
+    const dialog = screen.getByRole('dialog', {
+      name: 'Sample Movie photo viewer',
+    });
+    expect(dialog.querySelector('img')).toHaveAttribute(
+      'src',
+      '/poster-original.jpg'
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Close photo viewer' })
+    );
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 
   it('handles errors and shows an error message when fetching fails', async () => {

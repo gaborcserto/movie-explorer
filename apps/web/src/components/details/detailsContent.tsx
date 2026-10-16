@@ -8,6 +8,7 @@ import type {
 } from '@movie-explorer/contracts';
 import PhotoLightbox from './photoLightbox';
 import VideoLightbox from './videoLightbox';
+import HeroImage from './heroImage';
 import MovieImage from '../utility/customImage';
 import './media.scss';
 
@@ -180,12 +181,12 @@ export function DetailsHero({ movieData }: DetailsProps) {
 
   return (
     <div className="movie-details__container">
-      <MovieImage
+      <HeroImage
         src={posterUrl}
         srcSet={posterSrcSet}
         previewSrc={posterPreviewUrl}
-        loading="eager"
         alt={title}
+        title={title}
         className="movie-details__image"
       />
       <div className="movie-details__content">

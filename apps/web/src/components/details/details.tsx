@@ -5,6 +5,7 @@ import type { MovieDetails } from '@movie-explorer/contracts';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
 import Error from '../../layouts/error';
 import Loading from '../../layouts/loading';
+import HeaderSearch from '../search/headerSearch';
 import { getMovie, isNotFoundError } from '../../util/apiUtils';
 
 type DetailsState = 'loading' | 'success' | 'not-found' | 'error';
@@ -99,13 +100,11 @@ function Details() {
         data-testid="details-component"
       >
         <div className="movie-details container">
-          <div className="movie-details__top">
+          <div className="movie-details__top detail-header">
             <Link to="/search" className="movie-details__brand brand">
               <strong>Movie</strong> Explorer
             </Link>
-            <Link className="movie-details__btn" type="button" to="/search">
-              search
-            </Link>
+            <HeaderSearch />
           </div>
           {renderContent()}
         </div>

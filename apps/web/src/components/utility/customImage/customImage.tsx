@@ -11,6 +11,8 @@ interface MovieImageProps {
   loading?: 'lazy' | 'eager';
   alt: string;
   className: string;
+  onImageLoad?: () => void;
+  onImageError?: () => void;
 }
 
 function MovieImageContent({
@@ -21,6 +23,8 @@ function MovieImageContent({
   loading = 'lazy',
   alt,
   className,
+  onImageLoad,
+  onImageError,
 }: MovieImageProps) {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -54,8 +58,14 @@ function MovieImageContent({
         loading={loading}
         decoding="async"
         style={{ opacity: loaded ? 1 : 0 }}
-        onLoad={() => setLoaded(true)}
-        onError={() => setFailed(true)}
+        onLoad={() => {
+          setLoaded(true);
+          onImageLoad?.();
+        }}
+        onError={() => {
+          setFailed(true);
+          onImageError?.();
+        }}
       />
       {previewSrc && !showFallback && (
         <ImagePreview src={previewSrc} visible={!loaded} />
@@ -69,6 +79,8 @@ function MovieImage({
   srcSet,
   sizes,
   previewSrc,
+  onImageLoad,
+  onImageError,
   ...props
 }: MovieImageProps) {
   const sourceKey = JSON.stringify([src, srcSet, sizes, previewSrc]);
@@ -80,6 +92,8 @@ function MovieImage({
       srcSet={srcSet}
       sizes={sizes}
       previewSrc={previewSrc}
+      onImageLoad={onImageLoad}
+      onImageError={onImageError}
       {...props}
     />
   );

@@ -1,0 +1,163 @@
+@use '../../assets/scss' as *;
+
+// Reserve the available space so opening the field never moves the brand.
+.detail-header {
+  align-items: center;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+
+  > .brand {
+    flex: 0 0 auto;
+  }
+
+  @media (width <= 480px) {
+    gap: 12px;
+
+    > .brand {
+      width: 92px;
+    }
+  }
+}
+
+.detail-search {
+  flex: 1 1 440px;
+  height: 44px;
+  max-width: 440px;
+  min-width: 0;
+  position: relative;
+
+  button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: $red-1;
+    cursor: pointer;
+    display: flex;
+    flex: 0 0 44px;
+    font-size: 22px;
+    height: 44px;
+    justify-content: center;
+    width: 44px;
+  }
+
+  button,
+  input {
+    &:focus-visible {
+      outline: 2px solid $red-1;
+      outline-offset: -3px;
+    }
+  }
+
+  &__trigger {
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 1;
+
+    svg {
+      position: absolute;
+      transition:
+        opacity 180ms ease,
+        transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  }
+
+  &__icon {
+    &--search {
+      transform: rotate(0) scale(1);
+    }
+
+    &--close {
+      transform: rotate(-90deg) scale(0.7);
+    }
+
+    &--hidden {
+      opacity: 0;
+    }
+  }
+
+  &__trigger[aria-expanded='true'] .detail-search__icon--search {
+    transform: rotate(90deg) scale(0.7);
+  }
+
+  &__trigger[aria-expanded='true'] .detail-search__icon--close {
+    transform: rotate(0) scale(1);
+  }
+
+  &__form {
+    align-items: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    box-sizing: border-box;
+    display: flex;
+    height: 44px;
+    overflow: hidden;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition:
+      width 280ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 260ms ease,
+      border-color 260ms ease,
+      visibility 0s linear 280ms;
+    visibility: hidden;
+    width: 44px;
+
+    &--expanded {
+      background: $grey-3;
+      border-color: $grey-1;
+      transition:
+        width 280ms cubic-bezier(0.22, 1, 0.36, 1),
+        background-color 260ms ease,
+        border-color 260ms ease,
+        visibility 0s;
+      visibility: visible;
+      width: 100%;
+    }
+
+    input {
+      background: transparent;
+      border: 0;
+      color: $white;
+      font: inherit;
+      height: 100%;
+      min-width: 0;
+      opacity: 0;
+      outline-color: transparent;
+      padding: 0 56px 0 12px;
+      transition:
+        opacity 90ms ease,
+        outline-color 0s;
+      width: 100%;
+
+      &::placeholder {
+        color: rgb(255 255 255 / 0.65);
+      }
+    }
+
+    &--expanded input {
+      opacity: 1;
+      transition:
+        opacity 150ms ease 75ms,
+        outline-color 0s 140ms;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__trigger svg {
+      transition: none;
+    }
+
+    &__form {
+      transition: none;
+
+      input,
+      &--expanded input {
+        opacity: 1;
+        transition: none;
+      }
+    }
+  }
+}

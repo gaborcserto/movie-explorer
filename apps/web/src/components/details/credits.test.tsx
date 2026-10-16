@@ -480,6 +480,7 @@ test('preserves every writer and producer outside the six distinct cast limit an
     ],
   });
   expect(cards().getAllByRole('article')).toHaveLength(22);
+  expect(cards().getAllByRole('heading', { level: 3 })).toHaveLength(22);
   expect(cards().getAllByRole('heading', { name: 'Same' })).toHaveLength(16);
   expect(cards().getByText('Hero \u00b7 Narrator')).toBeVisible();
   expect(cards().queryByRole('heading', { name: 'Cast 5' })).toBeNull();

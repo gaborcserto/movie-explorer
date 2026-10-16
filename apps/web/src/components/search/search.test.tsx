@@ -59,6 +59,10 @@ describe('Search Component', () => {
   test('navigates to search results on form submission', () => {
     renderSearch();
     const input = screen.getByPlaceholderText('What do you want to watch?');
+    expect(screen.getByRole('button', { name: 'search' })).toHaveClass(
+      'btn--primary',
+      'btn'
+    );
     fireEvent.change(input, { target: { value: 'Inception' } });
     fireEvent.submit(screen.getByRole('search'));
 

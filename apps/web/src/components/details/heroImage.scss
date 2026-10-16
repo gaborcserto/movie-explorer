@@ -1,0 +1,65 @@
+@use '../../assets/scss' as *;
+
+.hero-image {
+  border: 0;
+  cursor: default;
+  display: block;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  transition:
+    transform 0.24s ease,
+    filter 0.24s ease,
+    box-shadow 0.24s ease;
+
+  &--loaded {
+    cursor: zoom-in;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $red-1;
+    outline-offset: 4px;
+    z-index: 1;
+  }
+
+  &__media,
+  &__media__img {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+
+  &__media__img {
+    object-fit: cover;
+    transition:
+      transform 0.24s ease,
+      filter 0.24s ease;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hero-image--loaded:hover {
+    @include hero-image-shadow(0.38);
+
+    filter: saturate(1.2);
+    transform: scale(1.06);
+    z-index: 2;
+  }
+}
+
+.hero-image--loaded:focus-visible .hero-image__media__img {
+  filter: saturate(1.2);
+}
+
+.hero-image--loaded:focus-visible {
+  @include hero-image-shadow(0.38);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-image,
+  .hero-image__media__img,
+  .hero-image--loaded:hover {
+    transition: none;
+    transform: none;
+  }
+}

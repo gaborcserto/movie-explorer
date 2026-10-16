@@ -326,24 +326,25 @@ test('filters before sorting and supports direct URL selections', async () => {
   ).toHaveValue('oldest');
 });
 
-test('reveals 12, 24, 36, then the final partial batch without extra requests and retains useful focus', async () => {
+test('reveals 10, 20, 30, then the final partial batch without extra requests and retains useful focus', async () => {
   const user = userEvent.setup();
   await renderFilmography(batch);
-  expect(titles()).toHaveLength(12);
+  expect(titles()).toHaveLength(10);
   expect(section().getByRole('status')).toHaveTextContent(
-    'Showing 12 of 37 movies'
+    'Showing 10 of 37 movies'
   );
   const more = section().getByRole('button', { name: 'Load more' });
+  expect(more).toHaveClass('btn--outline', 'btn--action');
   await user.click(more);
-  expect(titles()).toHaveLength(24);
+  expect(titles()).toHaveLength(20);
   expect(section().getByRole('status')).toHaveTextContent(
-    'Showing 24 of 37 movies'
+    'Showing 20 of 37 movies'
   );
   expect(more).toHaveFocus();
   await user.click(more);
-  expect(titles()).toHaveLength(36);
+  expect(titles()).toHaveLength(30);
   expect(section().getByRole('status')).toHaveTextContent(
-    'Showing 36 of 37 movies'
+    'Showing 30 of 37 movies'
   );
   expect(more).toHaveFocus();
   await user.click(more);
@@ -358,9 +359,9 @@ test('reveals 12, 24, 36, then the final partial batch without extra requests an
 
 test.each([
   [0, 0],
-  [12, 0],
-  [24, 1],
-  [36, 2],
+  [10, 0],
+  [20, 1],
+  [30, 2],
 ])('hides Load More when all %s movies are visible', async (total, clicks) => {
   const user = userEvent.setup();
   await renderFilmography(batch.slice(0, total));
@@ -380,22 +381,22 @@ test('resets batches on sorting, view, and role changes while preserving biograp
     section().getByRole('combobox', { name: 'Sort filmography' }),
     'oldest'
   );
-  expect(titles()).toHaveLength(12);
+  expect(titles()).toHaveLength(10);
   await user.click(section().getByRole('button', { name: 'Load more' }));
   await user.click(section().getByRole('button', { name: 'Crew' }));
-  expect(titles()).toHaveLength(12);
+  expect(titles()).toHaveLength(10);
   await user.click(section().getByRole('button', { name: 'Load more' }));
   await user.selectOptions(
     section().getByRole('combobox', { name: 'Job or department' }),
     'job:Director'
   );
-  expect(titles()).toHaveLength(12);
+  expect(titles()).toHaveLength(10);
   await user.click(section().getByRole('button', { name: 'Load more' }));
   await user.selectOptions(
     section().getByRole('combobox', { name: 'Job or department' }),
     ''
   );
-  expect(titles()).toHaveLength(12);
+  expect(titles()).toHaveLength(10);
   expect(fetchMock).toHaveBeenCalledTimes(1);
   expect(screen.getByRole('button', { name: 'Show Less' })).toHaveAttribute(
     'aria-expanded',
@@ -422,7 +423,7 @@ test('Back/Forward restores selections and resets the local visible count', asyn
   expect(
     section().getByRole('combobox', { name: 'Sort filmography' })
   ).toHaveValue('newest');
-  expect(titles()).toHaveLength(12);
+  expect(titles()).toHaveLength(10);
   await act(async () => {
     await router.navigate(-1);
   });
@@ -465,7 +466,7 @@ test('person navigation resets local batches and stale roles using the new credi
     await router.navigate('/person/43?personView=crew&personRole=job%3AWriter');
   });
   await screen.findByRole('heading', { name: 'Next person' });
-  expect(titles()).toHaveLength(12);
+  expect(titles()).toHaveLength(10);
   expect(
     section().getByRole('combobox', { name: 'Job or department' })
   ).toHaveValue('');

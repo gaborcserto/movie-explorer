@@ -241,7 +241,7 @@ function List() {
         <div className="list__more">
           <button
             type="button"
-            className="btn btn--primary"
+            className={`btn ${searchQuery ? 'btn--primary' : 'btn--outline btn--action'}`}
             disabled={loadingMore}
             onClick={() => loadMore()}
           >

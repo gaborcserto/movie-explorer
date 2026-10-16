@@ -24,51 +24,14 @@
     display: inline-block;
   }
 
-  &__btn {
-    color: transparent;
-    width: 30px;
-    height: 30px;
-    position: relative;
-    transition: opacity 0.2s ease;
-
-    &:hover,
-    &:focus-visible {
-      opacity: 0.75;
-    }
-
-    &:after {
-      background-color: $red-1;
-      content: '';
-      mask-image: url('../../assets/img/search.svg');
-      mask-size: contain;
-      mask-position: center;
-      mask-repeat: no-repeat;
-      position: absolute;
-      width: 30px;
-      height: 30px;
-      display: block;
-      transition: none;
-      top: 0;
-    }
-  }
-
   &__image {
+    @include hero-image-shadow;
+
     aspect-ratio: 2 / 3;
+    background: transparent;
     flex: 0 0 320px;
     width: 320px;
-    border-radius: 4px;
-    box-shadow:
-      rgb(0 0 0 / 0.19) 0 10px 20px,
-      rgb(0 0 0 / 0.23) 0 6px 6px;
-
-    &__img {
-      border-radius: 4px;
-      background-clip: padding-box;
-      overflow: hidden;
-      height: 100%;
-      object-fit: cover;
-      width: 100%;
-    }
+    border-radius: 10px;
   }
 
   &__container {

@@ -33,3 +33,11 @@
   position: $position;
   top: 50%;
 }
+
+@mixin hero-image-shadow($light-opacity: 0.24) {
+  box-shadow:
+    0 24px 32px -6px rgb(0 0 0 / 0.58),
+    0 14px 20px -4px rgb(0 0 0 / 0.42),
+    0 5px 8px -2px rgb(0 0 0 / 0.3),
+    0 18px 28px -12px rgba(220, 228, 238, $light-opacity);
+}

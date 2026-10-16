@@ -10,7 +10,7 @@ import './filmography.scss';
 type View = 'acting' | 'crew';
 type Sort = 'newest' | 'oldest' | 'title';
 
-const FILMOGRAPHY_BATCH_SIZE = 12;
+const FILMOGRAPHY_BATCH_SIZE = 10;
 
 function uniqueText(values: string[]) {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
@@ -121,7 +121,7 @@ function FilmographyResults({
         <div className="filmography__more">
           <button
             type="button"
-            className="btn btn--primary"
+            className="btn btn--outline btn--action"
             onClick={() => {
               const nextCount = visibleCount + FILMOGRAPHY_BATCH_SIZE;
               setVisibleCount(nextCount);

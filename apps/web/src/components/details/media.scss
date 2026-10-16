@@ -35,21 +35,34 @@
 }
 
 .cast-member {
+  color: $white;
   min-width: 0;
+  position: relative;
+  transform-origin: center top;
+  transition:
+    transform 0.24s ease,
+    filter 0.24s ease;
+
+  &:focus-within {
+    z-index: 2;
+  }
+
+  &__link h3 {
+    text-decoration: none;
+    transition:
+      color 0.2s ease,
+      opacity 0.2s ease;
+  }
 }
 
-.movie-details__credits .person-credit-link,
-.cast-member__link h3 {
+.movie-details__credits .person-credit-link {
+  color: rgb(255 255 255 / 0.65);
   text-decoration: underline;
   text-decoration-color: transparent;
   text-underline-offset: 3px;
   transition:
     color 180ms ease,
     text-decoration-color 180ms ease;
-}
-
-.movie-details__credits .person-credit-link {
-  color: rgb(255 255 255 / 0.65);
 
   &:hover,
   &:focus-visible {
@@ -70,22 +83,9 @@
   display: block;
   text-decoration: none;
 
-  &:hover h3,
-  &:focus-visible h3 {
-    color: $red-1;
-    text-decoration-color: currentcolor;
-  }
-
   &:focus-visible {
     outline: 2px solid $red-1;
     outline-offset: 4px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .movie-details__credits .person-credit-link,
-  .cast-member__link h3 {
-    transition: none;
   }
 }
 
@@ -95,6 +95,7 @@
   border-radius: 4px;
   margin-bottom: 10px;
   overflow: hidden;
+  transition: box-shadow 0.24s ease;
   width: 100%;
   max-width: 180px;
 
@@ -102,6 +103,48 @@
     height: 100%;
     object-fit: cover;
     width: 100%;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cast-member:hover {
+    filter: saturate(1.2);
+    transform: scale(1.06);
+    z-index: 3;
+  }
+
+  .cast-member:hover h3 {
+    color: $red-1;
+    opacity: 1;
+  }
+
+  .cast-member:hover .cast-member__image {
+    box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
+  }
+}
+
+.cast-member:focus-within .cast-member__image {
+  box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
+}
+
+.cast-member:focus-within h3 {
+  color: $red-1;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .movie-details__credits .person-credit-link,
+  .cast-member,
+  .cast-member__link h3,
+  .cast-member__image {
+    transition: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .cast-member:hover {
+      filter: none;
+      transform: none;
+    }
   }
 }
 
@@ -140,8 +183,8 @@
 .photo-grid,
 .video-grid {
   display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 20px 24px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
 }
 
 .photo-tile,
@@ -155,6 +198,17 @@
   padding: 0;
   position: relative;
   text-decoration: none;
+  transform-origin: center top;
+  transition:
+    transform 0.24s ease,
+    filter 0.24s ease;
+}
+
+.photo-tile:focus-visible,
+.video-tile:focus-visible {
+  outline: 2px solid $red-1;
+  outline-offset: 3px;
+  z-index: 2;
 }
 
 .photo-tile {
@@ -165,9 +219,6 @@
 .video-tile img {
   height: 100%;
   object-fit: cover;
-  transition:
-    filter 0.2s ease,
-    transform 0.2s ease;
   width: 100%;
 }
 
@@ -176,12 +227,13 @@
   height: auto;
 }
 
-.photo-tile:hover img,
-.photo-tile:focus-visible img,
-.video-tile:hover img,
-.video-tile:focus-visible img {
-  filter: saturate(1.12);
-  transform: scale(1.03);
+@media (hover: hover) and (pointer: fine) {
+  .photo-tile:hover,
+  .video-tile:hover {
+    filter: saturate(1.2);
+    transform: scale(1.06);
+    z-index: 3;
+  }
 }
 
 .video-tile {
@@ -426,18 +478,17 @@
 
   .photo-grid,
   .video-grid {
+    gap: 16px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .cast-grid {
-    display: flex;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
-    overflow-x: auto;
-    padding-bottom: 8px;
   }
 
   .cast-member {
-    flex: 0 0 120px;
+    min-width: 0;
   }
 
   .cast-member__link:focus-visible {
@@ -450,9 +501,33 @@
   }
 }
 
+@media (width <= 359px) {
+  .photo-grid,
+  .video-grid {
+    gap: 16px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cast-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .photo-tile img,
-  .video-tile img {
+  .photo-tile,
+  .video-tile {
     transition: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .photo-tile:hover,
+    .video-tile:hover {
+      transform: none;
+    }
+  }
+
+  .photo-tile:focus-visible,
+  .video-tile:focus-visible {
+    transform: none;
   }
 }

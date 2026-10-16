@@ -24,20 +24,49 @@
 
     label {
       display: grid;
-      font-size: 14px;
+      color: rgb(255 255 255 / 0.65);
+      flex: 0 1 240px;
+      font-size: 12px;
       gap: 8px;
       max-width: 100%;
       min-width: 0;
+      position: relative;
+      text-transform: uppercase;
+
+      &:after {
+        background: $red-1;
+        bottom: 12px;
+        content: '';
+        height: 20px;
+        mask: url('../../assets/img/down.svg') center / contain no-repeat;
+        pointer-events: none;
+        position: absolute;
+        right: 10px;
+        width: 20px;
+      }
     }
 
     select {
-      background: $grey-2;
-      border: 1px solid $grey-1;
-      border-radius: 4px;
+      appearance: none;
+      background: $grey-3;
+      border: 1px solid rgb(255 255 255 / 0.18);
+      border-radius: 2px;
       color: $white;
+      cursor: pointer;
+      font: inherit;
+      font-size: 16px;
+      font-weight: 500;
+      line-height: 20px;
       max-width: 100%;
+      min-height: 44px;
       min-width: 0;
-      padding: 10px;
+      padding: 10px 36px 10px 12px;
+      text-overflow: ellipsis;
+      width: 100%;
+
+      &:hover {
+        border-color: $red-1;
+      }
 
       &:focus-visible {
         outline: 2px solid $red-1;
@@ -45,9 +74,28 @@
       }
     }
 
+    .btn {
+      background: $grey-3;
+      border-color: rgb(255 255 255 / 0.18);
+      color: $white;
+      font-size: 16px;
+      min-height: 44px;
+      text-transform: none;
+
+      &:hover {
+        border-color: $red-1;
+      }
+    }
+
     [aria-pressed='true'] {
       background: $red-1;
       color: $white;
+    }
+  }
+
+  @media (width <= 480px) {
+    &__controls label {
+      flex: 1 1 100%;
     }
   }
 
@@ -72,10 +120,6 @@
     display: flex;
     justify-content: center;
     padding-top: 36px;
-
-    button {
-      min-width: 210px;
-    }
   }
 
   @include media-size(lg-down) {

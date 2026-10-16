@@ -83,11 +83,21 @@ test('direct person navigation loads the complete contract through the API witho
     { signal: expect.any(AbortSignal) }
   );
   expect(screen.getByText('Directing')).toBeVisible();
+  const hero = screen
+    .getByRole('heading', { name: person.name })
+    .closest('.person-hero');
+  expect(hero).not.toBeNull();
+  expect(hero?.querySelector('.person-hero__posters')).toHaveAttribute(
+    'aria-hidden',
+    'true'
+  );
+  expect(hero?.querySelectorAll('.person-hero__posters img')).toHaveLength(1);
   expect(screen.getByText('Budapest, Hungary')).toBeVisible();
   expect(screen.getByText('1970-01-01')).toHaveAttribute(
     'datetime',
     '1970-01-01'
   );
+  expect(screen.getByText('Age').nextElementSibling).toHaveTextContent('50');
   expect(screen.getByText('2020-12-31')).toHaveAttribute(
     'datetime',
     '2020-12-31'
@@ -99,6 +109,11 @@ test('direct person navigation loads the complete contract through the API witho
   expect(screen.getAllByRole('link', { name: 'Movie Explorer' })).toHaveLength(
     2
   );
+  expect(
+    screen
+      .getByRole('button', { name: 'Search movies' })
+      .closest('.person-hero')
+  ).not.toBeNull();
   expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   expect(
     screen.queryByPlaceholderText('What do you want to watch?')
@@ -134,6 +149,32 @@ test('omits optional metadata and uses the missing portrait and biography placeh
   expect(
     screen.getByRole('img', { name: 'Portrait of Only a name' }).tagName
   ).toBe('DIV');
+  expect(document.querySelector('.person-hero__posters')).toBeNull();
+});
+
+test('uses distinct available filmography posters as decorative hero tiles', async () => {
+  fetchMock.mockResolvedValue(
+    response({
+      ...person,
+      filmography: [
+        ...person.filmography,
+        { ...person.filmography[0], id: 11 },
+        { ...person.filmography[0], id: 12, posterUrl: '' },
+        { ...person.filmography[0], id: 13, posterUrl: '/other-movie.jpg' },
+      ],
+    })
+  );
+  renderPage();
+  await screen.findByRole('heading', { name: person.name });
+  const backdrop = document.querySelector('.person-hero__posters');
+  expect(backdrop).toHaveAttribute('aria-hidden', 'true');
+  expect(
+    [...(backdrop?.querySelectorAll('img') ?? [])].map((image) => image.src)
+  ).toEqual([
+    new URL('/movie.jpg', window.location.href).href,
+    new URL('/other-movie.jpg', window.location.href).href,
+  ]);
+  expect(backdrop?.querySelector('a, button')).toBeNull();
 });
 
 test.each(['', '  \n  '])(
@@ -158,13 +199,41 @@ test('uses responsive portrait candidates and failed-image fallback', async () =
   );
   expect(portrait).toHaveAttribute(
     'sizes',
-    '(max-width: 767.98px) min(260px, calc(100vw - 32px)), 320px'
+    '(max-width: 767.98px) min(320px, calc(100vw - 52px)), 320px'
   );
   expect(portrait).toHaveAttribute('loading', 'eager');
   fireEvent.error(portrait);
   expect(
     screen.getByRole('img', { name: `Portrait of ${person.name}` }).tagName
   ).toBe('DIV');
+  expect(
+    screen.queryByRole('button', { name: `Portrait of ${person.name}` })
+  ).toBeNull();
+});
+
+test('opens the full-resolution portrait from the keyboard and restores focus', async () => {
+  const user = userEvent.setup();
+  renderPage();
+  const portrait = await screen.findByRole('img', {
+    name: `Portrait of ${person.name}`,
+  });
+  fireEvent.load(portrait);
+
+  const trigger = screen.getByRole('button', {
+    name: `Portrait of ${person.name}`,
+  });
+  trigger.focus();
+  await user.keyboard('{Enter}');
+
+  const dialog = screen.getByRole('dialog', {
+    name: `${person.name} photo viewer`,
+  });
+  expect(dialog.querySelector('img')).toHaveAttribute(
+    'src',
+    '/portrait-original.jpg'
+  );
+  await user.keyboard('{Escape}');
+  await waitFor(() => expect(trigger).toHaveFocus());
 });
 
 test('renders biography as plain text and supports keyboard expansion and collapse', async () => {

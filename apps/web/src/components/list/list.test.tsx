@@ -1,4 +1,4 @@
-import { render, waitFor, screen } from '@testing-library/react';
+import { cleanup, render, waitFor, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import List from './list';
@@ -98,6 +98,37 @@ describe('<List />', () => {
     );
   });
 
+  test('uses the Home coral outline style without changing Search results buttons', async () => {
+    const response = {
+      movies: Array.from({ length: 11 }, (_, index) => ({
+        id: index + 1,
+        title: `Movie ${index + 1}`,
+        releaseDate: '2022-01-01',
+        posterUrl: `/movie-${index + 1}.jpg`,
+        genres: ['test'],
+      })),
+      totalResults: 11,
+      page: 1,
+      totalPages: 2,
+    };
+    getMovies.mockResolvedValue(response);
+
+    renderList('/search');
+    const homeLoadMore = await screen.findByRole('button', {
+      name: 'Load more',
+    });
+    expect(homeLoadMore).toHaveClass('btn--outline', 'btn--action');
+
+    cleanup();
+    getMovies.mockResolvedValue(response);
+    renderList('/search/Alien');
+    const resultsLoadMore = await screen.findByRole('button', {
+      name: 'Load more',
+    });
+    expect(resultsLoadMore).toHaveClass('btn--primary');
+    expect(resultsLoadMore).not.toHaveClass('btn--action');
+  });
+
   test('it keeps the results page rendered when a movie has no release date', async () => {
     getMovies.mockResolvedValue({
       movies: [
@@ -153,7 +184,9 @@ describe('<List />', () => {
     expect(screen.getByText('10 movies loaded')).toBeInTheDocument();
     expect(getMovies).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByRole('button', { name: 'Load more' }));
+    const loadMore = screen.getByRole('button', { name: 'Load more' });
+    expect(loadMore).toHaveClass('btn--outline', 'btn--action');
+    await user.click(loadMore);
     expect(screen.getByText('Movie 20')).toBeInTheDocument();
     expect(screen.queryByText('Movie 21')).not.toBeInTheDocument();
     expect(screen.getByText('20 movies loaded')).toBeInTheDocument();

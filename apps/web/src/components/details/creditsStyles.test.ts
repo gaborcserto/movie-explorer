@@ -19,6 +19,25 @@ function declarations(selector: string) {
   return values;
 }
 
+function declarationsForMedia(selector: string, query: string) {
+  const values: Record<string, string> = {};
+  stylesheet.walkAtRules('media', (media) => {
+    if (
+      query.includes('prefers-reduced-motion')
+        ? !media.params.includes(query)
+        : media.params !== query
+    )
+      return;
+    media.walkRules((rule) => {
+      if (!rule.selectors.includes(selector)) return;
+      rule.walkDecls((declaration) => {
+        values[declaration.prop] = declaration.value;
+      });
+    });
+  });
+  return values;
+}
+
 test('keeps top Credits links muted with an invisible underline and a subtle transition', () => {
   expect(
     declarations('.movie-details__credits .person-credit-link')
@@ -41,24 +60,87 @@ test('keeps all card names coral and role labels muted without changing typograp
     color: 'rgba(255, 255, 255, 0.55)',
     'font-size': '13px',
   });
-  expect(declarations('.cast-member__link h3')).toMatchObject({
-    'text-decoration-color': 'transparent',
-    transition: 'color 180ms ease, text-decoration-color 180ms ease',
+  expect(declarations('.cast-member__link h3')['text-decoration']).toBe('none');
+  expect(
+    declarationsForMedia(
+      '.cast-member:hover',
+      '(hover: hover) and (pointer: fine)'
+    )
+  ).toMatchObject({
+    filter: 'saturate(1.2)',
+    transform: 'scale(1.06)',
+  });
+  expect(declarations('.cast-member')).toMatchObject({
+    'transform-origin': 'center top',
+    transition: 'transform 0.24s ease, filter 0.24s ease',
+  });
+  expect(declarations('.cast-member__link h3')['text-decoration']).toBe('none');
+  expect(
+    declarationsForMedia(
+      '.cast-member:hover .cast-member__image',
+      '(hover: hover) and (pointer: fine)'
+    )['box-shadow']
+  ).toBe('0 16px 30px rgba(0, 0, 0, 0.32)');
+});
+
+test('uses a wrapping mobile grid with two columns when they fit and one on narrow screens', () => {
+  const mediaRules: Array<{ query: string; columns?: string }> = [];
+  stylesheet.walkAtRules('media', (media) => {
+    if (
+      !media.params.includes('max-width') &&
+      !media.params.includes('width <=')
+    )
+      return;
+    media.walkRules('.cast-grid', (rule) => {
+      mediaRules.push({
+        query: media.params,
+        columns: rule.nodes
+          ?.filter(
+            (node) =>
+              node.type === 'decl' && node.prop === 'grid-template-columns'
+          )
+          .map((node) => (node.type === 'decl' ? node.value : ''))
+          .at(-1),
+      });
+    });
+  });
+
+  expect(mediaRules).toEqual([
+    expect.objectContaining({
+      query: '(max-width: 767.98px)',
+      columns: 'repeat(2, minmax(0, 1fr))',
+    }),
+    expect.objectContaining({
+      query: '(width <= 359px)',
+      columns: 'minmax(0, 1fr)',
+    }),
+  ]);
+  expect(declarations('.cast-grid')).toMatchObject({ display: 'grid' });
+  expect(declarations('.cast-member')).toMatchObject({ 'min-width': '0' });
+  expect(declarations('.cast-member__image')).toMatchObject({
+    'aspect-ratio': '2/3',
+    width: '100%',
   });
 });
 
 test.each(['hover', 'focus-visible'])(
-  'shows coral text and underline for both credit links on %s',
+  'shows coral text for credit links and Cast & Crew names on %s',
   (state) => {
-    [
-      `.movie-details__credits .person-credit-link:${state}`,
-      `.cast-member__link:${state} h3`,
-    ].forEach((selector) => {
-      expect(declarations(selector)).toMatchObject({
-        color: '#f65261',
-        'text-decoration-color': 'currentcolor',
-      });
-    });
+    expect(
+      declarations(`.movie-details__credits .person-credit-link:${state}`)
+    ).toMatchObject({ color: '#f65261' });
+    const castSelector =
+      state === 'hover'
+        ? '.cast-member:hover h3'
+        : '.cast-member:focus-within h3';
+    const castDeclarations =
+      state === 'hover'
+        ? declarationsForMedia(
+            castSelector,
+            '(hover: hover) and (pointer: fine)'
+          )
+        : declarations(castSelector);
+    expect(castDeclarations).toMatchObject({ color: '#f65261' });
   }
 );
 
@@ -84,4 +166,10 @@ test('disables credit animations when reduced motion is requested', () => {
   });
   expect(selectors).toContain('.movie-details__credits .person-credit-link');
   expect(selectors).toContain('.cast-member__link h3');
+  expect(selectors).toContain('.cast-member');
+  const reducedMotionTransform = declarationsForMedia(
+    '.cast-member:hover',
+    '(prefers-reduced-motion: reduce)'
+  ).transform;
+  expect(reducedMotionTransform).toBe('none');
 });

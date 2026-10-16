@@ -1,17 +1,29 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { PersonDetails } from '@movie-explorer/contracts';
-import CustomImage from '../../components/utility/customImage';
+import HeroImage from '../../components/details/heroImage';
 import Footer from '../../layouts/footer';
 import Loading from '../../layouts/loading';
 import Error from '../../layouts/error';
 import { getPerson, isNotFoundError } from '../../util/apiUtils';
 import './personPage.scss';
 import Filmography from './filmography';
+import HeaderSearch from '../../components/search/headerSearch';
+import getPersonAge from './personAge';
 
 type PersonState =
   | { status: 'loading' | 'not-found' | 'error' }
   | { status: 'success'; person: PersonDetails };
+
+function getPosterUrls(person: PersonDetails) {
+  return [
+    ...new Set(
+      person.filmography
+        .map((entry) => entry.posterUrl?.trim())
+        .filter((url): url is string => Boolean(url))
+    ),
+  ].slice(0, 12);
+}
 
 function PersonProfile({ person }: { person: PersonDetails }) {
   const [expanded, setExpanded] = useState(false);
@@ -19,40 +31,38 @@ function PersonProfile({ person }: { person: PersonDetails }) {
   const isLong = biography.length > 800;
   // Prefer a word boundary, while retaining meaningful line breaks.
   const excerpt = biography.slice(0, 800).replace(/\s+\S*$/, '');
-  // Higher density candidates can point at the full-resolution original.
-  const portraitSrcSet = person.profileSrcSet
-    ?.split(',')
-    .filter((candidate) => {
-      const density = candidate.match(/\s(\d+(?:\.\d+)?)x\s*$/)?.[1];
-      return !density || Number(density) <= 2;
-    })
-    .join(',');
-  const metadata = [
+  const age = getPersonAge(person.birthday, person.deathDate);
+  const metadata: [string, string | number | undefined][] = [
     ['Known for', person.knownForDepartment],
     ['Birthday', person.birthday],
+    ['Age', age],
     ['Death date', person.deathDate],
     ['Place of birth', person.placeOfBirth],
-  ].filter(([, value]) => value?.trim());
-
+  ];
+  const visibleMetadata = metadata.filter(([, value]) =>
+    typeof value === 'number' ? Number.isFinite(value) : value?.trim()
+  );
   return (
     <div className="person-profile">
-      <CustomImage
+      <HeroImage
         src={person.profileUrl}
-        srcSet={portraitSrcSet}
-        sizes="(max-width: 767.98px) min(260px, calc(100vw - 32px)), 320px"
-        loading="eager"
+        srcSet={person.profileSrcSet}
+        fullSrcSet={person.profileSrcSet}
+        sizes="(max-width: 767.98px) min(320px, calc(100vw - 52px)), 320px"
         alt={`Portrait of ${person.name}`}
+        title={person.name}
         className="person-profile__portrait"
       />
       <div className="person-profile__content">
         <h1>{person.name}</h1>
-        {metadata.length > 0 && (
+        {visibleMetadata.length > 0 && (
           <dl className="person-profile__metadata">
-            {metadata.map(([label, value]) => (
+            {visibleMetadata.map(([label, value]) => (
               <div key={label}>
                 <dt>{label}</dt>
                 <dd>
-                  {label === 'Birthday' || label === 'Death date' ? (
+                  {typeof value === 'string' &&
+                  (label === 'Birthday' || label === 'Death date') ? (
                     <time dateTime={value}>{value}</time>
                   ) : (
                     value
@@ -72,7 +82,7 @@ function PersonProfile({ person }: { person: PersonDetails }) {
           {isLong && (
             <button
               type="button"
-              className="btn btn--outline"
+              className="btn btn--outline btn--action"
               aria-expanded={expanded}
               aria-controls="person-biography"
               onClick={() => setExpanded(!expanded)}
@@ -117,16 +127,30 @@ function PersonDetailsPage({ id }: { id: string }) {
   }, [personId, validId, attempt]);
 
   const title = validId ? 'Person not found' : 'Invalid person ID';
+  const posterUrls =
+    state.status === 'success' ? getPosterUrls(state.person) : [];
 
   return (
     <>
-      <header className="person-header container">
-        <Link to="/search" className="brand">
-          <strong>Movie</strong> Explorer
-        </Link>
-        <Link to="/search" className="person-header__search">
-          Search movies
-        </Link>
+      <header className="person-hero">
+        {posterUrls.length > 0 && (
+          <div className="person-hero__posters" aria-hidden="true">
+            {posterUrls.map((url) => (
+              <img key={url} src={url} alt="" loading="lazy" />
+            ))}
+          </div>
+        )}
+        <div className="movie-details container person-hero__container">
+          <div className="movie-details__top person-header detail-header">
+            <Link to="/search" className="movie-details__brand brand">
+              <strong>Movie</strong> Explorer
+            </Link>
+            <HeaderSearch />
+          </div>
+          {state.status === 'success' && (
+            <PersonProfile person={state.person} />
+          )}
+        </div>
       </header>
       <main ref={mainRef} tabIndex={-1} className="main person-page container">
         {!validId || state.status === 'not-found' ? (
@@ -163,10 +187,7 @@ function PersonDetailsPage({ id }: { id: string }) {
               />
             )}
             {state.status === 'success' && (
-              <>
-                <PersonProfile person={state.person} />
-                <Filmography entries={state.person.filmography} />
-              </>
+              <Filmography entries={state.person.filmography} />
             )}
           </>
         )}
