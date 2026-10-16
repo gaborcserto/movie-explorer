@@ -7,9 +7,18 @@ import MovieImage from '../utility/customImage';
 interface CardProps {
   movie: MovieSummary;
   loading?: 'lazy' | 'eager';
+  destination?: string;
+  subtitle?: string;
+  genreNavigation?: boolean;
 }
 
-function Card({ movie, loading = 'lazy' }: CardProps) {
+function Card({
+  movie,
+  loading = 'lazy',
+  destination,
+  subtitle,
+  genreNavigation = true,
+}: CardProps) {
   const { id, title, releaseDate, posterUrl, posterSrcSet, genres } = movie;
   const [searchParams] = useSearchParams();
 
@@ -37,7 +46,11 @@ function Card({ movie, loading = 'lazy' }: CardProps) {
 
   return (
     <article className="card">
-      <Link to={movieUrl} className="card__link" aria-label={title} />
+      <Link
+        to={destination ?? movieUrl}
+        className="card__link"
+        aria-label={title}
+      />
       <div className="card__image__wrapper">
         <MovieImage
           src={posterUrl}
@@ -50,7 +63,10 @@ function Card({ movie, loading = 'lazy' }: CardProps) {
       <div className="card__footer">
         <div className="card__footer__part">
           <span className="card__title">{title}</span>
-          <p className="card__type">{genreLinks}</p>
+          <p className="card__type">
+            {genreNavigation ? genreLinks : genres.join(', ')}
+          </p>
+          {subtitle && <p className="card__subtitle">{subtitle}</p>}
         </div>
         <div className="card__footer__part">
           {releaseYear && <p className="card__date">{releaseYear}</p>}

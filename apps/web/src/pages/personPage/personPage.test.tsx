@@ -103,7 +103,10 @@ test('direct person navigation loads the complete contract through the API witho
   expect(
     screen.queryByPlaceholderText('What do you want to watch?')
   ).toBeNull();
-  expect(screen.queryByText('A movie')).toBeNull();
+  expect(screen.getByRole('link', { name: 'A movie' })).toHaveAttribute(
+    'href',
+    '/movie/10'
+  );
   expect(screen.queryByRole('button', { name: 'Show More' })).toBeNull();
 });
 

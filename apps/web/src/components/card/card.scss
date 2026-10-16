@@ -101,6 +101,14 @@
     white-space: nowrap;
   }
 
+  &__subtitle {
+    color: rgb(255 255 255 / 0.8);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 8px;
+    overflow-wrap: anywhere;
+  }
+
   &__image__wrapper {
     border-radius: 4px;
     aspect-ratio: 2 / 3;

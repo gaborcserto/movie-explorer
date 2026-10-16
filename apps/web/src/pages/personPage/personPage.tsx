@@ -7,6 +7,7 @@ import Loading from '../../layouts/loading';
 import Error from '../../layouts/error';
 import { getPerson, isNotFoundError } from '../../util/apiUtils';
 import './personPage.scss';
+import Filmography from './filmography';
 
 type PersonState =
   | { status: 'loading' | 'not-found' | 'error' }
@@ -162,7 +163,10 @@ function PersonDetailsPage({ id }: { id: string }) {
               />
             )}
             {state.status === 'success' && (
-              <PersonProfile person={state.person} />
+              <>
+                <PersonProfile person={state.person} />
+                <Filmography entries={state.person.filmography} />
+              </>
             )}
           </>
         )}
