@@ -9,12 +9,11 @@ import {
   Get,
   Controller,
   Param,
-  ParseIntPipe,
   Query,
-  HttpException,
-  HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import { MoviesService } from './movies.service';
+import { DetailIdParams } from '../validation/detail-id.dto';
 import {
   GetMoviesQuery,
   GetMovieSuggestionsQuery,
@@ -69,12 +68,12 @@ export class MoviesController {
   @ApiNotFoundResponse({ description: 'Movie not found' })
   @ApiParam({ name: 'id', description: 'Movie unique identifier' })
   public async getMovie(
-    @Param('id', ParseIntPipe) id: number,
+    @Param() params: DetailIdParams,
   ): Promise<MovieDetails> {
-    const movie = await this.moviesService.findOne(id);
+    const movie = await this.moviesService.findOne(params.id);
 
     if (!movie) {
-      throw new HttpException('Movie not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException('Movie not found');
     }
     return movie;
   }

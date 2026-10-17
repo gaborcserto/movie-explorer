@@ -8,6 +8,7 @@ import Error from '../../layouts/error';
 import Loading from '../../layouts/loading';
 import HeaderSearch from '../search/headerSearch';
 import { getMovie, isNotFoundError } from '../../util/apiUtils';
+import parseDetailId from '../../util/detailId';
 
 type DetailsState = 'loading' | 'success' | 'not-found' | 'error';
 
@@ -15,17 +16,19 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
   const [detailsState, setDetailsState] = useState<DetailsState>('loading');
   const [attempt, setAttempt] = useState(0);
 
-  const movieId = Number(movieIdStr);
+  const movieId = parseDetailId(movieIdStr);
+  const validId = Number.isSafeInteger(movieId);
 
   const [movieData, setMovieData] = useState<MovieDetails | null>(null);
 
   useEffect(() => {
     let current = true;
-    if (!Number.isSafeInteger(movieId) || movieId <= 0) {
+    if (!validId) {
       setDetailsState('not-found');
       return undefined;
     }
-    getMovie(movieId)
+    const controller = new AbortController();
+    getMovie(movieId, controller.signal)
       .then((movie) => {
         if (!current) return;
         setMovieData(movie);
@@ -38,13 +41,14 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
       });
     return () => {
       current = false;
+      controller.abort();
     };
-  }, [movieId, attempt]);
+  }, [movieId, validId, attempt]);
 
   const pageTitle = {
     loading: 'Loading movie',
     success: movieData?.title || 'Movie details',
-    'not-found': 'Movie not found',
+    'not-found': validId ? 'Movie not found' : 'Invalid movie ID',
     error: 'Unable to load movie',
   }[detailsState];
   const mainRef = useDetailPage(pageTitle);
@@ -59,8 +63,12 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
     if (detailsState === 'not-found') {
       return (
         <Error
-          title="Movie not found"
-          message="We could not find that movie."
+          title={validId ? 'Movie not found' : 'Invalid movie ID'}
+          message={
+            validId
+              ? 'We could not find that movie.'
+              : 'Please use a valid positive whole-number movie ID.'
+          }
           className="movie-details__container movie-details__container--error"
         />
       );

@@ -494,8 +494,7 @@ test('movie navigation uses the existing route without person parameter leakage 
   await screen.findByRole('heading', { level: 1, name: 'Movie 01' });
   expect(router.state.location.pathname).toBe('/movie/1');
   expect(router.state.location.search).toBe('');
-  expect(fetchMock).toHaveBeenLastCalledWith(
-    'http://localhost:4000/movies/1',
-    {}
-  );
+  expect(fetchMock).toHaveBeenLastCalledWith('http://localhost:4000/movies/1', {
+    signal: expect.any(AbortSignal),
+  });
 });

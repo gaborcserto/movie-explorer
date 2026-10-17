@@ -94,7 +94,7 @@ describe('<App />', () => {
       await screen.findByRole('heading', { name: 'Sample Movie' })
     ).toBeInTheDocument();
     expect(screen.getByText('Drama, Action')).toBeInTheDocument();
-    expect(getMovie).toHaveBeenCalledWith(1234);
+    expect(getMovie).toHaveBeenCalledWith(1234, expect.any(AbortSignal));
     expect(screen.getAllByRole('main')).toHaveLength(1);
     expect(screen.getByRole('main')).toContainElement(
       screen.getByRole('heading', { name: movie.title })

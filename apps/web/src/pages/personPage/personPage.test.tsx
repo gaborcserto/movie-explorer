@@ -115,7 +115,9 @@ test('direct person navigation loads the complete contract through the API witho
   expect(screen.getByRole('main')).toContainElement(
     screen.getByRole('heading', { name: 'Filmography' })
   );
-  expect(document.title).toBe(`${person.name} | Movie Explorer`);
+  await waitFor(() =>
+    expect(document.title).toBe(`${person.name} | Movie Explorer`)
+  );
   expect(screen.getAllByRole('link', { name: 'Movie Explorer' })).toHaveLength(
     2
   );
@@ -140,7 +142,7 @@ test('API helper retains filmography and forwards the cancellation signal', asyn
   await expect(getPerson(42, controller.signal)).resolves.toEqual(person);
   expect(fetchMock).toHaveBeenCalledWith(
     'http://localhost:4000/api/v1/persons/42',
-    { signal: controller.signal }
+    { signal: expect.any(AbortSignal) }
   );
 });
 
@@ -283,21 +285,28 @@ test('announces loading and cancels requests on unmount', () => {
   expect(signal?.aborted).toBe(true);
 });
 
-test.each(['nope', '0', '-1', '1.5', '1e2', '9007199254740992'])(
-  'rejects invalid ID %s without a request',
-  (id) => {
-    renderPage(`/person/${id}`);
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Invalid person ID' })
-    ).toBeVisible();
-    expect(screen.getByRole('alert')).toBeVisible();
-    expect(screen.getByRole('link', { name: 'Browse movies' })).toHaveAttribute(
-      'href',
-      '/search'
-    );
-    expect(fetchMock).not.toHaveBeenCalled();
-  }
-);
+test.each([
+  'nope',
+  '0',
+  '-1',
+  '1.5',
+  '1e2',
+  '0x10',
+  ' 42',
+  '42 ',
+  '9007199254740992',
+])('rejects invalid ID %s without a request', (id) => {
+  renderPage(`/person/${id}`);
+  expect(
+    screen.getByRole('heading', { level: 1, name: 'Invalid person ID' })
+  ).toBeVisible();
+  expect(screen.getByRole('alert')).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Browse movies' })).toHaveAttribute(
+    'href',
+    '/search'
+  );
+  expect(fetchMock).not.toHaveBeenCalled();
+});
 
 test('handles HTTP 404 with a route back to browsing', async () => {
   fetchMock.mockResolvedValue(response(undefined, 404));

@@ -16,7 +16,29 @@ describe('getTmdbConfig', () => {
       imageBaseUrl: 'https://image.tmdb.org/t/p/w500',
       language: 'en-US',
       region: undefined,
+      requestTimeoutMs: 8000,
     });
+  });
+
+  it.each(['0', '-1', '1.5', '1e3', ' 8000', '60001', '', 'NaN'])(
+    'rejects invalid timeout %s',
+    (value) => {
+      expect(() =>
+        getTmdbConfig({
+          TMDB_ACCESS_TOKEN: 'token',
+          TMDB_REQUEST_TIMEOUT_MS: value,
+        }),
+      ).toThrow('TMDB_REQUEST_TIMEOUT_MS');
+    },
+  );
+
+  it('accepts a configured timeout', () => {
+    expect(
+      getTmdbConfig({
+        TMDB_ACCESS_TOKEN: 'token',
+        TMDB_REQUEST_TIMEOUT_MS: '5000',
+      }).requestTimeoutMs,
+    ).toBe(5000);
   });
 
   describe('local environment loading', () => {

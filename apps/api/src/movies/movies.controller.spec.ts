@@ -57,7 +57,7 @@ describe('MoviesController', () => {
   it('returns a movie by id', async () => {
     service.findOne.mockResolvedValue(movie);
 
-    await expect(controller.getMovie(1)).resolves.toBe(movie);
+    await expect(controller.getMovie({ id: 1 })).resolves.toBe(movie);
     expect(service.findOne).toHaveBeenCalledWith(1);
   });
 
@@ -73,7 +73,7 @@ describe('MoviesController', () => {
   it('throws not found when a movie does not exist', async () => {
     service.findOne.mockResolvedValue(undefined);
 
-    await expect(controller.getMovie(999)).rejects.toMatchObject({
+    await expect(controller.getMovie({ id: 999 })).rejects.toMatchObject({
       status: HttpStatus.NOT_FOUND,
       message: 'Movie not found',
     });

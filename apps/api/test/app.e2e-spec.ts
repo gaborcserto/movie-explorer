@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   BadGatewayException,
+  HttpException,
   INestApplication,
   ValidationPipe,
 } from '@nestjs/common';
@@ -70,6 +71,84 @@ describe('AppController (e2e)', () => {
     });
     movieProvider.findSuggestions.mockResolvedValue({ suggestions: [] });
   });
+
+  it.each([
+    '1e3',
+    '0x10',
+    '-1',
+    '1.5',
+    '0',
+    '9007199254740992',
+    ' 42',
+    '42 ',
+    '+42',
+  ])('rejects invalid detail ID %s before calling the provider', async (id) => {
+    for (const base of ['/movies', '/api/v1/persons']) {
+      await request(app.getHttpServer())
+        .get(base + '/' + encodeURIComponent(id))
+        .expect(400)
+        .expect((response) => {
+          expect(response.body.statusCode).toBe(400);
+          expect(Array.isArray(response.body.message)).toBe(true);
+        });
+    }
+    expect(movieProvider.findOne).not.toHaveBeenCalled();
+    expect(movieProvider.findPerson).not.toHaveBeenCalled();
+  });
+
+  it.each(['1', '00042', '9007199254740991'])(
+    'accepts safe positive decimal detail ID %s',
+    async (id) => {
+      await request(app.getHttpServer())
+        .get('/movies/' + id)
+        .expect(200);
+      await request(app.getHttpServer())
+        .get('/api/v1/persons/' + id)
+        .expect(200);
+      expect(movieProvider.findOne).toHaveBeenCalledWith(Number(id));
+      expect(movieProvider.findPerson).toHaveBeenCalledWith(Number(id));
+    },
+  );
+
+  it('preserves a safe rate-limit delay in the public body and header', async () => {
+    movieProvider.findOne.mockRejectedValueOnce(
+      new HttpException(
+        {
+          statusCode: 429,
+          error: 'Too Many Requests',
+          message: 'Movie provider rate limit reached',
+          retryAfter: 15,
+        },
+        429,
+      ),
+    );
+    await request(app.getHttpServer())
+      .get('/movies/1')
+      .expect(429)
+      .expect('Retry-After', '15')
+      .expect({
+        statusCode: 429,
+        error: 'Too Many Requests',
+        message: 'Movie provider rate limit reached',
+        retryAfter: 15,
+      });
+  });
+
+  it.each([429, 502, 504])(
+    'preserves public error status %s',
+    async (status) => {
+      movieProvider.findOne.mockRejectedValueOnce(
+        new HttpException(
+          { statusCode: status, message: 'Safe provider failure' },
+          status,
+        ),
+      );
+      await request(app.getHttpServer())
+        .get('/movies/1')
+        .expect(status)
+        .expect({ statusCode: status, message: 'Safe provider failure' });
+    },
+  );
 
   it('returns unified suggestions without changing movie-only consumers', async () => {
     movieProvider.findPeople.mockResolvedValueOnce({

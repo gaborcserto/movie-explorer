@@ -84,7 +84,7 @@ describe('<Details />', () => {
     expect(screen.getByRole('heading', { name: 'Overview' })).toBeVisible();
     expect(screen.getByText('Director Name')).toBeVisible();
     expect(screen.getByText('Actor One · Actor Two')).toBeVisible();
-    expect(getMovie).toHaveBeenCalledWith(1234);
+    expect(getMovie).toHaveBeenCalledWith(1234, expect.any(AbortSignal));
     expect(screen.getAllByRole('main')).toHaveLength(1);
     const main = screen.getByRole('main');
     expect(main).toHaveFocus();
@@ -287,8 +287,17 @@ describe('<Details />', () => {
     expect(screen.queryByRole('button', { name: /try again/i })).toBeNull();
   });
 
-  it('shows a not-found state for invalid movie IDs', async () => {
-    useParams.mockReturnValue({ movieId: 'unknown' });
+  it.each([
+    'unknown',
+    '1e3',
+    '0x10',
+    '-1',
+    '1.5',
+    '0',
+    '9007199254740992',
+    ' 42',
+  ])('shows an invalid-ID state for %s', async (movieId) => {
+    useParams.mockReturnValue({ movieId });
 
     render(
       <MemoryRouter>
@@ -296,7 +305,7 @@ describe('<Details />', () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText('Movie not found')).toBeInTheDocument();
+    expect(await screen.findByText('Invalid movie ID')).toBeInTheDocument();
     expect(getMovie).not.toHaveBeenCalled();
   });
 

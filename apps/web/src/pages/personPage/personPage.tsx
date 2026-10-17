@@ -11,6 +11,7 @@ import Filmography from './filmography';
 import HeaderSearch from '../../components/search/headerSearch';
 import getPersonAge from './personAge';
 import useDetailPage from '../../components/details/useDetailPage';
+import parseDetailId from '../../util/detailId';
 
 type PersonState =
   | { status: 'loading' | 'not-found' | 'error' }
@@ -98,7 +99,7 @@ function PersonProfile({ person }: { person: PersonDetails }) {
 }
 
 function PersonDetailsPage({ id }: { id: string }) {
-  const personId = /^\d+$/.test(id) ? Number(id) : NaN;
+  const personId = parseDetailId(id);
   const validId = Number.isSafeInteger(personId) && personId > 0;
   const [state, setState] = useState<PersonState>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);

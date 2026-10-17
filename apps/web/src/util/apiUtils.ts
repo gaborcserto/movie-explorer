@@ -18,29 +18,108 @@ const apiBaseUrl = (configuredApiBaseUrl ?? 'http://localhost:4000').replace(
 );
 const moviesUrl = `${apiBaseUrl}/movies`;
 
-class ApiRequestError extends Error {
-  constructor(public readonly status: number) {
-    super(`API request failed with status ${status}`);
+export type ApiErrorCategory =
+  | 'invalid-request'
+  | 'not-found'
+  | 'rate-limited'
+  | 'internal-server'
+  | 'service-unavailable'
+  | 'http'
+  | 'network'
+  | 'timeout'
+  | 'cancelled'
+  | 'invalid-response';
+
+export class ApiRequestError extends Error {
+  constructor(
+    public readonly category: ApiErrorCategory,
+    public readonly status?: number,
+    public readonly retryAfterSeconds?: number
+  ) {
+    super(`API request failed: ${category}`);
     this.name = 'ApiRequestError';
   }
 }
 
+export const API_REQUEST_TIMEOUT_MS = 12_000;
+
+export function classifyHttpStatus(status: number): ApiErrorCategory {
+  if (status === 400 || status === 422) return 'invalid-request';
+  if (status === 404) return 'not-found';
+  if (status === 429) return 'rate-limited';
+  if (status === 500) return 'internal-server';
+  if ([502, 503, 504].includes(status)) return 'service-unavailable';
+  return 'http';
+}
+
 async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(url, init);
-
-  if (!response.ok) {
-    throw new ApiRequestError(response.status);
+  const controller = new AbortController();
+  const callerSignal = init.signal;
+  const cancel = () => {
+    if (!controller.signal.aborted) controller.abort('cancelled');
+  };
+  if (callerSignal?.aborted) cancel();
+  else callerSignal?.addEventListener('abort', cancel, { once: true });
+  const timer = setTimeout(() => {
+    if (!controller.signal.aborted) controller.abort('timeout');
+  }, API_REQUEST_TIMEOUT_MS);
+  let status: number | undefined;
+  try {
+    controller.signal.throwIfAborted();
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    status = response.status;
+    controller.signal.throwIfAborted();
+    if (!response.ok) {
+      const delay = response.headers?.get('Retry-After');
+      const seconds = delay && /^\d+$/.test(delay) ? Number(delay) : undefined;
+      const retryAfterSeconds =
+        status === 429 &&
+        seconds !== undefined &&
+        Number.isSafeInteger(seconds) &&
+        seconds > 0 &&
+        seconds <= 86_400
+          ? seconds
+          : undefined;
+      throw new ApiRequestError(
+        classifyHttpStatus(status),
+        status,
+        retryAfterSeconds
+      );
+    }
+    try {
+      const body: unknown = await response.json();
+      controller.signal.throwIfAborted();
+      return body as T;
+    } catch {
+      if (controller.signal.aborted) throw controller.signal.reason;
+      throw new ApiRequestError('invalid-response', status);
+    }
+  } catch (error: unknown) {
+    if (controller.signal.aborted) {
+      throw new ApiRequestError(
+        controller.signal.reason === 'timeout' ? 'timeout' : 'cancelled',
+        status
+      );
+    }
+    if (error instanceof ApiRequestError) throw error;
+    throw new ApiRequestError('network', status);
+  } finally {
+    clearTimeout(timer);
+    callerSignal?.removeEventListener('abort', cancel);
+    // Release any unread error response body using this request's controller.
+    controller.abort();
   }
-
-  return (await response.json()) as T;
 }
 
 export const isNotFoundError = (error: unknown): boolean => {
   return error instanceof ApiRequestError && error.status === 404;
 };
 
-export const getMovie = async (id: number): Promise<MovieDetails> => {
-  return request<MovieDetails>(`${moviesUrl}/${id}`);
+export const getMovie = async (
+  id: number,
+  signal?: AbortSignal
+): Promise<MovieDetails> => {
+  return request<MovieDetails>(`${moviesUrl}/${id}`, signal ? { signal } : {});
 };
 
 export const getPerson = async (

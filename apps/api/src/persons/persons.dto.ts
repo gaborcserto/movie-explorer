@@ -1,5 +1,3 @@
-import { Transform } from 'class-transformer';
-import { IsInt, Max, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type {
   PersonDetails,
@@ -7,21 +5,9 @@ import type {
   PersonFilmographyEntry,
 } from '@movie-explorer/contracts';
 import { MovieSummary } from '../movies/movies.dto';
+import { DetailIdParams } from '../validation/detail-id.dto';
 
-export class GetPersonParams {
-  @ApiProperty({
-    type: 'integer',
-    minimum: 1,
-    maximum: Number.MAX_SAFE_INTEGER,
-  })
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : NaN,
-  )
-  @IsInt()
-  @Min(1)
-  @Max(Number.MAX_SAFE_INTEGER)
-  id: number;
-}
+export class GetPersonParams extends DetailIdParams {}
 
 export class PersonCrewCreditDto implements PersonCrewCredit {
   @ApiPropertyOptional()

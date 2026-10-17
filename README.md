@@ -75,6 +75,21 @@ Unified autocomplete uses `GET /api/v1/search/suggestions?query=Alien&limit=6`. 
 
 `GET /api/v1/persons?query=Weaver&page=1` returns `people`, `page`, `totalPages`, and `totalResults`. Queries are trimmed, nonempty, and bounded to 100 characters; pages are bounded to 1-500. Search URLs use `/search/:searchQuery?view=people`; Movies is the default when `view` is absent. Movie filters remain in the URL when switching, but are never sent to person search. Each view loads on first visit and retains its own pagination while switching within the current query.
 
+## Request failures and deadlines
+
+Browser API requests have a 12-second deadline, including JSON body reads. All existing request types use this default. Caller cancellation remains independent and silent in existing navigation/search flows; timeouts remain genuine failures eligible for manual retry. There are no automatic retries. The API utility exposes typed categories (`invalid-request`, `not-found`, `rate-limited`, `internal-server`, `service-unavailable`, `http`, `network`, `timeout`, `cancelled`, `invalid-response`), retains available HTTP status, and keeps `isNotFoundError` compatibility. Rate-limit errors retain validated header delays as `retryAfterSeconds`. Invalid JSON is classified; successful JSON still uses endpoint contract types rather than comprehensive runtime schema validation in the browser.
+
+TMDB requests default to 8 seconds, including body reads. Set `TMDB_REQUEST_TIMEOUT_MS` to decimal integer milliseconds from 1 to 60000; invalid configuration fails startup. Keep it below the browser deadline where practical. Each upstream request has its own deadline, so sequential provider calls can exceed one upstream deadline.
+
+- Missing movie/person details return 404. Unexpected collection/search/genre 404 responses return 502; successful empty collections remain valid.
+- Upstream 429 returns 429. A positive `Retry-After` delay up to 24 hours, supplied as integer seconds or a canonical future HTTP date, is normalized to seconds in the `Retry-After` response header and optional `retryAfter` body field. Invalid, expired, zero, or longer delays are omitted. CORS exposes this header.
+- Upstream timeout returns 504. Connection failures, invalid JSON/required response structures, upstream authorization failures, and other upstream HTTP failures (including 5xx) return sanitized 502 responses. Missing credentials or invalid configuration prevent startup.
+- Public errors retain Nest's `statusCode`, safe `message`, and standard `error` label where provided; validation messages remain arrays. Expected upstream failures log operation category, failure category, upstream status when known, and application status without raw messages, query text, credentials, or bodies.
+
+Both detail route IDs accept decimal digits only, a positive integer at most `Number.MAX_SAFE_INTEGER`; leading zeroes are allowed. Scientific/hexadecimal notation, signs, fractions, whitespace, zero, and unsafe integers are rejected. The frontend shows a contextual invalid-ID state without fetching; the API returns 400. Valid missing IDs remain 404.
+
+Error response types remain outside the shared success contracts; a shared error contract and schema migration are deferred. Phase 24.3B/24.3C retain ownership of full-page network/error variants, Error Boundary reset behavior, history return navigation, and partial detail/autocomplete responses.
+
 ## Project structure
 
 ```text
