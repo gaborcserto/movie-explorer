@@ -224,6 +224,11 @@ describe.each(['home', 'movie', 'person'])(
       expect(screen.getByRole('status')).toHaveTextContent(
         'Suggestions unavailable'
       );
+      expect(screen.getByRole('status')).toBeVisible();
+      expect(screen.getByRole('status')).not.toHaveClass('visually-hidden');
+      expect(input).not.toHaveAttribute('aria-activedescendant');
+      fireEvent.submit(input.closest('form')!);
+      expect(router.state.location.pathname).toBe('/search/Aliens');
       expect(input).not.toHaveAttribute('aria-activedescendant');
       await act(async () => {
         await router.navigate('/search/committed');

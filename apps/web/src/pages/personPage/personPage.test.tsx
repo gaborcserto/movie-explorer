@@ -301,7 +301,7 @@ test.each([
     screen.getByRole('heading', { level: 1, name: 'Invalid person ID' })
   ).toBeVisible();
   expect(screen.getByRole('alert')).toBeVisible();
-  expect(screen.getByRole('link', { name: 'Browse movies' })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: 'Back to Search' })).toHaveAttribute(
     'href',
     '/search'
   );
@@ -317,7 +317,7 @@ test('handles HTTP 404 with a route back to browsing', async () => {
   expect(screen.getByRole('alert')).toHaveTextContent(
     'We could not find that person.'
   );
-  expect(screen.getByRole('link', { name: 'Browse movies' })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: 'Back to Search' })).toHaveAttribute(
     'href',
     '/search'
   );
@@ -325,7 +325,7 @@ test('handles HTTP 404 with a route back to browsing', async () => {
 });
 
 test.each(['network', 'HTTP'])(
-  'recovers from a %s failure through Retry without refocusing main',
+  'recovers from a %s failure through Retry and returns focus to main on success',
   async (failure) => {
     const user = userEvent.setup();
     if (failure === 'network')
@@ -333,14 +333,16 @@ test.each(['network', 'HTTP'])(
     else fetchMock.mockResolvedValueOnce(response(undefined, 502));
     renderPage();
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Unable to load person'
+      failure === 'network'
+        ? 'Connection problem'
+        : 'Service temporarily unavailable'
     );
     await user.click(screen.getByRole('button', { name: 'Try again' }));
     expect(
       await screen.findByRole('heading', { name: person.name })
     ).toBeVisible();
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(screen.getByRole('main')).not.toHaveFocus();
+    expect(screen.getByRole('main')).toHaveFocus();
   }
 );
 
@@ -432,7 +434,7 @@ test('sets a loading title and preserves the destination title after late data',
 
 test.each([
   [404, 'Person not found'],
-  [502, 'Unable to load person'],
+  [502, 'Service temporarily unavailable'],
 ])(
   'uses a meaningful title and focused main for HTTP %s',
   async (status, title) => {

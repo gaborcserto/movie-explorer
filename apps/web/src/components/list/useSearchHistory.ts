@@ -29,6 +29,7 @@ export const SearchHistory = createContext<{
   movies: Map<string, MovieSnapshot>;
   people: Map<string, PeopleSnapshot>;
   scroll: Map<string, number>;
+  detailOrigins: Map<string, string>;
 } | null>(null);
 
 // Keep history local to this app instance and bound memory during long sessions.

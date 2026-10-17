@@ -9,6 +9,9 @@ import type {
   PersonListResponse,
   PersonSummary,
 } from '@movie-explorer/contracts';
+import presentApiError, {
+  isCancelledError,
+} from '../../util/errorPresentation';
 import { getPeople } from '../../util/apiUtils';
 import Card from '../card/card';
 import Loading from '../../layouts/loading';
@@ -24,8 +27,8 @@ export default function PeopleList({ query }: { query: string }) {
   const [people, setPeople] = useState<PersonSummary[]>(restored?.items ?? []);
   const [visible, setVisible] = useState(restored?.visible ?? 10);
   const [loading, setLoading] = useState(Boolean(query) && !restored);
-  const [error, setError] = useState(false);
-  const [moreError, setMoreError] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+  const [moreError, setMoreError] = useState<unknown>(null);
   const controller = useRef<AbortController | null>(null);
   const busy = useRef(false);
 
@@ -37,11 +40,11 @@ export default function PeopleList({ query }: { query: string }) {
       const request = new AbortController();
       controller.current = request;
       setLoading(true);
-      setError(false);
-      setMoreError(false);
+      setMoreError(null);
       try {
         const response = await getPeople(query, page, request.signal);
         if (request.signal.aborted) return;
+        setError(null);
         setData(response);
         setPeople((current) => [
           ...new Map(
@@ -51,10 +54,10 @@ export default function PeopleList({ query }: { query: string }) {
           ).values(),
         ]);
         setVisible(page === 1 ? 10 : revealed + 10);
-      } catch {
-        if (request.signal.aborted) return;
-        if (page === 1) setError(true);
-        else setMoreError(true);
+      } catch (failure: unknown) {
+        if (request.signal.aborted || isCancelledError(failure)) return;
+        if (page === 1) setError(failure);
+        else setMoreError(failure);
       } finally {
         if (!request.signal.aborted) {
           busy.current = false;
@@ -83,14 +86,15 @@ export default function PeopleList({ query }: { query: string }) {
         Enter a name to search for people.
       </p>
     );
-  if (loading && !data)
+  if (loading && !data && !error)
     return <Loading className="list__container container" />;
   if (error)
     return (
       <Error
         className="list__container container"
-        title="Unable to load people"
-        message="Something went wrong while loading people."
+        title={presentApiError(error)?.heading}
+        message={presentApiError(error)?.description ?? ''}
+        pending={loading}
         actionLabel="Try again"
         onAction={() => load(1)}
       />
@@ -131,7 +135,9 @@ export default function PeopleList({ query }: { query: string }) {
           />
         ))}
       </div>
-      {moreError && <p role="alert">Unable to load more people.</p>}
+      {Boolean(moreError) && (
+        <p role="alert">{presentApiError(moreError)?.description}</p>
+      )}
       {more && (
         <div className="list__more">
           <button

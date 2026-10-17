@@ -1,8 +1,8 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { createMemoryRouter, Outlet, RouterProvider } from 'react-router-dom';
 import type { PersonListResponse } from '@movie-explorer/contracts';
 import SearchResults from './searchResults';
-import { getMovies, getPeople } from '../../util/apiUtils';
+import { ApiRequestError, getMovies, getPeople } from '../../util/apiUtils';
 import SearchHistoryProvider from './searchHistory';
 
 vi.mock('../../util/apiUtils', async () => ({
@@ -27,17 +27,22 @@ function setup(
 ) {
   const router = createMemoryRouter(
     [
-      { path: '/search/:searchQuery?', element: <SearchResults /> },
-      { path: '/person/:id', element: <h1>Person details</h1> },
-      { path: '/movie/:id', element: <h1>Movie details</h1> },
+      {
+        element: (
+          <SearchHistoryProvider>
+            <Outlet />
+          </SearchHistoryProvider>
+        ),
+        children: [
+          { path: '/search/:searchQuery?', element: <SearchResults /> },
+          { path: '/person/:id', element: <h1>Person details</h1> },
+          { path: '/movie/:id', element: <h1>Movie details</h1> },
+        ],
+      },
     ],
     { initialEntries: [path] }
   );
-  render(
-    <SearchHistoryProvider>
-      <RouterProvider router={router} />
-    </SearchHistoryProvider>
-  );
+  render(<RouterProvider router={router} />);
   return router;
 }
 beforeEach(() => {
@@ -112,7 +117,7 @@ test('direct People links do not fetch movies, reveal ten at a time, paginate, d
   expect(getPeople).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
   expect(await screen.findByRole('alert')).toHaveTextContent(
-    'Unable to load more people'
+    "We couldn't load this information. Please try again."
   );
   expect(within(region).getAllByRole('article')).toHaveLength(20);
   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
@@ -151,7 +156,7 @@ test('shows initial loading, error, retry and empty states', async () => {
   await act(async () => {
     reject(new Error('offline'));
   });
-  expect(screen.getByText('Unable to load people')).toBeVisible();
+  expect(screen.getByText('Something went wrong')).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
   expect(
     await screen.findByText('No people found for "Absent".')
@@ -372,3 +377,32 @@ test('sparse People pages reveal at most ten additional cards per interaction', 
   expect(screen.getAllByRole('article')).toHaveLength(23);
   expect(getPeople).toHaveBeenCalledTimes(2);
 });
+
+test.each(['movies', 'people'] as const)(
+  '%s inline classified failures retain Retry focus and guard pending requests',
+  async (view) => {
+    const request =
+      view === 'movies' ? vi.mocked(getMovies) : vi.mocked(getPeople);
+    let reject!: (error: unknown) => void;
+    request.mockRejectedValueOnce(new ApiRequestError('timeout'));
+    request.mockReturnValueOnce(
+      new Promise<never>((_, fail) => {
+        reject = fail;
+      })
+    );
+    setup(`/search/Actor${view === 'people' ? '?view=people' : ''}`);
+    await screen.findByRole('heading', { name: 'Request timed out' });
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    retry.focus();
+    fireEvent.click(retry);
+    fireEvent.click(retry);
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(retry).toHaveAttribute('aria-disabled', 'true');
+    expect(retry).toHaveFocus();
+    await act(async () => reject(new ApiRequestError('network')));
+    expect(
+      screen.getByRole('heading', { name: 'Connection problem' })
+    ).toBeVisible();
+    expect(retry).toHaveFocus();
+  }
+);

@@ -4,7 +4,10 @@ import { Link, useParams } from 'react-router-dom';
 import type { MovieDetails } from '@movie-explorer/contracts';
 import useDetailPage from './useDetailPage';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
-import Error from '../../layouts/error';
+import DetailError from './detailError';
+import presentApiError, {
+  isCancelledError,
+} from '../../util/errorPresentation';
 import Loading from '../../layouts/loading';
 import HeaderSearch from '../search/headerSearch';
 import { getMovie, isNotFoundError } from '../../util/apiUtils';
@@ -14,6 +17,8 @@ type DetailsState = 'loading' | 'success' | 'not-found' | 'error';
 
 function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
   const [detailsState, setDetailsState] = useState<DetailsState>('loading');
+  const [requestError, setRequestError] = useState<unknown>(null);
+  const [pending, setPending] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
   const movieId = parseDetailId(movieIdStr);
@@ -28,16 +33,22 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
       return undefined;
     }
     const controller = new AbortController();
+    setPending(true);
     getMovie(movieId, controller.signal)
       .then((movie) => {
-        if (!current) return;
+        if (!current || controller.signal.aborted) return;
         setMovieData(movie);
         setDetailsState('success');
       })
       .catch((error: unknown) => {
-        if (!current) return;
+        if (!current || controller.signal.aborted) return;
+        if (isCancelledError(error)) return;
+        setRequestError(error);
         setMovieData(null);
         setDetailsState(isNotFoundError(error) ? 'not-found' : 'error');
+      })
+      .finally(() => {
+        if (current) setPending(false);
       });
     return () => {
       current = false;
@@ -49,7 +60,9 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
     loading: 'Loading movie',
     success: movieData?.title || 'Movie details',
     'not-found': validId ? 'Movie not found' : 'Invalid movie ID',
-    error: 'Unable to load movie',
+    error: pending
+      ? 'Loading movie'
+      : (presentApiError(requestError)?.heading ?? 'Movie details'),
   }[detailsState];
   const mainRef = useDetailPage(pageTitle);
 
@@ -62,27 +75,27 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
 
     if (detailsState === 'not-found') {
       return (
-        <Error
-          title={validId ? 'Movie not found' : 'Invalid movie ID'}
-          message={
+        <DetailError
+          heading={validId ? 'Movie not found' : 'Invalid movie ID'}
+          description={
             validId
               ? 'We could not find that movie.'
               : 'Please use a valid positive whole-number movie ID.'
           }
-          className="movie-details__container movie-details__container--error"
         />
       );
     }
 
     if (detailsState === 'error') {
       return (
-        <Error
-          title="Unable to load movie"
-          message="Something went wrong while loading this movie."
-          className="movie-details__container movie-details__container--error"
-          actionLabel="Try again"
-          onAction={() => {
-            setDetailsState('loading');
+        <DetailError
+          {...(presentApiError(requestError) ?? {
+            heading: 'Something went wrong',
+            description: 'Please try again.',
+          })}
+          pending={pending}
+          retry={() => {
+            setPending(true);
             setAttempt((value) => value + 1);
           }}
         />

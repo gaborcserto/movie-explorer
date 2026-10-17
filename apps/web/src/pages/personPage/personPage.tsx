@@ -4,7 +4,10 @@ import type { PersonDetails } from '@movie-explorer/contracts';
 import HeroImage from '../../components/details/heroImage';
 import Footer from '../../layouts/footer';
 import Loading from '../../layouts/loading';
-import Error from '../../layouts/error';
+import DetailError from '../../components/details/detailError';
+import presentApiError, {
+  isCancelledError,
+} from '../../util/errorPresentation';
 import { getPerson, isNotFoundError } from '../../util/apiUtils';
 import './personPage.scss';
 import Filmography from './filmography';
@@ -102,19 +105,28 @@ function PersonDetailsPage({ id }: { id: string }) {
   const personId = parseDetailId(id);
   const validId = Number.isSafeInteger(personId) && personId > 0;
   const [state, setState] = useState<PersonState>({ status: 'loading' });
+  const [requestError, setRequestError] = useState<unknown>(null);
+  const [pending, setPending] = useState(false);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (!validId) return undefined;
     const controller = new AbortController();
+    setPending(true);
     let current = true;
     getPerson(personId, controller.signal)
       .then((person) => {
-        if (current) setState({ status: 'success', person });
+        if (current && !controller.signal.aborted)
+          setState({ status: 'success', person });
       })
       .catch((error: unknown) => {
-        if (current) {
+        if (current && !controller.signal.aborted) {
+          if (isCancelledError(error)) return;
+          setRequestError(error);
           setState({ status: isNotFoundError(error) ? 'not-found' : 'error' });
         }
+      })
+      .finally(() => {
+        if (current) setPending(false);
       });
     return () => {
       current = false;
@@ -133,7 +145,9 @@ function PersonDetailsPage({ id }: { id: string }) {
         ? state.person.name
         : {
             loading: 'Loading person',
-            error: 'Unable to load person',
+            error: pending
+              ? 'Loading person'
+              : (presentApiError(requestError)?.heading ?? 'Person details'),
           }[state.status];
   }
   const mainRef = useDetailPage(pageTitle);
@@ -165,34 +179,29 @@ function PersonDetailsPage({ id }: { id: string }) {
         </div>
         <div className="main person-page container">
           {!validId || state.status === 'not-found' ? (
-            <>
-              <h1>{title}</h1>
-              <Error
-                className="person-page__state"
-                message={
-                  validId
-                    ? 'We could not find that person.'
-                    : 'Please use a valid positive whole-number person ID.'
-                }
-              />
-              <Link to="/search" className="btn btn--outline">
-                Browse movies
-              </Link>
-            </>
+            <DetailError
+              heading={title}
+              description={
+                validId
+                  ? 'We could not find that person.'
+                  : 'Please use a valid positive whole-number person ID.'
+              }
+            />
           ) : (
             <>
-              {state.status !== 'success' && <h1>Person details</h1>}
+              {state.status === 'loading' && <h1>Person details</h1>}
               {state.status === 'loading' && (
                 <Loading className="person-page__state" />
               )}
               {state.status === 'error' && (
-                <Error
-                  className="person-page__state"
-                  title="Unable to load person"
-                  message="Something went wrong while loading this person."
-                  actionLabel="Try again"
-                  onAction={() => {
-                    setState({ status: 'loading' });
+                <DetailError
+                  {...(presentApiError(requestError) ?? {
+                    heading: 'Something went wrong',
+                    description: 'Please try again.',
+                  })}
+                  pending={pending}
+                  retry={() => {
+                    setPending(true);
                     setAttempt((value) => value + 1);
                   }}
                 />

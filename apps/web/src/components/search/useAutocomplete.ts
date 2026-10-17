@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { SearchSuggestion } from '@movie-explorer/contracts';
+import { isCancelledError } from '../../util/errorPresentation';
 import { getSearchSuggestions } from '../../util/apiUtils';
 
 export default function useAutocomplete(committedQuery = '', enabled = true) {
@@ -9,6 +10,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
+  const [failed, setFailed] = useState(false);
   const [message, setMessage] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
@@ -23,6 +25,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
     setOpen(false);
     setActive(-1);
     setMessage('');
+    setFailed(false);
   };
 
   useEffect(() => {
@@ -33,6 +36,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
     setOpen(false);
     setActive(-1);
     setMessage('');
+    setFailed(false);
   }, [committedQuery, location.key]);
 
   useEffect(() => {
@@ -63,8 +67,15 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
             ? `${items.length} suggestions available. Use arrow keys to navigate.`
             : 'No suggestions found. Press Enter to search.'
         );
-      } catch {
-        if (controller.signal.aborted || current !== generation.current) return;
+      } catch (error: unknown) {
+        if (
+          controller.signal.aborted ||
+          current !== generation.current ||
+          isCancelledError(error)
+        )
+          return;
+        setFailed(true);
+        setActive(-1);
         setSuggestions([]);
         setOpen(false);
         setMessage('Suggestions unavailable. Press Enter to search.');
@@ -151,6 +162,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
     active,
     setActive,
     message,
+    failed,
     listId,
     containerRef,
     dismiss,
@@ -159,6 +171,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
     onKeyDown,
     inputProps: {
       role: 'combobox' as const,
+      'aria-describedby': failed ? `${listId}-failure` : undefined,
       'aria-autocomplete': 'list' as const,
       'aria-expanded': open,
       'aria-controls': open ? listId : undefined,

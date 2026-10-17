@@ -7,7 +7,15 @@ type Props = { autocomplete: ReturnType<typeof useAutocomplete> };
 export default function Suggestions({ autocomplete }: Props) {
   return (
     <>
-      <span className="visually-hidden" role="status">
+      <span
+        id={`${autocomplete.listId}-failure`}
+        className={
+          autocomplete.failed
+            ? 'search-suggestions__failure'
+            : 'visually-hidden'
+        }
+        role="status"
+      >
         {autocomplete.message}
       </span>
       <div

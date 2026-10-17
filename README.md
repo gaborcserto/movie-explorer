@@ -88,7 +88,11 @@ TMDB requests default to 8 seconds, including body reads. Set `TMDB_REQUEST_TIME
 
 Both detail route IDs accept decimal digits only, a positive integer at most `Number.MAX_SAFE_INTEGER`; leading zeroes are allowed. Scientific/hexadecimal notation, signs, fractions, whitespace, zero, and unsafe integers are rejected. The frontend shows a contextual invalid-ID state without fetching; the API returns 400. Valid missing IDs remain 404.
 
-Error response types remain outside the shared success contracts; a shared error contract and schema migration are deferred. Phase 24.3B/24.3C retain ownership of full-page network/error variants, Error Boundary reset behavior, history return navigation, and partial detail/autocomplete responses.
+Error response types remain outside the shared success contracts; a shared error contract and schema migration are deferred. Detail errors use the shared contextual popcorn presentation, with safe messages for classified API failures. Invalid IDs and missing resources offer Back to Search without Retry. Recoverable failures offer a guarded manual Retry; validated rate-limit delays provide guidance without timers or automatic requests. Pending retries keep the action focused; success moves focus to the detail main landmark only when that action still holds focus. Cancellation stays silent. Search failures remain inline and pagination failures retain loaded results. Autocomplete failures are visible beside the input and Enter still submits the query.
+
+Back to Search returns to the preceding search entry only when the app observed that Search-to-Detail push in the current session. This reuses bounded result and scroll snapshots, preserving query, view, filters, sorting and loaded depth. Direct entries, reloads, evicted history and detail-to-detail navigation fall back to `/search`; no persistent search storage or speculative history jumps are used. Fatal rendering errors retain full-document Reload and a native Search link, independent of router context, without resetting the failing tree or displaying an HTTP status.
+
+Partial detail responses and partial autocomplete groups remain deferred to Phase 24.3C. Phase 24.4 scope should be confirmed separately; this phase does not implement a shared error schema or broader success-response validation.
 
 ## Project structure
 

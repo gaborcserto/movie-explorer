@@ -95,3 +95,19 @@
     }
   }
 }
+
+.search-suggestions__failure {
+  background: $grey-3;
+  border-radius: 6px;
+  color: $white;
+  display: block;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 8px 12px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  overflow-wrap: anywhere;
+  z-index: 5;
+}

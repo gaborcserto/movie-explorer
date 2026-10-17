@@ -13,6 +13,9 @@ import type {
   MovieListResponse,
   MovieSummary,
 } from '@movie-explorer/contracts';
+import presentApiError, {
+  isCancelledError,
+} from '../../util/errorPresentation';
 import Card from '../card/card';
 import Error from '../../layouts/error';
 import Loading from '../../layouts/loading';
@@ -50,7 +53,8 @@ function List() {
   const [loadingData, setLoadingData] = useState(!restored);
   const [loadingMore, setLoadingMore] = useState(false);
   const [errorData, setErrorData] = useState<unknown>(null);
-  const [loadMoreError, setLoadMoreError] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<unknown>(null);
+  const loadingInitialRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const queryGenerationRef = useRef(0);
   const requestControllerRef = useRef<AbortController | null>(null);
@@ -92,42 +96,55 @@ function List() {
     return 'No movies available.';
   };
 
-  const loadInitialMovies = useCallback(() => {
-    requestControllerRef.current?.abort();
-    const controller = new AbortController();
-    requestControllerRef.current = controller;
-    const { signal } = controller;
-    queryGenerationRef.current += 1;
-    const queryGeneration = queryGenerationRef.current;
-    const isCurrentRequest = () =>
-      !signal.aborted && queryGeneration === queryGenerationRef.current;
+  const loadInitialMovies = useCallback(
+    (retry = false) => {
+      if (
+        loadingInitialRef.current &&
+        !requestControllerRef.current?.signal.aborted
+      )
+        return Promise.resolve();
+      loadingInitialRef.current = true;
+      requestControllerRef.current?.abort();
+      const controller = new AbortController();
+      requestControllerRef.current = controller;
+      const { signal } = controller;
+      queryGenerationRef.current += 1;
+      const queryGeneration = queryGenerationRef.current;
+      const isCurrentRequest = () =>
+        !signal.aborted && queryGeneration === queryGenerationRef.current;
 
-    loadingMoreRef.current = false;
-    setLoadingMore(false);
-    setLoadingData(true);
-    setErrorData(null);
-    setLoadMoreError(false);
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+      setLoadingData(true);
+      if (!retry) setErrorData(null);
+      setLoadMoreError(null);
 
-    return getMovies({ ...params, page: 1 }, signal)
-      .then((response) => {
-        if (!isCurrentRequest()) return;
-        setMoviesData(response);
-        setMovies(appendUniqueMovies([], response.movies));
-        setVisibleMovieCount(MOVIE_BATCH_SIZE);
-      })
-      .catch((error: unknown) => {
-        if (!isCurrentRequest()) return;
-        if (error instanceof DOMException && error.name === 'AbortError')
-          return;
-        setMoviesData(undefined);
-        setMovies([]);
-        setVisibleMovieCount(MOVIE_BATCH_SIZE);
-        setErrorData(error);
-      })
-      .finally(() => {
-        if (isCurrentRequest()) setLoadingData(false);
-      });
-  }, [params]);
+      return getMovies({ ...params, page: 1 }, signal)
+        .then((response) => {
+          if (!isCurrentRequest()) return;
+          setErrorData(null);
+          setLoadMoreError(null);
+          setMoviesData(response);
+          setMovies(appendUniqueMovies([], response.movies));
+          setVisibleMovieCount(MOVIE_BATCH_SIZE);
+        })
+        .catch((error: unknown) => {
+          if (!isCurrentRequest()) return;
+          if (isCancelledError(error)) return;
+          setMoviesData(undefined);
+          setMovies([]);
+          setVisibleMovieCount(MOVIE_BATCH_SIZE);
+          setErrorData(error);
+        })
+        .finally(() => {
+          if (isCurrentRequest()) {
+            loadingInitialRef.current = false;
+            setLoadingData(false);
+          }
+        });
+    },
+    [params]
+  );
 
   useEffect(() => {
     if (!restored) loadInitialMovies();
@@ -160,7 +177,7 @@ function List() {
       setVisibleMovieCount(
         (current) => Math.min(current, movies.length) + MOVIE_BATCH_SIZE
       );
-      setLoadMoreError(false);
+      setLoadMoreError(null);
       return;
     }
 
@@ -169,21 +186,21 @@ function List() {
     const isCurrentRequest = () =>
       !signal.aborted && queryGeneration === queryGenerationRef.current;
     setLoadingMore(true);
-    setLoadMoreError(false);
     try {
       const response = await getMovies(
         { ...params, page: moviesData.page + 1 },
         signal
       );
       if (!isCurrentRequest()) return;
+      setLoadMoreError(null);
       setMoviesData(response);
       setMovies((current) => appendUniqueMovies(current, response.movies));
       setVisibleMovieCount(
         (current) => Math.min(current, movies.length) + MOVIE_BATCH_SIZE
       );
-    } catch {
-      if (!isCurrentRequest()) return;
-      setLoadMoreError(true);
+    } catch (error: unknown) {
+      if (!isCurrentRequest() || isCancelledError(error)) return;
+      setLoadMoreError(error);
     } finally {
       if (isCurrentRequest()) {
         loadingMoreRef.current = false;
@@ -192,7 +209,7 @@ function List() {
     }
   };
 
-  if (loadingData) {
+  if (loadingData && !errorData) {
     return (
       <Loading className="list__container container list__container--loading" />
     );
@@ -201,11 +218,12 @@ function List() {
   if (errorData) {
     return (
       <Error
-        title="Unable to load movies"
-        message="Something went wrong while loading movies."
+        title={presentApiError(errorData)?.heading}
+        message={presentApiError(errorData)?.description ?? ''}
         className="list__container container list__container--error"
+        pending={loadingData}
         actionLabel="Try again"
-        onAction={() => loadInitialMovies()}
+        onAction={() => loadInitialMovies(true)}
       />
     );
   }
@@ -342,12 +360,13 @@ function List() {
           />
         ))}
       </div>
-      {loadMoreError && (
+      {Boolean(loadMoreError) && (
         <div className="list__more-error" role="alert">
-          <span>Unable to load more movies.</span>
+          <span>{presentApiError(loadMoreError)?.description}</span>
           <button
             type="button"
             className="btn btn--outline"
+            disabled={loadingMore}
             onClick={() => loadMore()}
           >
             Try again

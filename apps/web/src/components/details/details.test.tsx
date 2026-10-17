@@ -261,10 +261,10 @@ describe('<Details />', () => {
       </MemoryRouter>
     );
     await waitFor(() =>
-      expect(screen.getByText('Unable to load movie')).toBeInTheDocument()
+      expect(screen.getByText('Something went wrong')).toBeInTheDocument()
     );
     expect(
-      screen.getByText('Something went wrong while loading this movie.')
+      screen.getByText("We couldn't load this information. Please try again.")
     ).toBeInTheDocument();
     expect(screen.queryByText('Failed to fetch')).not.toBeInTheDocument();
   });
@@ -323,7 +323,7 @@ describe('<Details />', () => {
       </MemoryRouter>
     );
 
-    await screen.findByText('Unable to load movie');
+    await screen.findByText('Something went wrong');
     await user.click(screen.getByRole('button', { name: /try again/i }));
 
     expect(await screen.findByText('Sample Movie')).toBeInTheDocument();
@@ -347,7 +347,7 @@ describe('<Details />', () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText('Unable to load movie')).toBeVisible();
+    expect(await screen.findByText('Something went wrong')).toBeVisible();
     expect(screen.queryByRole('heading', { name: 'Photos' })).toBeNull();
     expect(getMovie).toHaveBeenCalledTimes(1);
 
@@ -419,8 +419,8 @@ test('movie retry requests cannot change the title or focus after leaving', asyn
       <Details />
     </MemoryRouter>
   );
-  await screen.findByText('Unable to load movie');
-  expect(document.title).toBe('Unable to load movie | Movie Explorer');
+  await screen.findByText('Something went wrong');
+  expect(document.title).toBe('Something went wrong | Movie Explorer');
   expect(screen.getByRole('main')).toHaveFocus();
   await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
   expect(document.title).toBe('Loading movie | Movie Explorer');

@@ -630,10 +630,10 @@ describe('<List />', () => {
     renderList();
 
     await waitFor(() =>
-      expect(screen.getByText('Unable to load movies')).toBeInTheDocument()
+      expect(screen.getByText('Something went wrong')).toBeInTheDocument()
     );
     expect(
-      screen.getByText('Something went wrong while loading movies.')
+      screen.getByText("We couldn't load this information. Please try again.")
     ).toBeInTheDocument();
     expect(
       screen.queryByText(/Failed to fetch movies/)
@@ -654,7 +654,7 @@ describe('<List />', () => {
 
     renderList();
 
-    await screen.findByText('Unable to load movies');
+    await screen.findByText('Something went wrong');
     await user.click(screen.getByRole('button', { name: /try again/i }));
 
     expect(await screen.findByText('No movies available.')).toBeInTheDocument();
@@ -742,7 +742,7 @@ describe('<List />', () => {
     await user.click(await screen.findByRole('button', { name: 'Load more' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Unable to load more movies.'
+      "We couldn't load this information. Please try again."
     );
     expect(screen.getByText('First movie')).toBeInTheDocument();
 
