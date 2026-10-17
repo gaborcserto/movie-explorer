@@ -1,5 +1,41 @@
 import React, { ReactNode } from 'react';
 import './errorBoundary.scss';
+import ErrorPresentation from '../errorPresentation/errorPresentation';
+import useDetailPage from '../details/useDetailPage';
+
+function FatalErrorFallback() {
+  const mainRef = useDetailPage('Something went wrong');
+
+  return (
+    <main
+      className="fatal-error"
+      ref={mainRef}
+      tabIndex={-1}
+      aria-label="Something went wrong"
+    >
+      <ErrorPresentation
+        variant="page"
+        headingLevel={1}
+        heading="Something went wrong"
+        description="An unexpected error interrupted this scene."
+        primaryAction={
+          <button
+            className="btn btn--primary"
+            type="button"
+            onClick={() => window.location.reload()}
+          >
+            Reload page
+          </button>
+        }
+        secondaryAction={
+          <a className="btn btn--outline" href="/search">
+            Back to Search
+          </a>
+        }
+      />
+    </main>
+  );
+}
 
 interface Props {
   children?: ReactNode;
@@ -29,11 +65,7 @@ class ErrorBoundary extends React.Component<Props, State> {
     const { children } = this.props;
 
     if (hasError) {
-      return (
-        <main className="error" role="alert">
-          <h1 className="error__title">Sorry, there was an error.</h1>
-        </main>
-      );
+      return <FatalErrorFallback />;
     }
 
     return children;

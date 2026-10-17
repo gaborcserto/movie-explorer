@@ -106,6 +106,14 @@ describe('<App />', () => {
   test('displays the 404 error page for non-existent routes', () => {
     renderApp('/non-existent-route');
 
-    expect(screen.getByText('404 Error')).toBeInTheDocument();
+    expect(screen.getByText('404')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Page not found' })
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+    expect(
+      screen.getByRole('link', { name: 'Back to Search' })
+    ).toHaveAttribute('href', '/search');
+    expect(getMovies).not.toHaveBeenCalled();
   });
 });

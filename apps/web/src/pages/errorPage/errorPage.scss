@@ -1,20 +1,3 @@
-@use '../../assets/scss' as *;
-
 .error-page {
-  @include center-align(absolute);
-
-  text-align: center;
-
-  &__title {
-    text-align: center;
-    font-size: 60px;
-    color: $white;
-    padding-bottom: 30px;
-  }
-
-  &__subtitle {
-    color: $red-1;
-    text-align: center;
-    padding-bottom: 20px;
-  }
+  display: flex;
 }

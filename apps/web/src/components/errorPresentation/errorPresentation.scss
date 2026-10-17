@@ -1,0 +1,82 @@
+@use '../../assets/scss' as *;
+
+.error-presentation {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin: auto;
+  max-width: 640px;
+  padding: 32px 20px;
+  text-align: center;
+  width: 100%;
+
+  &__illustration {
+    width: clamp(136px, calc(50vw - 24px), 272px);
+    max-width: 100%;
+  }
+
+  &--contextual &__illustration {
+    width: clamp(136px, calc(50vw - 24px), 208px);
+  }
+
+  &__status {
+    color: $red-1;
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  &__heading {
+    font-size: clamp(24px, 4vw, 32px);
+    font-weight: 600;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  &__description {
+    font-size: 16px;
+    line-height: 1.6;
+    max-width: 440px;
+    overflow-wrap: anywhere;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+    width: 100%;
+
+    .btn {
+      align-items: center;
+      box-sizing: border-box;
+      display: inline-flex;
+      justify-content: center;
+      min-height: 44px;
+      text-decoration: none;
+    }
+  }
+
+  @include media-size(sm-up) {
+    padding: 40px 24px;
+
+    &__actions {
+      flex-flow: row wrap;
+      justify-content: center;
+    }
+  }
+
+  @include media-size(md-up) {
+    &__illustration {
+      width: clamp(208px, 27vw, 272px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .error-presentation__actions .btn {
+    transition: none;
+  }
+}

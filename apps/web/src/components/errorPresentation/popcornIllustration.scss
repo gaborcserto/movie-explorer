@@ -1,0 +1,66 @@
+@use '../../assets/scss' as *;
+
+.popcorn-illustration {
+  color: $red-1;
+  display: block;
+  height: auto;
+  width: 100%;
+  animation: popcorn-entrance 300ms ease-out;
+
+  &__bucket {
+    transform-origin: 120px 218px;
+    animation: popcorn-settle 1400ms ease-in-out;
+  }
+
+  &__kernel {
+    animation: popcorn-float 1800ms ease-in-out;
+
+    &--second {
+      animation-duration: 2200ms;
+    }
+  }
+}
+
+@keyframes popcorn-entrance {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes popcorn-settle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  40% {
+    transform: rotate(-1.5deg);
+  }
+
+  70% {
+    transform: rotate(1deg);
+  }
+}
+
+@keyframes popcorn-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  40% {
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popcorn-illustration,
+  .popcorn-illustration__bucket,
+  .popcorn-illustration__kernel {
+    animation: none;
+  }
+}

@@ -404,7 +404,7 @@ test('Back/Forward navigation loads the correct person and resets biography expa
   );
 });
 
-test('sets a loading title, restores the previous title on exit, and ignores late data', async () => {
+test('sets a loading title and preserves the destination title after late data', async () => {
   document.title = 'Movie Explorer';
   const pending = deferredResponse();
   fetchMock.mockReturnValueOnce(pending.promise);
@@ -414,11 +414,11 @@ test('sets a loading title, restores the previous title on exit, and ignores lat
   await act(async () => {
     await router.navigate('/unknown-route');
   });
-  expect(document.title).toBe('Movie Explorer');
+  expect(document.title).toBe('Page not found | Movie Explorer');
   await act(async () => {
     pending.resolve(response());
   });
-  expect(document.title).toBe('Movie Explorer');
+  expect(document.title).toBe('Page not found | Movie Explorer');
 });
 
 test.each([
