@@ -85,7 +85,7 @@
 
   &__rating {
     background: $red-1;
-    color: $white;
+    color: $grey-3;
     flex: 0 0 auto;
     font-style: normal;
     font-weight: 300;
@@ -220,6 +220,44 @@
   @include media-size(sm-down) {
     &__content {
       max-width: 100%;
+    }
+  }
+}
+
+.detail-page {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  position: relative;
+
+  > main {
+    flex: 1 1 auto;
+  }
+
+  &__navigation {
+    left: 0;
+    right: 0;
+    position: absolute;
+    min-height: 0;
+    z-index: 101;
+  }
+
+  // The navigation is 44px tall with 28px padding on each side.
+  &__hero {
+    padding-top: 100px;
+
+    > .movie-details {
+      min-height: 296px;
+    }
+  }
+}
+
+@media (width <= 480px) {
+  .detail-page__hero {
+    padding-top: 104px;
+
+    > .movie-details {
+      min-height: 292px;
     }
   }
 }

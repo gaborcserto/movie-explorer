@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useParams as originalUseParams } from 'react-router-dom';
@@ -55,6 +56,8 @@ describe('<Details />', () => {
     render(<Details />);
 
     expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(document.title).toBe('Loading movie | Movie Explorer');
+    expect(screen.getByRole('main')).toHaveFocus();
   });
 
   it('displays movie data once it is fetched', async () => {
@@ -74,6 +77,19 @@ describe('<Details />', () => {
     expect(screen.getByText('Director Name')).toBeVisible();
     expect(screen.getByText('Actor One · Actor Two')).toBeVisible();
     expect(getMovie).toHaveBeenCalledWith(1234);
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+    const main = screen.getByRole('main');
+    expect(main).toHaveFocus();
+    expect(
+      within(main).getByRole('heading', { name: mockData.title })
+    ).toBeVisible();
+    expect(
+      within(main).getByRole('heading', { name: 'Overview' })
+    ).toBeVisible();
+    expect(
+      within(main).queryByRole('button', { name: 'Search movies' })
+    ).toBeNull();
+    expect(document.title).toBe('Sample Movie | Movie Explorer');
   });
 
   it('omits unavailable and invalid metadata', () => {
@@ -337,5 +353,78 @@ describe('<Details />', () => {
     ).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Photos' })).toBeVisible();
     expect(screen.queryByRole('heading', { name: 'Sample Movie' })).toBeNull();
+    expect(document.title).toBe('Current movie | Movie Explorer');
+    expect(screen.getByRole('main')).toHaveFocus();
   });
+});
+
+test('movie retry requests cannot change the title or focus after leaving', async () => {
+  document.title = 'Movie Explorer';
+  useParams.mockReturnValue({ movieId: '1234' });
+  let resolveRetry!: (movie: MovieDetails) => void;
+  getMovie
+    .mockRejectedValueOnce(new Error('Network failed'))
+    .mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveRetry = resolve;
+      })
+    );
+  const { unmount } = render(<Details />);
+  await screen.findByText('Unable to load movie');
+  expect(document.title).toBe('Unable to load movie | Movie Explorer');
+  expect(screen.getByRole('main')).toHaveFocus();
+  await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+  expect(document.title).toBe('Loading movie | Movie Explorer');
+  unmount();
+  const destination = document.createElement('button');
+  document.body.append(destination);
+  destination.focus();
+  await act(async () => {
+    resolveRetry(mockData);
+  });
+  expect(document.title).toBe('Movie Explorer');
+  expect(destination).toHaveFocus();
+  destination.remove();
+});
+
+test('photo names and full-image viewing survive missing or failed thumbnails', async () => {
+  render(
+    <DetailsLowerContent
+      movieData={{
+        ...mockData,
+        photos: [
+          { thumbnailUrl: '/broken.jpg', fullUrl: '/full.jpg', alt: '' },
+          { thumbnailUrl: '', fullUrl: '/second-full.jpg' },
+          { thumbnailUrl: '/orphan.jpg', fullUrl: '' },
+        ],
+      }}
+    />
+  );
+  const photo = screen.getByRole('button', {
+    name: 'View Sample Movie photo 1',
+  });
+  fireEvent.error(photo.querySelector('img')!);
+  expect(photo.querySelector('img')).toBeNull();
+  expect(photo.querySelector('.image-placeholder')).not.toBeNull();
+  expect(
+    screen.getByRole('button', { name: 'View Sample Movie photo 2' })
+  ).toBeVisible();
+  expect(document.querySelector('img[src="/orphan.jpg"]')).toBeNull();
+  await userEvent.click(photo);
+  expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
+    'src',
+    '/full.jpg'
+  );
+});
+
+test('missing movies keep a useful landmark and document title', async () => {
+  useParams.mockReturnValue({ movieId: '404' });
+  isNotFoundError.mockReturnValue(true);
+  getMovie.mockRejectedValueOnce(new Error('Not found'));
+  render(<Details />);
+  await screen.findByText('Movie not found');
+  await waitFor(() =>
+    expect(document.title).toBe('Movie not found | Movie Explorer')
+  );
+  expect(screen.getByRole('main')).toHaveFocus();
 });

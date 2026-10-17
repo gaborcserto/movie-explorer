@@ -253,6 +253,47 @@ describe('photo lightbox', () => {
     ).toHaveAttribute('src', '/original2.jpg');
   });
 
+  it('pans by accessible controls, clamps at edges, and resets with zoom', async () => {
+    const { user, image } = await open();
+    const viewport = load(image);
+    Object.defineProperties(viewport, {
+      clientWidth: { configurable: true, value: 200 },
+      clientHeight: { configurable: true, value: 200 },
+    });
+    const left = screen.getByRole('button', { name: 'Pan left' });
+    const right = screen.getByRole('button', { name: 'Pan right' });
+    const up = screen.getByRole('button', { name: 'Pan up' });
+    const down = screen.getByRole('button', { name: 'Pan down' });
+    expect(left).toBeDisabled();
+    expect(right).toBeDisabled();
+    expect(up).toBeDisabled();
+    expect(down).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Zoom in' }));
+    expect(left).toBeEnabled();
+    expect(right).toBeEnabled();
+    expect(up).toBeEnabled();
+    expect(down).toBeEnabled();
+    await user.click(down);
+    expect(image.style.transform).toBe('translate(0px, 80px) scale(1.5)');
+    await user.click(up);
+    expect(image.style.transform).toBe('translate(0px, 0px) scale(1.5)');
+    await user.click(right);
+    expect(image.style.transform).toBe('translate(80px, 0px) scale(1.5)');
+    await user.keyboard('{Enter}');
+    expect(image.style.transform).toBe('translate(160px, 0px) scale(1.5)');
+    await user.click(right);
+    await user.click(right);
+    await user.click(right);
+    await user.click(right);
+    await user.click(right);
+    expect(image.style.transform).toBe('translate(500px, 0px) scale(1.5)');
+    expect(right).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Reset zoom to fit' }));
+    expect(image.style.transform).toBe('translate(0px, 0px) scale(1)');
+    expect(left).toBeDisabled();
+    expect(right).toBeDisabled();
+  });
+
   it('supports swipe, double tap and pinch without navigating during pan or cancelled gestures', async () => {
     const { image } = await open();
     let viewport = load(image);

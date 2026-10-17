@@ -106,14 +106,22 @@ test('direct person navigation loads the complete contract through the API witho
     person.biography
   );
   expect(screen.getByRole('main')).toHaveFocus();
+  expect(screen.getByRole('main')).toContainElement(
+    screen.getByRole('heading', { name: person.name })
+  );
+  expect(screen.getByRole('main')).toContainElement(
+    screen.getByRole('heading', { name: 'Biography' })
+  );
+  expect(screen.getByRole('main')).toContainElement(
+    screen.getByRole('heading', { name: 'Filmography' })
+  );
+  expect(document.title).toBe(`${person.name} | Movie Explorer`);
   expect(screen.getAllByRole('link', { name: 'Movie Explorer' })).toHaveLength(
     2
   );
   expect(
-    screen
-      .getByRole('button', { name: 'Search movies' })
-      .closest('.person-hero')
-  ).not.toBeNull();
+    screen.getByRole('button', { name: 'Search movies' }).closest('main')
+  ).toBeNull();
   expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   expect(
     screen.queryByPlaceholderText('What do you want to watch?')
@@ -351,6 +359,8 @@ test.each(['success', 'failure'])(
       'New person'
     );
     expect(screen.queryByRole('alert')).toBeNull();
+    expect(document.title).toBe('New person | Movie Explorer');
+    expect(screen.getByRole('main')).toHaveFocus();
   }
 );
 
@@ -390,4 +400,52 @@ test('Back/Forward navigation loads the correct person and resets biography expa
       'Second person'
     )
   );
+});
+
+test('sets a loading title, restores the previous title on exit, and ignores late data', async () => {
+  document.title = 'Movie Explorer';
+  const pending = deferredResponse();
+  fetchMock.mockReturnValueOnce(pending.promise);
+  const router = renderPage();
+  expect(document.title).toBe('Loading person | Movie Explorer');
+  expect(screen.getByRole('main')).toHaveFocus();
+  await act(async () => {
+    await router.navigate('/unknown-route');
+  });
+  expect(document.title).toBe('Movie Explorer');
+  await act(async () => {
+    pending.resolve(response());
+  });
+  expect(document.title).toBe('Movie Explorer');
+});
+
+test.each([
+  [404, 'Person not found'],
+  [502, 'Unable to load person'],
+])(
+  'uses a meaningful title and focused main for HTTP %s',
+  async (status, title) => {
+    fetchMock.mockResolvedValueOnce(response(undefined, status));
+    renderPage();
+    await screen.findByRole('alert');
+    await waitFor(() =>
+      expect(document.title).toBe(`${title} | Movie Explorer`)
+    );
+    expect(screen.getByRole('main')).toHaveFocus();
+  }
+);
+
+test('biography and filmography interactions retain focus and the person title', async () => {
+  fetchMock.mockResolvedValueOnce(
+    response({ ...person, biography: 'Biography. '.repeat(100) })
+  );
+  renderPage();
+  const user = userEvent.setup();
+  const expand = await screen.findByRole('button', { name: 'Show More' });
+  await user.click(expand);
+  expect(expand).toHaveFocus();
+  const sort = screen.getByRole('combobox', { name: 'Sort filmography' });
+  await user.selectOptions(sort, 'title');
+  expect(sort).toHaveFocus();
+  expect(document.title).toBe(`${person.name} | Movie Explorer`);
 });

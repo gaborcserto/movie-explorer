@@ -50,6 +50,9 @@ describe('<Card />', () => {
     );
     expect(screen.getByText('Director')).toBeVisible();
     expect(screen.getByText('Documentary, Comedy')).toBeVisible();
+    expect(screen.getByText('Documentary, Comedy')).toHaveClass(
+      'card__type--static'
+    );
     expect(screen.getAllByRole('link')).toHaveLength(1);
   });
 

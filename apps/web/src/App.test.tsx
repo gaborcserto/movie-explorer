@@ -95,6 +95,12 @@ describe('<App />', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Drama, Action')).toBeInTheDocument();
     expect(getMovie).toHaveBeenCalledWith(1234);
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+    expect(screen.getByRole('main')).toContainElement(
+      screen.getByRole('heading', { name: movie.title })
+    );
+    expect(screen.getByRole('banner').closest('main')).toBeNull();
+    expect(screen.getByRole('contentinfo').closest('main')).toBeNull();
   });
 
   test('displays the 404 error page for non-existent routes', () => {

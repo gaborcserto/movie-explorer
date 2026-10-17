@@ -1,7 +1,8 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import './details.scss';
 import { Link, useParams } from 'react-router-dom';
 import type { MovieDetails } from '@movie-explorer/contracts';
+import useDetailPage from './useDetailPage';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
 import Error from '../../layouts/error';
 import Loading from '../../layouts/loading';
@@ -10,50 +11,43 @@ import { getMovie, isNotFoundError } from '../../util/apiUtils';
 
 type DetailsState = 'loading' | 'success' | 'not-found' | 'error';
 
-function Details() {
+function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
   const [detailsState, setDetailsState] = useState<DetailsState>('loading');
-  const { movieId: movieIdStr } = useParams();
+  const [attempt, setAttempt] = useState(0);
 
   const movieId = Number(movieIdStr);
 
   const [movieData, setMovieData] = useState<MovieDetails | null>(null);
 
-  const loadMovie = useCallback(
-    (isCurrentRequest: () => boolean = () => true) => {
-      if (!Number.isInteger(movieId) || movieId <= 0) {
-        setMovieData(null);
-        setDetailsState('not-found');
-        return;
-      }
-
-      setDetailsState('loading');
-
-      getMovie(movieId)
-        .then((movie) => {
-          if (!isCurrentRequest()) return;
-
-          setMovieData(movie);
-          setDetailsState('success');
-        })
-        .catch((error: unknown) => {
-          if (!isCurrentRequest()) return;
-
-          setMovieData(null);
-          setDetailsState(isNotFoundError(error) ? 'not-found' : 'error');
-        });
-    },
-    [movieId]
-  );
-
   useEffect(() => {
-    let isCurrent = true;
-
-    loadMovie(() => isCurrent);
-
+    let current = true;
+    if (!Number.isSafeInteger(movieId) || movieId <= 0) {
+      setDetailsState('not-found');
+      return undefined;
+    }
+    getMovie(movieId)
+      .then((movie) => {
+        if (!current) return;
+        setMovieData(movie);
+        setDetailsState('success');
+      })
+      .catch((error: unknown) => {
+        if (!current) return;
+        setMovieData(null);
+        setDetailsState(isNotFoundError(error) ? 'not-found' : 'error');
+      });
     return () => {
-      isCurrent = false;
+      current = false;
     };
-  }, [loadMovie]);
+  }, [movieId, attempt]);
+
+  const pageTitle = {
+    loading: 'Loading movie',
+    success: movieData?.title || 'Movie details',
+    'not-found': 'Movie not found',
+    error: 'Unable to load movie',
+  }[detailsState];
+  const mainRef = useDetailPage(pageTitle);
 
   const renderContent = () => {
     if (detailsState === 'loading') {
@@ -79,7 +73,10 @@ function Details() {
           message="Something went wrong while loading this movie."
           className="movie-details__container movie-details__container--error"
           actionLabel="Try again"
-          onAction={() => loadMovie()}
+          onAction={() => {
+            setDetailsState('loading');
+            setAttempt((value) => value + 1);
+          }}
         />
       );
     }
@@ -94,24 +91,29 @@ function Details() {
   const isLoaded = detailsState === 'success' && movieData;
 
   return (
-    <>
-      <header
-        className="header header--movie-details"
-        data-testid="details-component"
-      >
-        <div className="movie-details container">
-          <div className="movie-details__top detail-header">
-            <Link to="/search" className="movie-details__brand brand">
-              <strong>Movie</strong> Explorer
-            </Link>
-            <HeaderSearch />
-          </div>
-          {renderContent()}
+    <div className="detail-page">
+      <header className="detail-page__navigation movie-details container">
+        <div className="movie-details__top detail-header">
+          <Link to="/search" className="movie-details__brand brand">
+            <strong>Movie</strong> Explorer
+          </Link>
+          <HeaderSearch />
         </div>
       </header>
-      {isLoaded && <DetailsLowerContent movieData={movieData} />}
-    </>
+      <main ref={mainRef} tabIndex={-1} aria-label={pageTitle}>
+        <div
+          className="header header--movie-details detail-page__hero"
+          data-testid="details-component"
+        >
+          <div className="movie-details container">{renderContent()}</div>
+        </div>
+        {isLoaded && <DetailsLowerContent movieData={movieData} />}
+      </main>
+    </div>
   );
 }
 
-export default Details;
+export default function Details() {
+  const { movieId = '' } = useParams();
+  return <MovieDetailsPage key={movieId} movieIdStr={movieId} />;
+}

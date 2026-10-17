@@ -70,6 +70,20 @@ function PhotoView({
     });
   }
 
+  function pan(dx: number, dy: number) {
+    update(view.scale, view.x + dx, view.y + dy);
+  }
+
+  function panLimits() {
+    const box = viewport.current;
+    const img = image.current;
+    if (!box || !img) return { x: 0, y: 0 };
+    return {
+      x: Math.max(0, (img.clientWidth * view.scale - box.clientWidth) / 2),
+      y: Math.max(0, (img.clientHeight * view.scale - box.clientHeight) / 2),
+    };
+  }
+
   useEffect(() => {
     const reset = () => setView(fit);
     const observer =
@@ -181,6 +195,34 @@ function PhotoView({
         >
           <FaMagnifyingGlassPlus aria-hidden="true" focusable="false" />
         </button>
+      </div>
+      <div className="lightbox__pan" role="group" aria-label="Pan controls">
+        {(
+          [
+            ['Pan left', -1, 0],
+            ['Pan right', 1, 0],
+            ['Pan up', 0, -1],
+            ['Pan down', 0, 1],
+          ] as const
+        ).map(([label, dx, dy]) => {
+          const limits = panLimits();
+          const atBoundary =
+            (dx < 0 && view.x <= -limits.x) ||
+            (dx > 0 && view.x >= limits.x) ||
+            (dy < 0 && view.y <= -limits.y) ||
+            (dy > 0 && view.y >= limits.y);
+          return (
+            <button
+              key={label}
+              type="button"
+              aria-label={label}
+              disabled={status !== 'loaded' || view.scale === 1 || atBoundary}
+              onClick={() => pan(dx * 80, dy * 80)}
+            >
+              {label.replace('Pan ', '')}
+            </button>
+          );
+        })}
       </div>
       <div
         className={`lightbox__viewport${view.scale > 1 ? ' lightbox__viewport--zoomed' : ''}`}

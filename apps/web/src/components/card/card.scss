@@ -74,6 +74,10 @@
     position: relative;
     z-index: 2;
 
+    &--static {
+      pointer-events: none;
+    }
+
     &__link {
       font-size: 14px;
       line-height: 17px;

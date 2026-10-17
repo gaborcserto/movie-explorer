@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { PersonDetails } from '@movie-explorer/contracts';
 import HeroImage from '../../components/details/heroImage';
@@ -10,6 +10,7 @@ import './personPage.scss';
 import Filmography from './filmography';
 import HeaderSearch from '../../components/search/headerSearch';
 import getPersonAge from './personAge';
+import useDetailPage from '../../components/details/useDetailPage';
 
 type PersonState =
   | { status: 'loading' | 'not-found' | 'error' }
@@ -101,12 +102,6 @@ function PersonDetailsPage({ id }: { id: string }) {
   const validId = Number.isSafeInteger(personId) && personId > 0;
   const [state, setState] = useState<PersonState>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
-  const mainRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    mainRef.current?.focus({ preventScroll: true });
-  }, []);
-
   useEffect(() => {
     if (!validId) return undefined;
     const controller = new AbortController();
@@ -130,70 +125,86 @@ function PersonDetailsPage({ id }: { id: string }) {
   const posterUrls =
     state.status === 'success' ? getPosterUrls(state.person) : [];
 
+  let pageTitle = title;
+  if (validId && state.status !== 'not-found') {
+    pageTitle =
+      state.status === 'success'
+        ? state.person.name
+        : {
+            loading: 'Loading person',
+            error: 'Unable to load person',
+          }[state.status];
+  }
+  const mainRef = useDetailPage(pageTitle);
+
   return (
-    <>
-      <header className="person-hero">
-        {posterUrls.length > 0 && (
-          <div className="person-hero__posters" aria-hidden="true">
-            {posterUrls.map((url) => (
-              <img key={url} src={url} alt="" loading="lazy" />
-            ))}
-          </div>
-        )}
-        <div className="movie-details container person-hero__container">
-          <div className="movie-details__top person-header detail-header">
-            <Link to="/search" className="movie-details__brand brand">
-              <strong>Movie</strong> Explorer
-            </Link>
-            <HeaderSearch />
-          </div>
-          {state.status === 'success' && (
-            <PersonProfile person={state.person} />
-          )}
+    <div className="detail-page">
+      <header className="detail-page__navigation movie-details container">
+        <div className="movie-details__top person-header detail-header">
+          <Link to="/search" className="movie-details__brand brand">
+            <strong>Movie</strong> Explorer
+          </Link>
+          <HeaderSearch />
         </div>
       </header>
-      <main ref={mainRef} tabIndex={-1} className="main person-page container">
-        {!validId || state.status === 'not-found' ? (
-          <>
-            <h1>{title}</h1>
-            <Error
-              className="person-page__state"
-              message={
-                validId
-                  ? 'We could not find that person.'
-                  : 'Please use a valid positive whole-number person ID.'
-              }
-            />
-            <Link to="/search" className="btn btn--outline">
-              Browse movies
-            </Link>
-          </>
-        ) : (
-          <>
-            {state.status !== 'success' && <h1>Person details</h1>}
-            {state.status === 'loading' && (
-              <Loading className="person-page__state" />
+      <main ref={mainRef} tabIndex={-1} aria-label={pageTitle}>
+        <div className="person-hero detail-page__hero">
+          {posterUrls.length > 0 && (
+            <div className="person-hero__posters" aria-hidden="true">
+              {posterUrls.map((url) => (
+                <img key={url} src={url} alt="" loading="lazy" />
+              ))}
+            </div>
+          )}
+          <div className="movie-details container person-hero__container">
+            {state.status === 'success' && (
+              <PersonProfile person={state.person} />
             )}
-            {state.status === 'error' && (
+          </div>
+        </div>
+        <div className="main person-page container">
+          {!validId || state.status === 'not-found' ? (
+            <>
+              <h1>{title}</h1>
               <Error
                 className="person-page__state"
-                title="Unable to load person"
-                message="Something went wrong while loading this person."
-                actionLabel="Try again"
-                onAction={() => {
-                  setState({ status: 'loading' });
-                  setAttempt((value) => value + 1);
-                }}
+                message={
+                  validId
+                    ? 'We could not find that person.'
+                    : 'Please use a valid positive whole-number person ID.'
+                }
               />
-            )}
-            {state.status === 'success' && (
-              <Filmography entries={state.person.filmography} />
-            )}
-          </>
-        )}
+              <Link to="/search" className="btn btn--outline">
+                Browse movies
+              </Link>
+            </>
+          ) : (
+            <>
+              {state.status !== 'success' && <h1>Person details</h1>}
+              {state.status === 'loading' && (
+                <Loading className="person-page__state" />
+              )}
+              {state.status === 'error' && (
+                <Error
+                  className="person-page__state"
+                  title="Unable to load person"
+                  message="Something went wrong while loading this person."
+                  actionLabel="Try again"
+                  onAction={() => {
+                    setState({ status: 'loading' });
+                    setAttempt((value) => value + 1);
+                  }}
+                />
+              )}
+              {state.status === 'success' && (
+                <Filmography entries={state.person.filmography} />
+              )}
+            </>
+          )}
+        </div>
       </main>
       <Footer />
-    </>
+    </div>
   );
 }
 

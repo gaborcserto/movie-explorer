@@ -143,3 +143,57 @@ describe('video lightbox', () => {
     expect(document.querySelector('iframe')).toBeNull();
   });
 });
+
+test('describes keyboard exit from the cross-origin player and offers a safe YouTube fallback', async () => {
+  render(<DetailsLowerContent movieData={movie} />);
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Play Official Trailer' })
+  );
+  const dialog = screen.getByRole('dialog');
+  expect(dialog).toHaveAccessibleDescription(
+    /Tab or Shift\+Tab.*Close.*Escape outside the player/
+  );
+  expect(screen.getByTitle('Official Trailer')).toHaveAccessibleDescription(
+    /Tab or Shift\+Tab/
+  );
+  const fallback = screen.getByRole('link', { name: 'Watch on YouTube' });
+  expect(fallback).toHaveAttribute(
+    'href',
+    'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+  );
+  expect(fallback).toHaveAttribute('target', '_blank');
+  expect(fallback).toHaveAttribute('rel', 'noopener noreferrer');
+  await userEvent.click(screen.getByRole('button', { name: 'Next video' }));
+  expect(fallback).toHaveAttribute(
+    'href',
+    'https://www.youtube.com/watch?v=9bZkp7q19f0'
+  );
+  fallback.focus();
+  fireEvent.keyDown(fallback, { key: 'Escape' });
+  expect(screen.queryByRole('dialog')).toBeNull();
+});
+
+test('keeps video thumbnails and missing-image placeholders independent of play names', async () => {
+  render(
+    <DetailsLowerContent
+      movieData={{
+        ...movie,
+        videos: [
+          movie.videos![0],
+          { name: 'No thumbnail', url: 'https://youtu.be/9bZkp7q19f0' },
+        ],
+      }}
+    />
+  );
+  const first = screen.getByRole('button', { name: 'Play Official Trailer' });
+  fireEvent.error(first.querySelector('img')!);
+  expect(first.querySelector('img')).toBeNull();
+  expect(first.querySelector('.image-placeholder')).toHaveAttribute(
+    'aria-hidden',
+    'true'
+  );
+  const missing = screen.getByRole('button', { name: 'Play No thumbnail' });
+  expect(missing.querySelector('.image-placeholder')).not.toBeNull();
+  await userEvent.click(first);
+  expect(screen.getByRole('dialog')).toBeVisible();
+});

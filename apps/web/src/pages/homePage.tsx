@@ -9,14 +9,12 @@ function HomePage() {
   return (
     <>
       <Header />
-      <main className="main">
-        {movieId ? null : (
-          <>
-            <Filter />
-            <CardList />
-          </>
-        )}
-      </main>
+      {movieId ? null : (
+        <main className="main">
+          <Filter />
+          <CardList />
+        </main>
+      )}
       <Footer />
     </>
   );

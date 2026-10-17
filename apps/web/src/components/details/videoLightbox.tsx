@@ -53,7 +53,7 @@ export default function VideoLightbox({
       if (key === 'Tab') {
         const controls = [
           ...(dialog?.querySelectorAll<HTMLElement>(
-            'button:not(:disabled), iframe'
+            'button:not(:disabled), iframe, a[href]'
           ) ?? []),
         ];
         const first = controls[0];
@@ -117,6 +117,7 @@ export default function VideoLightbox({
       role="dialog"
       aria-modal="true"
       aria-labelledby="video-lightbox-title"
+      aria-describedby="video-keyboard-help"
       ref={root}
       tabIndex={-1}
     >
@@ -136,15 +137,30 @@ export default function VideoLightbox({
           <FaXmark aria-hidden="true" focusable="false" />
         </button>
       </div>
+      <p id="video-keyboard-help" className="lightbox__notice">
+        In the YouTube player, use Tab or Shift+Tab to reach the dialog
+        controls. Then use Close, or press Escape outside the player.
+      </p>
       <div className="video-lightbox__player">
         <iframe
           key={video.videoId}
           title={video.video.name || `${title} video`}
           src={`https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&playsinline=1&rel=0`}
           allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          aria-describedby="video-keyboard-help"
           allowFullScreen
         />
       </div>
+      <p className="lightbox__notice">
+        Playback unavailable?{' '}
+        <a
+          href={`https://www.youtube.com/watch?v=${video.videoId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Watch on YouTube
+        </a>
+      </p>
       {videos.length > 1 && (
         <>
           <button

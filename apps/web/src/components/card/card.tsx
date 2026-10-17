@@ -63,7 +63,9 @@ function Card({
       <div className="card__footer">
         <div className="card__footer__part">
           <span className="card__title">{title}</span>
-          <p className="card__type">
+          <p
+            className={`card__type${genreNavigation ? '' : ' card__type--static'}`}
+          >
             {genreNavigation ? genreLinks : genres.join(', ')}
           </p>
           {subtitle && <p className="card__subtitle">{subtitle}</p>}

@@ -110,3 +110,29 @@ test.each(['.photo-grid', '.video-grid'])(
     });
   }
 );
+
+test('reserves thumbnail space for loaded, missing, and failed images', () => {
+  expect(declarations('.media-thumbnail')).toMatchObject({
+    'aspect-ratio': '16/9',
+    width: '100%',
+    overflow: 'hidden',
+  });
+  expect(declarations('.media-thumbnail__img')).toMatchObject({
+    'object-fit': 'cover',
+    width: '100%',
+    height: '100%',
+  });
+});
+
+test('disables lightbox button transitions and hover/active scaling for reduced motion', () => {
+  const query = '(prefers-reduced-motion: reduce)';
+  expect(declarationsForMedia('.lightbox button', query).transition).toBe(
+    'none'
+  );
+  [
+    '.lightbox button:hover:not(:disabled)',
+    '.lightbox button:active:not(:disabled)',
+  ].forEach((selector) => {
+    expect(declarationsForMedia(selector, query).transform).toBe('none');
+  });
+});

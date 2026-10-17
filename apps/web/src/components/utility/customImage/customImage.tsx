@@ -37,6 +37,7 @@ function MovieImageContent({
         <div
           className={`${className}__placeholder image-placeholder`}
           role="img"
+          aria-hidden={alt ? undefined : true}
           aria-label={alt}
         >
           <FaImage aria-hidden="true" focusable="false" />

@@ -273,9 +273,7 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<number | null>(null);
   const { cards } = getPersonCredits(movieData);
-  const visiblePhotos = photos.filter(
-    (photo) => photo.thumbnailUrl && photo.fullUrl
-  );
+  const visiblePhotos = photos.filter((photo) => photo.fullUrl?.trim());
   const videoEntries = videos.map((video) => ({
     video,
     videoId: getYouTubeVideoId(video.url),
@@ -342,13 +340,14 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
                     <button
                       type="button"
                       className="photo-tile"
-                      key={photo.thumbnailUrl}
+                      key={photo.fullUrl}
+                      aria-label={`View ${title} photo ${index + 1}`}
                       onClick={() => setSelectedPhoto(index)}
                     >
-                      <img
+                      <MovieImage
                         src={photo.thumbnailUrl}
                         alt={photo.alt ?? `${title} still ${index + 1}`}
-                        loading="lazy"
+                        className="media-thumbnail"
                       />
                     </button>
                   ))}
@@ -369,9 +368,11 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
                       : -1;
                     const content = (
                       <>
-                        {video.thumbnailUrl && (
-                          <img src={video.thumbnailUrl} alt="" loading="lazy" />
-                        )}
+                        <MovieImage
+                          src={video.thumbnailUrl}
+                          alt=""
+                          className="media-thumbnail"
+                        />
                         <span>{label}</span>
                       </>
                     );

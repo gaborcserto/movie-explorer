@@ -343,6 +343,24 @@
   padding-top: 12px;
 }
 
+.lightbox__pan {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  order: 2;
+  padding-top: 4px;
+
+  button {
+    font-size: 12px;
+    min-height: 40px;
+    min-width: 64px;
+    padding: 0 8px;
+    text-transform: capitalize;
+  }
+}
+
 .lightbox__viewport {
   align-items: center;
   display: flex;
@@ -414,7 +432,7 @@
     background: #000000;
     border: 0;
     max-height: 100%;
-    width: min(100%, calc((100dvh - 104px) * 1.7778), 1280px);
+    width: min(100%, calc((100dvh - 220px) * 1.7778), 1280px);
   }
 }
 
@@ -424,7 +442,7 @@
   }
 
   .video-lightbox__player iframe {
-    width: min(100%, calc((100svh - 104px) * 1.7778));
+    width: min(100%, calc((100svh - 220px) * 1.7778));
   }
 }
 
@@ -529,5 +547,40 @@
   .photo-tile:focus-visible,
   .video-tile:focus-visible {
     transform: none;
+  }
+}
+
+.media-thumbnail {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  overflow: hidden;
+
+  &__img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+  }
+}
+
+.lightbox__notice a {
+  color: $white;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  &:focus-visible {
+    outline: 2px solid $red-1;
+    outline-offset: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox button {
+    transition: none;
+
+    &:hover:not(:disabled),
+    &:active:not(:disabled) {
+      transform: none;
+    }
   }
 }
