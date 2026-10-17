@@ -1,15 +1,20 @@
 import { act, render, fireEvent, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import Search from './search';
-import { getMovieSuggestions as originalGetMovieSuggestions } from '../../util/apiUtils';
+import { getSearchSuggestions as originalGetMovieSuggestions } from '../../util/apiUtils';
 
 vi.mock('../../util/apiUtils');
-const getMovieSuggestions = vi.mocked(originalGetMovieSuggestions);
+const getSearchSuggestions = vi.mocked(originalGetMovieSuggestions);
 
 function LocationDisplay() {
   const location = useLocation();
 
-  return <span data-testid="location">{location.pathname}</span>;
+  return (
+    <span data-testid="location">
+      {location.pathname}
+      {location.search}
+    </span>
+  );
 }
 
 const renderSearch = (initialEntry = '/search') => {
@@ -71,6 +76,20 @@ describe('Search Component', () => {
     );
   });
 
+  test('preserves committed search controls and strips detail-only parameters on submission', () => {
+    renderSearch(
+      '/search/Old?view=people&filter=drama&photo=2&personSort=title'
+    );
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: ' New & query ' },
+    });
+    fireEvent.submit(screen.getByRole('search'));
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/search/New%20%26%20query?view=people&filter=drama'
+    );
+    expect(screen.getByRole('combobox')).toHaveValue('New & query');
+  });
+
   test('uses the URL search query as the initial search value', () => {
     renderSearch('/search/avatar');
 
@@ -81,30 +100,43 @@ describe('Search Component', () => {
 
   test('debounces suggestions and supports keyboard selection', async () => {
     vi.useFakeTimers();
-    getMovieSuggestions.mockResolvedValue({
+    getSearchSuggestions.mockResolvedValue({
       suggestions: [
-        { id: 42, title: 'Alien', releaseYear: 1979, posterUrl: '/alien.jpg' },
-        { id: 43, title: 'Aliens', releaseYear: 1986 },
+        {
+          mediaType: 'movie' as const,
+          id: 42,
+          title: 'Alien',
+          releaseYear: 1979,
+          posterUrl: '/alien.jpg',
+        },
+        {
+          mediaType: 'movie' as const,
+          id: 43,
+          title: 'Aliens',
+          releaseYear: 1986,
+        },
       ],
     });
     renderSearch();
-    const input = screen.getByRole('combobox', { name: 'Search movies' });
+    const input = screen.getByRole('combobox', {
+      name: 'Search movies and people',
+    });
 
     fireEvent.change(input, { target: { value: 'Al' } });
-    expect(getMovieSuggestions).not.toHaveBeenCalled();
+    expect(getSearchSuggestions).not.toHaveBeenCalled();
     await act(async () => vi.advanceTimersByTimeAsync(300));
 
     expect(screen.getByRole('listbox')).toBeInTheDocument();
-    expect(getMovieSuggestions).toHaveBeenCalledTimes(1);
+    expect(getSearchSuggestions).toHaveBeenCalledTimes(1);
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     expect(input).toHaveAttribute(
       'aria-activedescendant',
-      'movie-suggestion-0'
+      `${input.getAttribute('aria-controls')}-0`
     );
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     expect(input).toHaveAttribute(
       'aria-activedescendant',
-      'movie-suggestion-1'
+      `${input.getAttribute('aria-controls')}-1`
     );
     fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -114,17 +146,23 @@ describe('Search Component', () => {
   test('ignores stale autocomplete results and closes with Escape', async () => {
     vi.useFakeTimers();
     let resolveFirst:
-      | ((value: { suggestions: { id: number; title: string }[] }) => void)
+      | ((value: {
+          suggestions: { mediaType: 'movie'; id: number; title: string }[];
+        }) => void)
       | undefined;
-    getMovieSuggestions
+    getSearchSuggestions
       .mockReturnValueOnce(
         new Promise((resolve) => {
           resolveFirst = resolve;
         })
       )
-      .mockResolvedValueOnce({ suggestions: [{ id: 2, title: 'Alien' }] });
+      .mockResolvedValueOnce({
+        suggestions: [{ mediaType: 'movie' as const, id: 2, title: 'Alien' }],
+      });
     renderSearch();
-    const input = screen.getByRole('combobox', { name: 'Search movies' });
+    const input = screen.getByRole('combobox', {
+      name: 'Search movies and people',
+    });
 
     fireEvent.change(input, { target: { value: 'Al' } });
     await act(async () => vi.advanceTimersByTimeAsync(300));
@@ -133,7 +171,9 @@ describe('Search Component', () => {
     expect(screen.getByText('Alien')).toBeInTheDocument();
 
     await act(async () => {
-      resolveFirst?.({ suggestions: [{ id: 1, title: 'Stale' }] });
+      resolveFirst?.({
+        suggestions: [{ mediaType: 'movie' as const, id: 1, title: 'Stale' }],
+      });
       await Promise.resolve();
     });
     expect(screen.queryByText('Stale')).toBeNull();

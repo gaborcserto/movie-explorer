@@ -8,6 +8,7 @@ describe('PersonsService', () => {
     findOne: jest.fn(),
     findSuggestions: jest.fn(),
     findPerson: jest.fn(),
+    findPeople: jest.fn(),
   };
   const service = new PersonsService(provider);
 

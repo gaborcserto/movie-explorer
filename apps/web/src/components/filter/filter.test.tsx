@@ -1,224 +1,317 @@
-import { render, screen } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import Filter from './filter';
 
-function LocationDisplay() {
-  const location = useLocation();
-  return <span data-testid="location">{location.search}</span>;
-}
-
-function renderFilter(initialEntry = '/') {
-  render(
-    <MemoryRouter initialEntries={[initialEntry]}>
-      <Routes>
-        <Route
-          path="*"
-          element={
-            <>
-              <Filter />
-              <LocationDisplay />
-            </>
-          }
-        />
-        <Route
-          path="/search/:searchQuery"
-          element={
-            <>
-              <Filter />
-              <LocationDisplay />
-            </>
-          }
-        />
-      </Routes>
-    </MemoryRouter>
+function setup(path = '/search') {
+  const router = createMemoryRouter(
+    [
+      {
+        path: '/search/:searchQuery?',
+        element: (
+          <>
+            <Filter />
+            <button type="button">Outside</button>
+          </>
+        ),
+      },
+    ],
+    { initialEntries: [path] }
   );
+  render(<RouterProvider router={router} />);
+  return router;
 }
+const open = async () => {
+  await userEvent.click(screen.getByRole('button', { name: /Filters & Sort/ }));
+  return screen.getByRole('dialog');
+};
+const expand = async (name: RegExp) =>
+  userEvent.click(screen.getByRole('button', { name }));
+const apply = async () =>
+  userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+const closed = async () =>
+  waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
-async function selectSort(option: string) {
-  const user = userEvent.setup();
-  await user.click(screen.getByRole('button', { name: 'Sort field' }));
-  await user.click(screen.getByRole('button', { name: option }));
-}
+test('drafts multiple filters, applies atomically, and displays only committed active count', async () => {
+  const router = setup('/search?extra=keep');
+  await open();
+  await expand(/^Genre/);
+  await userEvent.click(
+    screen.getByRole('button', { name: 'science fiction' })
+  );
+  expect(screen.getByRole('button', { name: /^Genre/ })).toHaveTextContent(
+    'Science fiction'
+  );
+  expect(
+    screen.getByRole('button', { name: 'science fiction' })
+  ).toHaveAttribute('aria-pressed', 'true');
+  await expand(/^Release Year/);
+  await userEvent.type(screen.getByLabelText('Release year'), '1979');
+  await expand(/^Minimum Rating/);
+  await userEvent.selectOptions(
+    screen.getByLabelText('Minimum TMDB rating'),
+    '8'
+  );
+  expect(router.state.location.search).toBe('?extra=keep');
+  expect(screen.queryByLabelText(/active filters/)).toBeNull();
+  expect(
+    screen.getByRole('button', { name: /^Release Year/ })
+  ).toHaveTextContent('1979');
+  await apply();
+  await closed();
+  expect(router.state.location.search).toBe(
+    '?extra=keep&filter=science+fiction&year=1979&rating=8'
+  );
+  expect(screen.getByLabelText('3 active filters')).toBeVisible();
+  await open();
+  expect(screen.getByLabelText('Release year')).toHaveValue('1979');
+  expect(screen.getByLabelText('Minimum TMDB rating')).toHaveValue('8');
+});
 
-async function selectDirection(option: 'Ascending' | 'Descending') {
-  const user = userEvent.setup();
-  await user.click(screen.getByRole('button', { name: 'Sort direction' }));
-  await user.click(screen.getByRole('button', { name: option }));
-}
+test('Reset only changes the draft; Escape discards it and restores focus', async () => {
+  const router = setup('/search?filter=drama&year=2000&rating=7');
+  await open();
+  await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
+  expect(router.state.location.search).toContain('filter=drama');
+  expect(screen.getByLabelText('Release year')).toHaveValue('');
+  expect(screen.getByLabelText('3 active filters')).toBeVisible();
+  await userEvent.keyboard('{Escape}');
+  await closed();
+  expect(screen.getByRole('button', { name: /Filters & Sort/ })).toHaveFocus();
+  await open();
+  expect(screen.getByLabelText('Release year')).toHaveValue('2000');
+  expect(screen.getByRole('button', { name: /^Genre/ })).toHaveTextContent(
+    'Drama'
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
+  await apply();
+  expect(router.state.location.search).toBe('');
+});
 
-async function selectFilter(label: string, option: string) {
-  const user = userEvent.setup();
-  await user.click(screen.getByRole('button', { name: label }));
-  await user.click(screen.getByRole('button', { name: option }));
-}
+test('outside interaction discards edits; close control also restores focus', async () => {
+  setup();
+  await open();
+  await expand(/^Genre/);
+  await userEvent.click(screen.getByRole('button', { name: 'drama' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Outside' }));
+  await closed();
+  await open();
+  expect(screen.getByRole('button', { name: /^Genre/ })).toHaveTextContent(
+    'All Genres'
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Close filters' }));
+  await closed();
+  expect(screen.getByRole('button', { name: /Filters & Sort/ })).toHaveFocus();
+});
 
-describe('Filter component', () => {
-  it('shows popularity descending as the clean default with direction control', () => {
-    renderFilter();
-
+test.each(['Popularity', 'Title', 'Release Date', 'Rating'])(
+  'preserves supported %s sorting and explicit direction',
+  async (field) => {
+    const router = setup();
+    await open();
+    await expand(/^Sort By/);
+    await userEvent.selectOptions(screen.getByLabelText('Sort field'), field);
     expect(
-      screen.getByRole('button', { name: 'Sort field' })
-    ).toHaveTextContent('Popularity');
-    expect(
-      screen.getByRole('button', { name: 'Sort direction' })
+      screen.getByRole('button', { name: /^Sort Direction/ })
     ).toHaveTextContent('Descending');
-    expect(screen.getByTestId('location')).toHaveTextContent('');
+    await expand(/^Sort Direction/);
+    await userEvent.click(screen.getByRole('button', { name: 'Ascending' }));
+    expect(router.state.location.search).toBe('');
+    await apply();
+    const params = new URLSearchParams(router.state.location.search);
+    expect(params.get('sorting')).toBe(
+      {
+        Popularity: 'popularity',
+        Title: 'title',
+        'Release Date': 'releaseDate',
+        Rating: 'rating',
+      }[field]
+    );
+    expect(params.get('order')).toBe('asc');
+    await open();
+    await expand(/^Sort By/);
+    await expand(/^Sort Direction/);
+    expect(screen.getByRole('button', { name: 'Ascending' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Descending' }));
+    await apply();
+    expect(new URLSearchParams(router.state.location.search).get('order')).toBe(
+      field === 'Popularity' ? null : 'desc'
+    );
+  }
+);
+
+test('text search keeps relevance and normalizes unsupported and duplicate URL values', async () => {
+  const router = setup(
+    '/search/alien?view=people&filter=invalid&filter=drama&year=1800&rating=10&sorting=title&order=asc&extra=keep'
+  );
+  await waitFor(() =>
+    expect(router.state.location.search).toBe('?view=people&extra=keep')
+  );
+  await open();
+  await expand(/^Sort By/);
+  expect(screen.getByText(/Text searches use TMDB relevance/)).toBeVisible();
+  expect(screen.queryByLabelText('Sort field')).toBeNull();
+});
+
+test('validates single-year bounds, supports arrows and Any Year', async () => {
+  const router = setup();
+  await open();
+  const accordion = screen.getByRole('button', { name: /^Release Year/ });
+  expect(accordion).toHaveAttribute('aria-expanded', 'false');
+  expect(
+    document.getElementById(accordion.getAttribute('aria-controls') ?? '')
+  ).toHaveAttribute('inert');
+  await userEvent.click(accordion);
+  expect(accordion).toHaveAttribute('aria-expanded', 'true');
+  const input = screen.getByLabelText('Release year');
+  await userEvent.type(input, '199');
+  expect(input).toHaveAttribute('aria-invalid', 'true');
+  expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+  await userEvent.type(input, '9{ArrowUp}');
+  expect(input).toHaveValue('2000');
+  await userEvent.keyboard('{ArrowDown}');
+  expect(input).toHaveValue('1999');
+  expect(router.state.location.search).toBe('');
+  await userEvent.click(screen.getByRole('button', { name: 'Any Year' }));
+  expect(input).toHaveValue('');
+  await userEvent.type(input, '1873');
+  expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+});
+
+test('Back/Forward closes open drafts and reopening uses committed state', async () => {
+  const router = setup('/search?year=2000');
+  await open();
+  await expand(/^Release Year/);
+  await userEvent.clear(screen.getByLabelText('Release year'));
+  await userEvent.type(screen.getByLabelText('Release year'), '2024');
+  await apply();
+  await open();
+  await act(async () => {
+    await router.navigate(-1);
   });
-
-  it('toggles popularity from descending to ascending', async () => {
-    renderFilter();
-
-    await selectDirection('Ascending');
-
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      '?sorting=popularity&order=asc'
-    );
-    expect(
-      screen.getByRole('button', { name: 'Sort direction' })
-    ).toHaveTextContent('Ascending');
+  await closed();
+  await open();
+  expect(screen.getByLabelText('Release year')).toHaveValue('2000');
+  await act(async () => {
+    await router.navigate(1);
   });
+  await closed();
+  await open();
+  expect(screen.getByLabelText('Release year')).toHaveValue('2024');
+});
 
-  it('defaults Release Date sorting to newest first and toggles to oldest first', async () => {
-    renderFilter();
+test('mobile drawer contains keyboard focus, locks scrolling, dismisses via backdrop and restores focus', async () => {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn((query: string) => ({
+      matches: query.includes('767'),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  );
+  setup();
+  const dialog = await open();
+  expect(dialog).toHaveAttribute('aria-modal', 'true');
+  expect(document.body.style.overflow).toBe('hidden');
+  expect(dialog).toHaveFocus();
+  await userEvent.tab();
+  expect(screen.getByRole('button', { name: 'Close filters' })).toHaveFocus();
+  await userEvent.tab({ shift: true });
+  expect(screen.getByRole('button', { name: 'Apply' })).toHaveFocus();
+  await userEvent.tab();
+  expect(screen.getByRole('button', { name: 'Close filters' })).toHaveFocus();
+  fireEvent.click(screen.getByRole('button', { name: 'Dismiss filters' }));
+  await closed();
+  expect(document.body.style.overflow).toBe('');
+  expect(screen.getByRole('button', { name: /Filters & Sort/ })).toHaveFocus();
+});
 
-    await selectSort('Release Date');
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      '?sorting=releaseDate&order=desc'
-    );
+test('reduced motion dismisses immediately without an exit delay', async () => {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn((query: string) => ({
+      matches: query.includes('reduced-motion'),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  );
+  setup();
+  await open();
+  await userEvent.keyboard('{Escape}');
+  expect(screen.queryByRole('dialog')).toBeNull();
+});
 
-    await selectDirection('Ascending');
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      '?sorting=releaseDate&order=asc'
-    );
-  });
-
-  it('supports Title sorting in both directions', async () => {
-    renderFilter('/?sorting=title&order=asc');
-
-    await selectDirection('Descending');
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      '?sorting=title&order=desc'
-    );
-  });
-
-  it('supports Rating sorting in both directions', async () => {
-    renderFilter();
-
-    await selectSort('Rating');
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      '?sorting=rating&order=desc'
-    );
-    expect(
-      screen.getByRole('button', { name: 'Sort field' })
-    ).toHaveTextContent('Rating');
-
-    await selectDirection('Ascending');
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      '?sorting=rating&order=asc'
-    );
-  });
-
-  it('preserves the current valid direction when changing sort field', async () => {
-    renderFilter('/?sorting=popularity&order=asc');
-
-    await selectSort('Release Date');
-
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      '?sorting=releaseDate&order=asc'
-    );
-    expect(
-      screen.getByRole('button', { name: 'Sort direction' })
-    ).toHaveTextContent('Ascending');
-  });
-
-  it.each([['popularity'], ['releaseDate'], ['title'], ['rating']])(
-    'keeps direction visible for %s sorting',
-    (sort) => {
-      renderFilter(`/?sorting=${sort}&order=desc`);
-
-      expect(
-        screen.getByRole('button', { name: 'Sort direction' })
-      ).toHaveTextContent('Descending');
+test('desktop panel moves above a low trigger and repositions when the viewport grows', async () => {
+  vi.stubGlobal('innerHeight', 500);
+  vi.stubGlobal('innerWidth', 1024);
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+    function getRect(this: HTMLElement) {
+      return this.classList.contains('movie-filters__anchor')
+        ? new DOMRect(850, 400, 150, 44)
+        : new DOMRect();
     }
   );
+  vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(480);
+  setup();
+  const dialog = await open();
+  expect(dialog.style.top).toBe('auto');
+  expect(dialog.style.bottom).toBe('110px');
+  expect(dialog.style.left).toBe('520px');
+  expect(dialog.style.getPropertyValue('--filter-available-height')).toBe(
+    '374px'
+  );
+  vi.stubGlobal('innerHeight', 1000);
+  fireEvent(window, new Event('resize'));
+  expect(dialog.style.top).toBe('454px');
+  expect(dialog.style.bottom).toBe('auto');
+  expect(dialog.style.getPropertyValue('--filter-available-height')).toBe(
+    '530px'
+  );
+});
 
-  it('preserves explicit sorting when a genre changes', async () => {
-    renderFilter('/?sorting=releaseDate&order=desc');
-
-    await selectFilter('Genre', 'documentary');
-
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      '?sorting=releaseDate&order=desc&filter=documentary'
-    );
+test('mobile drawer follows visual viewport changes while the keyboard is open', async () => {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn((query: string) => ({
+      matches: query.includes('767'),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  );
+  vi.stubGlobal('innerHeight', 800);
+  const viewport = Object.assign(new EventTarget(), {
+    height: 320,
+    offsetTop: 30,
   });
-
-  it('represents TMDB relevance ordering during text search', () => {
-    renderFilter('/search/zodiac');
-
-    expect(
-      screen.getByRole('button', { name: 'Sort field' })
-    ).toHaveTextContent('Relevance');
-    expect(
-      screen.queryByRole('button', { name: /sort direction/i })
-    ).toBeNull();
-  });
-
-  it('stores advanced filters in the URL while preserving search relevance', async () => {
-    const user = userEvent.setup();
-    renderFilter('/search/alien');
-
-    await selectFilter('Genre', 'science fiction');
-    await user.type(
-      screen.getByRole('textbox', { name: 'Release year' }),
-      '1979'
-    );
-    await selectFilter('Minimum rating', '8+');
-
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      '?filter=science+fiction&year=1979&rating=8'
-    );
-    expect(
-      screen.getByRole('button', { name: 'Sort field' })
-    ).toHaveTextContent('Relevance');
-  });
-
-  it('only applies complete valid years and supports arrow-key changes', async () => {
-    const user = userEvent.setup();
-    renderFilter('/search');
-    const yearInput = screen.getByRole('textbox', { name: 'Release year' });
-
-    await user.type(yearInput, '199');
-    expect(screen.getByTestId('location')).not.toHaveTextContent('year=');
-
-    await user.type(yearInput, '9');
-    expect(screen.getByTestId('location')).toHaveTextContent('?year=1999');
-
-    await user.type(yearInput, '{ArrowUp}');
-    expect(yearInput).toHaveValue('2000');
-    expect(screen.getByTestId('location')).toHaveTextContent('?year=2000');
-
-    await user.type(yearInput, '{ArrowDown}');
-    expect(yearInput).toHaveValue('1999');
-    expect(screen.getByTestId('location')).toHaveTextContent('?year=1999');
-
-    await user.clear(yearInput);
-    expect(yearInput).toHaveValue('');
-    expect(yearInput).toHaveAttribute('placeholder', 'Any Year');
-    expect(screen.getByTestId('location')).not.toHaveTextContent('year=');
-  });
-
-  it('uses the same explicit sorting state on the movie detail route', async () => {
-    renderFilter('/movie/123?sorting=releaseDate&order=desc');
-
-    expect(
-      screen.getByRole('button', { name: 'Sort field' })
-    ).toHaveTextContent('Release Date');
-
-    await selectDirection('Ascending');
-
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      '?sorting=releaseDate&order=asc'
-    );
-  });
+  vi.stubGlobal('visualViewport', viewport);
+  setup();
+  const dialog = await open();
+  expect(dialog.style.getPropertyValue('--filter-viewport-height')).toBe(
+    '320px'
+  );
+  expect(dialog.style.getPropertyValue('--filter-viewport-bottom')).toBe(
+    '450px'
+  );
+  viewport.height = 200;
+  viewport.offsetTop = 40;
+  viewport.dispatchEvent(new Event('resize'));
+  expect(dialog.style.getPropertyValue('--filter-viewport-height')).toBe(
+    '200px'
+  );
+  expect(dialog.style.getPropertyValue('--filter-viewport-bottom')).toBe(
+    '560px'
+  );
 });

@@ -101,92 +101,6 @@
       }
     }
 
-    .header__suggestions {
-      background: $grey-3;
-      border: 1px solid rgb(255 255 255 / 0.14);
-      border-radius: 0 0 4px 4px;
-      box-shadow: 0 12px 30px rgb(0 0 0 / 0.35);
-      left: 0;
-      max-height: 348px;
-      overflow-y: auto;
-      position: absolute;
-      right: 0;
-      scrollbar-color: rgb(255 255 255 / 0.35) rgb(0 0 0 / 0.25);
-      scrollbar-gutter: stable;
-      scrollbar-width: thin;
-      top: calc(100% + 4px);
-      z-index: 2;
-
-      &::-webkit-scrollbar {
-        width: 8px;
-      }
-
-      &::-webkit-scrollbar-track {
-        background: rgb(0 0 0 / 0.25);
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background: rgb(255 255 255 / 0.32);
-        border: 2px solid $grey-3;
-        border-radius: 8px;
-      }
-
-      &::-webkit-scrollbar-thumb:hover {
-        background: rgb(255 255 255 / 0.48);
-      }
-
-      li + li {
-        border-top: 1px solid rgb(255 255 255 / 0.08);
-      }
-
-      button {
-        align-items: center;
-        background: transparent;
-        border: 0;
-        color: $white;
-        cursor: pointer;
-        display: flex;
-        gap: 12px;
-        min-height: 68px;
-        padding: 6px 10px;
-        text-align: left;
-        width: 100%;
-
-        &:hover,
-        &:focus-visible,
-        &.is-active {
-          background: rgb(246 82 97 / 0.16);
-          outline: none;
-        }
-
-        img,
-        .header__suggestions__placeholder {
-          background: rgb(255 255 255 / 0.08);
-          border-radius: 2px;
-          flex: 0 0 40px;
-          height: 60px;
-          object-fit: cover;
-          width: 40px;
-        }
-
-        strong,
-        small {
-          display: block;
-        }
-
-        strong {
-          font-size: 16px;
-          line-height: 20px;
-        }
-
-        small {
-          color: rgb(255 255 255 / 0.65);
-          font-size: 13px;
-          margin-top: 3px;
-        }
-      }
-    }
-
     .btn {
       flex: 0 0 220px;
     }
@@ -218,6 +132,13 @@
         flex-basis: 100%;
         width: 100%;
       }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__search__input,
+    &__search .btn {
+      transition: none;
     }
   }
 }

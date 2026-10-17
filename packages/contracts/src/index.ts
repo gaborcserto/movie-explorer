@@ -1,4 +1,10 @@
 export type {
+  PersonSummary,
+  PersonListResponse,
+  SearchSuggestion,
+  SearchSuggestionsResponse,
+} from './search';
+export type {
   MovieDetails,
   MovieId,
   MovieListResponse,

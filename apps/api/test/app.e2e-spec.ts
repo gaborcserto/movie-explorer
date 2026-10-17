@@ -25,6 +25,7 @@ const movieProvider: jest.Mocked<MovieProvider> = {
   findOne: jest.fn(),
   findSuggestions: jest.fn(),
   findPerson: jest.fn(),
+  findPeople: jest.fn(),
 };
 
 describe('AppController (e2e)', () => {
@@ -68,6 +69,67 @@ describe('AppController (e2e)', () => {
       description: 'Determined to prove herself, Officer Judy Hopps...',
     });
     movieProvider.findSuggestions.mockResolvedValue({ suggestions: [] });
+  });
+
+  it('returns unified suggestions without changing movie-only consumers', async () => {
+    movieProvider.findPeople.mockResolvedValueOnce({
+      people: [{ id: 5, name: 'Person' }],
+      page: 1,
+      totalPages: 1,
+      totalResults: 1,
+    });
+    movieProvider.findSuggestions.mockResolvedValue({
+      suggestions: [{ id: 5, title: 'Movie' }],
+    });
+    await request(app.getHttpServer())
+      .get('/api/v1/search/suggestions?query=Query&limit=2')
+      .expect(200)
+      .expect({
+        suggestions: [
+          { mediaType: 'movie', id: 5, title: 'Movie' },
+          { mediaType: 'person', id: 5, name: 'Person' },
+        ],
+      });
+    expect(movieProvider.findPeople).toHaveBeenCalledWith('Query', 1);
+    await request(app.getHttpServer())
+      .get('/movies/suggestions?query=Query')
+      .expect(200)
+      .expect({ suggestions: [{ id: 5, title: 'Movie' }] });
+  });
+
+  it('searches person pages and validates query/page/limit bounds', async () => {
+    const result = {
+      people: [{ id: 7, name: 'Person' }],
+      page: 2,
+      totalPages: 2,
+      totalResults: 21,
+    };
+    movieProvider.findPeople.mockResolvedValueOnce(result);
+    await request(app.getHttpServer())
+      .get('/api/v1/persons?query=Person&page=2')
+      .expect(200)
+      .expect(result);
+    expect(movieProvider.findPeople).toHaveBeenCalledWith('Person', 2);
+    for (const query of [
+      '',
+      'query=%20%20',
+      'query=Person&page=0',
+      'query=Person&page=501',
+      'query=Person&page=1.5',
+    ]) {
+      await request(app.getHttpServer())
+        .get('/api/v1/persons?' + query)
+        .expect(400);
+    }
+    for (const query of [
+      'query=x',
+      'query=Query&limit=0',
+      'query=Query&limit=11',
+    ]) {
+      await request(app.getHttpServer())
+        .get('/api/v1/search/suggestions?' + query)
+        .expect(400);
+    }
   });
 
   it('/movies (GET)', () => {

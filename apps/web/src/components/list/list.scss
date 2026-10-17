@@ -2,6 +2,7 @@
 
 .list {
   &__container {
+    overflow-wrap: anywhere;
     color: $white;
     padding: 28px 60px 48px;
   }

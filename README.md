@@ -10,8 +10,8 @@ Movie Explorer lets you search and browse movies, view details, and explore cast
 
 ## Features
 
-- Search movies with keyboard accessible suggestions.
-- Filter and sort results, and load more results as you browse.
+- Search movies and people with shared keyboard accessible autocomplete on Home and both detail headers.
+- Switch between shareable Movies and People results; filter and sort movies, and load ten more results at a time.
 - View movie details, cast, photos, and videos.
 - Open high resolution photos in a lightbox with fullscreen, zoom, pan, and touch gestures.
 - Browse a responsive interface with lazy loaded thumbnails and responsive images.
@@ -69,7 +69,11 @@ The running API serves its generated Swagger/OpenAPI documentation at [http://lo
 
 Filmography merges acting and crew credits by movie ID in first-seen order (cast followed by crew), excluding explicitly adult records. `actingCredits` contains distinct character names; an empty array records acting with an unknown character, while an absent field means no acting credit. `crewCredits` contains distinct department/job pairs, with unavailable values omitted. Movie summaries use an empty poster URL for missing posters and an empty genres array because the appended credits do not supply genre names. No per-movie requests, sorting, or pagination are performed.
 
-Existing `/movies` endpoints are unchanged. Movie details retain `cast` and `director` and add structured `castMembers` and `directors` with optional person IDs and responsive portraits. Person pages and navigation are not yet implemented in the frontend.
+Existing `/movies` endpoints are unchanged. Movie details retain `cast` and `director` and add structured `castMembers` and `directors` with optional person IDs and responsive portraits. Person pages are available at `/person/:id`, with portraits, biographies, and filmographies.
+
+Unified autocomplete uses `GET /api/v1/search/suggestions?query=Alien&limit=6`. The limit applies to each group (maximum 10); the UI displays up to six movies and six people. Suggestions have a `mediaType` discriminator (`movie` or `person`), stable IDs, optional image URLs, and release year or known-for department. The existing `GET /movies/suggestions` response remains movie-only. Separate TMDB movie/person searches preserve movie ranking and prevent TV results from displacing people; no suggestion detail requests are made.
+
+`GET /api/v1/persons?query=Weaver&page=1` returns `people`, `page`, `totalPages`, and `totalResults`. Queries are trimmed, nonempty, and bounded to 100 characters; pages are bounded to 1-500. Search URLs use `/search/:searchQuery?view=people`; Movies is the default when `view` is absent. Movie filters remain in the URL when switching, but are never sent to person search. Each view loads on first visit and retains its own pagination while switching within the current query.
 
 ## Project structure
 

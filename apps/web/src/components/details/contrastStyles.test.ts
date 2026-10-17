@@ -52,21 +52,58 @@ function contrastRatio(foreground: string, background: string) {
   return (values[0]! + 0.05) / (values[1]! + 0.05);
 }
 
-test.each([
-  ['movie rating', '.movie-details__rating'],
-  ['selected filmography view', '.filmography__controls [aria-pressed=true]'],
-])('%s keeps readable text on the coral brand color', (_name, selector) => {
-  const style = declarations(selector);
+test('movie rating uses the requested white-on-coral styling', () => {
+  const style = declarations('.movie-details__rating');
   expect(style.background).toBe('#f65261');
-  expect(contrastRatio(style.color!, style.background!)).toBeGreaterThanOrEqual(
-    4.5
-  );
+  expect(style.color).toBe('#ffffff');
+  expect(style['font-weight']).toBe('700');
+  // White on coral is an intentional design choice with below-AA contrast.
+  expect(contrastRatio(style.color!, style.background!)).toBeCloseTo(3.33, 2);
+  expect(style).toMatchObject({
+    width: '60px',
+    height: '60px',
+    'border-radius': '30px',
+    'font-size': '20px',
+  });
+  let mobileStyle: Record<string, string> | undefined;
+  stylesheets[0]!.walkAtRules('media', (media) => {
+    if (media.params !== '(max-width: 767.98px)') return;
+    media.walkRules('.movie-details__rating', (rule) => {
+      mobileStyle = {};
+      rule.walkDecls((declaration) => {
+        mobileStyle![declaration.prop] = declaration.value;
+      });
+    });
+  });
+  expect(mobileStyle).toMatchObject({
+    width: '52px',
+    height: '52px',
+    'font-size': '18px',
+  });
+  expect(mobileStyle?.color).toBeUndefined();
+  expect(mobileStyle?.background).toBeUndefined();
+  expect(mobileStyle?.['font-weight']).toBeUndefined();
+  expect(
+    stylesheets[0]!.nodes?.some(
+      (node) =>
+        node.type === 'rule' &&
+        node.selectors.includes('.movie-details__rating:hover')
+    )
+  ).toBe(false);
 });
 
-test('selected view keeps dark text through hover, active, and focus states', () => {
+test('selected filmography view preserves the intentional white-on-coral contrast exception', () => {
+  const style = declarations('.filmography__controls [aria-pressed=true]');
+  expect(style.background).toBe('#f65261');
+  expect(style.color).toBe('#ffffff');
+  // This requested visual treatment does not meet AA contrast for normal text.
+  expect(contrastRatio(style.color!, style.background!)).toBeCloseTo(3.33, 2);
+});
+
+test('selected view keeps white text through hover, active, and focus states', () => {
   const selector = '.filmography__controls [aria-pressed=true]';
   const base = declarations(selector);
-  expect(base.color).toBe('#232323');
+  expect(base.color).toBe('#ffffff');
   [':hover', ':active', ':focus-visible'].forEach((state) => {
     const rule = stylesheets[1]!.nodes?.find(
       (node) =>
@@ -77,7 +114,7 @@ test('selected view keeps dark text through hover, active, and focus states', ()
       rule.walkDecls('color', (declaration) => {
         color = declaration.value;
       });
-      expect(color ?? base.color).toBe('#232323');
+      expect(color ?? base.color).toBe('#ffffff');
     }
   });
 });

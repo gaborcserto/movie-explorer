@@ -1,4 +1,10 @@
-import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBadGatewayResponse,
   ApiBadRequestResponse,
@@ -11,11 +17,20 @@ import {
 import type { PersonDetails } from '@movie-explorer/contracts';
 import { GetPersonParams, PersonDetailsDto } from './persons.dto';
 import { PersonsService } from './persons.service';
+import { GetPeopleQuery } from './people.dto';
 
 @ApiTags('persons')
 @Controller('api/v1/persons')
 export class PersonsController {
   constructor(private readonly personsService: PersonsService) {}
+
+  // Intentionally public person search.
+  // nestjs-doctor-ignore-next-line security/require-guards-on-endpoints
+  @Get()
+  @ApiOperation({ summary: 'Search people by name' })
+  public getPeople(@Query() query: GetPeopleQuery) {
+    return this.personsService.findPeople(query.query, query.page);
+  }
 
   // Intentionally public person details; no authentication is required.
   // nestjs-doctor-ignore-next-line security/require-guards-on-endpoints

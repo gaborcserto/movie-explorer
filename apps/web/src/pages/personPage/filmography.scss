@@ -89,7 +89,9 @@
 
     [aria-pressed='true'] {
       background: $red-1;
-      color: $grey-3;
+
+      // Intentional white-on-coral contrast exception for normal text.
+      color: $white;
     }
   }
 

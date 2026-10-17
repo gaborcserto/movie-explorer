@@ -1,8 +1,7 @@
 import { useParams } from 'react-router-dom';
 import Footer from '../layouts/footer';
 import Header from '../layouts/header';
-import Filter from '../components/filter';
-import CardList from '../components/list/list';
+import SearchResults from '../components/list/searchResults';
 
 function HomePage() {
   const { movieId } = useParams();
@@ -11,8 +10,7 @@ function HomePage() {
       <Header />
       {movieId ? null : (
         <main className="main">
-          <Filter />
-          <CardList />
+          <SearchResults />
         </main>
       )}
       <Footer />

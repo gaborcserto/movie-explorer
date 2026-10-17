@@ -26,3 +26,16 @@ test('preserves the original Search submit button width', () => {
   expect(declarations.height).toBeUndefined();
   expect(declarations['align-self']).toBeUndefined();
 });
+
+test('allows unbroken queries to wrap in result context and empty states', () => {
+  const results = postcss.parse(
+    compile(fileURLToPath(new URL('../list/list.scss', import.meta.url))).css
+  );
+  let wrapping: string | undefined;
+  results.walkRules('.list__container', (rule) => {
+    rule.walkDecls('overflow-wrap', (declaration) => {
+      wrapping = declaration.value;
+    });
+  });
+  expect(wrapping).toBe('anywhere');
+});

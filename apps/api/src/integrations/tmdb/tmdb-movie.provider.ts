@@ -11,6 +11,12 @@ import type {
 import type { MovieProvider } from '../../movies/movie-provider';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbMovieMapper } from './tmdb-movie.mapper';
+import {
+  mapPeople,
+  searchPage,
+  searchRecord,
+  searchText,
+} from './tmdb-search.mapper';
 import { isTmdbPersonDetails, TmdbPersonMapper } from './tmdb-person.mapper';
 import {
   TmdbGenre,
@@ -60,23 +66,49 @@ export class TmdbMovieProvider implements MovieProvider {
     };
   }
 
+  public async findPeople(query: string, page: number) {
+    const response = await this.request<unknown>('/search/person', {
+      query: query.trim(),
+      include_adult: 'false',
+      page: String(page),
+    });
+    return mapPeople(response, this.config.imageBaseUrl);
+  }
+
   public async findSuggestions(
     query: string,
     limit: number,
   ): Promise<MovieSuggestionsResponse> {
-    const response = await this.request<TmdbPagedResponse<TmdbMovieListItem>>(
-      '/search/movie',
-      {
-        query: query.trim(),
-        include_adult: 'false',
-        page: '1',
-      },
-    );
+    const response = await this.request<unknown>('/search/movie', {
+      query: query.trim(),
+      include_adult: 'false',
+      page: '1',
+    });
 
+    const suggestions = searchPage(response).results.flatMap((value) => {
+      const movie = searchRecord(value);
+      const title = searchText(movie?.title);
+      if (
+        !movie ||
+        !title ||
+        (movie.media_type && movie.media_type !== 'movie')
+      )
+        return [];
+      return [
+        this.mapper.toMovieSuggestion({
+          id: Number(movie.id),
+          title,
+          release_date: searchText(movie.release_date),
+          poster_path: searchText(movie.poster_path)?.startsWith('/')
+            ? searchText(movie.poster_path)
+            : null,
+        }),
+      ];
+    });
     return {
-      suggestions: (response?.results ?? [])
-        .slice(0, limit)
-        .map((movie) => this.mapper.toMovieSuggestion(movie)),
+      suggestions: [
+        ...new Map(suggestions.map((movie) => [movie.id, movie])).values(),
+      ].slice(0, limit),
     };
   }
 

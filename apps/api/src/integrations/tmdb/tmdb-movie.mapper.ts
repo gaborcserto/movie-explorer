@@ -175,7 +175,12 @@ export class TmdbMovieMapper {
     return people;
   }
 
-  public toMovieSuggestion(movie: TmdbMovieListItem): MovieSuggestion {
+  public toMovieSuggestion(
+    movie: Pick<
+      TmdbMovieListItem,
+      'id' | 'title' | 'release_date' | 'poster_path'
+    >,
+  ): MovieSuggestion {
     const releaseYear = /^\d{4}/.test(movie.release_date)
       ? Number(movie.release_date.slice(0, 4))
       : undefined;

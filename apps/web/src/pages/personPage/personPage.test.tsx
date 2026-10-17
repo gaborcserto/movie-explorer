@@ -120,7 +120,9 @@ test('direct person navigation loads the complete contract through the API witho
     2
   );
   expect(
-    screen.getByRole('button', { name: 'Search movies' }).closest('main')
+    screen
+      .getByRole('button', { name: 'Search movies and people' })
+      .closest('main')
   ).toBeNull();
   expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   expect(

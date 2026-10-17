@@ -6,6 +6,8 @@ import {
   getMovie,
   getMovies,
   getMovieSuggestions,
+  getSearchSuggestions,
+  getPeople,
   isNotFoundError,
   sortParams,
 } from './apiUtils';
@@ -139,6 +141,42 @@ describe('API functions', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:4000/movies/suggestions?query=Alien&limit=6',
+      { signal: controller.signal }
+    );
+  });
+
+  it('requests unified suggestions with encoded queries and cancellation', async () => {
+    const result = {
+      suggestions: [
+        { mediaType: 'person', id: 42, name: 'Person' },
+        { mediaType: 'movie', id: 42, title: 'Movie' },
+      ],
+    };
+    fetchMock.mockResolvedValue(response(result));
+    const controller = new AbortController();
+    await expect(
+      getSearchSuggestions('A&B / test?', controller.signal)
+    ).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/search/suggestions?query=A%26B+%2F+test%3F&limit=6',
+      { signal: controller.signal }
+    );
+  });
+
+  it('requests independent person pages without movie controls', async () => {
+    const result = {
+      people: [{ id: 42, name: 'Person' }],
+      page: 2,
+      totalPages: 3,
+      totalResults: 42,
+    };
+    fetchMock.mockResolvedValue(response(result));
+    const controller = new AbortController();
+    await expect(getPeople('A&B', 2, controller.signal)).resolves.toEqual(
+      result
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/persons?query=A%26B&page=2',
       { signal: controller.signal }
     );
   });

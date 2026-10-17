@@ -1,4 +1,12 @@
-import { cleanup, render, waitFor, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  waitFor,
+  screen,
+} from '@testing-library/react';
+import type { MovieListResponse } from '@movie-explorer/contracts';
 import userEvent from '@testing-library/user-event';
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import List from './list';
@@ -7,9 +15,14 @@ import { getMovies as originalGetMovies } from '../../util/apiUtils';
 const getMovies = vi.mocked(originalGetMovies);
 vi.mock('../../util/apiUtils');
 
-const renderList = (initialEntry = '/search') => {
+const renderList = (initialEntry = '/search', destinations: string[] = []) => {
   render(
     <MemoryRouter initialEntries={[initialEntry]}>
+      {destinations.map((destination) => (
+        <Link key={destination} to={destination}>
+          {destination}
+        </Link>
+      ))}
       <Routes>
         <Route path="/search/:searchQuery?" element={<List />} />
       </Routes>
@@ -24,7 +37,91 @@ const emptyResponse = (total: number) => ({
   totalPages: 1,
 });
 
+const moviePage = (title: string, page = 1): MovieListResponse => ({
+  movies: Array.from({ length: 10 }, (_, index) => ({
+    id: (page - 1) * 10 + index + 1,
+    title: `${title} ${index + 1}`,
+    posterUrl: '',
+    genres: [],
+  })),
+  totalResults: 30,
+  page,
+  totalPages: 3,
+});
+
+function deferredResponse() {
+  let resolve!: (response: MovieListResponse) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<MovieListResponse>(
+    (resolvePromise, rejectPromise) => {
+      resolve = resolvePromise;
+      reject = rejectPromise;
+    }
+  );
+  return { promise, resolve, reject };
+}
+
+async function settleObsoleteRequest(
+  request: ReturnType<typeof deferredResponse>,
+  outcome: string
+) {
+  // Deliberately ignore cancellation to verify protection against late responses.
+  await act(async () => {
+    if (outcome === 'success') {
+      request.resolve({
+        ...moviePage('Obsolete', 2),
+        totalResults: 999,
+        totalPages: 2,
+      });
+    } else {
+      request.reject(new Error('Obsolete request failed'));
+    }
+  });
+}
+
 describe('<List />', () => {
+  test('sparse pages reveal at most ten new movies per Load more interaction', async () => {
+    getMovies
+      .mockResolvedValueOnce({
+        ...moviePage('First'),
+        movies: moviePage('First').movies.slice(0, 3),
+      })
+      .mockResolvedValueOnce({
+        ...moviePage('Next', 2),
+        movies: [
+          ...moviePage('Next', 2).movies,
+          ...moviePage('Last', 3).movies,
+        ],
+      });
+    renderList('/search/Alien?filter=drama');
+    await screen.findByText('First 1');
+    fireEvent.click(screen.getByRole('button', { name: /load more/i }));
+    await screen.findByText('Next 10');
+    expect(screen.getAllByRole('article')).toHaveLength(13);
+    expect(screen.queryByText('Last 1')).toBeNull();
+  });
+
+  test.each([2, 500])(
+    'explains empty filtered pages at page %s and respects the provider limit',
+    async (page) => {
+      getMovies.mockResolvedValue({
+        movies: [],
+        page,
+        totalPages: 900,
+        totalResults: 18000,
+      });
+      renderList('/search/Alien?filter=drama');
+      await screen.findByText(
+        page === 500
+          ? 'No matches in the accessible result pages.'
+          : 'No matches in the pages checked so far. Load more to check the next page.'
+      );
+      expect(
+        Boolean(screen.queryByRole('button', { name: /load more/i }))
+      ).toBe(page < 500);
+      expect(getMovies).toHaveBeenCalledTimes(1);
+    }
+  );
   beforeEach(() => {
     vi.resetAllMocks();
   });
@@ -198,7 +295,240 @@ describe('<List />', () => {
     expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
     expect(getMovies).toHaveBeenCalledTimes(2);
     expect(getMovies).toHaveBeenLastCalledWith(
-      expect.objectContaining({ page: 2 })
+      expect.objectContaining({ page: 2 }),
+      expect.any(AbortSignal)
+    );
+  });
+
+  describe.each([
+    ['query', '/search/B', { search: 'B', genres: null }],
+    ['filter', '/search/A?filter=crime', { search: 'A', genres: 'crime' }],
+  ])('changing the %s during Load More', (_, destination, expectedParams) => {
+    test.each(['success', 'failure'])(
+      'resets loading and ignores obsolete %s after new results arrive',
+      async (outcome) => {
+        const user = userEvent.setup();
+        const obsoletePage = deferredResponse();
+        getMovies
+          .mockResolvedValueOnce(moviePage('Original'))
+          .mockReturnValueOnce(obsoletePage.promise)
+          .mockResolvedValueOnce(moviePage('Current'))
+          .mockResolvedValueOnce(moviePage('Current page two', 2));
+
+        renderList('/search/A', [destination]);
+        await user.click(
+          await screen.findByRole('button', { name: 'Load more' })
+        );
+        expect(
+          screen.getByRole('button', { name: /loading more/i })
+        ).toBeDisabled();
+        const obsoleteSignal = getMovies.mock.calls[1][1];
+        expect(obsoleteSignal).toBeInstanceOf(AbortSignal);
+
+        await user.click(screen.getByRole('link', { name: destination }));
+        expect(await screen.findByText('Current 1')).toBeInTheDocument();
+        expect(obsoleteSignal?.aborted).toBe(true);
+        expect(screen.getByRole('button', { name: 'Load more' })).toBeEnabled();
+        expect(getMovies).toHaveBeenNthCalledWith(
+          3,
+          expect.objectContaining({ ...expectedParams, page: 1 }),
+          expect.any(AbortSignal)
+        );
+
+        await settleObsoleteRequest(obsoletePage, outcome);
+
+        expect(screen.getByText('Current 1')).toBeInTheDocument();
+        expect(screen.queryByText('Original 1')).not.toBeInTheDocument();
+        expect(screen.queryByText('Obsolete 1')).not.toBeInTheDocument();
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(
+          screen.getByRole('heading', { name: /30 .*results|30 movies found/ })
+        ).toBeInTheDocument();
+        expect(
+          screen.getByText(/10 (matching )?movies loaded/)
+        ).toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: 'Load more' }));
+        expect(
+          await screen.findByText('Current page two 1')
+        ).toBeInTheDocument();
+        expect(getMovies).toHaveBeenLastCalledWith(
+          expect.objectContaining({ ...expectedParams, page: 2 }),
+          expect.any(AbortSignal)
+        );
+      }
+    );
+  });
+
+  test.each(['success', 'failure'])(
+    'obsolete page %s cannot clear a newer page request loading state',
+    async (outcome) => {
+      const user = userEvent.setup();
+      const obsoletePage = deferredResponse();
+      const currentPage = deferredResponse();
+      getMovies
+        .mockResolvedValueOnce(moviePage('Original'))
+        .mockReturnValueOnce(obsoletePage.promise)
+        .mockResolvedValueOnce(moviePage('Current'))
+        .mockReturnValueOnce(currentPage.promise);
+      renderList('/search/A', ['/search/B']);
+      await user.click(
+        await screen.findByRole('button', { name: 'Load more' })
+      );
+      await user.click(screen.getByRole('link', { name: '/search/B' }));
+      await user.click(
+        await screen.findByRole('button', { name: 'Load more' })
+      );
+
+      await settleObsoleteRequest(obsoletePage, outcome);
+
+      const loadingButton = screen.getByRole('button', {
+        name: /loading more/i,
+      });
+      expect(loadingButton).toBeDisabled();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      await user.click(loadingButton);
+      expect(getMovies).toHaveBeenCalledTimes(4);
+      await act(async () =>
+        currentPage.resolve(moviePage('Current page two', 2))
+      );
+      expect(screen.getByText('Current page two 1')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Load more' })).toBeEnabled();
+    }
+  );
+
+  test('repeated Load More activation requests each provider page only once', async () => {
+    const user = userEvent.setup();
+    const nextPage = deferredResponse();
+    getMovies
+      .mockResolvedValueOnce(moviePage('First page'))
+      .mockReturnValueOnce(nextPage.promise)
+      .mockResolvedValueOnce(moviePage('Third page', 3));
+    renderList();
+    const button = await screen.findByRole('button', { name: 'Load more' });
+
+    act(() => {
+      fireEvent.click(button);
+      fireEvent.click(button);
+      fireEvent.click(button);
+    });
+    expect(getMovies).toHaveBeenCalledTimes(2);
+    expect(button).toBeDisabled();
+    await act(async () => nextPage.resolve(moviePage('Second page', 2)));
+    expect(screen.getByText('20 movies loaded')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Load more' }));
+    expect(await screen.findByText('Third page 1')).toBeInTheDocument();
+    expect(getMovies.mock.calls.map(([params]) => params.page)).toEqual([
+      1, 2, 3,
+    ]);
+  });
+
+  describe.each(['initial load', 'initial retry'])(
+    '%s lifecycle',
+    (requestPath) => {
+      describe.each(['success', 'failure'])('obsolete %s', (outcome) => {
+        test.each([true, false])(
+          'ignores obsolete responses with new results completed: %s',
+          async (newResultsCompleted) => {
+            const user = userEvent.setup();
+            const obsoleteRequest = deferredResponse();
+            const currentRequest = deferredResponse();
+            if (requestPath === 'initial retry') {
+              getMovies.mockRejectedValueOnce(new Error('Initial load failed'));
+            }
+            getMovies
+              .mockReturnValueOnce(obsoleteRequest.promise)
+              .mockReturnValueOnce(currentRequest.promise)
+              .mockResolvedValueOnce(moviePage('Current page two', 2));
+            renderList('/search/A', ['/search/B']);
+            if (requestPath === 'initial retry') {
+              await user.click(
+                await screen.findByRole('button', { name: 'Try again' })
+              );
+            }
+            const obsoleteSignal = getMovies.mock.lastCall?.[1];
+            expect(obsoleteSignal).toBeInstanceOf(AbortSignal);
+            expect(screen.getByText(/loading/i)).toBeInTheDocument();
+
+            await user.click(screen.getByRole('link', { name: '/search/B' }));
+            expect(obsoleteSignal?.aborted).toBe(true);
+            if (newResultsCompleted) {
+              await act(async () =>
+                currentRequest.resolve(moviePage('Current'))
+              );
+            }
+            await settleObsoleteRequest(obsoleteRequest, outcome);
+
+            if (!newResultsCompleted) {
+              expect(screen.getByText(/loading/i)).toBeInTheDocument();
+              expect(screen.queryByText('Obsolete 1')).not.toBeInTheDocument();
+              expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+              await act(async () =>
+                currentRequest.resolve(moviePage('Current'))
+              );
+            }
+            expect(screen.getByText('Current 1')).toBeInTheDocument();
+            expect(screen.queryByText('Obsolete 1')).not.toBeInTheDocument();
+            expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+            expect(
+              screen.getByRole('heading', { name: '30 movies found' })
+            ).toBeInTheDocument();
+            expect(screen.getByText('10 movies loaded')).toBeInTheDocument();
+            await user.click(screen.getByRole('button', { name: 'Load more' }));
+            expect(
+              await screen.findByText('Current page two 1')
+            ).toBeInTheDocument();
+            expect(getMovies).toHaveBeenLastCalledWith(
+              expect.objectContaining({ search: 'B', page: 2 }),
+              expect.any(AbortSignal)
+            );
+          }
+        );
+      });
+    }
+  );
+
+  test('rapid query and filter changes cancel every obsolete request', async () => {
+    const user = userEvent.setup();
+    const obsoletePage = deferredResponse();
+    const middleQuery = deferredResponse();
+    const middleFilter = deferredResponse();
+    const destinations = [
+      '/search/B',
+      '/search/B?filter=crime',
+      '/search/C?year=2020&rating=7',
+    ];
+    getMovies
+      .mockResolvedValueOnce(moviePage('Original'))
+      .mockReturnValueOnce(obsoletePage.promise)
+      .mockReturnValueOnce(middleQuery.promise)
+      .mockReturnValueOnce(middleFilter.promise)
+      .mockResolvedValueOnce(moviePage('Latest'));
+    renderList('/search/A', destinations);
+    await user.click(await screen.findByRole('button', { name: 'Load more' }));
+    await user.click(screen.getByRole('link', { name: destinations[0] }));
+    await user.click(screen.getByRole('link', { name: destinations[1] }));
+    await user.click(screen.getByRole('link', { name: destinations[2] }));
+    expect(await screen.findByText('Latest 1')).toBeInTheDocument();
+    expect(
+      getMovies.mock.calls.slice(0, -1).every(([, signal]) => signal?.aborted)
+    ).toBe(true);
+    expect(getMovies.mock.lastCall?.[1]?.aborted).toBe(false);
+    await settleObsoleteRequest(middleFilter, 'failure');
+    await settleObsoleteRequest(obsoletePage, 'success');
+    await settleObsoleteRequest(middleQuery, 'success');
+    expect(screen.getByText('Latest 1')).toBeInTheDocument();
+    expect(screen.queryByText('Obsolete 1')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Load more' })).toBeEnabled();
+    expect(getMovies).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        search: 'C',
+        genres: null,
+        releaseYear: '2020',
+        minimumRating: '7',
+        page: 1,
+      }),
+      expect.any(AbortSignal)
     );
   });
 

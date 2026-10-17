@@ -4,9 +4,11 @@ import type {
   MovieQueryParams,
   MovieSuggestionsResponse,
   PersonDetails,
+  PersonListResponse,
 } from '@movie-explorer/contracts';
 
 export interface MovieProvider {
+  findPeople(query: string, page: number): Promise<PersonListResponse>;
   findPerson(id: number): Promise<PersonDetails | undefined>;
   findAll(query: MovieQueryParams): Promise<MovieListResponse>;
   findSuggestions(

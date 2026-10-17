@@ -7,7 +7,7 @@ import {
   within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useParams as originalUseParams } from 'react-router-dom';
+import { MemoryRouter, useParams as originalUseParams } from 'react-router-dom';
 import type { MovieDetails } from '@movie-explorer/contracts';
 import Details from './details';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
@@ -53,7 +53,11 @@ describe('<Details />', () => {
     useParams.mockReturnValue({ movieId: '1234' });
     getMovie.mockReturnValueOnce(new Promise(() => {}));
 
-    render(<Details />);
+    render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
 
     expect(screen.getByText('Loading...')).toBeInTheDocument();
     expect(document.title).toBe('Loading movie | Movie Explorer');
@@ -64,7 +68,11 @@ describe('<Details />', () => {
     useParams.mockReturnValue({ movieId: '1234' });
     getMovie.mockResolvedValueOnce(mockData);
 
-    render(<Details />);
+    render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Sample Movie')).toBeInTheDocument();
@@ -87,7 +95,7 @@ describe('<Details />', () => {
       within(main).getByRole('heading', { name: 'Overview' })
     ).toBeVisible();
     expect(
-      within(main).queryByRole('button', { name: 'Search movies' })
+      within(main).queryByRole('button', { name: 'Search movies and people' })
     ).toBeNull();
     expect(document.title).toBe('Sample Movie | Movie Explorer');
   });
@@ -247,7 +255,11 @@ describe('<Details />', () => {
   it('handles errors and shows an error message when fetching fails', async () => {
     useParams.mockReturnValue({ movieId: '12' });
     getMovie.mockRejectedValueOnce(new Error('Failed to fetch'));
-    render(<Details />);
+    render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
     await waitFor(() =>
       expect(screen.getByText('Unable to load movie')).toBeInTheDocument()
     );
@@ -262,7 +274,11 @@ describe('<Details />', () => {
     isNotFoundError.mockReturnValue(true);
     getMovie.mockRejectedValueOnce(new Error('Movie not found'));
 
-    render(<Details />);
+    render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText('Movie not found')).toBeInTheDocument();
     expect(
@@ -274,7 +290,11 @@ describe('<Details />', () => {
   it('shows a not-found state for invalid movie IDs', async () => {
     useParams.mockReturnValue({ movieId: 'unknown' });
 
-    render(<Details />);
+    render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText('Movie not found')).toBeInTheDocument();
     expect(getMovie).not.toHaveBeenCalled();
@@ -288,7 +308,11 @@ describe('<Details />', () => {
       .mockRejectedValueOnce(new Error('Failed to fetch'))
       .mockResolvedValueOnce(mockData);
 
-    render(<Details />);
+    render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
 
     await screen.findByText('Unable to load movie');
     await user.click(screen.getByRole('button', { name: /try again/i }));
@@ -308,7 +332,11 @@ describe('<Details />', () => {
         videos: [{ name: 'Trailer', url: 'https://www.youtube.com/watch?v=1' }],
       });
 
-    render(<Details />);
+    render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText('Unable to load movie')).toBeVisible();
     expect(screen.queryByRole('heading', { name: 'Photos' })).toBeNull();
@@ -334,7 +362,11 @@ describe('<Details />', () => {
         resolvePrevious = resolve;
       })
     );
-    const { rerender } = render(<Details />);
+    const { rerender } = render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
 
     useParams.mockReturnValue({ movieId: '969681' });
     getMovie.mockResolvedValueOnce({
@@ -343,7 +375,11 @@ describe('<Details />', () => {
       title: 'Current movie',
       photos: [{ thumbnailUrl: '/current.jpg', fullUrl: '/original.jpg' }],
     });
-    rerender(<Details />);
+    rerender(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
     await screen.findByRole('heading', { name: 'Current movie' });
 
     await act(async () => resolvePrevious(mockData));
@@ -369,7 +405,11 @@ test('movie retry requests cannot change the title or focus after leaving', asyn
         resolveRetry = resolve;
       })
     );
-  const { unmount } = render(<Details />);
+  const { unmount } = render(
+    <MemoryRouter>
+      <Details />
+    </MemoryRouter>
+  );
   await screen.findByText('Unable to load movie');
   expect(document.title).toBe('Unable to load movie | Movie Explorer');
   expect(screen.getByRole('main')).toHaveFocus();
@@ -421,7 +461,11 @@ test('missing movies keep a useful landmark and document title', async () => {
   useParams.mockReturnValue({ movieId: '404' });
   isNotFoundError.mockReturnValue(true);
   getMovie.mockRejectedValueOnce(new Error('Not found'));
-  render(<Details />);
+  render(
+    <MemoryRouter>
+      <Details />
+    </MemoryRouter>
+  );
   await screen.findByText('Movie not found');
   await waitFor(() =>
     expect(document.title).toBe('Movie not found | Movie Explorer')

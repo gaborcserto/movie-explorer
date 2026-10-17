@@ -8,6 +8,10 @@ export class PersonsService {
     @Inject(MOVIE_PROVIDER) private readonly movieProvider: MovieProvider,
   ) {}
 
+  public findPeople(query: string, page: number) {
+    return this.movieProvider.findPeople(query, page);
+  }
+
   public findOne(id: number): Promise<PersonDetails | undefined> {
     return this.movieProvider.findPerson(id);
   }

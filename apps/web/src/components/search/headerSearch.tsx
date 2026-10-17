@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { FaMagnifyingGlass, FaXmark } from 'react-icons/fa6';
+import useAutocomplete from './useAutocomplete';
+import Suggestions from './suggestions';
 import './headerSearch.scss';
 
 export default function HeaderSearch() {
@@ -9,7 +10,7 @@ export default function HeaderSearch() {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const navigate = useNavigate();
+  const autocomplete = useAutocomplete('', expanded);
 
   useEffect(() => {
     if (expanded) inputRef.current?.focus();
@@ -18,26 +19,35 @@ export default function HeaderSearch() {
   }, [expanded]);
 
   const close = () => {
+    autocomplete.dismiss();
+    triggerRef.current?.focus();
     setExpanded(false);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' && !autocomplete.open) {
       event.preventDefault();
       close();
     }
   };
 
   return (
-    <div className="detail-search">
+    <div
+      ref={autocomplete.containerRef}
+      className="detail-search"
+      onBlur={autocomplete.onBlur}
+    >
       <button
         ref={triggerRef}
         type="button"
         className="detail-search__trigger"
-        aria-label={expanded ? 'Close search' : 'Search movies'}
+        aria-label={expanded ? 'Close search' : 'Search movies and people'}
         aria-expanded={expanded}
         aria-controls={inputId}
-        onClick={() => setExpanded((isExpanded) => !isExpanded)}
+        onClick={() => {
+          if (expanded) close();
+          else setExpanded(true);
+        }}
       >
         <FaMagnifyingGlass
           className={`detail-search__icon detail-search__icon--search${expanded ? ' detail-search__icon--hidden' : ''}`}
@@ -51,27 +61,33 @@ export default function HeaderSearch() {
       <form
         className={`detail-search__form${expanded ? ' detail-search__form--expanded' : ''}`}
         role="search"
-        aria-label="Movie search"
+        aria-label="Movie and person search"
         aria-hidden={!expanded}
         inert={!expanded}
         onSubmit={(event) => {
           event.preventDefault();
-          const query = inputRef.current?.value.trim();
-          if (query) navigate(`/search/${encodeURIComponent(query)}`);
+          if (autocomplete.query.trim()) autocomplete.submit();
         }}
       >
         <label className="visually-hidden" htmlFor={inputId}>
-          Movie title
+          Search movies and people
         </label>
         <input
           ref={inputRef}
           id={inputId}
           type="search"
-          placeholder="Search movies..."
+          placeholder="Search movies and people..."
           autoComplete="off"
-          onKeyDown={handleKeyDown}
+          value={autocomplete.query}
+          onChange={(event) => autocomplete.edit(event.target.value)}
+          {...autocomplete.inputProps}
+          onKeyDown={(event) => {
+            handleKeyDown(event);
+            autocomplete.onKeyDown(event);
+          }}
         />
       </form>
+      {expanded && <Suggestions autocomplete={autocomplete} />}
     </div>
   );
 }

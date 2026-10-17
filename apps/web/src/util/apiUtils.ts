@@ -6,6 +6,8 @@ import type {
   MovieSortOrder,
   MovieSuggestionsResponse,
   PersonDetails,
+  PersonListResponse,
+  SearchSuggestionsResponse,
 } from '@movie-explorer/contracts';
 import type { URLParams } from '../types';
 
@@ -150,6 +152,29 @@ export const getMovieSuggestions = async (
   const params = new URLSearchParams({ query, limit: '6' });
   return request<MovieSuggestionsResponse>(
     `${moviesUrl}/suggestions?${params.toString()}`,
+    signal ? { signal } : {}
+  );
+};
+
+export const getSearchSuggestions = (
+  query: string,
+  signal?: AbortSignal
+): Promise<SearchSuggestionsResponse> => {
+  const params = new URLSearchParams({ query, limit: '6' });
+  return request<SearchSuggestionsResponse>(
+    `${apiBaseUrl}/api/v1/search/suggestions?${params}`,
+    signal ? { signal } : {}
+  );
+};
+
+export const getPeople = (
+  query: string,
+  page = 1,
+  signal?: AbortSignal
+): Promise<PersonListResponse> => {
+  const params = new URLSearchParams({ query, page: String(page) });
+  return request<PersonListResponse>(
+    `${apiBaseUrl}/api/v1/persons?${params}`,
     signal ? { signal } : {}
   );
 };
