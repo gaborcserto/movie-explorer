@@ -9,7 +9,7 @@ function HomePage() {
     <>
       <Header />
       {movieId ? null : (
-        <main className="main">
+        <main className="main" tabIndex={-1}>
           <SearchResults />
         </main>
       )}

@@ -80,10 +80,20 @@ export function useSearchScroll() {
     const save = () => {
       if (history) remember(history.scroll, location.key, window.scrollY);
     };
+    if (saved === undefined) save();
     window.addEventListener('scroll', save, { passive: true });
+    // Capture departure before routing changes the document's height, including
+    // a position change whose scroll event has not been delivered yet.
+    document.addEventListener('click', save, true);
+    document.addEventListener('submit', save, true);
+    window.addEventListener('popstate', save, true);
     return () => {
-      save();
+      // The destination layout may already have clamped scrollY during unmount.
+      // Preserve the last scroll event recorded while this Search entry was active.
       window.removeEventListener('scroll', save);
+      document.removeEventListener('click', save, true);
+      document.removeEventListener('submit', save, true);
+      window.removeEventListener('popstate', save, true);
     };
   }, [history, location.key]);
 }

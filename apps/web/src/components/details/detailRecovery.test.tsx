@@ -102,6 +102,42 @@ test.each(['movie', 'person'] as const)(
   }
 );
 
+test.each(['movies', 'people'] as const)(
+  '%s initial Retry restores focus to Search results after success',
+  async (view) => {
+    const request =
+      view === 'movies' ? vi.mocked(getMovies) : vi.mocked(getPeople);
+    request.mockRejectedValueOnce(new ApiRequestError('network'));
+    let resolve!: () => void;
+    const ready = new Promise<void>((done) => {
+      resolve = done;
+    });
+    const page = { page: 1, totalPages: 0, totalResults: 0 };
+    if (view === 'movies')
+      vi.mocked(getMovies).mockImplementationOnce(async () => {
+        await ready;
+        return { ...page, movies: [] };
+      });
+    else
+      vi.mocked(getPeople).mockImplementationOnce(async () => {
+        await ready;
+        return { ...page, people: [] };
+      });
+    setup(`/search/Example${view === 'people' ? '?view=people' : ''}`);
+    await screen.findByRole('heading', { name: 'Connection problem' });
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    retry.focus();
+    fireEvent.click(retry);
+    expect(retry).toHaveFocus();
+    const status = screen.getByText('Loading...');
+    expect(status).toHaveTextContent('Loading...');
+    expect(status.closest('[role="alert"]')).toBeNull();
+    await act(async () => resolve());
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(screen.getByRole('main')).toHaveFocus();
+  }
+);
+
 test.each(['movie', 'person'] as const)(
   '%s direct entry uses Search instead of unknown previous history',
   async (kind) => {
@@ -121,6 +157,38 @@ test.each(['movie', 'person'] as const)(
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
     fireEvent.click(screen.getByRole('link', { name: 'Back to Search' }));
     expect(router.state.location.pathname).toBe('/search');
+  }
+);
+
+test.each(['movie', 'person'] as const)(
+  '%s return restores an unscrolled Search entry after scrolling details',
+  async (kind) => {
+    vi.mocked(getMovie).mockRejectedValue(new ApiRequestError('network'));
+    vi.mocked(getPerson).mockRejectedValue(new ApiRequestError('network'));
+    vi.mocked(getMovies).mockResolvedValue({
+      movies: [{ id: 42, title: 'Example', genres: [], posterUrl: '' }],
+      page: 1,
+      totalPages: 1,
+      totalResults: 1,
+    });
+    vi.mocked(getPeople).mockResolvedValue({
+      people: [{ id: 42, name: 'Example' }],
+      page: 1,
+      totalPages: 1,
+      totalResults: 1,
+    });
+    const scrollY = vi.spyOn(window, 'scrollY', 'get').mockReturnValue(0);
+    setup(`/search/Example${kind === 'person' ? '?view=people' : ''}`);
+    fireEvent.click(await screen.findByRole('link', { name: 'Example' }));
+    await screen.findByRole('heading', { name: 'Connection problem' });
+    scrollY.mockReturnValue(280);
+    fireEvent.scroll(window);
+    fireEvent.click(screen.getByRole('link', { name: 'Back to Search' }));
+    await screen.findByRole('link', { name: 'Example' });
+    expect(window.scrollTo).toHaveBeenLastCalledWith({
+      top: 0,
+      behavior: 'instant',
+    });
   }
 );
 
@@ -156,8 +224,11 @@ test.each(['movie', 'person'] as const)(
     fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
     expect(screen.getAllByRole('article')).toHaveLength(20);
     const origin = router.state.location;
-    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(640);
-    fireEvent.scroll(window);
+    const scrollY = vi.spyOn(window, 'scrollY', 'get').mockReturnValue(640);
+    // Depart before a scroll event; the destination then clamps the old position.
+    document.addEventListener('click', () => scrollY.mockReturnValue(280), {
+      once: true,
+    });
     fireEvent.click(screen.getByRole('link', { name: `${name} 1` }));
     await screen.findByRole('heading', { name: 'Connection problem' });
     fireEvent.click(screen.getByRole('link', { name: 'Back to Search' }));
