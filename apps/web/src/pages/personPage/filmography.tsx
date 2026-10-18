@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import type {
   PersonCrewCredit,
   PersonFilmographyEntry,
 } from '@movie-explorer/contracts';
-import Card from '../../components/card';
+import MovieImage from '../../components/utility/customImage';
+import { getPosterDisplaySrcSet } from '../../util/imageSizing';
 import './filmography.scss';
 
 type View = 'acting' | 'crew';
@@ -88,7 +89,7 @@ function FilmographyResults({
         {movies.length === 1 ? 'movie' : 'movies'}
       </p>
       {movies.length === 0 && <p>No movie credits available.</p>}
-      <div className="filmography__grid">
+      <ul className="filmography__list">
         {visibleMovies.map((movie) => {
           const roles =
             view === 'acting'
@@ -107,17 +108,56 @@ function FilmographyResults({
                         .join(' — ');
                     })
                 );
+          const metadataId = `filmography-metadata-${movie.id}`;
+          const content = (
+            <>
+              <div className="filmography__poster">
+                <MovieImage
+                  src={movie.posterUrl}
+                  srcSet={getPosterDisplaySrcSet(
+                    movie.posterUrl,
+                    movie.posterSrcSet
+                  )}
+                  sizes="48px"
+                  loading="lazy"
+                  alt=""
+                  className="filmography__image"
+                />
+              </div>
+              <span className="filmography__title">{movie.title}</span>
+              <div id={metadataId} className="filmography__metadata">
+                {movie.releaseDate && (
+                  <time
+                    className="filmography__year"
+                    dateTime={movie.releaseDate}
+                  >
+                    {movie.releaseDate.substring(0, 4)}
+                  </time>
+                )}
+                {roles.length > 0 && (
+                  <p className="filmography__role">{roles.join(' · ')}</p>
+                )}
+              </div>
+            </>
+          );
           return (
-            <Card
-              key={movie.id}
-              movie={movie}
-              destination={`/movie/${movie.id}`}
-              genreNavigation={false}
-              subtitle={roles.join(' · ')}
-            />
+            <li key={movie.id}>
+              {Number.isSafeInteger(movie.id) && movie.id > 0 ? (
+                <Link
+                  to={`/movie/${movie.id}`}
+                  className="filmography__row"
+                  aria-label={movie.title}
+                  aria-describedby={metadataId}
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div className="filmography__row">{content}</div>
+              )}
+            </li>
           );
         })}
-      </div>
+      </ul>
       {visibleCount < movies.length && (
         <div className="filmography__more">
           <button

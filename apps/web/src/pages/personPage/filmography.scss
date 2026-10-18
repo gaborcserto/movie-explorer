@@ -111,22 +111,182 @@
     }
   }
 
-  &__grid {
+  &__list {
+    list-style: none;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__row {
+    align-items: center;
+    border-bottom: 1px solid $grey-2;
+    border-radius: 4px;
+    color: $white;
+    gap: 4px 16px;
     display: grid;
-    gap: 36px 32px;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
-    isolation: isolate;
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    min-height: 96px;
+    padding: 12px;
+    position: relative;
+    text-decoration: none;
+    transform-origin: center top;
+    transition:
+      transform 0.24s ease,
+      filter 0.24s ease,
+      box-shadow 0.24s ease;
+
+    &:focus-within {
+      z-index: 2;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $red-1;
+      outline-offset: 4px;
+    }
+  }
+
+  &__poster {
+    aspect-ratio: 2 / 3;
+    background: rgb(0 0 0 / 0.25);
+    border-radius: 4px;
+    grid-column: 1;
+    grid-row: 1 / -1;
+    overflow: hidden;
+    transition: box-shadow 0.24s ease;
+    width: 48px;
+  }
+
+  &__image {
+    height: 100%;
+    width: 100%;
+
+    &__img {
+      height: 100%;
+      object-fit: cover;
+      width: 100%;
+    }
+  }
+
+  &__title {
+    align-self: end;
+    color: $white;
+    font-size: 18px;
+    grid-column: 2;
+    grid-row: 1;
+    line-height: 1.35;
+    opacity: 1;
+    overflow-wrap: anywhere;
+    text-decoration: none;
+    transition:
+      color 0.2s ease,
+      opacity 0.2s ease;
+  }
+
+  &__metadata {
+    display: contents;
+  }
+
+  &__year {
+    grid-column: 3;
+    grid-row: 1 / -1;
+  }
+
+  &__role {
+    align-self: start;
+    grid-column: 2;
+    grid-row: 2;
+    overflow-wrap: anywhere;
+  }
+
+  &__year,
+  &__role {
+    color: $white;
+    font-size: 14px;
+    line-height: 17px;
+    opacity: 0.5;
+    text-decoration: none;
+    transition:
+      color 0.2s ease,
+      opacity 0.2s ease;
+  }
+
+  a.filmography__row {
+    &:link,
+    &:visited,
+    &:hover,
+    &:active,
+    &:focus-visible {
+      text-decoration: none;
+    }
+
+    &:hover .filmography__title,
+    &:focus-visible .filmography__title {
+      color: $red-1;
+      opacity: 1;
+    }
+
+    &:hover .filmography__year,
+    &:hover .filmography__role,
+    &:focus-visible .filmography__year,
+    &:focus-visible .filmography__role {
+      opacity: 0.75;
+    }
+
+    &:focus-visible .filmography__poster {
+      box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        filter: saturate(1.2);
+        transform: scale(1.06);
+        z-index: 3;
+        box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
+      }
+
+      &:hover .filmography__poster {
+        box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
+      }
+    }
+  }
+
+  @media (width <= 480px) {
+    &__row {
+      column-gap: 12px;
+      grid-template-columns: 48px minmax(0, 1fr);
+      grid-template-rows: auto auto auto;
+      padding: 12px 4px;
+    }
+
+    &__year {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    &__role {
+      grid-row: 3;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__row,
+    &__poster,
+    &__title {
+      transition: none;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      a.filmography__row:hover {
+        transform: none;
+      }
+    }
   }
 
   &__more {
     display: flex;
     justify-content: center;
     padding-top: 36px;
-  }
-
-  @include media-size(lg-down) {
-    &__grid {
-      gap: 24px 20px;
-    }
   }
 }

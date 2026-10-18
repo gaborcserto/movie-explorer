@@ -1,4 +1,11 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import type {
@@ -168,7 +175,10 @@ test('renders missing posters, dates, characters and job information without fab
       crewCredits: [{}],
     }),
   ]);
-  expect(section().getByRole('img', { name: 'Movie 01' }).tagName).toBe('DIV');
+  expect(section().queryByRole('img')).toBeNull();
+  expect(
+    section().getByRole('link').querySelector('.image-placeholder')
+  ).toHaveAttribute('aria-hidden', 'true');
   expect(titles()).toEqual(['Movie 01']);
   expect(section().queryByText('2020')).toBeNull();
   await user.click(section().getByRole('button', { name: 'Crew' }));
@@ -485,7 +495,7 @@ test('movie navigation uses the existing route without person parameter leakage 
   const link = section().getByRole('link', { name: 'Movie 01' });
   expect(link).toHaveAttribute('href', '/movie/1');
   expect(section().queryByRole('link', { name: 'Drama' })).toBeNull();
-  expect(section().getByRole('img', { name: 'Movie 01' })).toHaveAttribute(
+  expect(link.querySelector('img')).toHaveAttribute(
     'srcset',
     '/small.jpg 1x, /large.jpg 2x'
   );
@@ -497,4 +507,41 @@ test('movie navigation uses the existing route without person parameter leakage 
   expect(fetchMock).toHaveBeenLastCalledWith('http://localhost:4000/movies/1', {
     signal: expect.any(AbortSignal),
   });
+});
+
+test('renders semantic compact rows with described year and role and lazy decorative posters', async () => {
+  await renderFilmography([movie(1)]);
+  expect(section().getAllByRole('listitem')).toHaveLength(1);
+  const link = section().getByRole('link', { name: 'Movie 01' });
+  expect(link).toHaveAccessibleDescription('2020 Hero');
+  expect(link.querySelector('time')).toHaveAttribute('datetime', '2020-01-01');
+  expect(link.querySelector('img')).toHaveAttribute('alt', '');
+  expect(link.querySelector('img')).toHaveAttribute('loading', 'lazy');
+  expect(link.querySelector('img')).toHaveAttribute('sizes', '48px');
+  expect(link.querySelector('a, button')).toBeNull();
+  fireEvent.error(link.querySelector('img')!);
+  expect(link.querySelector('.image-placeholder')).toHaveAttribute(
+    'aria-hidden',
+    'true'
+  );
+  expect(link).toHaveAccessibleName('Movie 01');
+});
+
+test('keyboard users can focus and activate a row through the existing movie route', async () => {
+  const user = userEvent.setup();
+  const router = await renderFilmography([movie(1)]);
+  section().getByRole('combobox', { name: 'Sort filmography' }).focus();
+  await user.tab();
+  expect(section().getByRole('link', { name: 'Movie 01' })).toHaveFocus();
+  fetchMock.mockResolvedValue(response({ ...movie(1), cast: [] }));
+  await user.keyboard('{Enter}');
+  await screen.findByRole('heading', { level: 1, name: 'Movie 01' });
+  expect(router.state.location.pathname).toBe('/movie/1');
+});
+
+test('retains a credit without linking to an unsupported destination', async () => {
+  await renderFilmography([movie(0)]);
+  expect(section().getByText('Movie 00')).toBeVisible();
+  expect(section().getAllByRole('listitem')).toHaveLength(1);
+  expect(section().queryByRole('link')).toBeNull();
 });
