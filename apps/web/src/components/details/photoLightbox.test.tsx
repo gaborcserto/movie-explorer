@@ -21,7 +21,7 @@ const movie: MovieDetails = {
 async function open() {
   const user = userEvent.setup();
   render(<DetailsLowerContent movieData={movie} />);
-  const thumbnail = screen.getByAltText('Movie still 1');
+  const thumbnail = screen.getByAltText('Movie backdrop 1');
   await user.click(thumbnail);
   const dialog = screen.getByRole('dialog');
   const image = within(dialog).getByRole('img', { hidden: true });

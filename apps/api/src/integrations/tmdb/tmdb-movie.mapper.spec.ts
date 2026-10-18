@@ -3,7 +3,129 @@ import { TmdbMovieMapper } from './tmdb-movie.mapper';
 const mapper = new TmdbMovieMapper('https://image.tmdb.org/t/p/w500');
 
 describe('TmdbMovieMapper', () => {
-  it('retains distinct characters for repeated person IDs before limiting cast', () => {
+  const metadataMovie = {
+    id: 1,
+    title: 'Movie',
+    genres: [],
+    overview: '',
+    poster_path: null,
+    runtime: null,
+    vote_average: 0,
+  };
+
+  it('maps original metadata and USD amounts without deriving values', () => {
+    expect(
+      mapper.toMovieDetails({
+        ...metadataMovie,
+        original_title: '千と千尋の神隠し — Original',
+        status: 'Released',
+        original_language: 'ja',
+        budget: 225000000,
+        revenue: 2512865567,
+      }),
+    ).toMatchObject({
+      originalTitle: '千と千尋の神隠し — Original',
+      status: 'Released',
+      originalLanguage: 'ja',
+      budget: 225000000,
+      revenue: 2512865567,
+    });
+  });
+
+  it.each([undefined, null, '', '100', -1, NaN, Infinity, {}])(
+    'omits malformed or absent optional metadata %p without failing primary details',
+    (value) => {
+      const result = mapper.toMovieDetails({
+        ...metadataMovie,
+        original_title: value,
+        status: value,
+        original_language: value,
+        budget: value,
+        revenue: value,
+      });
+      expect(result.title).toBe('Movie');
+      expect(result.budget).toBeUndefined();
+      expect(result.revenue).toBeUndefined();
+      if (typeof value !== 'string' || !value.trim()) {
+        expect(result.originalTitle).toBeUndefined();
+        expect(result.status).toBeUndefined();
+        expect(result.originalLanguage).toBeUndefined();
+      }
+    },
+  );
+
+  it('retains zero amounts as provider-supported unknown values', () => {
+    expect(
+      mapper.toMovieDetails({
+        ...metadataMovie,
+        budget: 0,
+        revenue: 0,
+        status: 'Unfamiliar status',
+      }),
+    ).toMatchObject({ budget: 0, revenue: 0, status: 'Unfamiliar status' });
+  });
+
+  it('maps reviewed writing and producing jobs explicitly, preserving distinctions and excluding unrelated department jobs', () => {
+    const result = mapper.toMovieDetails({
+      ...metadataMovie,
+      credits: {
+        cast: [],
+        crew: [
+          { id: 1, name: 'Source Author', department: 'Writing', job: 'Novel' },
+          { id: 2, name: 'Creator', department: 'Writing', job: 'Characters' },
+          { id: 2, name: 'Creator', department: 'Writing', job: 'Comic Book' },
+          { id: 2, name: 'Creator', department: 'Writing', job: 'Comic Book' },
+          { id: 3, name: 'Ambiguous', department: 'Writing', job: 'Other' },
+          { id: 4, name: 'Casting', department: 'Production', job: 'Casting' },
+          {
+            id: 5,
+            name: 'Manager',
+            department: 'Production',
+            job: 'Unit Production Manager',
+          },
+          {
+            id: 6,
+            name: 'Co Producer',
+            department: 'Production',
+            job: 'Co-Producer',
+          },
+          {
+            id: 6,
+            name: 'Co Producer',
+            department: 'Production',
+            job: 'Executive Producer',
+          },
+          {
+            id: 7,
+            name: 'Associate',
+            department: 'Production',
+            job: 'Associate Producer',
+          },
+          {
+            id: 8,
+            name: 'Assistant',
+            department: 'Directing',
+            job: 'First Assistant Director',
+          },
+        ],
+      },
+    });
+    expect(result.writers).toEqual([
+      { id: 1, name: 'Source Author', roles: ['Novel'] },
+      { id: 2, name: 'Creator', roles: ['Characters', 'Comic Book'] },
+    ]);
+    expect(result.producers).toEqual([
+      {
+        id: 6,
+        name: 'Co Producer',
+        roles: ['Co-Producer', 'Executive Producer'],
+      },
+      { id: 7, name: 'Associate', roles: ['Associate Producer'] },
+    ]);
+    expect(result.directors).toBeUndefined();
+  });
+
+  it('retains distinct characters for repeated person IDs across the complete cast', () => {
     const result = mapper.toMovieDetails({
       id: 1,
       title: 'Multiple roles',
@@ -27,18 +149,25 @@ describe('TmdbMovieMapper', () => {
         crew: [],
       },
     });
-    expect(result.castMembers).toHaveLength(6);
+    expect(result.castMembers).toHaveLength(8);
     expect(result.castMembers[0]).toMatchObject({
       id: 10,
       name: 'Actor',
       character: 'Hero / Narrator',
     });
     expect(result.castMembers.map((member) => member.id)).toEqual([
-      10, 20, 21, 22, 23, 24,
+      10,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      undefined,
     ]);
   });
 
-  it('preserves person identities and unknown cast roles, deduplicating before the cast limit', () => {
+  it('preserves person identities and unknown cast roles, deduplicating across the complete cast', () => {
     const result = mapper.toMovieDetails({
       id: 1,
       title: 'Credits',
@@ -85,8 +214,9 @@ describe('TmdbMovieMapper', () => {
       'Another',
       'Fifth',
       'Sixth',
+      'Seventh',
     ]);
-    expect(result.castMembers).toHaveLength(6);
+    expect(result.castMembers).toHaveLength(7);
     expect(result.castMembers[0]).toEqual({ id: 10, name: 'Same Name' });
     expect(result.castMembers[1]).toEqual({ id: 11, name: 'Same Name' });
     expect(result.castMembers[2]).toEqual({ name: 'No ID' });
@@ -109,7 +239,7 @@ describe('TmdbMovieMapper', () => {
     ]);
   });
 
-  it('maps writing jobs and exact producers, combining jobs only for valid shared identities', () => {
+  it('maps explicit writing and producing jobs, combining jobs only for valid shared identities', () => {
     const result = mapper.toMovieDetails({
       id: 1,
       title: 'Crew',
@@ -158,6 +288,7 @@ describe('TmdbMovieMapper', () => {
       { id: 3, name: 'Producer Two', roles: ['Producer'] },
       { name: 'Unknown Producer', roles: ['Producer'] },
       { name: 'Invalid Producer', roles: ['Producer'] },
+      { id: 4, name: 'Executive', roles: ['Executive Producer'] },
     ]);
     expect(result.directors).toEqual([{ id: 1, name: 'Shared' }]);
   });
@@ -216,7 +347,7 @@ describe('TmdbMovieMapper', () => {
     });
   });
 
-  it('maps directors and limits cast to the first six billed names', () => {
+  it('maps directors and the complete cast in billing order', () => {
     expect(
       mapper.toMovieDetails({
         id: 2,
@@ -253,6 +384,7 @@ describe('TmdbMovieMapper', () => {
         'Actor Four',
         'Actor Five',
         'Actor Six',
+        'Actor Seven',
       ],
       director: 'Director One, Director Two',
     });
@@ -273,8 +405,11 @@ describe('TmdbMovieMapper', () => {
       },
     });
 
-    expect(movie.photos).toEqual([
+    expect(movie.backdrops).toEqual([
       {
+        filePath: '/backdrop.jpg',
+        width: 1920,
+        height: 1080,
         thumbnailUrl: 'https://image.tmdb.org/t/p/w500/backdrop.jpg',
         fullUrl: 'https://image.tmdb.org/t/p/original/backdrop.jpg',
       },

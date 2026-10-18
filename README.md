@@ -12,7 +12,7 @@ Movie Explorer lets you search and browse movies, view details, and explore cast
 
 - Search movies and people with shared keyboard accessible autocomplete on Home and both detail headers.
 - Switch between shareable Movies and People results; filter and sort movies, and load ten more results at a time.
-- View movie details, cast, photos, and videos.
+- View movie details, cast, separate backdrops and posters, and videos.
 - Open high resolution photos in a lightbox with fullscreen, zoom, pan, and touch gestures.
 - Browse a responsive interface with lazy loaded thumbnails and responsive images.
 
@@ -96,8 +96,8 @@ Back to Search returns to the preceding search entry only when the app observed 
 
 The public response behavior is summarized below.
 
-Detail responses retain their existing data fields and add optional availability metadata:
-- Movie: `sections.credits`, `sections.photos`, `sections.videos`.
+Detail responses include optional availability metadata:
+- Movie: `sections.credits`, `sections.photos` (backdrops), `sections.posters`, `sections.videos`.
 - Person: `filmographyAvailability`.
 - Unified autocomplete: `groups.movie` and `groups.person`.
 
@@ -119,9 +119,25 @@ There are no recommendations or independent person photo sections.
 
 Manual recovery endpoints return only the mapped section:
 - `GET /movies/:id/credits`: cast and crew fields.
-- `GET /movies/:id/photos`: `{ photos: [...] }`.
+- `GET /movies/:id/photos`: `{ backdrops: [...] }` (the existing photo recovery route).
+- `GET /movies/:id/posters`: `{ posters: [...] }`.
 - `GET /movies/:id/videos`: `{ videos: [...] }`.
 - `GET /api/v1/persons/:id/filmography`: `{ filmography: [...] }`.
+
+Movie details expose complete `backdrops`, `posters`, and `videos` collections,
+with six backdrop previews, six portrait poster previews, and three video cards.
+Gallery buttons open the selected image category in the existing lightbox or
+expand video cards. Originals load only when opened; embeds are created only
+after selection and do not autoplay. Images preserve file paths, dimensions,
+aspect ratios and language; videos preserve identifiers, site, type and language.
+TMDB requests retain `TMDB_LANGUAGE` (default `en-US`) and explicitly include its
+language, English, and untagged media through `include_image_language` and
+`include_video_language`, both for appends and recovery. Other localized variants
+are intentionally excluded. YouTube uses the existing player, Vimeo opens an
+external link, and unknown video sites show an unavailable-playback message.
+Logos are not exposed. Movie image responses now use `backdrops` in place of
+`photos`; the frontend also accepts older responses using `photos`, including
+recovery responses.
 
 These endpoints validate IDs and preserve sanitized 429/502/504 behavior and safe
 Retry-After headers. Retry affects only the selected section, guards pending

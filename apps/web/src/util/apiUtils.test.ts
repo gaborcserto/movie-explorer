@@ -4,6 +4,7 @@ import type {
 } from '@movie-explorer/contracts';
 import {
   getMovie,
+  getMovieSection,
   getMovies,
   getMovieSuggestions,
   getSearchSuggestions,
@@ -43,6 +44,141 @@ const mockMoviesData: MovieListResponse = {
 
 const fetchMock = vi.fn();
 vi.stubGlobal('fetch', fetchMock);
+
+test('preserves movie metadata and full cast in the API contract', async () => {
+  const body = {
+    ...mockMovieData,
+    originalTitle: 'Original — Title',
+    status: 'Released',
+    originalLanguage: 'en',
+    budget: 225000000,
+    revenue: 2512865567,
+    castMembers: Array.from({ length: 25 }, (_, index) => ({
+      id: index + 1,
+      name: `Actor ${index}`,
+    })),
+  };
+  fetchMock.mockResolvedValueOnce(response(body));
+  await expect(getMovie(1234)).resolves.toEqual(body);
+});
+
+test.each([null, '100', -1, Infinity, {}])(
+  'ignores invalid optional financial metadata %j while preserving primary details',
+  async (amount) => {
+    fetchMock.mockResolvedValueOnce(
+      response({
+        ...mockMovieData,
+        budget: amount,
+        revenue: amount,
+        originalTitle: {},
+        originalLanguage: 123,
+        status: null,
+      })
+    );
+    const result = await getMovie(1234);
+    expect(result.title).toBe(mockMovieData.title);
+    expect(result.budget).toBeUndefined();
+    expect(result.revenue).toBeUndefined();
+    expect(result.originalTitle).toBeUndefined();
+    expect(result.originalLanguage).toBeUndefined();
+    expect(result.status).toBeUndefined();
+  }
+);
+
+test('accepts categorized media metadata and targets the poster recovery endpoint', async () => {
+  const image = {
+    thumbnailUrl: '/thumb.jpg',
+    fullUrl: '/full.jpg',
+    filePath: '/image.jpg',
+    width: 1000,
+    height: 1500,
+    aspectRatio: 0.667,
+    language: null,
+  };
+  const body = {
+    ...mockMovieData,
+    backdrops: [image],
+    posters: [image],
+    videos: [
+      {
+        id: 'id',
+        key: 'key',
+        site: 'YouTube',
+        type: 'Interview',
+        language: 'hu',
+        name: 'Interview',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      },
+    ],
+    sections: {
+      credits: { status: 'available' },
+      photos: { status: 'available' },
+      posters: { status: 'available' },
+      videos: { status: 'available' },
+    },
+  };
+  fetchMock
+    .mockResolvedValueOnce(response(body))
+    .mockResolvedValueOnce(response({ posters: [image] }));
+  await expect(getMovie(1234)).resolves.toEqual(body);
+  await expect(
+    getMovieSection(1234, 'posters', new AbortController().signal)
+  ).resolves.toEqual({
+    posters: [image],
+  });
+  expect(fetchMock).toHaveBeenLastCalledWith(
+    'http://localhost:4000/movies/1234/posters',
+    { signal: expect.any(AbortSignal) }
+  );
+});
+
+test.each([{ width: 'invalid' }, { language: 12 }, { aspectRatio: -1 }])(
+  'rejects invalid poster metadata at the API boundary: %j',
+  async (metadata) => {
+    fetchMock.mockResolvedValueOnce(
+      response({
+        posters: [
+          { thumbnailUrl: '/thumb.jpg', fullUrl: '/full.jpg', ...metadata },
+        ],
+      })
+    );
+    await expect(
+      getMovieSection(1234, 'posters', new AbortController().signal)
+    ).rejects.toMatchObject({
+      category: 'invalid-response',
+    });
+  }
+);
+
+test('unavailable posters clear stale media while preserving successful backdrops', async () => {
+  const image = { thumbnailUrl: '/thumb.jpg', fullUrl: '/full.jpg' };
+  fetchMock.mockResolvedValueOnce(
+    response({
+      ...mockMovieData,
+      backdrops: [image],
+      posters: [image],
+      videos: [],
+      sections: {
+        credits: { status: 'available' },
+        photos: { status: 'available' },
+        posters: { status: 'unavailable' },
+        videos: { status: 'available' },
+      },
+    })
+  );
+  await expect(getMovie(1234)).resolves.toMatchObject({
+    backdrops: [image],
+    posters: [],
+  });
+});
+
+test('normalizes legacy photo retry responses so recovered backdrops replace an unavailable collection', async () => {
+  const photos = [{ thumbnailUrl: '/thumb.jpg', fullUrl: '/full.jpg' }];
+  fetchMock.mockResolvedValueOnce(response({ photos }));
+  await expect(
+    getMovieSection(1234, 'photos', new AbortController().signal)
+  ).resolves.toMatchObject({ backdrops: photos });
+});
 
 describe('API functions', () => {
   it.each(['15', 'invalid', '0', '-1', '999999999', '1.5'])(

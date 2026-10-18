@@ -85,10 +85,10 @@ test('validates section recovery responses before rendering', async () => {
   await expect(
     getMovieSection(1, 'photos', new AbortController().signal)
   ).rejects.toMatchObject({ category: 'invalid-response' });
-  reply({ photos: [] });
+  reply({ backdrops: [] });
   await expect(
     getMovieSection(1, 'photos', new AbortController().signal)
-  ).resolves.toEqual({ photos: [] });
+  ).resolves.toEqual({ backdrops: [] });
 });
 
 test('validates autocomplete availability and suggestion discriminants', async () => {

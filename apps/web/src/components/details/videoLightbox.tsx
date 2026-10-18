@@ -145,8 +145,8 @@ export default function VideoLightbox({
         <iframe
           key={video.videoId}
           title={video.video.name || `${title} video`}
-          src={`https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&playsinline=1&rel=0`}
-          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          src={`https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=0&playsinline=1&rel=0`}
+          allow="encrypted-media; picture-in-picture; fullscreen"
           aria-describedby="video-keyboard-help"
           allowFullScreen
         />

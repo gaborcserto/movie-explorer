@@ -60,20 +60,39 @@ export function movieSection(value: unknown, section: string): boolean {
       ) &&
       (value.director === undefined || typeof value.director === 'string')
     );
-  const items = value[section];
+  const items =
+    section === 'photos' ? (value.backdrops ?? value.photos) : value[section];
   return (
     Array.isArray(items) &&
     items.every(
       (item: unknown) =>
         record(item) &&
-        (section === 'photos'
+        (section === 'photos' || section === 'posters'
           ? typeof item.fullUrl === 'string' &&
             typeof item.thumbnailUrl === 'string' &&
-            (item.alt === undefined || typeof item.alt === 'string')
+            (item.alt === undefined || typeof item.alt === 'string') &&
+            (item.filePath === undefined ||
+              typeof item.filePath === 'string') &&
+            ['width', 'height', 'aspectRatio'].every(
+              (key) =>
+                item[key] === undefined ||
+                (typeof item[key] === 'number' &&
+                  Number.isFinite(item[key]) &&
+                  item[key] > 0)
+            ) &&
+            (item.language === undefined ||
+              item.language === null ||
+              typeof item.language === 'string')
           : typeof item.name === 'string' &&
             typeof item.url === 'string' &&
             (item.thumbnailUrl === undefined ||
-              typeof item.thumbnailUrl === 'string'))
+              typeof item.thumbnailUrl === 'string') &&
+            ['id', 'key', 'site', 'type'].every(
+              (key) => item[key] === undefined || typeof item[key] === 'string'
+            ) &&
+            (item.language === undefined ||
+              item.language === null ||
+              typeof item.language === 'string'))
     )
   );
 }

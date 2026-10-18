@@ -183,6 +183,27 @@ export class MovieCastMemberDto
 }
 
 export class MovieDetails extends MovieSummary implements MovieDetailsContract {
+  @ApiPropertyOptional({ description: 'Original movie title' })
+  originalTitle?: string;
+
+  @ApiPropertyOptional({ description: 'Provider release status' })
+  status?: string;
+
+  @ApiPropertyOptional({ description: 'Original language code' })
+  originalLanguage?: string;
+
+  @ApiPropertyOptional({
+    description: 'Budget in USD; zero means unknown',
+    minimum: 0,
+  })
+  budget?: number;
+
+  @ApiPropertyOptional({
+    description: 'Revenue in USD; zero means unknown',
+    minimum: 0,
+  })
+  revenue?: number;
+
   @ApiPropertyOptional({ type: () => MovieSectionsDto })
   sections?: MovieDetailsContract['sections'];
 
@@ -190,7 +211,7 @@ export class MovieDetails extends MovieSummary implements MovieDetailsContract {
   posterPreviewUrl?: string;
 
   @ApiProperty({
-    description: 'Primary billed cast names',
+    description: 'Complete cast names in provider billing order',
     example: ['Emma Stone', 'Ryan Gosling'],
   })
   cast: string[];
@@ -236,9 +257,23 @@ export class MovieDetails extends MovieSummary implements MovieDetailsContract {
 
   @ApiPropertyOptional({
     type: () => [Object],
-    description: 'Movie still thumbnail and full-resolution image URLs',
+    description: 'Legacy backdrop collection; new responses use backdrops',
   })
   photos?: MoviePhoto[];
+
+  @ApiPropertyOptional({
+    type: () => [Object],
+    description:
+      'Complete backdrop collection with dimensions and language metadata',
+  })
+  backdrops?: MoviePhoto[];
+
+  @ApiPropertyOptional({
+    type: () => [Object],
+    description:
+      'Complete poster collection with dimensions and language metadata',
+  })
+  posters?: MoviePhoto[];
 
   @ApiPropertyOptional({
     type: () => [Object],

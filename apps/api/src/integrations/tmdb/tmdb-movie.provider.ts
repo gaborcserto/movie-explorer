@@ -160,7 +160,7 @@ export class TmdbMovieProvider implements MovieProvider {
   public async findOne(id: number): Promise<MovieDetails | undefined> {
     const movie = await this.detailRequest<TmdbMovieDetails>(`/movie/${id}`, {
       append_to_response: 'credits,images,videos',
-      include_image_language: `${this.config.language.split('-')[0]},null`,
+      ...this.mediaLanguages(),
     });
     if (!movie) return undefined;
     if (
@@ -194,15 +194,18 @@ export class TmdbMovieProvider implements MovieProvider {
     const sections: Record<MovieSection, SectionAvailability> = {
       credits: { status: 'unavailable' },
       photos: { status: 'unavailable' },
+      posters: { status: 'unavailable' },
       videos: { status: 'unavailable' },
     };
-    for (const section of ['credits', 'videos', 'photos'] as const) {
+    for (const section of ['credits', 'videos', 'photos', 'posters'] as const) {
       try {
         Object.assign(
           details,
           this.mapMovieSection(
             section,
-            section === 'photos' ? movie.images : movie[section],
+            section === 'photos' || section === 'posters'
+              ? movie.images
+              : movie[section],
           ),
         );
         sections[section] = { status: 'available' };
@@ -219,30 +222,63 @@ export class TmdbMovieProvider implements MovieProvider {
     value: unknown,
   ): MovieSectionResponse {
     const resource = detailRecord(value);
+    const imageKey = section === 'posters' ? 'posters' : 'backdrops';
+    const isImages = section === 'photos' || section === 'posters';
     if (
       !resource ||
       resource.success === false ||
       (section === 'credits'
         ? !Array.isArray(resource.cast) || !Array.isArray(resource.crew)
-        : !Array.isArray(
-            resource[section === 'photos' ? 'backdrops' : 'results'],
-          ))
+        : !Array.isArray(resource[isImages ? imageKey : 'results']))
     ) {
       throw new BadGatewayException('Movie section response was invalid');
     }
-    const validEntries = (key: string, fields: string[]) =>
+    const validEntries = (
+      key: string,
+      fields: string[],
+      metadata: (item: Record<string, unknown>) => boolean = () => true,
+    ) =>
       Array.isArray(resource[key]) &&
       resource[key].every((entry: unknown) => {
         const item = detailRecord(entry);
-        return item && fields.every((field) => typeof item[field] === 'string');
+        return (
+          item &&
+          fields.every((field) => typeof item[field] === 'string') &&
+          metadata(item)
+        );
       });
     if (
       section === 'credits'
         ? !validEntries('cast', ['name']) ||
           !validEntries('crew', ['name', 'job'])
-        : section === 'photos'
-          ? !validEntries('backdrops', ['file_path'])
-          : !validEntries('results', ['name', 'key', 'site'])
+        : isImages
+          ? !validEntries(imageKey, ['file_path'], (image) => {
+              return (
+                typeof image.file_path === 'string' &&
+                image.file_path.startsWith('/') &&
+                ['width', 'height', 'aspect_ratio'].every(
+                  (key) =>
+                    image[key] === undefined ||
+                    (typeof image[key] === 'number' &&
+                      Number.isFinite(image[key]) &&
+                      image[key] > 0),
+                ) &&
+                (image.iso_639_1 === undefined ||
+                  image.iso_639_1 === null ||
+                  typeof image.iso_639_1 === 'string')
+              );
+            })
+          : !validEntries('results', ['name', 'key', 'site'], (video) => {
+              return (
+                ['id', 'type'].every(
+                  (key) =>
+                    video[key] === undefined || typeof video[key] === 'string',
+                ) &&
+                (video.iso_639_1 === undefined ||
+                  video.iso_639_1 === null ||
+                  typeof video.iso_639_1 === 'string')
+              );
+            })
     ) {
       throw new BadGatewayException('Movie section response was invalid');
     }
@@ -258,12 +294,15 @@ export class TmdbMovieProvider implements MovieProvider {
     // Mapping errors are isolated to their section, including malformed entries.
     if (section === 'credits')
       movie.credits = value as TmdbMovieDetails['credits'];
-    if (section === 'photos')
-      movie.images = value as TmdbMovieDetails['images'];
+    if (isImages)
+      movie.images = {
+        [imageKey]: resource[imageKey],
+      } as TmdbMovieDetails['images'];
     if (section === 'videos')
       movie.videos = value as TmdbMovieDetails['videos'];
     const mapped = this.mapper.toMovieDetails(movie);
-    if (section === 'photos') return { photos: mapped.photos ?? [] };
+    if (section === 'photos') return { backdrops: mapped.backdrops ?? [] };
+    if (section === 'posters') return { posters: mapped.posters ?? [] };
     if (section === 'videos') return { videos: mapped.videos ?? [] };
     return {
       cast: mapped.cast,
@@ -279,14 +318,11 @@ export class TmdbMovieProvider implements MovieProvider {
     id: number,
     section: MovieSection,
   ): Promise<MovieSectionResponse> {
-    const source = section === 'photos' ? 'images' : section;
+    const source =
+      section === 'photos' || section === 'posters' ? 'images' : section;
     const value = await this.request<unknown>(
       `/movie/${id}/${source}`,
-      section === 'photos'
-        ? {
-            include_image_language: `${this.config.language.split('-')[0]},null`,
-          }
-        : {},
+      source === 'images' || section === 'videos' ? this.mediaLanguages() : {},
       true,
     );
     try {
@@ -295,6 +331,17 @@ export class TmdbMovieProvider implements MovieProvider {
       this.logFailure(`movie-${section}`, 'invalid-response', 502, 200);
       throw new BadGatewayException('Movie section response was invalid');
     }
+  }
+
+  private mediaLanguages(): Record<string, string> {
+    // Appended and standalone requests use the same explicit fallback union.
+    const languages = [
+      ...new Set([this.config.language.split('-')[0], 'en', 'null']),
+    ].join(',');
+    return {
+      include_image_language: languages,
+      include_video_language: languages,
+    };
   }
 
   public async findPerson(id: number): Promise<PersonDetails | undefined> {

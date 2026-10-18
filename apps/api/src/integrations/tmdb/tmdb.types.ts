@@ -26,6 +26,11 @@ export interface TmdbGenreListResponse {
 }
 
 export interface TmdbMovieDetails {
+  original_title?: unknown;
+  status?: unknown;
+  original_language?: unknown;
+  budget?: unknown;
+  revenue?: unknown;
   credits?: TmdbCredits;
   images?: TmdbImages;
   videos?: TmdbVideos;
@@ -54,6 +59,7 @@ export interface TmdbCastMember {
 }
 
 export interface TmdbCrewMember {
+  department?: string;
   id?: number;
   profile_path?: string | null;
   job: string;
@@ -74,13 +80,17 @@ export interface TmdbPersonDetails {
 }
 
 export interface TmdbImages {
-  backdrops: TmdbImage[];
+  backdrops?: TmdbImage[];
+  posters?: TmdbImage[];
+  logos?: TmdbImage[];
 }
 
 export interface TmdbImage {
   file_path: string;
   width: number;
   height: number;
+  aspect_ratio?: number;
+  iso_639_1?: string | null;
 }
 
 export interface TmdbVideos {
@@ -88,6 +98,8 @@ export interface TmdbVideos {
 }
 
 export interface TmdbVideo {
+  id?: string;
+  iso_639_1?: string | null;
   key: string;
   name: string;
   site: string;

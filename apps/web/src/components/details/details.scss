@@ -150,17 +150,50 @@
 
   &__credits dd {
     color: rgb(255 255 255 / 0.65);
+    font-size: 15px;
   }
 
   &__credits {
     display: grid;
-    gap: 16px;
+    gap: 12px 20px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+
+    > div:first-child {
+      grid-column: 1 / -1;
+    }
 
     dt {
       font-size: 13px;
       font-weight: 500;
       padding-bottom: 3px;
       text-transform: uppercase;
+    }
+  }
+
+  &__information {
+    padding-top: 20px;
+  }
+
+  &__metadata {
+    display: grid;
+    gap: 10px 20px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+    font-size: 14px;
+    line-height: 1.4;
+
+    > div:first-child {
+      grid-column: 1 / -1;
+    }
+
+    dt {
+      color: rgb(255 255 255 / 0.55);
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+
+    dd {
+      color: rgb(255 255 255 / 0.85);
+      overflow-wrap: anywhere;
     }
   }
 

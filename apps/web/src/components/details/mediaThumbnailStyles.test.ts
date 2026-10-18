@@ -88,28 +88,51 @@ test('preserves thumbnail aspect ratios and disables scaling for reduced motion'
   });
 });
 
-test.each(['.photo-grid', '.video-grid'])(
-  'adds breathing room while preserving responsive columns for %s',
-  (gridSelector) => {
-    expect(declarations(gridSelector)).toMatchObject({
-      gap: '20px 24px',
-      'grid-template-columns':
-        'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
-    });
-    expect(
-      declarationsForMedia(gridSelector, '(max-width: 767.98px)')
-    ).toMatchObject({
-      gap: '16px',
-      'grid-template-columns': 'repeat(2, minmax(0, 1fr))',
-    });
-    expect(
-      declarationsForMedia(gridSelector, '(width <= 359px)')
-    ).toMatchObject({
-      gap: '16px',
-      'grid-template-columns': 'minmax(0, 1fr)',
-    });
-  }
-);
+test('uses six backdrop, ten portrait and four video columns on desktop', () => {
+  expect(declarations('.photo-grid:not(.photo-grid--portraits)')).toMatchObject(
+    {
+      'grid-template-columns': 'repeat(6, minmax(0, 1fr))',
+    }
+  );
+  expect(declarations('.photo-grid--portraits')).toMatchObject({
+    'grid-template-columns': 'repeat(10, minmax(0, 1fr))',
+  });
+  expect(declarations('.video-grid')).toMatchObject({
+    'grid-template-columns': 'repeat(4, minmax(0, 1fr))',
+  });
+  expect(declarations('.photo-grid')).toMatchObject({ gap: '12px' });
+});
+
+test('reduces media columns at tablet and mobile widths', () => {
+  expect(
+    declarationsForMedia(
+      '.photo-grid:not(.photo-grid--portraits)',
+      '(max-width: 991.98px)'
+    )['grid-template-columns']
+  ).toBe('repeat(3, minmax(0, 1fr))');
+  expect(
+    declarationsForMedia('.photo-grid--portraits', '(max-width: 991.98px)')[
+      'grid-template-columns'
+    ]
+  ).toBe('repeat(5, minmax(0, 1fr))');
+  expect(
+    declarationsForMedia('.video-grid', '(max-width: 991.98px)')[
+      'grid-template-columns'
+    ]
+  ).toBe('repeat(2, minmax(0, 1fr))');
+  expect(
+    declarationsForMedia('.photo-grid', '(max-width: 767.98px)')
+  ).toMatchObject({
+    gap: '12px',
+    'grid-template-columns': 'repeat(2, minmax(0, 1fr))',
+  });
+  expect(
+    declarationsForMedia(
+      '.photo-grid:not(.photo-grid--portraits)',
+      '(max-width: 767.98px)'
+    )['grid-template-columns']
+  ).toBe('repeat(2, minmax(0, 1fr))');
+});
 
 test('reserves thumbnail space for loaded, missing, and failed images', () => {
   expect(declarations('.media-thumbnail')).toMatchObject({

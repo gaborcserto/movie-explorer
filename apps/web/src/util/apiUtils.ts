@@ -134,9 +134,20 @@ export const getMovie = async (
     signal ? { signal } : {}
   );
   if (!record(body)) throw new ApiRequestError('invalid-response');
+  // Optional metadata must not turn an otherwise usable movie into an error.
+  (['originalTitle', 'status', 'originalLanguage'] as const).forEach((key) => {
+    if (typeof body[key] !== 'string') delete body[key];
+  });
+  (['budget', 'revenue'] as const).forEach((key) => {
+    const value = body[key];
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0)
+      delete body[key];
+  });
   if (body.sections !== undefined) {
     if (
       !availabilityMap(body.sections, ['credits', 'videos', 'photos']) ||
+      (body.sections.posters !== undefined &&
+        !availability(body.sections.posters)) ||
       body.id !== id ||
       typeof body.title !== 'string' ||
       !Array.isArray(body.genres) ||
@@ -157,7 +168,8 @@ export const getMovie = async (
     )
       throw new ApiRequestError('invalid-response');
     const { sections } = body;
-    (['credits', 'videos', 'photos'] as const).forEach((section) => {
+    (['credits', 'videos', 'photos', 'posters'] as const).forEach((section) => {
+      if (!sections[section]) return;
       if (
         sections[section].status === 'available' &&
         !movieSection(body, section)
@@ -171,6 +183,9 @@ export const getMovie = async (
           body.directors = [];
           body.writers = [];
           body.producers = [];
+        } else if (section === 'photos') {
+          body.backdrops = [];
+          body.photos = [];
         } else body[section] = [];
       }
     });
@@ -228,6 +243,9 @@ export const getMovieSection = async (
   );
   if (!movieSection(body, section))
     throw new ApiRequestError('invalid-response');
+  if (section === 'photos' && body.backdrops === undefined && body.photos) {
+    body.backdrops = body.photos;
+  }
   return body;
 };
 

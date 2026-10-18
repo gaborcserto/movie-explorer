@@ -69,6 +69,7 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
           ...previous,
           ...result,
           sections: {
+            ...previous.sections,
             credits: previous.sections?.credits ?? { status: 'available' },
             videos: previous.sections?.videos ?? { status: 'available' },
             photos: previous.sections?.photos ?? { status: 'available' },

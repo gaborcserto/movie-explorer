@@ -15,8 +15,13 @@ const movie = {
   poster_path: null,
   vote_average: 0,
   runtime: null,
+  original_title: 'Original movie',
+  status: 'Released',
+  original_language: 'en',
+  budget: 1000000,
+  revenue: 0,
   credits: { cast: [{ id: 2, name: 'Actor', order: 0 }], crew: [] },
-  images: { backdrops: [{ file_path: '/still.jpg' }] },
+  images: { backdrops: [{ file_path: '/still.jpg' }], posters: [] },
   videos: { results: [{ name: 'Trailer', site: 'YouTube', key: 'key' }] },
 };
 
@@ -50,12 +55,17 @@ describe('partial detail recovery', () => {
       const key = section === 'images' ? 'photos' : section;
       expect(result).toMatchObject({
         title: 'Primary movie',
+        originalTitle: 'Original movie',
+        status: 'Released',
+        originalLanguage: 'en',
+        budget: 1000000,
+        revenue: 0,
         description: 'Overview',
         sections: { [key]: { status: 'unavailable' } },
       });
       if (section !== 'credits') expect(result?.cast).toEqual(['Actor']);
       if (section !== 'images')
-        expect(result?.photos?.[0].fullUrl).toBe(
+        expect(result?.backdrops?.[0].fullUrl).toBe(
           'https://example.com/original/still.jpg',
         );
       if (section !== 'videos')
@@ -131,7 +141,13 @@ describe('partial detail recovery', () => {
       const source = section === 'photos' ? 'images' : section;
       fetchMock.mockResolvedValue(Response.json(movie[source]));
       const result = await provider.findMovieSection(1, section);
-      expect(result).toHaveProperty(section === 'credits' ? 'cast' : section);
+      expect(result).toHaveProperty(
+        section === 'credits'
+          ? 'cast'
+          : section === 'photos'
+            ? 'backdrops'
+            : section,
+      );
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock.mock.calls[0][0].pathname).toBe(`/movie/1/${source}`);
     },

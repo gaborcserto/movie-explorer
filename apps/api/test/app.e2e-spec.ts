@@ -152,13 +152,13 @@ describe('AppController (e2e)', () => {
     },
   );
 
-  it.each(['credits', 'photos', 'videos'] as const)(
+  it.each(['credits', 'photos', 'posters', 'videos'] as const)(
     'serves localized movie %s recovery and validates IDs',
     async (section) => {
       const body =
         section === 'credits'
           ? { cast: ['Recovered actor'] }
-          : { [section]: [] };
+          : { [section === 'photos' ? 'backdrops' : section]: [] };
       movieProvider.findMovieSection.mockResolvedValueOnce(body);
       await request(app.getHttpServer())
         .get(`/movies/42/${section}`)
@@ -183,6 +183,49 @@ describe('AppController (e2e)', () => {
     await request(app.getHttpServer())
       .get('/api/v1/persons/0/filmography')
       .expect(400);
+  });
+
+  it('returns categorized media and metadata without truncating public contracts', async () => {
+    const image = {
+      filePath: '/image.jpg',
+      width: 1000,
+      height: 1500,
+      aspectRatio: 0.667,
+      language: null,
+      thumbnailUrl: 'https://example.com/w500/image.jpg',
+      fullUrl: 'https://example.com/original/image.jpg',
+    };
+    const movie = {
+      ...movies[0],
+      cast: [],
+      backdrops: [image],
+      posters: Array.from({ length: 9 }, (_, i) => ({
+        ...image,
+        filePath: `/poster-${i}.jpg`,
+      })),
+      videos: [
+        {
+          id: 'video-id',
+          key: 'dQw4w9WgXcQ',
+          site: 'YouTube',
+          type: 'Teaser',
+          language: 'hu',
+          name: 'Official teaser',
+          url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        },
+      ],
+      sections: {
+        credits: { status: 'available' as const },
+        photos: { status: 'available' as const },
+        posters: { status: 'available' as const },
+        videos: { status: 'available' as const },
+      },
+    };
+    movieProvider.findOne.mockResolvedValueOnce(movie);
+    await request(app.getHttpServer())
+      .get('/movies/269149')
+      .expect(200)
+      .expect(movie);
   });
 
   it('returns successful HTTP responses with explicit unavailable sections', async () => {
@@ -423,6 +466,11 @@ describe('AppController (e2e)', () => {
     });
     expect(schemas.MovieDetails).toMatchObject({
       properties: {
+        originalTitle: { type: 'string' },
+        status: { type: 'string' },
+        originalLanguage: { type: 'string' },
+        budget: { type: 'number', minimum: 0 },
+        revenue: { type: 'number', minimum: 0 },
         castMembers: {
           type: 'array',
           items: { $ref: '#/components/schemas/MovieCastMemberDto' },
@@ -473,6 +521,31 @@ describe('AppController (e2e)', () => {
           cast: expect.any(Array),
         });
       });
+  });
+
+  it('returns metadata and the complete cast contract without truncation', async () => {
+    const castMembers = Array.from({ length: 25 }, (_, index) => ({
+      id: index + 1,
+      name: `Actor ${index}`,
+      character: `Character ${index}`,
+    }));
+    const details = {
+      ...movies[0],
+      originalTitle: 'Original — Title',
+      status: 'Released',
+      originalLanguage: 'en',
+      budget: 225000000,
+      revenue: 2512865567,
+      cast: castMembers.map((person) => person.name),
+      castMembers,
+      writers: [{ id: 40, name: 'Writer', roles: ['Screenplay', 'Story'] }],
+      producers: [{ id: 41, name: 'Producer', roles: ['Executive Producer'] }],
+    };
+    movieProvider.findOne.mockResolvedValueOnce(details);
+    await request(app.getHttpServer())
+      .get(`/movies/${details.id}`)
+      .expect(200)
+      .expect(details);
   });
 
   it('/movies (GET) supports search, filters, and pagination parameters', () => {

@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type {
   MovieCastMember,
@@ -8,11 +8,12 @@ import type {
   MovieVideo,
 } from '@movie-explorer/contracts';
 import SectionRecovery from './sectionRecovery';
-import PhotoLightbox from './photoLightbox';
+import PhotoPreview from './photoPreview';
 import VideoLightbox from './videoLightbox';
 import HeroImage from './heroImage';
+import MovieMetadata from './movieMetadata';
+import CastPreview from './castPreview';
 import MovieImage from '../utility/customImage';
-import { getDisplaySrcSet } from '../../util/imageSizing';
 import './media.scss';
 
 interface DetailsProps {
@@ -37,48 +38,43 @@ function hasPersonId(id: number | undefined): id is number {
 }
 
 function getPersonCredits(movie: MovieDetails) {
-  const peopleById = new Map<number, PersonCredit>();
-  const directors: PersonCredit[] = [];
-  const writers: PersonCredit[] = [];
-  const producers: PersonCredit[] = [];
-  const cast: PersonCredit[] = [];
-  const addCredit = (person: MovieDirector, key: string, role?: string) => {
-    let credit = hasPersonId(person.id) ? peopleById.get(person.id) : undefined;
-    if (!credit) {
-      credit = { ...person, name: person.name.trim(), key, roles: [] };
-      if (hasPersonId(person.id)) {
-        credit.key = `person-${person.id}`;
-        peopleById.set(person.id, credit);
-      }
-    }
-    credit.profileUrl ||= person.profileUrl;
-    credit.profileSrcSet ||= person.profileSrcSet;
-    const label = role?.trim();
-    if (label && !credit.roles.includes(label)) credit.roles.push(label);
-    return credit;
-  };
-  (movie.directors ?? []).forEach((person, index) => {
-    if (!person.name.trim()) return;
-    const credit = addCredit(person, `director-${index}`, 'Director');
-    if (!directors.includes(credit)) directors.push(credit);
-  });
-  const addCrew = (
-    members: MovieDetails['writers'],
-    category: string,
-    target: PersonCredit[]
-  ) => {
-    (members ?? []).forEach((person, index) => {
+  const groupPeople = (
+    members: (MovieDirector & { roles?: string[] })[],
+    category: string
+  ): PersonCredit[] => {
+    const byId = new Map<number, PersonCredit>();
+    const unlinkedByName = new Map<string, PersonCredit>();
+    const people: PersonCredit[] = [];
+    members.forEach((person, index) => {
       if (!person.name.trim()) return;
-      const credit = addCredit(person, `${category}-${index}`);
-      person.roles.forEach((role) => {
+      let credit = hasPersonId(person.id) ? byId.get(person.id) : undefined;
+      if (!hasPersonId(person.id) && category !== 'cast')
+        credit = unlinkedByName.get(person.name.trim());
+      if (!credit) {
+        credit = {
+          ...person,
+          name: person.name.trim(),
+          key: hasPersonId(person.id)
+            ? `person-${person.id}`
+            : `${category}-${index}`,
+          roles: [],
+        };
+        people.push(credit);
+        if (hasPersonId(person.id)) byId.set(person.id, credit);
+        else if (category !== 'cast') unlinkedByName.set(credit.name, credit);
+      }
+      credit.profileUrl ||= person.profileUrl;
+      credit.profileSrcSet ||= person.profileSrcSet;
+      (person.roles ?? []).forEach((role) => {
         const label = role.trim();
         if (label && !credit.roles.includes(label)) credit.roles.push(label);
       });
-      if (!target.includes(credit)) target.push(credit);
     });
+    return people;
   };
-  addCrew(movie.writers, 'writer', writers);
-  addCrew(movie.producers, 'producer', producers);
+  const directors = groupPeople(movie.directors ?? [], 'director');
+  const writers = groupPeople(movie.writers ?? [], 'writer');
+  const producers = groupPeople(movie.producers ?? [], 'producer');
   const structuredCast = (movie.castMembers ?? []).filter((person) =>
     person.name.trim()
   );
@@ -93,32 +89,24 @@ function getPersonCredits(movie: MovieDetails) {
     ...structuredCast,
     ...legacyNames.map((name) => ({ name })),
   ];
-  castMembers.forEach((person, index) => {
-    if (!person.name.trim()) return;
-    const credit = addCredit(person, `cast-${index}`, person.character);
-    if (!cast.includes(credit)) cast.push(credit);
-  });
+  const cast = groupPeople(
+    castMembers.map((person) => ({
+      ...person,
+      roles: person.character ? [person.character] : [],
+    })),
+    'cast'
+  );
   return {
     directors,
     writers,
     producers,
     cast,
-    cards: [
-      ...new Set([...cast.slice(0, 6), ...directors, ...writers, ...producers]),
-    ],
   };
 }
 
-function CreditNames({
-  people,
-  separator = ' · ',
-}: {
-  people: PersonCredit[];
-  separator?: string;
-}) {
-  return people.map((person, index) => (
+function CreditNames({ people }: { people: PersonCredit[] }) {
+  return people.map((person) => (
     <Fragment key={person.key}>
-      {index > 0 && separator}
       {hasPersonId(person.id) ? (
         <Link to={`/person/${person.id}`} className="person-credit-link">
           {person.name}
@@ -128,6 +116,29 @@ function CreditNames({
       )}
     </Fragment>
   ));
+}
+
+function CrewGroup({
+  label,
+  people,
+}: {
+  label: string;
+  people: PersonCredit[];
+}) {
+  const headingId = `crew-${label.toLowerCase()}-heading`;
+  const groupClass = `crew-group crew-group--${label.toLowerCase()}`;
+  return (
+    <section className={groupClass} aria-labelledby={headingId}>
+      <h3 id={headingId}>{label}</h3>
+      <ul className="crew-group__people">
+        {people.map((person) => (
+          <li key={person.key}>
+            <CreditNames people={[person]} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 type SupportedVideo = { video: MovieVideo; videoId: string };
@@ -176,13 +187,10 @@ export function DetailsHero({ movieData }: DetailsProps) {
     rating,
     runtimeMinutes,
     description,
-    director,
   } = movieData;
   const releaseYear = releaseDate ? /^\d{4}/.exec(releaseDate)?.[0] : undefined;
   const genresData = genres.map((genre) => genre.trim()).filter(Boolean);
   const overview = description?.trim();
-  const directorName = director?.trim();
-  const { directors, writers, producers, cast } = getPersonCredits(movieData);
   const hasRuntime =
     runtimeMinutes !== undefined &&
     Number.isFinite(runtimeMinutes) &&
@@ -228,53 +236,7 @@ export function DetailsHero({ movieData }: DetailsProps) {
             <p className="movie-details__overview">{overview}</p>
           </section>
         )}
-        {(directors.length > 0 ||
-          directorName ||
-          writers.length > 0 ||
-          producers.length > 0 ||
-          cast.length > 0) && (
-          <section className="movie-details__section">
-            <h2 className="movie-details__section-title">Credits</h2>
-            <dl className="movie-details__credits">
-              {cast.length > 0 && (
-                <div>
-                  <dt>Cast</dt>
-                  <dd>
-                    <CreditNames people={cast} />
-                  </dd>
-                </div>
-              )}
-              {(directors.length > 0 || directorName) && (
-                <div>
-                  <dt>Director</dt>
-                  <dd>
-                    {directors.length > 0 ? (
-                      <CreditNames people={directors} separator=", " />
-                    ) : (
-                      directorName
-                    )}
-                  </dd>
-                </div>
-              )}
-              {writers.length > 0 && (
-                <div>
-                  <dt>Writer</dt>
-                  <dd>
-                    <CreditNames people={writers} separator=", " />
-                  </dd>
-                </div>
-              )}
-              {producers.length > 0 && (
-                <div>
-                  <dt>Producer</dt>
-                  <dd>
-                    <CreditNames people={producers} separator=", " />
-                  </dd>
-                </div>
-              )}
-            </dl>
-          </section>
-        )}
+        <MovieMetadata movie={movieData} />
       </div>
     </div>
   );
@@ -284,75 +246,103 @@ export function DetailsLowerContent({
   movieData,
   recoverSection,
 }: LowerDetailsProps) {
-  const { title, photos = [], videos = [] } = movieData;
-  const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
+  const {
+    title,
+    photos = [],
+    backdrops = photos,
+    posters = [],
+    videos = [],
+  } = movieData;
+  const [visibleVideoCount, setVisibleVideoCount] = useState(4);
   const [selectedVideo, setSelectedVideo] = useState<number | null>(null);
-  const { cards } = getPersonCredits(movieData);
-  const visiblePhotos = photos.filter((photo) => photo.fullUrl?.trim());
+  const lastVideoRef = useRef<HTMLElement>(null);
+  const focusLastVideo = useRef(false);
+  const rememberLastVideo = (element: HTMLElement | null) => {
+    lastVideoRef.current = element;
+  };
+  useEffect(() => {
+    setVisibleVideoCount(4);
+    setSelectedVideo(null);
+    focusLastVideo.current = false;
+  }, [movieData.id]);
+  useEffect(() => {
+    if (!focusLastVideo.current) return;
+    focusLastVideo.current = false;
+    lastVideoRef.current?.focus({ preventScroll: true });
+  }, [visibleVideoCount]);
+  const { cast, directors, writers, producers } = getPersonCredits(movieData);
+  const crewGroups = [
+    { label: 'Directors', people: directors },
+    { label: 'Writers', people: writers },
+    { label: 'Producers', people: producers },
+  ].filter((group) => group.people.length > 0);
+  const showCastSection = cast.length > 0 || Boolean(movieData.sections);
+  const showCrewSection =
+    crewGroups.length > 0 || movieData.sections?.credits.status === 'available';
+  const visiblePhotos = backdrops.filter((photo) => photo.fullUrl?.trim());
   const videoEntries = videos.map((video) => ({
     video,
     videoId: getYouTubeVideoId(video.url),
   }));
   const supportedVideos = videoEntries.filter(isSupportedVideo);
+  const lastVisibleVideoIndex =
+    Math.min(visibleVideoCount, videoEntries.length) - 1;
 
   return (
     <div className="movie-details__lower">
       <div className="container movie-details__lower-content">
-        {(cards.length > 0 || movieData.sections) && (
-          <section className="details-section" aria-labelledby="cast-heading">
-            <div className="details-section__heading">
-              <h2 id="cast-heading">Cast &amp; Crew</h2>
-            </div>
-            <SectionRecovery
-              label="Credits"
-              availability={movieData.sections?.credits}
-              recover={(signal) =>
-                recoverSection
-                  ? recoverSection('credits', signal)
-                  : Promise.reject(new Error('Recovery unavailable'))
-              }
-            />
-            {movieData.sections?.credits.status === 'available' &&
-              cards.length === 0 && <p>No cast or crew available.</p>}
-            <div className="cast-grid">
-              {cards.map((member) => {
-                const content = (
-                  <>
-                    <MovieImage
-                      src={member.profileUrl}
-                      srcSet={getDisplaySrcSet(member.profileSrcSet)}
-                      alt={member.name}
-                      className="cast-member__image"
-                    />
-                    <div>
-                      <h3>{member.name}</h3>
-                      {member.roles.length > 0 && (
-                        <p>{member.roles.join(' · ')}</p>
-                      )}
-                    </div>
-                  </>
-                );
-                return (
-                  <article className="cast-member" key={member.key}>
-                    {hasPersonId(member.id) ? (
-                      <Link
-                        to={`/person/${member.id}`}
-                        className="cast-member__link"
-                        aria-label={member.name}
-                      >
-                        {content}
-                      </Link>
-                    ) : (
-                      content
-                    )}
-                  </article>
-                );
-              })}
-            </div>
-          </section>
+        {(showCastSection || showCrewSection) && (
+          <div
+            className={`cast-crew-layout${
+              showCastSection !== showCrewSection
+                ? ' cast-crew-layout--single'
+                : ''
+            }`}
+          >
+            {showCastSection && (
+              <section
+                className="details-section"
+                aria-labelledby="cast-heading"
+              >
+                <div className="details-section__heading">
+                  <h2 id="cast-heading">Cast</h2>
+                </div>
+                <SectionRecovery
+                  label="Credits"
+                  availability={movieData.sections?.credits}
+                  recover={(signal) =>
+                    recoverSection
+                      ? recoverSection('credits', signal)
+                      : Promise.reject(new Error('Recovery unavailable'))
+                  }
+                />
+                {movieData.sections?.credits.status === 'available' &&
+                  cast.length === 0 && <p>No cast available.</p>}
+                <CastPreview key={movieData.id} members={cast} />
+              </section>
+            )}
+
+            {showCrewSection && (
+              <section
+                className="details-section"
+                aria-labelledby="crew-heading"
+              >
+                <div className="details-section__heading">
+                  <h2 id="crew-heading">Crew</h2>
+                </div>
+                {crewGroups.length === 0 && <p>No crew available.</p>}
+                <div className="crew-groups">
+                  {crewGroups.map(({ label, people }) => (
+                    <CrewGroup key={label} label={label} people={people} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
         )}
 
         {(visiblePhotos.length > 0 ||
+          posters.length > 0 ||
           videos.length > 0 ||
           movieData.sections) && (
           <section
@@ -362,9 +352,9 @@ export function DetailsLowerContent({
             <h2 id="media-heading">Media</h2>
             {(visiblePhotos.length > 0 || movieData.sections) && (
               <div className="media-block">
-                <h3>Photos</h3>
+                <h3>Backdrops</h3>
                 <SectionRecovery
-                  label="Photos"
+                  label="Backdrops"
                   availability={movieData.sections?.photos}
                   recover={(signal) =>
                     recoverSection
@@ -373,24 +363,36 @@ export function DetailsLowerContent({
                   }
                 />
                 {movieData.sections?.photos.status === 'available' &&
-                  visiblePhotos.length === 0 && <p>No photos available.</p>}
-                <div className="photo-grid">
-                  {visiblePhotos.map((photo, index) => (
-                    <button
-                      type="button"
-                      className="photo-tile"
-                      key={photo.fullUrl}
-                      aria-label={`View ${title} photo ${index + 1}`}
-                      onClick={() => setSelectedPhoto(index)}
-                    >
-                      <MovieImage
-                        src={photo.thumbnailUrl}
-                        alt={photo.alt ?? `${title} still ${index + 1}`}
-                        className="media-thumbnail"
-                      />
-                    </button>
-                  ))}
-                </div>
+                  visiblePhotos.length === 0 && <p>No backdrops available.</p>}
+                <PhotoPreview
+                  photos={visiblePhotos}
+                  title={title}
+                  category="backdrops"
+                  resetKey={movieData.id}
+                />
+              </div>
+            )}
+            {(posters.length > 0 || movieData.sections?.posters) && (
+              <div className="media-block">
+                <h3>Posters</h3>
+                <SectionRecovery
+                  label="Posters"
+                  availability={movieData.sections?.posters}
+                  recover={(signal) =>
+                    recoverSection
+                      ? recoverSection('posters', signal)
+                      : Promise.reject(new Error('Recovery unavailable'))
+                  }
+                />
+                {movieData.sections?.posters?.status === 'available' &&
+                  posters.length === 0 && <p>No posters available.</p>}
+                <PhotoPreview
+                  photos={posters}
+                  title={title}
+                  portrait
+                  category="posters"
+                  resetKey={movieData.id}
+                />
               </div>
             )}
             {(videos.length > 0 || movieData.sections) && (
@@ -407,8 +409,29 @@ export function DetailsLowerContent({
                 />
                 {movieData.sections?.videos.status === 'available' &&
                   videos.length === 0 && <p>No videos available.</p>}
-                <div className="video-grid">
-                  {videoEntries.map((entry) => {
+                <div className="media-preview__summary">
+                  <span>
+                    {videos.length} {videos.length === 1 ? 'video' : 'videos'}{' '}
+                    available
+                  </span>
+                  {visibleVideoCount < videos.length && (
+                    <button
+                      type="button"
+                      className="btn btn--outline btn--action media-preview__action"
+                      aria-controls="movie-video-grid"
+                      aria-label="Show more videos"
+                      onClick={() => {
+                        focusLastVideo.current =
+                          visibleVideoCount + 4 >= videos.length;
+                        setVisibleVideoCount((count) => count + 4);
+                      }}
+                    >
+                      Show more
+                    </button>
+                  )}
+                </div>
+                <div className="video-grid" id="movie-video-grid">
+                  {videoEntries.slice(0, visibleVideoCount).map((entry) => {
                     const { video, videoId } = entry;
                     const label = video.name || 'Video';
                     const playerIndex = videoId
@@ -427,27 +450,57 @@ export function DetailsLowerContent({
                       </>
                     );
 
-                    return playerIndex >= 0 ? (
-                      <button
-                        type="button"
+                    if (playerIndex >= 0)
+                      return (
+                        <button
+                          type="button"
+                          className="video-tile"
+                          aria-label={`Play ${label}`}
+                          key={`${video.url}-${video.name}`}
+                          ref={
+                            entry === videoEntries[lastVisibleVideoIndex]
+                              ? rememberLastVideo
+                              : undefined
+                          }
+                          onClick={() => setSelectedVideo(playerIndex)}
+                        >
+                          {content}
+                        </button>
+                      );
+                    if (video.url)
+                      return (
+                        <a
+                          className="video-tile"
+                          href={video.url}
+                          title={label}
+                          target="_blank"
+                          rel="noreferrer"
+                          key={`${video.url}-${video.name}`}
+                          ref={
+                            entry === videoEntries[lastVisibleVideoIndex]
+                              ? rememberLastVideo
+                              : undefined
+                          }
+                        >
+                          {content}
+                        </a>
+                      );
+                    return (
+                      <div
                         className="video-tile"
-                        aria-label={`Play ${label}`}
-                        key={`${video.url}-${video.name}`}
-                        onClick={() => setSelectedVideo(playerIndex)}
+                        key={`${video.site}-${video.key}`}
+                        ref={
+                          entry === videoEntries[lastVisibleVideoIndex]
+                            ? rememberLastVideo
+                            : undefined
+                        }
+                        tabIndex={-1}
                       >
                         {content}
-                      </button>
-                    ) : (
-                      <a
-                        className="video-tile"
-                        href={video.url}
-                        title={label}
-                        target="_blank"
-                        rel="noreferrer"
-                        key={`${video.url}-${video.name}`}
-                      >
-                        {content}
-                      </a>
+                        <p>
+                          Playback unavailable for {video.site || 'this site'}.
+                        </p>
+                      </div>
                     );
                   })}
                 </div>
@@ -456,14 +509,6 @@ export function DetailsLowerContent({
           </section>
         )}
 
-        {selectedPhoto !== null && (
-          <PhotoLightbox
-            photos={visiblePhotos}
-            initialIndex={selectedPhoto}
-            title={title}
-            onClose={() => setSelectedPhoto(null)}
-          />
-        )}
         {selectedVideo !== null && (
           <VideoLightbox
             videos={supportedVideos}

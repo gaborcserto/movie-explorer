@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import type { PersonDetails } from '@movie-explorer/contracts';
 import SectionRecovery from '../../components/details/sectionRecovery';
 import HeroImage from '../../components/details/heroImage';
+import PhotoPreview from '../../components/details/photoPreview';
 import Footer from '../../layouts/footer';
 import Loading from '../../layouts/loading';
 import DetailError from '../../components/details/detailError';
@@ -234,6 +235,23 @@ function PersonDetailsPage({ id }: { id: string }) {
                   }}
                 />
               )}
+              {state.status === 'success' &&
+                Boolean(state.person.profilePhotos?.length) && (
+                  <section
+                    className="details-section media-section"
+                    aria-labelledby="person-photos-heading"
+                  >
+                    <div className="media-block">
+                      <h3 id="person-photos-heading">Photos</h3>
+                      <PhotoPreview
+                        photos={state.person.profilePhotos ?? []}
+                        title={state.person.name}
+                        portrait
+                        resetKey={state.person.id}
+                      />
+                    </div>
+                  </section>
+                )}
               {state.status === 'success' && (
                 <Filmography
                   entries={state.person.filmography}

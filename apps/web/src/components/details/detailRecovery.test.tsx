@@ -283,7 +283,7 @@ test('partial movie keeps primary and media, retries only credits, and preserves
   setup('/movie/42');
   await screen.findByRole('heading', { name: 'Partial movie' });
   expect(
-    screen.getByRole('button', { name: 'View Partial movie photo 1' })
+    screen.getByRole('button', { name: 'View Partial movie backdrop 1' })
   ).toBeVisible();
   expect(screen.getByText('No videos available.')).toBeVisible();
   expect(
@@ -392,3 +392,120 @@ test('route changes cancel a section retry and ignore a late successful response
   expect(screen.getByRole('heading', { name: 'New movie' })).toBeVisible();
   expect(screen.queryByText('Stale actor')).not.toBeInTheDocument();
 });
+
+test.each(['photos', 'posters'] as const)(
+  'retries only %s while keeping successful media visible',
+  async (section) => {
+    vi.mocked(getMovie).mockResolvedValue({
+      id: 42,
+      title: 'Partial media',
+      genres: [],
+      cast: [],
+      posterUrl: '',
+      backdrops:
+        section === 'photos'
+          ? []
+          : [{ thumbnailUrl: '/backdrop.jpg', fullUrl: '/backdrop-full.jpg' }],
+      posters:
+        section === 'posters'
+          ? []
+          : [{ thumbnailUrl: '/poster.jpg', fullUrl: '/poster-full.jpg' }],
+      videos: [
+        { name: 'Trailer', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+      ],
+      sections: {
+        credits: { status: 'available' },
+        photos: { status: section === 'photos' ? 'unavailable' : 'available' },
+        posters: {
+          status: section === 'posters' ? 'unavailable' : 'available',
+        },
+        videos: { status: 'available' },
+      },
+    });
+    vi.mocked(getMovieSection)
+      .mockRejectedValueOnce(new ApiRequestError('network'))
+      .mockResolvedValueOnce({
+        [section === 'photos' ? 'backdrops' : 'posters']: [
+          { thumbnailUrl: '/recovered.jpg', fullUrl: '/recovered-full.jpg' },
+        ],
+      });
+    setup('/movie/42');
+    await screen.findByRole('heading', { name: 'Partial media' });
+    const label = section === 'photos' ? 'backdrops' : 'posters';
+    const surviving = section === 'photos' ? 'poster' : 'backdrop';
+    expect(
+      screen.getByRole('button', { name: `View Partial media ${surviving} 1` })
+    ).toBeVisible();
+    const retry = screen.getByRole('button', { name: `Retry ${label}` });
+    retry.focus();
+    fireEvent.click(retry);
+    await screen.findByText(
+      `${section === 'photos' ? 'Backdrops' : 'Posters'} unavailable. Please try again.`
+    );
+    expect(retry).toHaveFocus();
+    fireEvent.click(retry);
+    await screen.findByRole('button', {
+      name: `View Partial media ${label.slice(0, -1)} 1`,
+    });
+    expect(
+      screen.getByRole('button', { name: `View Partial media ${surviving} 1` })
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Play Trailer' })).toBeVisible();
+    expect(getMovie).toHaveBeenCalledTimes(1);
+    expect(getMovieSection).toHaveBeenLastCalledWith(
+      42,
+      section,
+      expect.any(AbortSignal)
+    );
+  }
+);
+
+test.each(['photo', 'poster', 'video'] as const)(
+  'movie route changes dispose the %s overlay and reset media previews',
+  async (kind) => {
+    vi.mocked(getMovie).mockResolvedValueOnce({
+      id: 42,
+      title: 'First movie',
+      genres: [],
+      cast: [],
+      posterUrl: '',
+      photos: [{ thumbnailUrl: '/thumb.jpg', fullUrl: '/full.jpg' }],
+      posters: [
+        { thumbnailUrl: '/poster-thumb.jpg', fullUrl: '/poster-full.jpg' },
+      ],
+      videos: Array.from({ length: 5 }, (_, index) => ({
+        name: `Trailer ${index}`,
+        url: `https://www.youtube.com/watch?v=dQw4w9WgXc${index}`,
+      })),
+    });
+    vi.mocked(getMovie).mockResolvedValueOnce({
+      id: 43,
+      title: 'Second movie',
+      genres: [],
+      cast: [],
+      posterUrl: '',
+    });
+    const router = setup('/movie/42');
+    await screen.findByRole('heading', { name: 'First movie' });
+    fireEvent.click(screen.getByRole('button', { name: 'Show more videos' }));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: {
+          photo: 'View First movie backdrop 1',
+          poster: 'View First movie poster 1',
+          video: 'Play Trailer 4',
+        }[kind],
+      })
+    );
+    expect(screen.getByRole('dialog')).toBeVisible();
+    await act(async () => router.navigate('/movie/43'));
+    await screen.findByRole('heading', { name: 'Second movie' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /Show more videos/ })
+    ).toBeNull();
+    expect(screen.queryByText('5 videos available')).toBeNull();
+    expect(document.body.style.overflow).not.toBe('hidden');
+    expect(getMovie).toHaveBeenCalledTimes(2);
+  }
+);

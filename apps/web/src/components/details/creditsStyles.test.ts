@@ -38,16 +38,6 @@ function declarationsForMedia(selector: string, query: string) {
   return values;
 }
 
-test('keeps top Credits links muted with an invisible underline and a subtle transition', () => {
-  expect(
-    declarations('.movie-details__credits .person-credit-link')
-  ).toMatchObject({
-    color: 'rgba(255, 255, 255, 0.65)',
-    'text-decoration-color': 'transparent',
-    transition: 'color 180ms ease, text-decoration-color 180ms ease',
-  });
-});
-
 test('keeps all card names coral and role labels muted without changing typography', () => {
   expect(declarations('.cast-member h3')).toMatchObject({
     color: '#f65261',
@@ -83,39 +73,47 @@ test('keeps all card names coral and role labels muted without changing typograp
   ).toBe('0 16px 30px rgba(0, 0, 0, 0.32)');
 });
 
-test('uses a wrapping mobile grid with two columns when they fit and one on narrow screens', () => {
-  const mediaRules: Array<{ query: string; columns?: string }> = [];
+test('uses five desktop columns, four tablet columns and horizontal Cast scrolling on mobile', () => {
+  const mediaRules: Array<{ query: string; display?: string }> = [];
   stylesheet.walkAtRules('media', (media) => {
-    if (
-      !media.params.includes('max-width') &&
-      !media.params.includes('width <=')
-    )
-      return;
+    if (!media.params.includes('max-width')) return;
     media.walkRules('.cast-grid', (rule) => {
       mediaRules.push({
         query: media.params,
-        columns: rule.nodes
-          ?.filter(
-            (node) =>
-              node.type === 'decl' && node.prop === 'grid-template-columns'
-          )
+        display: rule.nodes
+          ?.filter((node) => node.type === 'decl' && node.prop === 'display')
           .map((node) => (node.type === 'decl' ? node.value : ''))
           .at(-1),
       });
     });
   });
 
-  expect(mediaRules).toEqual([
-    expect.objectContaining({
-      query: '(max-width: 767.98px)',
-      columns: 'repeat(2, minmax(0, 1fr))',
-    }),
-    expect.objectContaining({
-      query: '(width <= 359px)',
-      columns: 'minmax(0, 1fr)',
-    }),
+  expect(mediaRules.map(({ query }) => query)).toEqual([
+    '(max-width: 991.98px)',
+    '(max-width: 767.98px)',
   ]);
-  expect(declarations('.cast-grid')).toMatchObject({ display: 'grid' });
+  expect(mediaRules[1].display).toBe('flex');
+  expect(declarations('.cast-grid')).toMatchObject({
+    display: 'grid',
+    'grid-template-columns': 'repeat(5, minmax(0, 1fr))',
+  });
+  expect(
+    declarationsForMedia('.cast-grid', '(max-width: 991.98px)')
+  ).toMatchObject({
+    'grid-template-columns': 'repeat(4, minmax(0, 1fr))',
+  });
+  expect(
+    declarationsForMedia('.cast-grid', '(max-width: 767.98px)')
+  ).toMatchObject({
+    display: 'flex',
+    'overflow-x': 'auto',
+    'overscroll-behavior-x': 'contain',
+    'scroll-snap-type': 'x proximity',
+    'scrollbar-width': 'none',
+  });
+  expect(
+    declarationsForMedia('.cast-member', '(max-width: 767.98px)')
+  ).toMatchObject({ flex: '0 0 148px', 'scroll-snap-align': 'start' });
   expect(declarations('.cast-member')).toMatchObject({ 'min-width': '0' });
   expect(declarations('.cast-member__image')).toMatchObject({
     'aspect-ratio': '2/3',
@@ -124,11 +122,8 @@ test('uses a wrapping mobile grid with two columns when they fit and one on narr
 });
 
 test.each(['hover', 'focus-visible'])(
-  'shows coral text for credit links and Cast & Crew names on %s',
+  'shows coral text for Cast & Crew names on %s',
   (state) => {
-    expect(
-      declarations(`.movie-details__credits .person-credit-link:${state}`)
-    ).toMatchObject({ color: '#f65261' });
     const castSelector =
       state === 'hover'
         ? '.cast-member:hover h3'
@@ -145,16 +140,13 @@ test.each(['hover', 'focus-visible'])(
 );
 
 test('provides visible focus outlines on summary and complete card links', () => {
-  [
-    '.movie-details__credits .person-credit-link:focus-visible',
-    '.cast-member__link:focus-visible',
-  ].forEach((selector) => {
+  ['.cast-member__link:focus-visible'].forEach((selector) => {
     expect(declarations(selector).outline).toBe('2px solid #f65261');
     expect(declarations(selector)['outline-offset']).toMatch(/^[34]px$/);
   });
 });
 
-test('disables credit animations when reduced motion is requested', () => {
+test('disables Cast animations when reduced motion is requested', () => {
   const selectors: string[] = [];
   stylesheet.walkAtRules('media', (media) => {
     if (media.params !== '(prefers-reduced-motion: reduce)') return;
@@ -164,7 +156,6 @@ test('disables credit animations when reduced motion is requested', () => {
       });
     });
   });
-  expect(selectors).toContain('.movie-details__credits .person-credit-link');
   expect(selectors).toContain('.cast-member__link h3');
   expect(selectors).toContain('.cast-member');
   const reducedMotionTransform = declarationsForMedia(
@@ -172,4 +163,62 @@ test('disables credit animations when reduced motion is requested', () => {
     '(prefers-reduced-motion: reduce)'
   ).transform;
   expect(reducedMotionTransform).toBe('none');
+});
+
+test('places Cast and Crew in desktop columns and stacks them at tablet widths', () => {
+  expect(declarations('.cast-crew-layout')).toMatchObject({
+    display: 'grid',
+    'grid-template-columns': 'minmax(0, 2.2fr) minmax(250px, 1fr)',
+  });
+  expect(
+    declarationsForMedia('.cast-crew-layout', '(max-width: 991.98px)')
+  ).toMatchObject({ 'grid-template-columns': 'minmax(0, 1fr)' });
+  expect(declarations('.cast-grid')['grid-template-columns']).toBe(
+    'repeat(5, minmax(0, 1fr))'
+  );
+  expect(
+    declarationsForMedia('.cast-grid', '(max-width: 991.98px)')[
+      'grid-template-columns'
+    ]
+  ).toBe('repeat(4, minmax(0, 1fr))');
+});
+
+test('uses compact Crew name grids, neutral links and visible focus', () => {
+  expect(declarations('.crew-group__people')).toMatchObject({
+    display: 'grid',
+    'grid-template-columns': 'minmax(0, 1fr)',
+  });
+  expect(declarations('.crew-group + .crew-group')).toMatchObject({
+    'border-top': '1px solid rgba(255, 255, 255, 0.1)',
+  });
+  expect(declarations('.crew-group .person-credit-link').color).toBe(
+    'rgba(255, 255, 255, 0.72)'
+  );
+  expect(
+    declarations('.crew-group .person-credit-link')['text-decoration']
+  ).toBe('none');
+  expect(
+    declarations('.crew-group--writers .crew-group__people')[
+      'grid-template-columns'
+    ]
+  ).toBe('repeat(2, minmax(0, 1fr))');
+  expect(declarations('.crew-group .person-credit-link:hover').color).toBe(
+    '#f65261'
+  );
+  expect(
+    declarations('.crew-group .person-credit-link:focus-visible').outline
+  ).toBe('2px solid #f65261');
+  expect(
+    declarationsForMedia(
+      '.crew-group .person-credit-link',
+      '(prefers-reduced-motion: reduce)'
+    ).transition
+  ).toBe('none');
+  expect(
+    declarationsForMedia(
+      '.crew-group--writers .crew-group__people',
+      '(width <= 479.98px)'
+    )['grid-template-columns']
+  ).toBe('minmax(0, 1fr)');
+  expect(declarations('.crew-group h3').color).toBe('#f65261');
 });

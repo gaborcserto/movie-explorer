@@ -50,19 +50,39 @@ export interface MovieCrewMember extends MovieDirector {
 }
 
 export interface MoviePhoto {
+  filePath?: string;
+  width?: number;
+  height?: number;
+  aspectRatio?: number;
+  language?: string | null;
   thumbnailUrl: string;
   fullUrl: string;
   alt?: string;
 }
 
 export interface MovieVideo {
+  id?: string;
+  key?: string;
+  site?: string;
+  type?: string;
+  language?: string | null;
   name: string;
+  /** Empty when the source site has no supported external link. */
   url: string;
   thumbnailUrl?: string;
 }
 
 export interface MovieDetails extends MovieSummary {
-  sections?: Record<MovieSection, SectionAvailability>;
+  originalTitle?: string;
+  status?: string;
+  originalLanguage?: string;
+  /** Movie budget in USD; zero represents an unknown amount. */
+  budget?: number;
+  /** Movie revenue in USD; zero represents an unknown amount. */
+  revenue?: number;
+  sections?: Record<Exclude<MovieSection, 'posters'>, SectionAvailability> & {
+    posters?: SectionAvailability;
+  };
   /** Small poster image for a decorative loading preview. */
   posterPreviewUrl?: string;
   cast: string[];
@@ -75,6 +95,9 @@ export interface MovieDetails extends MovieSummary {
   rating?: number;
   runtimeMinutes?: number;
   backdropUrl?: string;
+  backdrops?: MoviePhoto[];
+  posters?: MoviePhoto[];
+  /** Legacy backdrop collection; new API responses use backdrops. */
   photos?: MoviePhoto[];
   videos?: MovieVideo[];
 }
@@ -87,6 +110,8 @@ export interface MovieSectionResponse {
   writers?: MovieCrewMember[];
   producers?: MovieCrewMember[];
   photos?: MoviePhoto[];
+  backdrops?: MoviePhoto[];
+  posters?: MoviePhoto[];
   videos?: MovieVideo[];
 }
 

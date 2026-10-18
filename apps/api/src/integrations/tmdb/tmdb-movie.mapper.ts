@@ -4,15 +4,36 @@ import type {
   MovieSummary,
   MovieDirector,
   MovieCrewMember,
+  MoviePhoto,
+  MovieVideo,
 } from '@movie-explorer/contracts';
 import type {
   TmdbGenre,
   TmdbCrewMember,
   TmdbMovieDetails,
   TmdbMovieListItem,
+  TmdbImage,
 } from './tmdb.types';
 
-const MAIN_CAST_LIMIT = 6;
+// Exact jobs, not department membership: source authors keep their job labels.
+const WRITING_JOBS = [
+  'Writer',
+  'Screenplay',
+  'Story',
+  'Novel',
+  'Characters',
+  'Comic Book',
+];
+const PRODUCING_JOBS = [
+  'Producer',
+  'Executive Producer',
+  'Co-Producer',
+  'Associate Producer',
+  'Line Producer',
+  'Supervising Producer',
+  'Consulting Producer',
+  'Co-Executive Producer',
+];
 
 export class TmdbMovieMapper {
   private readonly originalImageBaseUrl: string;
@@ -57,8 +78,8 @@ export class TmdbMovieMapper {
 
   public toMovieDetails(movie: TmdbMovieDetails): MovieDetails {
     const crew = movie.credits?.crew ?? [];
-    const writers = this.toCrewMembers(crew, ['Writer', 'Screenplay', 'Story']);
-    const producers = this.toCrewMembers(crew, ['Producer']);
+    const writers = this.toCrewMembers(crew, WRITING_JOBS);
+    const producers = this.toCrewMembers(crew, PRODUCING_JOBS);
     const directorIds = new Set<number>();
     const directors: MovieDirector[] = (movie.credits?.crew ?? [])
       .filter((credit) => {
@@ -92,7 +113,6 @@ export class TmdbMovieMapper {
         castIds.add(credit.id);
         return true;
       })
-      .slice(0, MAIN_CAST_LIMIT)
       .map((credit) => ({
         ...this.toPersonReference(credit),
         character:
@@ -101,21 +121,38 @@ export class TmdbMovieMapper {
             : credit.character?.trim()) || undefined,
       }));
     const cast = castMembers.map((credit) => credit.name);
-    const photos = (movie.images?.backdrops ?? [])
-      .slice(0, 12)
-      .map((image) => ({
-        thumbnailUrl: this.toImageUrl(image.file_path),
-        fullUrl: this.toOriginalImageUrl(image.file_path),
-      }))
-      .filter((image) => image.thumbnailUrl && image.fullUrl);
-    const videos = (movie.videos?.results ?? [])
-      .filter((video) => video.site === 'YouTube' && video.key)
-      .slice(0, 6)
-      .map((video) => ({
-        name: video.name,
-        url: `https://www.youtube.com/watch?v=${video.key}`,
-        thumbnailUrl: `https://img.youtube.com/vi/${video.key}/hqdefault.jpg`,
-      }));
+    const backdrops = this.toImages(movie.images?.backdrops ?? []);
+    const posters = this.toImages(movie.images?.posters ?? []);
+    const seenVideos = new Set<string>();
+    const videos: MovieVideo[] = (movie.videos?.results ?? []).flatMap(
+      (video) => {
+        const identity = `${video.site}:${video.key}`;
+        // TMDB currently supports YouTube and Vimeo. Vimeo remains an external
+        // link; only YouTube is embedded by the application player.
+        if (!video.key || seenVideos.has(identity)) return [];
+        const url =
+          video.site === 'YouTube'
+            ? `https://www.youtube.com/watch?v=${encodeURIComponent(video.key)}`
+            : video.site === 'Vimeo' && /^\d+$/.test(video.key)
+              ? `https://vimeo.com/${video.key}`
+              : '';
+        seenVideos.add(identity);
+        return [
+          {
+            ...(video.id && { id: video.id }),
+            key: video.key,
+            site: video.site,
+            ...(video.type && { type: video.type }),
+            ...(video.iso_639_1 !== undefined && { language: video.iso_639_1 }),
+            name: video.name,
+            url,
+            ...(video.site === 'YouTube' && {
+              thumbnailUrl: `https://img.youtube.com/vi/${encodeURIComponent(video.key)}/hqdefault.jpg`,
+            }),
+          },
+        ];
+      },
+    );
 
     const details: MovieDetails = {
       id: movie.id,
@@ -131,6 +168,28 @@ export class TmdbMovieMapper {
       cast,
     };
 
+    if (typeof movie.original_title === 'string' && movie.original_title.trim())
+      details.originalTitle = movie.original_title;
+    if (typeof movie.status === 'string' && movie.status.trim())
+      details.status = movie.status;
+    if (
+      typeof movie.original_language === 'string' &&
+      movie.original_language.trim()
+    )
+      details.originalLanguage = movie.original_language;
+    if (
+      typeof movie.budget === 'number' &&
+      Number.isFinite(movie.budget) &&
+      movie.budget >= 0
+    )
+      details.budget = movie.budget;
+    if (
+      typeof movie.revenue === 'number' &&
+      Number.isFinite(movie.revenue) &&
+      movie.revenue >= 0
+    )
+      details.revenue = movie.revenue;
+
     if (castMembers.length) {
       details.castMembers = castMembers;
     }
@@ -145,10 +204,36 @@ export class TmdbMovieMapper {
     if (movie.runtime && movie.runtime > 0)
       details.runtimeMinutes = movie.runtime;
     if (backdropUrl) details.backdropUrl = backdropUrl;
-    if (photos.length) details.photos = photos;
+    if (backdrops.length) details.backdrops = backdrops;
+    if (posters.length) details.posters = posters;
     if (videos.length) details.videos = videos;
 
     return details;
+  }
+
+  private toImages(images: TmdbImage[]): MoviePhoto[] {
+    const seen = new Set<string>();
+    return images.flatMap((image) => {
+      if (!image.file_path?.startsWith('/') || seen.has(image.file_path))
+        return [];
+      seen.add(image.file_path);
+      return [
+        {
+          filePath: image.file_path,
+          thumbnailUrl: this.toImageUrl(image.file_path),
+          fullUrl: this.toOriginalImageUrl(image.file_path),
+          ...(image.width > 0 &&
+            Number.isFinite(image.width) && { width: image.width }),
+          ...(image.height > 0 &&
+            Number.isFinite(image.height) && { height: image.height }),
+          ...(image.aspect_ratio > 0 &&
+            Number.isFinite(image.aspect_ratio) && {
+              aspectRatio: image.aspect_ratio,
+            }),
+          ...(image.iso_639_1 !== undefined && { language: image.iso_639_1 }),
+        },
+      ];
+    });
   }
 
   private toCrewMembers(

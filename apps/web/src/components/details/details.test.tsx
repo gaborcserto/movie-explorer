@@ -82,8 +82,9 @@ describe('<Details />', () => {
       expect(screen.getByText('120 min')).toBeInTheDocument();
     });
     expect(screen.getByRole('heading', { name: 'Overview' })).toBeVisible();
-    expect(screen.getByText('Director Name')).toBeVisible();
-    expect(screen.getByText('Actor One · Actor Two')).toBeVisible();
+    expect(screen.queryByText('Director Name')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Actor One' })).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Credits' })).toBeNull();
     expect(getMovie).toHaveBeenCalledWith(1234, expect.any(AbortSignal));
     expect(screen.getAllByRole('main')).toHaveLength(1);
     const main = screen.getByRole('main');
@@ -143,7 +144,7 @@ describe('<Details />', () => {
     );
 
     const firstThumbnail = screen.getByRole('img', {
-      name: 'Sample Movie still 1',
+      name: 'Sample Movie backdrop 1',
     });
     expect(firstThumbnail).toHaveAttribute('src', '/first-thumbnail.jpg');
     expect(firstThumbnail).toHaveAttribute('loading', 'lazy');
@@ -349,13 +350,13 @@ describe('<Details />', () => {
     );
 
     expect(await screen.findByText('Something went wrong')).toBeVisible();
-    expect(screen.queryByRole('heading', { name: 'Photos' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Backdrops' })).toBeNull();
     expect(getMovie).toHaveBeenCalledTimes(1);
 
     await user.click(screen.getByRole('button', { name: /try again/i }));
 
     expect(
-      await screen.findByRole('heading', { name: 'Photos' })
+      await screen.findByRole('heading', { name: 'Backdrops' })
     ).toBeVisible();
     expect(
       screen.getByRole('heading', { name: 'Videos & Trailers' })
@@ -397,7 +398,7 @@ describe('<Details />', () => {
     expect(
       screen.getByRole('heading', { name: 'Current movie' })
     ).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Photos' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Backdrops' })).toBeVisible();
     expect(screen.queryByRole('heading', { name: 'Sample Movie' })).toBeNull();
     expect(document.title).toBe('Current movie | Movie Explorer');
     expect(screen.getByRole('main')).toHaveFocus();
@@ -451,13 +452,13 @@ test('photo names and full-image viewing survive missing or failed thumbnails', 
     />
   );
   const photo = screen.getByRole('button', {
-    name: 'View Sample Movie photo 1',
+    name: 'View Sample Movie backdrop 1',
   });
   fireEvent.error(photo.querySelector('img')!);
   expect(photo.querySelector('img')).toBeNull();
   expect(photo.querySelector('.image-placeholder')).not.toBeNull();
   expect(
-    screen.getByRole('button', { name: 'View Sample Movie photo 2' })
+    screen.getByRole('button', { name: 'View Sample Movie backdrop 2' })
   ).toBeVisible();
   expect(document.querySelector('img[src="/orphan.jpg"]')).toBeNull();
   await userEvent.click(photo);

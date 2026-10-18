@@ -39,11 +39,11 @@ describe('video lightbox', () => {
     const iframe = within(dialog).getByTitle('Official Trailer');
     expect(iframe).toHaveAttribute(
       'src',
-      'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&playsinline=1&rel=0'
+      'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=0&playsinline=1&rel=0'
     );
     expect(iframe).toHaveAttribute(
       'allow',
-      expect.stringContaining('autoplay')
+      expect.not.stringContaining('autoplay')
     );
     expect(document.body.style.overflow).toBe('hidden');
 
@@ -88,7 +88,7 @@ describe('video lightbox', () => {
     const secondFrame = screen.getByTitle('Behind the Scenes');
     expect(secondFrame).toHaveAttribute(
       'src',
-      'https://www.youtube-nocookie.com/embed/9bZkp7q19f0?autoplay=1&playsinline=1&rel=0'
+      'https://www.youtube-nocookie.com/embed/9bZkp7q19f0?autoplay=0&playsinline=1&rel=0'
     );
     expect(secondFrame).not.toBe(firstFrame);
     expect(screen.getByRole('button', { name: 'Next video' })).toBeDisabled();

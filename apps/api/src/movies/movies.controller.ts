@@ -91,4 +91,9 @@ export class MoviesController {
   public getPhotos(@Param() params: DetailIdParams) {
     return this.moviesService.findMovieSection(params.id, 'photos');
   }
+
+  @Get(':id/posters')
+  public getPosters(@Param() params: DetailIdParams) {
+    return this.moviesService.findMovieSection(params.id, 'posters');
+  }
 }

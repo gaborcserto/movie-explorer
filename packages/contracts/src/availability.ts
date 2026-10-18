@@ -3,4 +3,5 @@ export type SectionAvailability =
   | { status: 'available' }
   | { status: 'unavailable'; retryAfterSeconds?: number };
 
-export type MovieSection = 'credits' | 'videos' | 'photos';
+/** The photos retry route supplies the backdrop collection. */
+export type MovieSection = 'credits' | 'videos' | 'photos' | 'posters';

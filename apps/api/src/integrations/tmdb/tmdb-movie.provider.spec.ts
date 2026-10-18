@@ -289,7 +289,7 @@ describe('TmdbMovieProvider', () => {
       expect.objectContaining({
         pathname: '/3/movie/1',
         search:
-          '?language=en-US&append_to_response=credits%2Cimages%2Cvideos&include_image_language=en%2Cnull',
+          '?language=en-US&append_to_response=credits%2Cimages%2Cvideos&include_image_language=en%2Cnull&include_video_language=en%2Cnull',
       }),
       expect.any(Object),
     );
@@ -507,13 +507,13 @@ describe('TmdbMovieProvider', () => {
 
       const movie = await provider.findOne(969681);
 
-      expect(movie?.photos).toEqual([]);
+      expect(movie?.backdrops).toEqual([]);
       expect(movie?.videos).toEqual([]);
       expect(fetchMock).toHaveBeenCalledTimes(1);
       const url = fetchMock.mock.calls[0][0] as URL;
       expect(url.searchParams.get('language')).toBe(language);
       expect(url.searchParams.get('include_image_language')).toBe(
-        `${language.split('-')[0]},null`,
+        [...new Set([language.split('-')[0], 'en', 'null'])].join(','),
       );
     },
   );
@@ -534,14 +534,19 @@ describe('TmdbMovieProvider', () => {
     const first = await provider.findOne(969681);
     const second = await provider.findOne(969681);
 
-    expect(first?.photos).toEqual([
+    expect(first?.backdrops).toEqual([
       {
+        filePath: '/still.jpg',
+        width: 1920,
+        height: 1080,
         thumbnailUrl: 'https://image.tmdb.org/t/p/w500/still.jpg',
         fullUrl: 'https://image.tmdb.org/t/p/original/still.jpg',
       },
     ]);
     expect(first?.videos).toEqual([
       {
+        key: 'trailer',
+        site: 'YouTube',
         name: 'Trailer',
         url: 'https://www.youtube.com/watch?v=trailer',
         thumbnailUrl: 'https://img.youtube.com/vi/trailer/hqdefault.jpg',

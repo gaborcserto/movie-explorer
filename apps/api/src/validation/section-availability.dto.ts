@@ -17,6 +17,9 @@ export class SectionAvailabilityDto {
 }
 
 export class MovieSectionsDto {
+  @ApiPropertyOptional({ type: () => SectionAvailabilityDto })
+  posters?: SectionAvailabilityDto;
+
   @ApiProperty({ type: () => SectionAvailabilityDto })
   credits: SectionAvailabilityDto;
 
