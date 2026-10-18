@@ -1,9 +1,12 @@
 import './App.scss';
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import HomePage from './pages/homePage';
 import ErrorPage from './pages/errorPage/errorPage';
-import PersonPage from './pages/personPage/personPage';
 import SearchHistoryProvider from './components/list/searchHistory';
+import Loading from './layouts/loading';
+
+const PersonPage = lazy(() => import('./pages/personPage/personPage'));
 
 function App() {
   return (
@@ -14,7 +17,21 @@ function App() {
           <Route path="/search/:searchQuery" element={<HomePage />} />
           <Route path="/search" element={<HomePage />} />
           <Route path="/movie/:movieId" element={<HomePage />} />
-          <Route path="/person/:id" element={<PersonPage />} />
+          <Route
+            path="/person/:id"
+            element={
+              <Suspense
+                fallback={
+                  <Loading
+                    className="main route-loading"
+                    title="Loading person"
+                  />
+                }
+              >
+                <PersonPage />
+              </Suspense>
+            }
+          />
           <Route path="*" element={<ErrorPage />} />
         </Routes>
       </div>

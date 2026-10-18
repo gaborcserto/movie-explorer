@@ -103,10 +103,10 @@ describe('<App />', () => {
     expect(screen.getByRole('contentinfo').closest('main')).toBeNull();
   });
 
-  test('displays the 404 error page for non-existent routes', () => {
+  test('displays the 404 error page for non-existent routes', async () => {
     renderApp('/non-existent-route');
 
-    expect(screen.getByText('404')).toBeInTheDocument();
+    expect(await screen.findByText('404')).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { level: 1, name: 'Page not found' })
     ).toBeInTheDocument();

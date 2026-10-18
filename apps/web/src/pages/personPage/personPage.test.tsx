@@ -436,7 +436,9 @@ test('sets a loading title and preserves the destination title after late data',
   await act(async () => {
     await router.navigate('/unknown-route');
   });
-  expect(document.title).toBe('Page not found | Movie Explorer');
+  await waitFor(() =>
+    expect(document.title).toBe('Page not found | Movie Explorer')
+  );
   await act(async () => {
     pending.resolve(response());
   });
