@@ -65,6 +65,12 @@ export class PersonDetailsDto implements PersonDetails {
   })
   profileSrcSet?: string;
 
+  @ApiPropertyOptional({
+    type: () => [Object],
+    description: 'Primary portrait first, then distinct profile photos',
+  })
+  profilePhotos?: PersonDetails['profilePhotos'];
+
   @ApiProperty({ type: () => [PersonFilmographyEntryDto] })
   filmography: PersonFilmographyEntryDto[];
 }

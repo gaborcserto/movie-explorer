@@ -204,6 +204,16 @@ export const getPerson = async (
       !filmography(body.filmography))
   )
     throw new ApiRequestError('invalid-response');
+  // Optional gallery metadata must never prevent the profile from rendering.
+  if (
+    body.profilePhotos !== undefined &&
+    !movieSection({ photos: body.profilePhotos }, 'photos')
+  )
+    body.profilePhotos = undefined;
+  else
+    body.profilePhotos = body.profilePhotos?.filter(
+      (photo) => photo.fullUrl.trim() && photo.thumbnailUrl.trim()
+    );
   return body;
 };
 

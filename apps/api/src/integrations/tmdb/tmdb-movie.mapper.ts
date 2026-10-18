@@ -216,6 +216,14 @@ export class TmdbMovieMapper {
     };
   }
 
+  public toProfilePhoto(path: string, name: string) {
+    return {
+      thumbnailUrl: this.toImageUrl(path),
+      fullUrl: this.toOriginalImageUrl(path),
+      alt: `Portrait of ${name.trim()}`,
+    };
+  }
+
   private toPosterUrl(posterPath: string | null): string {
     if (!posterPath) {
       return '';

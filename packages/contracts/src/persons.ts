@@ -1,4 +1,4 @@
-import type { MovieSummary } from './movies';
+import type { MoviePhoto, MovieSummary } from './movies';
 import type { SectionAvailability } from './availability';
 
 export interface PersonCrewCredit {
@@ -23,5 +23,7 @@ export interface PersonDetails {
   biography?: string;
   profileUrl?: string;
   profileSrcSet?: string;
+  /** Primary portrait first, followed by distinct available profile images. */
+  profilePhotos?: MoviePhoto[];
   filmography: PersonFilmographyEntry[];
 }

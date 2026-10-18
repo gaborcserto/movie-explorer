@@ -299,7 +299,7 @@ export class TmdbMovieProvider implements MovieProvider {
 
   public async findPerson(id: number): Promise<PersonDetails | undefined> {
     const person = await this.detailRequest<unknown>(`/person/${id}`, {
-      append_to_response: 'movie_credits',
+      append_to_response: 'movie_credits,images',
     });
     if (person === undefined) return undefined;
     const record = detailRecord(person);

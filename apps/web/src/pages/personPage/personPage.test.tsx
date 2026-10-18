@@ -3,6 +3,7 @@ import {
   fireEvent,
   render,
   screen,
+  within,
   waitFor,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -219,7 +220,9 @@ test('uses responsive portrait candidates and failed-image fallback', async () =
     screen.getByRole('img', { name: `Portrait of ${person.name}` }).tagName
   ).toBe('DIV');
   expect(
-    screen.queryByRole('button', { name: `Portrait of ${person.name}` })
+    screen.queryByRole('button', {
+      name: `Open portrait gallery for ${person.name}`,
+    })
   ).toBeNull();
 });
 
@@ -232,7 +235,7 @@ test('opens the full-resolution portrait from the keyboard and restores focus', 
   fireEvent.load(portrait);
 
   const trigger = screen.getByRole('button', {
-    name: `Portrait of ${person.name}`,
+    name: `Open portrait gallery for ${person.name}`,
   });
   trigger.focus();
   await user.keyboard('{Enter}');
@@ -247,6 +250,145 @@ test('opens the full-resolution portrait from the keyboard and restores focus', 
   await user.keyboard('{Escape}');
   await waitFor(() => expect(trigger).toHaveFocus());
 });
+
+test('does not expose a gallery control without a primary portrait even when optional photos exist', async () => {
+  fetchMock.mockResolvedValue(
+    response({
+      ...person,
+      profileUrl: undefined,
+      profileSrcSet: undefined,
+      profilePhotos: [
+        { thumbnailUrl: '/other.jpg', fullUrl: '/other-original.jpg' },
+      ],
+    })
+  );
+  renderPage();
+  await screen.findByRole('heading', { name: person.name });
+  expect(
+    screen.getByRole('img', { name: `Portrait of ${person.name}` }).tagName
+  ).toBe('DIV');
+  expect(
+    screen.queryByRole('button', {
+      name: `Open portrait gallery for ${person.name}`,
+    })
+  ).toBeNull();
+  expect(screen.queryByRole('dialog')).toBeNull();
+});
+
+test.each(['{Enter}', ' '])(
+  'opens a single portrait with %s and closes with focus restoration',
+  async (key) => {
+    const user = userEvent.setup();
+    renderPage();
+    const portrait = await screen.findByRole('img', {
+      name: `Portrait of ${person.name}`,
+    });
+    const trigger = screen.getByRole('button', {
+      name: `Open portrait gallery for ${person.name}`,
+    });
+    expect(trigger).toBeDisabled();
+    fireEvent.load(portrait);
+    trigger.focus();
+    await user.keyboard(key);
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('1 / 1')).toBeVisible();
+    expect(
+      within(dialog).queryByRole('button', { name: 'Next photo' })
+    ).toBeNull();
+    expect(
+      within(dialog).queryByRole('button', { name: 'Previous photo' })
+    ).toBeNull();
+    expect(document.body.style.overflow).toBe('hidden');
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Close photo viewer' })
+    );
+    expect(trigger).toHaveFocus();
+    expect(document.body.style.overflow).not.toBe('hidden');
+  }
+);
+
+test('opens the primary portrait first, deduplicates profiles and navigates with loading and error feedback', async () => {
+  const user = userEvent.setup();
+  const primary = {
+    thumbnailUrl: person.profileUrl,
+    fullUrl: '/portrait-original.jpg',
+    alt: `Portrait of ${person.name}`,
+  };
+  const second = {
+    thumbnailUrl: '/second.jpg',
+    fullUrl: '/second-original.jpg',
+    alt: `Portrait of ${person.name}`,
+  };
+  fetchMock.mockResolvedValue(
+    response({ ...person, profilePhotos: [second, primary, second] })
+  );
+  const router = renderPage();
+  const portrait = await screen.findByRole('img', {
+    name: `Portrait of ${person.name}`,
+  });
+  expect(
+    document.querySelector('img[src="/portrait-original.jpg"]')
+  ).toBeNull();
+  fireEvent.load(portrait);
+  const trigger = screen.getByRole('button', {
+    name: `Open portrait gallery for ${person.name}`,
+  });
+  await user.click(trigger);
+  const dialog = screen.getByRole('dialog');
+  expect(within(dialog).getByText('1 / 2')).toBeVisible();
+  const firstImage = dialog.querySelector('img');
+  expect(firstImage).toHaveAttribute('src', '/portrait-original.jpg');
+  expect(within(dialog).getByRole('status')).toHaveTextContent('Loading photo');
+  if (!firstImage) throw new Error('Missing primary image');
+  fireEvent.load(firstImage);
+  expect(within(dialog).queryByRole('status')).toBeNull();
+  await user.click(within(dialog).getByRole('button', { name: 'Next photo' }));
+  expect(firstImage).not.toHaveAttribute('src');
+  const nextImage = dialog.querySelector('img');
+  expect(nextImage).toHaveAttribute('src', second.fullUrl);
+  if (!nextImage) throw new Error('Missing next image');
+  fireEvent.error(nextImage);
+  expect(within(dialog).getByRole('alert')).toHaveTextContent(
+    'Unable to load photo'
+  );
+  await user.click(
+    within(dialog).getByRole('button', { name: 'Previous photo' })
+  );
+  expect(dialog.querySelector('img')).toHaveAttribute('src', primary.fullUrl);
+  await user.keyboard('{ArrowLeft}{ArrowRight}{Escape}');
+  expect(trigger).toHaveFocus();
+  await user.click(trigger);
+  await act(async () => router.navigate('/person/43'));
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(document.body.style.overflow).not.toBe('hidden');
+});
+
+test.each([
+  undefined,
+  [],
+  null,
+  { profiles: [] },
+  [{ fullUrl: 3 }],
+  [{ thumbnailUrl: '', fullUrl: '' }],
+])(
+  'keeps the primary portrait usable with missing or malformed optional photos: %j',
+  async (profilePhotos) => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValue(response({ ...person, profilePhotos }));
+    renderPage();
+    const portrait = await screen.findByRole('img', {
+      name: `Portrait of ${person.name}`,
+    });
+    fireEvent.load(portrait);
+    await user.click(
+      screen.getByRole('button', {
+        name: `Open portrait gallery for ${person.name}`,
+      })
+    );
+    expect(within(screen.getByRole('dialog')).getByText('1 / 1')).toBeVisible();
+    await user.keyboard('{Escape}');
+  }
+);
 
 test('renders biography as plain text and supports keyboard expansion and collapse', async () => {
   const user = userEvent.setup();

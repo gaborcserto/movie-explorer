@@ -90,6 +90,19 @@
     max-width: none;
   }
 
+  button.person-profile__portrait:after {
+    background: rgb(0 0 0 / 0.65);
+    border-radius: 4px;
+    bottom: 12px;
+    color: $white;
+    content: 'View photos';
+    font-size: 12px;
+    padding: 6px 8px;
+    pointer-events: none;
+    position: absolute;
+    right: 12px;
+  }
+
   &__placeholder,
   &__metadata-placeholder {
     background: $grey-2;

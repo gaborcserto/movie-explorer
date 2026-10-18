@@ -61,6 +61,7 @@ export interface TmdbCrewMember {
 }
 
 export interface TmdbPersonDetails {
+  images?: unknown;
   id: number;
   name: string;
   known_for_department?: unknown;

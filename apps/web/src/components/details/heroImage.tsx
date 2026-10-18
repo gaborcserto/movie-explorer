@@ -17,6 +17,8 @@ interface Props {
   alt: string;
   title: string;
   className: string;
+  photos?: MoviePhoto[];
+  actionLabel?: string;
 }
 
 function getHighestResolution(src: string, srcSet?: string) {
@@ -48,12 +50,19 @@ function HeroImageContent({
   alt,
   title,
   className,
+  photos,
+  actionLabel,
 }: Props) {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState(false);
   const fullUrl = src ? getHighestResolution(src, fullSrcSet ?? srcSet) : '';
   const photo: MoviePhoto = { thumbnailUrl: src ?? '', fullUrl, alt };
+  const gallery = [
+    ...new Map(
+      [photo, ...(photos ?? [])].map((item) => [item.fullUrl, item])
+    ).values(),
+  ];
 
   const image = (
     <MovieImage
@@ -79,7 +88,7 @@ function HeroImageContent({
           type="button"
           disabled={!loaded}
           className={`hero-image${loaded ? ' hero-image--loaded' : ''} ${className}`}
-          aria-label={alt}
+          aria-label={actionLabel ?? alt}
           aria-haspopup="dialog"
           onClick={() => setOpen(true)}
         >
@@ -90,7 +99,7 @@ function HeroImageContent({
       )}
       {open && loaded && (
         <PhotoLightbox
-          photos={[photo]}
+          photos={gallery}
           initialIndex={0}
           title={title}
           onClose={() => setOpen(false)}

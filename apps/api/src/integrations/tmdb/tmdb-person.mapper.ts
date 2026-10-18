@@ -88,6 +88,24 @@ export class TmdbPersonMapper {
     person.movie_credits.cast.forEach((credit) => addCredit(credit, true));
     person.movie_credits.crew.forEach((credit) => addCredit(credit, false));
 
+    const profiles =
+      isRecord(person.images) &&
+      person.images.success !== false &&
+      Array.isArray(person.images.profiles)
+        ? person.images.profiles
+        : [];
+    const paths = [
+      text(person.profile_path),
+      ...profiles.map((profile: unknown) =>
+        isRecord(profile) ? text(profile.file_path) : undefined,
+      ),
+    ].filter((path): path is string =>
+      Boolean(path && /^\/[^/\s]+$/.test(path)),
+    );
+    const profilePhotos = [...new Set(paths)].map((path) =>
+      this.movieMapper.toProfilePhoto(path, person.name),
+    );
+
     return {
       ...this.movieMapper.toPersonReference({
         id: person.id,
@@ -104,6 +122,7 @@ export class TmdbPersonMapper {
         placeOfBirth: text(person.place_of_birth),
       }),
       ...(text(person.biography) && { biography: text(person.biography) }),
+      ...(profilePhotos.length > 0 && { profilePhotos }),
       filmography: [...movies.values()],
     };
   }

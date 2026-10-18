@@ -61,6 +61,8 @@ function PersonProfile({ person }: { person: PersonDetails }) {
         sizes="(max-width: 767.98px) min(320px, calc(100vw - 52px)), 320px"
         alt={`Portrait of ${person.name}`}
         title={person.name}
+        photos={person.profilePhotos}
+        actionLabel={`Open portrait gallery for ${person.name}`}
         className="person-profile__portrait"
       />
       <div className="person-profile__content">

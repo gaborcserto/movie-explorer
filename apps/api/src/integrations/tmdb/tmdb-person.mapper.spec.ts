@@ -9,6 +9,62 @@ const person: TmdbPersonDetails = {
 };
 
 describe('TmdbPersonMapper', () => {
+  it('maps primary-first profiles with stable path deduplication and skips malformed entries', () => {
+    const result = mapper.toPersonDetails({
+      ...person,
+      profile_path: '/primary.jpg',
+      images: {
+        profiles: [
+          { file_path: '/second.jpg' },
+          { file_path: '/primary.jpg' },
+          { file_path: ' /second.jpg ' },
+          null,
+          {},
+          { file_path: 42 },
+          { file_path: '//invalid.jpg' },
+          { file_path: ' ' },
+          { file_path: '/tall.jpg' },
+        ],
+      },
+    });
+    expect(result.profilePhotos).toEqual(
+      ['primary', 'second', 'tall'].map((name) => ({
+        thumbnailUrl: `https://image.tmdb.org/t/p/w500/${name}.jpg`,
+        fullUrl: `https://image.tmdb.org/t/p/original/${name}.jpg`,
+        alt: 'Portrait of Person',
+      })),
+    );
+  });
+
+  it.each([
+    undefined,
+    null,
+    {},
+    { profiles: null },
+    { profiles: 'invalid' },
+    { success: false, profiles: [{ file_path: '/ignored.jpg' }] },
+  ])(
+    'recovers from missing or failed optional image metadata: %j',
+    (images) => {
+      const result = mapper.toPersonDetails({
+        ...person,
+        profile_path: '/primary.jpg',
+        images,
+      });
+      expect(result.profilePhotos).toHaveLength(1);
+      expect(result.profilePhotos[0].fullUrl).toContain(
+        '/original/primary.jpg',
+      );
+      expect(result.name).toBe('Person');
+    },
+  );
+
+  it('allows absent primary and empty profiles without inventing a photo', () => {
+    expect(
+      mapper.toPersonDetails({ ...person, images: { profiles: [] } })
+        .profilePhotos,
+    ).toBeUndefined();
+  });
   it('merges movie identities, distinct characters, and distinct department/job pairs in credit order', () => {
     const movie = {
       id: 2,
