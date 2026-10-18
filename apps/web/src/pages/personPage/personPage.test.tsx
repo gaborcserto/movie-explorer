@@ -279,6 +279,17 @@ test('announces loading and cancels requests on unmount', () => {
   });
   const { unmount } = render(<RouterProvider router={router} />);
   expect(screen.getByRole('status')).toHaveTextContent('Loading...');
+  const loadingHero = screen.getByRole('status').closest('.person-hero');
+  expect(loadingHero).toContainElement(
+    screen.getByRole('heading', { level: 1, name: 'Person details' })
+  );
+  expect(
+    loadingHero?.querySelector('.person-profile__portrait')
+  ).toHaveAttribute('aria-hidden', 'true');
+  expect(
+    loadingHero?.querySelector('.person-profile__biography-placeholder')
+  ).toHaveAttribute('aria-hidden', 'true');
+  expect(screen.queryByRole('img')).toBeNull();
   const signal = fetchMock.mock.calls[0][1]?.signal;
   expect(signal?.aborted).toBe(false);
   unmount();

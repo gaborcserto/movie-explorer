@@ -106,6 +106,30 @@ function PersonProfile({ person }: { person: PersonDetails }) {
   );
 }
 
+function PersonProfileLoading() {
+  return (
+    <div className="person-profile person-profile--loading">
+      <div
+        className="person-profile__portrait person-profile__placeholder"
+        aria-hidden="true"
+      />
+      <div className="person-profile__content">
+        <h1>Person details</h1>
+        <Loading className="person-profile__loading-status" />
+        <div className="person-profile__metadata" aria-hidden="true">
+          {['department', 'birthday', 'age', 'birthplace'].map((field) => (
+            <div key={field} className="person-profile__metadata-placeholder" />
+          ))}
+        </div>
+        <div
+          className="person-profile__biography person-profile__biography-placeholder"
+          aria-hidden="true"
+        />
+      </div>
+    </div>
+  );
+}
+
 function PersonDetailsPage({ id }: { id: string }) {
   const personId = parseDetailId(id);
   const validId = Number.isSafeInteger(personId) && personId > 0;
@@ -177,6 +201,7 @@ function PersonDetailsPage({ id }: { id: string }) {
             </div>
           )}
           <div className="movie-details container person-hero__container">
+            {validId && state.status === 'loading' && <PersonProfileLoading />}
             {state.status === 'success' && (
               <PersonProfile person={state.person} />
             )}
@@ -194,10 +219,6 @@ function PersonDetailsPage({ id }: { id: string }) {
             />
           ) : (
             <>
-              {state.status === 'loading' && <h1>Person details</h1>}
-              {state.status === 'loading' && (
-                <Loading className="person-page__state" />
-              )}
               {state.status === 'error' && (
                 <DetailError
                   {...(presentApiError(requestError) ?? {

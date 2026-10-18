@@ -32,6 +32,7 @@ test('keeps a dark cinematic fallback and a non-interactive poster overlay', () 
   expect(declarations('.person-hero__posters')).toMatchObject({
     position: 'absolute',
     opacity: '0.38',
+    'grid-auto-rows': 'minmax(0, 1fr)',
   });
 });
 
@@ -43,6 +44,7 @@ test('matches the movie title typography and preserves a ten pixel portrait radi
   expect(declarations('.person-profile__portrait')).toMatchObject({
     'border-radius': '10px',
     'aspect-ratio': '2/3',
+    height: 'auto',
     flex: '0 0 320px',
     width: '320px',
   });

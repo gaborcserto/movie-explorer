@@ -94,7 +94,7 @@ Back to Search returns to the preceding search entry only when the app observed 
 
 ### Partial details and independent autocomplete (Phase 24.3C)
 
-See the [implementation audit and verification report](docs/phase-24.3c.md) for dependencies, affected files, browser checks and remaining limitations.
+The public response behavior is summarized below.
 
 Detail responses retain their existing data fields and add optional availability metadata:
 - Movie: `sections.credits`, `sections.photos`, `sections.videos`.
