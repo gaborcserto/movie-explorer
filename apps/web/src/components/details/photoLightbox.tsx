@@ -50,6 +50,16 @@ function PhotoView({
   const lastTap = useRef(0);
   const pointerType = useRef('mouse');
 
+  useEffect(() => {
+    const currentImage = image.current;
+    // Restore after React's development effect replay, without restarting a
+    // source that is already loading. Clearing a detached source lets the
+    // browser cancel obsolete downloads on close or photo navigation.
+    if (currentImage && !currentImage.hasAttribute('src'))
+      currentImage.src = photo.fullUrl;
+    return () => currentImage?.removeAttribute('src');
+  }, [photo.fullUrl]);
+
   function update(scale: number, x = 0, y = 0) {
     const nextScale = Math.max(1, Math.min(MAX_ZOOM, scale));
     const box = viewport.current;

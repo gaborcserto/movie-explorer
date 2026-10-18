@@ -3,6 +3,7 @@ import './card.scss';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { MovieSummary } from '@movie-explorer/contracts';
 import MovieImage from '../utility/customImage';
+import { getPosterDisplaySrcSet } from '../../util/imageSizing';
 
 interface CardProps {
   movie: MovieSummary;
@@ -54,7 +55,8 @@ function Card({
       <div className="card__image__wrapper">
         <MovieImage
           src={posterUrl}
-          srcSet={posterSrcSet}
+          srcSet={getPosterDisplaySrcSet(posterUrl, posterSrcSet)}
+          sizes={loading === 'lazy' ? 'auto, 300px' : '300px'}
           loading={loading}
           alt={title}
           className="card__image"

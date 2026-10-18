@@ -12,6 +12,7 @@ import PhotoLightbox from './photoLightbox';
 import VideoLightbox from './videoLightbox';
 import HeroImage from './heroImage';
 import MovieImage from '../utility/customImage';
+import { getDisplaySrcSet } from '../../util/imageSizing';
 import './media.scss';
 
 interface DetailsProps {
@@ -195,6 +196,7 @@ export function DetailsHero({ movieData }: DetailsProps) {
         src={posterUrl}
         srcSet={posterSrcSet}
         previewSrc={posterPreviewUrl}
+        sizes="(max-width: 767.98px) min(320px, calc(100vw - 52px)), (max-width: 991.98px) 260px, 320px"
         alt={title}
         title={title}
         className="movie-details__image"
@@ -318,7 +320,7 @@ export function DetailsLowerContent({
                   <>
                     <MovieImage
                       src={member.profileUrl}
-                      srcSet={member.profileSrcSet}
+                      srcSet={getDisplaySrcSet(member.profileSrcSet)}
                       alt={member.name}
                       className="cast-member__image"
                     />

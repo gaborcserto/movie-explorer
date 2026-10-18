@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useLayoutEffect } from 'react';
+import { StrictMode, useLayoutEffect } from 'react';
 import type { MovieDetails } from '@movie-explorer/contracts';
 import { DetailsLowerContent } from './detailsContent';
 import PhotoLightbox from './photoLightbox';
@@ -86,6 +86,35 @@ afterEach(() => {
 });
 
 describe('photo lightbox', () => {
+  it('clears obsolete full-resolution sources on navigation and close', async () => {
+    const { user, image, thumbnail } = await open();
+    await user.keyboard('{ArrowRight}');
+    expect(image).not.toHaveAttribute('src');
+    const next = within(screen.getByRole('dialog')).getByRole('img', {
+      hidden: true,
+    });
+    expect(next).toHaveAttribute('src', '/original2.jpg');
+    await user.keyboard('{Escape}');
+    expect(next).not.toHaveAttribute('src');
+    expect(thumbnail.closest('button')).toHaveFocus();
+  });
+
+  it('keeps the selected source through development effect replay', () => {
+    render(
+      <StrictMode>
+        <PhotoLightbox
+          photos={movie.photos ?? []}
+          initialIndex={0}
+          title="Movie"
+          onClose={() => undefined}
+        />
+      </StrictMode>
+    );
+    expect(
+      within(screen.getByRole('dialog')).getByRole('img', { hidden: true })
+    ).toHaveAttribute('src', '/original1.jpg');
+  });
+
   it.each(['preview', 'final'])(
     'handles %s completion first and enables zoom only for the original',
     async (first) => {

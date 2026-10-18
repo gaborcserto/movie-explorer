@@ -72,8 +72,32 @@ describe('<Card />', () => {
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.getByAltText(mockMovie.title)).toHaveAttribute(
       'srcset',
-      mockMovie.posterSrcSet
+      '/small.jpg 1x, /large.jpg 2x'
     );
+    expect(screen.getByAltText(mockMovie.title)).toHaveAttribute(
+      'loading',
+      'lazy'
+    );
+    expect(screen.getByAltText(mockMovie.title)).toHaveAttribute(
+      'sizes',
+      'auto, 300px'
+    );
+    expect(screen.getByAltText(mockMovie.title)).toHaveAttribute(
+      'decoding',
+      'async'
+    );
+  });
+
+  it('keeps the critical poster eager with a bounded display source', () => {
+    render(
+      <MemoryRouter>
+        <Card movie={mockMovie} loading="eager" />
+      </MemoryRouter>
+    );
+    const image = screen.getByAltText(mockMovie.title);
+    expect(image).toHaveAttribute('loading', 'eager');
+    expect(image).toHaveAttribute('sizes', '300px');
+    expect(image.getAttribute('srcset')).not.toContain('/original.jpg');
   });
 
   it('renders a movie without optional release date metadata', () => {

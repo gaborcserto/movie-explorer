@@ -195,7 +195,8 @@ describe('<Details />', () => {
               {
                 name: 'Actor One',
                 profileUrl: '/actor.jpg',
-                profileSrcSet: '/actor-small.jpg 1x, /actor-large.jpg 2x',
+                profileSrcSet:
+                  '/actor-small.jpg 1x, /actor-large.jpg 2x, /actor-original.jpg 3x',
               },
             ],
           }}

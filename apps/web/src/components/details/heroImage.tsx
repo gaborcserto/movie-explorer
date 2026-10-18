@@ -2,6 +2,10 @@ import { useState } from 'react';
 import type { MoviePhoto } from '@movie-explorer/contracts';
 import MovieImage from '../utility/customImage';
 import PhotoLightbox from './photoLightbox';
+import {
+  getDisplaySrcSet,
+  getPosterDisplaySrcSet,
+} from '../../util/imageSizing';
 import './heroImage.scss';
 
 interface Props {
@@ -35,16 +39,6 @@ function getHighestResolution(src: string, srcSet?: string) {
   );
 }
 
-function getDisplaySrcSet(srcSet?: string) {
-  return srcSet
-    ?.split(',')
-    .filter((candidate) => {
-      const density = candidate.match(/\s(\d+(?:\.\d+)?)x\s*$/)?.[1];
-      return !density || Number(density) <= 2;
-    })
-    .join(',');
-}
-
 function HeroImageContent({
   src,
   srcSet,
@@ -64,7 +58,7 @@ function HeroImageContent({
   const image = (
     <MovieImage
       src={failed ? undefined : src}
-      srcSet={getDisplaySrcSet(srcSet)}
+      srcSet={getPosterDisplaySrcSet(src, srcSet) ?? getDisplaySrcSet(srcSet)}
       previewSrc={previewSrc}
       sizes={sizes}
       loading="eager"
