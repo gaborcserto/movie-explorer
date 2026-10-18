@@ -38,6 +38,60 @@ describe('TmdbMovieProvider', () => {
     global.fetch = fetchMock;
   });
 
+  it('shares concurrent genre lookups and reuses successful results for one hour', async () => {
+    jest.useFakeTimers();
+    const started: string[] = [];
+    fetchMock.mockImplementation(async (url: URL) => {
+      started.push(url.pathname);
+      if (url.pathname.endsWith('/genre/movie/list')) {
+        await Promise.resolve();
+        return jsonResponse(genreResponse);
+      }
+      return moviePage(1, 1, [movieListItem(1, [18])]);
+    });
+    const provider = new TmdbMovieProvider(config);
+
+    await Promise.all([
+      provider.findAll({}),
+      provider.findAll({ search: 'a' }),
+    ]);
+    expect(
+      started.filter((path) => path.endsWith('/genre/movie/list')),
+    ).toHaveLength(1);
+
+    await provider.findAll({});
+    expect(
+      started.filter((path) => path.endsWith('/genre/movie/list')),
+    ).toHaveLength(1);
+
+    jest.advanceTimersByTime(60 * 60 * 1000);
+    await provider.findAll({});
+    expect(
+      started.filter((path) => path.endsWith('/genre/movie/list')),
+    ).toHaveLength(2);
+    jest.useRealTimers();
+  });
+
+  it('does not cache a failed genre lookup and allows retry', async () => {
+    let genreCalls = 0;
+    fetchMock.mockImplementation((url: URL) => {
+      if (url.pathname.endsWith('/genre/movie/list')) {
+        genreCalls += 1;
+        return genreCalls === 1
+          ? Promise.reject(new Error('temporary failure'))
+          : Promise.resolve(jsonResponse(genreResponse));
+      }
+      return Promise.resolve(moviePage(1, 1, [movieListItem(1, [18])]));
+    });
+    const provider = new TmdbMovieProvider(config);
+
+    await expect(provider.findAll({})).rejects.toThrow();
+    await expect(provider.findAll({})).resolves.toMatchObject({
+      movies: [expect.objectContaining({ genres: ['Drama'] })],
+    });
+    expect(genreCalls).toBe(2);
+  });
+
   it('maps TMDB popular results to the public movie list contract', async () => {
     fetchMock
       .mockResolvedValueOnce(

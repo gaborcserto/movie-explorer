@@ -42,12 +42,18 @@ function detailRecord(value: unknown): Record<string, unknown> | undefined {
     : undefined;
 }
 
+const GENRE_CACHE_TTL_MS = 60 * 60 * 1000;
+
 @Injectable()
 export class TmdbMovieProvider implements MovieProvider {
   private readonly logger = new Logger(TmdbMovieProvider.name);
   private readonly config: TmdbConfig;
   private readonly mapper: TmdbMovieMapper;
-  private genreCache?: TmdbGenre[];
+  private readonly genreCache = new Map<
+    string,
+    { genres: TmdbGenre[]; expiresAt: number }
+  >();
+  private readonly genreRequests = new Map<string, Promise<TmdbGenre[]>>();
 
   constructor(config: TmdbConfig = getTmdbConfig()) {
     this.config = config;
@@ -404,13 +410,30 @@ export class TmdbMovieProvider implements MovieProvider {
   }
 
   private async getGenres(): Promise<TmdbGenre[]> {
-    if (!this.genreCache) {
-      const response =
-        await this.request<TmdbGenreListResponse>('/genre/movie/list');
-      this.genreCache = response.genres;
-    }
+    const key = this.config.language;
+    const cached = this.genreCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) return cached.genres;
 
-    return this.genreCache;
+    const inFlight = this.genreRequests.get(key);
+    if (inFlight) return inFlight;
+
+    const request = this.request<TmdbGenreListResponse>(
+      '/genre/movie/list',
+    ).then((response) => {
+      this.genreCache.set(key, {
+        genres: response.genres,
+        expiresAt: Date.now() + GENRE_CACHE_TTL_MS,
+      });
+      return response.genres;
+    });
+    this.genreRequests.set(key, request);
+    try {
+      return await request;
+    } finally {
+      if (this.genreRequests.get(key) === request) {
+        this.genreRequests.delete(key);
+      }
+    }
   }
 
   private async getGenreIds(genre?: string | string[]): Promise<number[]> {
