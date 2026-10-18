@@ -1,3 +1,4 @@
+import { SectionAvailabilityDto } from '../validation/section-availability.dto';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type {
   PersonDetails,
@@ -32,6 +33,9 @@ export class PersonFilmographyEntryDto
 }
 
 export class PersonDetailsDto implements PersonDetails {
+  @ApiPropertyOptional({ type: () => SectionAvailabilityDto })
+  filmographyAvailability?: PersonDetails['filmographyAvailability'];
+
   @ApiProperty()
   id: number;
 

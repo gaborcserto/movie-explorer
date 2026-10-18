@@ -4,6 +4,8 @@ import App from '../../App';
 import {
   ApiRequestError,
   getMovie,
+  getMovieSection,
+  getFilmography,
   getPerson,
   getMovies,
   getPeople,
@@ -14,6 +16,8 @@ vi.mock('../../util/apiUtils', async () => ({
     '../../util/apiUtils'
   )),
   getMovie: vi.fn(),
+  getMovieSection: vi.fn(),
+  getFilmography: vi.fn(),
   getPerson: vi.fn(),
   getMovies: vi.fn(),
   getPeople: vi.fn(),
@@ -251,3 +255,140 @@ test.each(['movie', 'person'] as const)(
     expect(listRequest).toHaveBeenCalledTimes(1);
   }
 );
+
+test('partial movie keeps primary and media, retries only credits, and preserves focus through repeated failure', async () => {
+  vi.mocked(getMovie).mockResolvedValue({
+    id: 42,
+    title: 'Partial movie',
+    posterUrl: '',
+    genres: [],
+    cast: [],
+    photos: [{ thumbnailUrl: '/still.jpg', fullUrl: '/original.jpg' }],
+    videos: [],
+    sections: {
+      credits: { status: 'unavailable' },
+      photos: { status: 'available' },
+      videos: { status: 'available' },
+    },
+  });
+  let resolve!: (value: { cast: string[] }) => void;
+  vi.mocked(getMovieSection)
+    .mockRejectedValueOnce(new ApiRequestError('network'))
+    .mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        })
+    );
+  setup('/movie/42');
+  await screen.findByRole('heading', { name: 'Partial movie' });
+  expect(
+    screen.getByRole('button', { name: 'View Partial movie photo 1' })
+  ).toBeVisible();
+  expect(screen.getByText('No videos available.')).toBeVisible();
+  expect(
+    screen.queryByText('No cast or crew available.')
+  ).not.toBeInTheDocument();
+  const retry = screen.getByRole('button', { name: 'Retry credits' });
+  retry.focus();
+  fireEvent.click(retry);
+  await screen.findByText('Credits unavailable. Please try again.');
+  expect(retry).toHaveFocus();
+  fireEvent.click(retry);
+  fireEvent.click(retry);
+  expect(getMovieSection).toHaveBeenCalledTimes(2);
+  expect(retry).toHaveAttribute('aria-disabled', 'true');
+  expect(screen.getByText('Loading credits...')).toBeVisible();
+  await act(async () => resolve({ cast: ['Recovered actor'] }));
+  expect(screen.getAllByText('Recovered actor').length).toBeGreaterThan(0);
+  expect(screen.getByText('Credits loaded.').parentElement).toHaveFocus();
+  expect(window.scrollTo).not.toHaveBeenCalled();
+  expect(getMovie).toHaveBeenCalledTimes(1);
+  expect(getMovieSection).toHaveBeenLastCalledWith(
+    42,
+    'credits',
+    expect.any(AbortSignal)
+  );
+});
+
+test('unavailable filmography retains biography and URL controls until local recovery', async () => {
+  vi.mocked(getPerson).mockResolvedValue({
+    id: 42,
+    name: 'Partial person',
+    biography: 'A surviving biography.',
+    filmography: [],
+    filmographyAvailability: { status: 'unavailable' },
+  });
+  vi.mocked(getFilmography).mockResolvedValue({
+    filmography: [
+      {
+        id: 9,
+        title: 'Recovered film',
+        genres: [],
+        posterUrl: '',
+        actingCredits: ['Hero'],
+        crewCredits: [{ job: 'Director' }],
+      },
+    ],
+  });
+  const router = setup('/person/42?personView=crew&personSort=title');
+  await screen.findByRole('heading', { name: 'Partial person' });
+  expect(screen.getByText('A surviving biography.')).toBeVisible();
+  expect(screen.getByText('Filmography unavailable.')).toBeVisible();
+  expect(
+    screen.queryByText('No movie credits available.')
+  ).not.toBeInTheDocument();
+  expect(router.state.location.search).toContain('personView=crew');
+  fireEvent.click(screen.getByRole('button', { name: 'Retry filmography' }));
+  await screen.findByText('Recovered film');
+  expect(screen.getByRole('button', { name: 'Crew' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  expect(
+    screen.getByRole('combobox', { name: 'Sort filmography' })
+  ).toHaveValue('title');
+  expect(getPerson).toHaveBeenCalledTimes(1);
+  expect(getFilmography).toHaveBeenCalledWith(42, expect.any(AbortSignal));
+});
+
+test('route changes cancel a section retry and ignore a late successful response', async () => {
+  vi.mocked(getMovie)
+    .mockResolvedValueOnce({
+      id: 42,
+      title: 'Old movie',
+      posterUrl: '',
+      genres: [],
+      cast: [],
+      sections: {
+        credits: { status: 'unavailable' },
+        photos: { status: 'available' },
+        videos: { status: 'available' },
+      },
+    })
+    .mockResolvedValueOnce({
+      id: 43,
+      title: 'New movie',
+      posterUrl: '',
+      genres: [],
+      cast: [],
+    });
+  let resolve!: (value: { cast: string[] }) => void;
+  vi.mocked(getMovieSection).mockImplementation(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      })
+  );
+  const router = setup('/movie/42');
+  await screen.findByRole('button', { name: 'Retry credits' });
+  fireEvent.click(screen.getByRole('button', { name: 'Retry credits' }));
+  const signal = vi.mocked(getMovieSection).mock.calls[0][2];
+  await act(async () => {
+    await router.navigate('/movie/43');
+  });
+  expect(signal.aborted).toBe(true);
+  await act(async () => resolve({ cast: ['Stale actor'] }));
+  expect(screen.getByRole('heading', { name: 'New movie' })).toBeVisible();
+  expect(screen.queryByText('Stale actor')).not.toBeInTheDocument();
+});

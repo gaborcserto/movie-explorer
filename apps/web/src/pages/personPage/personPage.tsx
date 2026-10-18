@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { PersonDetails } from '@movie-explorer/contracts';
+import SectionRecovery from '../../components/details/sectionRecovery';
 import HeroImage from '../../components/details/heroImage';
 import Footer from '../../layouts/footer';
 import Loading from '../../layouts/loading';
@@ -8,7 +9,11 @@ import DetailError from '../../components/details/detailError';
 import presentApiError, {
   isCancelledError,
 } from '../../util/errorPresentation';
-import { getPerson, isNotFoundError } from '../../util/apiUtils';
+import {
+  getPerson,
+  getFilmography,
+  isNotFoundError,
+} from '../../util/apiUtils';
 import './personPage.scss';
 import Filmography from './filmography';
 import HeaderSearch from '../../components/search/headerSearch';
@@ -207,7 +212,37 @@ function PersonDetailsPage({ id }: { id: string }) {
                 />
               )}
               {state.status === 'success' && (
-                <Filmography entries={state.person.filmography} />
+                <Filmography
+                  entries={state.person.filmography}
+                  unavailable={
+                    state.person.filmographyAvailability?.status ===
+                    'unavailable'
+                  }
+                  recovery={
+                    <SectionRecovery
+                      label="Filmography"
+                      availability={state.person.filmographyAvailability}
+                      recover={async (signal) => {
+                        const result = await getFilmography(personId, signal);
+                        if (signal.aborted) return;
+                        setState((previous) =>
+                          previous.status === 'success'
+                            ? {
+                                status: 'success',
+                                person: {
+                                  ...previous.person,
+                                  ...result,
+                                  filmographyAvailability: {
+                                    status: 'available',
+                                  },
+                                },
+                              }
+                            : previous
+                        );
+                      }}
+                    />
+                  }
+                />
               )}
             </>
           )}

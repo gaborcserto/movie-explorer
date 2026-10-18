@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './details.scss';
 import { Link, useParams } from 'react-router-dom';
-import type { MovieDetails } from '@movie-explorer/contracts';
+import type { MovieDetails, MovieSection } from '@movie-explorer/contracts';
 import useDetailPage from './useDetailPage';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
 import DetailError from './detailError';
@@ -10,7 +10,11 @@ import presentApiError, {
 } from '../../util/errorPresentation';
 import Loading from '../../layouts/loading';
 import HeaderSearch from '../search/headerSearch';
-import { getMovie, isNotFoundError } from '../../util/apiUtils';
+import {
+  getMovie,
+  getMovieSection,
+  isNotFoundError,
+} from '../../util/apiUtils';
 import parseDetailId from '../../util/detailId';
 
 type DetailsState = 'loading' | 'success' | 'not-found' | 'error';
@@ -55,6 +59,24 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
       controller.abort();
     };
   }, [movieId, validId, attempt]);
+
+  const recoverSection = async (section: MovieSection, signal: AbortSignal) => {
+    const result = await getMovieSection(movieId, section, signal);
+    if (signal.aborted) return;
+    setMovieData(
+      (previous) =>
+        previous && {
+          ...previous,
+          ...result,
+          sections: {
+            credits: previous.sections?.credits ?? { status: 'available' },
+            videos: previous.sections?.videos ?? { status: 'available' },
+            photos: previous.sections?.photos ?? { status: 'available' },
+            [section]: { status: 'available' },
+          },
+        }
+    );
+  };
 
   const pageTitle = {
     loading: 'Loading movie',
@@ -128,7 +150,12 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
         >
           <div className="movie-details container">{renderContent()}</div>
         </div>
-        {isLoaded && <DetailsLowerContent movieData={movieData} />}
+        {isLoaded && (
+          <DetailsLowerContent
+            movieData={movieData}
+            recoverSection={recoverSection}
+          />
+        )}
       </main>
     </div>
   );

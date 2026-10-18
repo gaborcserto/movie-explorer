@@ -213,7 +213,7 @@ describe('TmdbMovieProvider', () => {
 
     const provider = new TmdbMovieProvider(config);
 
-    await expect(provider.findOne(1)).resolves.toEqual({
+    await expect(provider.findOne(1)).resolves.toMatchObject({
       id: 1,
       title: 'Alpha',
       releaseDate: '2020-01-01',
@@ -453,8 +453,8 @@ describe('TmdbMovieProvider', () => {
 
       const movie = await provider.findOne(969681);
 
-      expect(movie?.photos).toBeUndefined();
-      expect(movie?.videos).toBeUndefined();
+      expect(movie?.photos).toEqual([]);
+      expect(movie?.videos).toEqual([]);
       expect(fetchMock).toHaveBeenCalledTimes(1);
       const url = fetchMock.mock.calls[0][0] as URL;
       expect(url.searchParams.get('language')).toBe(language);
@@ -507,18 +507,26 @@ describe('TmdbMovieProvider', () => {
     { videos: { results: {} } },
     { credits: undefined },
     { credits: { cast: [] } },
-  ])('rejects partial appended resources: %j', async (partial) => {
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({ ...detailsResponse, ...partial }),
-    );
-    const provider = new TmdbMovieProvider(config);
+  ])(
+    'retains primary data with unavailable appended resources: %j',
+    async (partial) => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({ ...detailsResponse, ...partial }),
+      );
+      const provider = new TmdbMovieProvider(config);
 
-    await expect(provider.findOne(969681)).rejects.toMatchObject({
-      message: 'Movie provider response was incomplete',
-      name: BadGatewayException.name,
-    });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
+      const movie = await provider.findOne(969681);
+      const key = Object.keys(partial)[0];
+      expect(movie).toMatchObject({
+        id: 969681,
+        title: 'Sample movie',
+        sections: {
+          [key === 'images' ? 'photos' : key]: { status: 'unavailable' },
+        },
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it('recovers after a partial response without caching or automatic retries', async () => {
     fetchMock
@@ -526,9 +534,13 @@ describe('TmdbMovieProvider', () => {
       .mockResolvedValueOnce(jsonResponse(detailsResponse));
     const provider = new TmdbMovieProvider(config);
 
-    await expect(provider.findOne(969681)).rejects.toBeInstanceOf(
-      BadGatewayException,
-    );
+    await expect(provider.findOne(969681)).resolves.toMatchObject({
+      sections: {
+        photos: { status: 'unavailable' },
+        credits: { status: 'available' },
+        videos: { status: 'available' },
+      },
+    });
     await expect(provider.findOne(969681)).resolves.toMatchObject({
       id: 969681,
     });

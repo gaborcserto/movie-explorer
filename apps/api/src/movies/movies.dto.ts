@@ -1,3 +1,4 @@
+import { MovieSectionsDto } from '../validation/section-availability.dto';
 import { Transform, Type } from 'class-transformer';
 import {
   IsIn,
@@ -182,6 +183,9 @@ export class MovieCastMemberDto
 }
 
 export class MovieDetails extends MovieSummary implements MovieDetailsContract {
+  @ApiPropertyOptional({ type: () => MovieSectionsDto })
+  sections?: MovieDetailsContract['sections'];
+
   @ApiPropertyOptional({ description: 'Small poster loading preview URL' })
   posterPreviewUrl?: string;
 

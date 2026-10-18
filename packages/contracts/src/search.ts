@@ -1,4 +1,5 @@
 import type { MovieSuggestion } from './movies';
+import type { SectionAvailability } from './availability';
 
 export interface PersonSummary {
   id: number;
@@ -19,5 +20,6 @@ export type SearchSuggestion =
   | (PersonSummary & { mediaType: 'person' });
 
 export interface SearchSuggestionsResponse {
+  groups?: Record<'movie' | 'person', SectionAvailability>;
   suggestions: SearchSuggestion[];
 }

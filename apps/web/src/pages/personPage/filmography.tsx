@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type {
@@ -140,8 +141,12 @@ function FilmographyResults({
 
 export default function Filmography({
   entries,
+  unavailable = false,
+  recovery,
 }: {
   entries: PersonFilmographyEntry[];
+  unavailable?: boolean;
+  recovery?: ReactNode;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const movies = mergeMovies(entries);
@@ -176,9 +181,9 @@ export default function Filmography({
   const canonicalQuery = canonicalParams.toString();
   const query = searchParams.toString();
   useEffect(() => {
-    if (query !== canonicalQuery)
+    if (!unavailable && query !== canonicalQuery)
       setSearchParams(canonicalQuery, { replace: true });
-  }, [query, canonicalQuery, setSearchParams]);
+  }, [query, canonicalQuery, setSearchParams, unavailable]);
 
   const updateSelection = (name: string, value: string) => {
     const next = new URLSearchParams(searchParams);
@@ -197,79 +202,81 @@ export default function Filmography({
   return (
     <section className="filmography" aria-labelledby="filmography-heading">
       <h2 id="filmography-heading">Filmography</h2>
-      {hasActing || hasCrew ? (
-        <>
-          <div className="filmography__controls">
-            <div
-              className="filmography__views"
-              role="group"
-              aria-label="Filmography view"
-            >
-              {hasActing && (
-                <button
-                  type="button"
-                  className="btn btn--outline"
-                  aria-pressed={view === 'acting'}
-                  onClick={() => updateSelection('personView', 'acting')}
-                >
-                  Acting
-                </button>
+      {recovery}
+      {!unavailable &&
+        (hasActing || hasCrew ? (
+          <>
+            <div className="filmography__controls">
+              <div
+                className="filmography__views"
+                role="group"
+                aria-label="Filmography view"
+              >
+                {hasActing && (
+                  <button
+                    type="button"
+                    className="btn btn--outline"
+                    aria-pressed={view === 'acting'}
+                    onClick={() => updateSelection('personView', 'acting')}
+                  >
+                    Acting
+                  </button>
+                )}
+                {hasCrew && (
+                  <button
+                    type="button"
+                    className="btn btn--outline"
+                    aria-pressed={view === 'crew'}
+                    onClick={() => updateSelection('personView', 'crew')}
+                  >
+                    Crew
+                  </button>
+                )}
+              </div>
+              {view === 'crew' && (
+                <label>
+                  Job or department
+                  <select
+                    value={role}
+                    onChange={(event) =>
+                      updateSelection('personRole', event.target.value)
+                    }
+                  >
+                    <option value="">All jobs</option>
+                    {roles.map((value) => (
+                      <option key={value} value={value}>
+                        {value.startsWith('job:')
+                          ? value.slice(4)
+                          : `${value.slice(11)} (department)`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               )}
-              {hasCrew && (
-                <button
-                  type="button"
-                  className="btn btn--outline"
-                  aria-pressed={view === 'crew'}
-                  onClick={() => updateSelection('personView', 'crew')}
-                >
-                  Crew
-                </button>
-              )}
-            </div>
-            {view === 'crew' && (
               <label>
-                Job or department
+                Sort filmography
                 <select
-                  value={role}
+                  value={sort}
                   onChange={(event) =>
-                    updateSelection('personRole', event.target.value)
+                    updateSelection('personSort', event.target.value)
                   }
                 >
-                  <option value="">All jobs</option>
-                  {roles.map((value) => (
-                    <option key={value} value={value}>
-                      {value.startsWith('job:')
-                        ? value.slice(4)
-                        : `${value.slice(11)} (department)`}
-                    </option>
-                  ))}
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="title">Title A–Z</option>
                 </select>
               </label>
-            )}
-            <label>
-              Sort filmography
-              <select
-                value={sort}
-                onChange={(event) =>
-                  updateSelection('personSort', event.target.value)
-                }
-              >
-                <option value="newest">Newest first</option>
-                <option value="oldest">Oldest first</option>
-                <option value="title">Title A–Z</option>
-              </select>
-            </label>
-          </div>
-          <FilmographyResults
-            key={`${view}:${role}:${sort}`}
-            movies={sortedMovies}
-            view={view}
-            role={role}
-          />
-        </>
-      ) : (
-        <p role="status">No movie credits available.</p>
-      )}
+            </div>
+            <FilmographyResults
+              key={`${view}:${role}:${sort}`}
+              movies={sortedMovies}
+              view={view}
+              role={role}
+            />
+          </>
+        ) : (
+          <p role="status">No movie credits available.</p>
+        ))}
     </section>
   );
 }

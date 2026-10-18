@@ -59,13 +59,22 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
             .filter((item) => item.mediaType === type)
             .slice(0, 6)
         );
+        const partial =
+          response.groups &&
+          Object.values(response.groups).some(
+            (group) => group.status === 'unavailable'
+          );
+        setFailed(Boolean(partial));
         setSuggestions(items);
         setOpen(items.length > 0);
         setActive(-1);
+        const emptyMessage = partial
+          ? 'Some suggestions unavailable. Press Enter to search.'
+          : 'No suggestions found. Press Enter to search.';
         setMessage(
           items.length
-            ? `${items.length} suggestions available. Use arrow keys to navigate.`
-            : 'No suggestions found. Press Enter to search.'
+            ? `${items.length} suggestions available. Use arrow keys to navigate.${partial ? ' Some suggestions unavailable.' : ''}`
+            : emptyMessage
         );
       } catch (error: unknown) {
         if (

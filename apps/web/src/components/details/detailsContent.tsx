@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import type {
   MovieCastMember,
   MovieDetails,
+  MovieSection,
   MovieDirector,
   MovieVideo,
 } from '@movie-explorer/contracts';
+import SectionRecovery from './sectionRecovery';
 import PhotoLightbox from './photoLightbox';
 import VideoLightbox from './videoLightbox';
 import HeroImage from './heroImage';
@@ -14,6 +16,14 @@ import './media.scss';
 
 interface DetailsProps {
   movieData: MovieDetails;
+}
+
+interface LowerDetailsProps {
+  movieData: MovieDetails;
+  recoverSection?: (
+    section: MovieSection,
+    signal: AbortSignal
+  ) => Promise<void>;
 }
 
 interface PersonCredit extends MovieDirector {
@@ -268,7 +278,10 @@ export function DetailsHero({ movieData }: DetailsProps) {
   );
 }
 
-export function DetailsLowerContent({ movieData }: DetailsProps) {
+export function DetailsLowerContent({
+  movieData,
+  recoverSection,
+}: LowerDetailsProps) {
   const { title, photos = [], videos = [] } = movieData;
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<number | null>(null);
@@ -283,11 +296,22 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
   return (
     <div className="movie-details__lower">
       <div className="container movie-details__lower-content">
-        {cards.length > 0 && (
+        {(cards.length > 0 || movieData.sections) && (
           <section className="details-section" aria-labelledby="cast-heading">
             <div className="details-section__heading">
               <h2 id="cast-heading">Cast &amp; Crew</h2>
             </div>
+            <SectionRecovery
+              label="Credits"
+              availability={movieData.sections?.credits}
+              recover={(signal) =>
+                recoverSection
+                  ? recoverSection('credits', signal)
+                  : Promise.reject(new Error('Recovery unavailable'))
+              }
+            />
+            {movieData.sections?.credits.status === 'available' &&
+              cards.length === 0 && <p>No cast or crew available.</p>}
             <div className="cast-grid">
               {cards.map((member) => {
                 const content = (
@@ -326,15 +350,28 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
           </section>
         )}
 
-        {(visiblePhotos.length > 0 || videos.length > 0) && (
+        {(visiblePhotos.length > 0 ||
+          videos.length > 0 ||
+          movieData.sections) && (
           <section
             className="details-section media-section"
             aria-labelledby="media-heading"
           >
             <h2 id="media-heading">Media</h2>
-            {visiblePhotos.length > 0 && (
+            {(visiblePhotos.length > 0 || movieData.sections) && (
               <div className="media-block">
                 <h3>Photos</h3>
+                <SectionRecovery
+                  label="Photos"
+                  availability={movieData.sections?.photos}
+                  recover={(signal) =>
+                    recoverSection
+                      ? recoverSection('photos', signal)
+                      : Promise.reject(new Error('Recovery unavailable'))
+                  }
+                />
+                {movieData.sections?.photos.status === 'available' &&
+                  visiblePhotos.length === 0 && <p>No photos available.</p>}
                 <div className="photo-grid">
                   {visiblePhotos.map((photo, index) => (
                     <button
@@ -354,9 +391,20 @@ export function DetailsLowerContent({ movieData }: DetailsProps) {
                 </div>
               </div>
             )}
-            {videos.length > 0 && (
+            {(videos.length > 0 || movieData.sections) && (
               <div className="media-block">
                 <h3>Videos &amp; Trailers</h3>
+                <SectionRecovery
+                  label="Videos"
+                  availability={movieData.sections?.videos}
+                  recover={(signal) =>
+                    recoverSection
+                      ? recoverSection('videos', signal)
+                      : Promise.reject(new Error('Recovery unavailable'))
+                  }
+                />
+                {movieData.sections?.videos.status === 'available' &&
+                  videos.length === 0 && <p>No videos available.</p>}
                 <div className="video-grid">
                   {videoEntries.map((entry) => {
                     const { video, videoId } = entry;

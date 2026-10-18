@@ -1,4 +1,5 @@
 import type { MovieSummary } from './movies';
+import type { SectionAvailability } from './availability';
 
 export interface PersonCrewCredit {
   department?: string;
@@ -12,6 +13,7 @@ export interface PersonFilmographyEntry extends MovieSummary {
 }
 
 export interface PersonDetails {
+  filmographyAvailability?: SectionAvailability;
   id: number;
   name: string;
   knownForDepartment?: string;

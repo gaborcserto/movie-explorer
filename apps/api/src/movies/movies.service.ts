@@ -1,3 +1,4 @@
+import type { MovieSection } from '@movie-explorer/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   MovieDetails,
@@ -27,5 +28,8 @@ export class MoviesService {
 
   public findOne(id: number): Promise<MovieDetails | undefined> {
     return this.movieProvider.findOne(id);
+  }
+  public findMovieSection(id: number, section: MovieSection) {
+    return this.movieProvider.findMovieSection(id, section);
   }
 }

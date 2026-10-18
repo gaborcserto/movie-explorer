@@ -27,6 +27,8 @@ const movieProvider: jest.Mocked<MovieProvider> = {
   findSuggestions: jest.fn(),
   findPerson: jest.fn(),
   findPeople: jest.fn(),
+  findMovieSection: jest.fn(),
+  findFilmography: jest.fn(),
 };
 
 describe('AppController (e2e)', () => {
@@ -150,6 +152,85 @@ describe('AppController (e2e)', () => {
     },
   );
 
+  it.each(['credits', 'photos', 'videos'] as const)(
+    'serves localized movie %s recovery and validates IDs',
+    async (section) => {
+      const body =
+        section === 'credits'
+          ? { cast: ['Recovered actor'] }
+          : { [section]: [] };
+      movieProvider.findMovieSection.mockResolvedValueOnce(body);
+      await request(app.getHttpServer())
+        .get(`/movies/42/${section}`)
+        .expect(200)
+        .expect(body);
+      expect(movieProvider.findMovieSection).toHaveBeenCalledWith(42, section);
+      await request(app.getHttpServer())
+        .get(`/movies/0/${section}`)
+        .expect(400);
+      expect(movieProvider.findMovieSection).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('serves localized filmography recovery without loading a profile', async () => {
+    movieProvider.findFilmography.mockResolvedValueOnce({ filmography: [] });
+    await request(app.getHttpServer())
+      .get('/api/v1/persons/42/filmography')
+      .expect(200)
+      .expect({ filmography: [] });
+    expect(movieProvider.findFilmography).toHaveBeenCalledWith(42);
+    expect(movieProvider.findPerson).not.toHaveBeenCalled();
+    await request(app.getHttpServer())
+      .get('/api/v1/persons/0/filmography')
+      .expect(400);
+  });
+
+  it('returns successful HTTP responses with explicit unavailable sections', async () => {
+    const movie = {
+      ...movies[0],
+      cast: [],
+      sections: {
+        credits: { status: 'unavailable' as const },
+        videos: { status: 'available' as const },
+        photos: { status: 'unavailable' as const },
+      },
+    };
+    movieProvider.findOne.mockResolvedValueOnce(movie);
+    await request(app.getHttpServer())
+      .get('/movies/1')
+      .expect(200)
+      .expect(movie);
+    const person = {
+      id: 1,
+      name: 'Person',
+      biography: 'Biography',
+      filmography: [],
+      filmographyAvailability: { status: 'unavailable' as const },
+    };
+    movieProvider.findPerson.mockResolvedValueOnce(person);
+    await request(app.getHttpServer())
+      .get('/api/v1/persons/1')
+      .expect(200)
+      .expect(person);
+  });
+
+  it('returns a successful empty autocomplete group alongside an unavailable group', async () => {
+    movieProvider.findSuggestions.mockResolvedValueOnce({ suggestions: [] });
+    movieProvider.findPeople.mockRejectedValueOnce(
+      new HttpException('Safe failure', 502),
+    );
+    await request(app.getHttpServer())
+      .get('/api/v1/search/suggestions?query=Query')
+      .expect(200)
+      .expect({
+        suggestions: [],
+        groups: {
+          movie: { status: 'available' },
+          person: { status: 'unavailable' },
+        },
+      });
+  });
+
   it('returns unified suggestions without changing movie-only consumers', async () => {
     movieProvider.findPeople.mockResolvedValueOnce({
       people: [{ id: 5, name: 'Person' }],
@@ -164,6 +245,10 @@ describe('AppController (e2e)', () => {
       .get('/api/v1/search/suggestions?query=Query&limit=2')
       .expect(200)
       .expect({
+        groups: {
+          movie: { status: 'available' },
+          person: { status: 'available' },
+        },
         suggestions: [
           { mediaType: 'movie', id: 5, title: 'Movie' },
           { mediaType: 'person', id: 5, name: 'Person' },

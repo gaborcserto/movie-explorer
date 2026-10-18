@@ -65,7 +65,7 @@ The API e2e task builds the API and runs its mocked provider suite; it does not 
 
 The running API serves its generated Swagger/OpenAPI documentation at [http://localhost:4000/api-docs](http://localhost:4000/api-docs). The API keeps TMDB integration details server side and returns the shared application contracts.
 
-`GET /api/v1/persons/:id` returns a person profile and movie filmography for a positive integer TMDB person ID. It returns 400 for invalid IDs, 404 for missing persons, and 502 for failed or incomplete provider responses. Optional metadata is omitted when unavailable; birthdays, death dates, and release dates remain date-only strings.
+`GET /api/v1/persons/:id` returns a person profile and movie filmography for a positive integer TMDB person ID. It returns 400 for invalid IDs, 404 for missing persons, and 502 for invalid primary data or sanitized upstream failures; rate limits return 429 and timeouts return 504. Optional metadata is omitted when unavailable; birthdays, death dates, and release dates remain date-only strings.
 
 Filmography merges acting and crew credits by movie ID in first-seen order (cast followed by crew), excluding explicitly adult records. `actingCredits` contains distinct character names; an empty array records acting with an unknown character, while an absent field means no acting credit. `crewCredits` contains distinct department/job pairs, with unavailable values omitted. Movie summaries use an empty poster URL for missing posters and an empty genres array because the appended credits do not supply genre names. No per-movie requests, sorting, or pagination are performed.
 
@@ -77,7 +77,7 @@ Unified autocomplete uses `GET /api/v1/search/suggestions?query=Alien&limit=6`. 
 
 ## Request failures and deadlines
 
-Browser API requests have a 12-second deadline, including JSON body reads. All existing request types use this default. Caller cancellation remains independent and silent in existing navigation/search flows; timeouts remain genuine failures eligible for manual retry. There are no automatic retries. The API utility exposes typed categories (`invalid-request`, `not-found`, `rate-limited`, `internal-server`, `service-unavailable`, `http`, `network`, `timeout`, `cancelled`, `invalid-response`), retains available HTTP status, and keeps `isNotFoundError` compatibility. Rate-limit errors retain validated header delays as `retryAfterSeconds`. Invalid JSON is classified; successful JSON still uses endpoint contract types rather than comprehensive runtime schema validation in the browser.
+Browser API requests have a 12-second deadline, including JSON body reads. All existing request types use this default. Caller cancellation remains independent and silent in existing navigation/search flows; timeouts remain genuine failures eligible for manual retry. There are no automatic retry loops; detail requests have the bounded fallback described below. The API utility exposes typed categories (`invalid-request`, `not-found`, `rate-limited`, `internal-server`, `service-unavailable`, `http`, `network`, `timeout`, `cancelled`, `invalid-response`), retains available HTTP status, and keeps `isNotFoundError` compatibility. Rate-limit errors retain validated header delays as `retryAfterSeconds`. Invalid JSON is classified; successful JSON still uses endpoint contract types rather than comprehensive runtime schema validation in the browser.
 
 TMDB requests default to 8 seconds, including body reads. Set `TMDB_REQUEST_TIMEOUT_MS` to decimal integer milliseconds from 1 to 60000; invalid configuration fails startup. Keep it below the browser deadline where practical. Each upstream request has its own deadline, so sequential provider calls can exceed one upstream deadline.
 
@@ -92,7 +92,56 @@ Error response types remain outside the shared success contracts; a shared error
 
 Back to Search returns to the preceding search entry only when the app observed that Search-to-Detail push in the current session. This reuses bounded result and scroll snapshots, preserving query, view, filters, sorting and loaded depth. Direct entries, reloads, evicted history and detail-to-detail navigation fall back to `/search`; no persistent search storage or speculative history jumps are used. Fatal rendering errors retain full-document Reload and a native Search link, independent of router context, without resetting the failing tree or displaying an HTTP status.
 
-Partial detail responses and partial autocomplete groups remain deferred to Phase 24.3C. Phase 24.4 scope should be confirmed separately; this phase does not implement a shared error schema or broader success-response validation.
+### Partial details and independent autocomplete (Phase 24.3C)
+
+See the [implementation audit and verification report](docs/phase-24.3c.md) for dependencies, affected files, browser checks and remaining limitations.
+
+Detail responses retain their existing data fields and add optional availability metadata:
+- Movie: `sections.credits`, `sections.photos`, `sections.videos`.
+- Person: `filmographyAvailability`.
+- Unified autocomplete: `groups.movie` and `groups.person`.
+
+Each state is `{ status: 'available' }` (including successfully empty data) or
+`{ status: 'unavailable', retryAfterSeconds?: number }`. Unavailable data must
+never be interpreted as a successful empty section. Metadata is optional in the
+TypeScript contracts to accept older successful responses; the current provider
+always supplies it. Older clients can still read the existing data fields, but
+need updating to distinguish unavailable sections.
+
+Movie details retain one TMDB request with appended credits, images and videos;
+person details retain one request with appended movie credits. Missing, failed or
+malformed appends are isolated without additional requests. If that request fails
+atomically with an eligible 502 (HTTP/connection failure), one profile-only request
+can salvage the required record. Invalid JSON, invalid primary data, 404, 429 and
+504 do not trigger fallback. No timeout defaults change. Sequential fallback may
+still exceed the browser deadline on a slow upstream; cancellation remains silent.
+There are no recommendations or independent person photo sections.
+
+Manual recovery endpoints return only the mapped section:
+- `GET /movies/:id/credits`: cast and crew fields.
+- `GET /movies/:id/photos`: `{ photos: [...] }`.
+- `GET /movies/:id/videos`: `{ videos: [...] }`.
+- `GET /api/v1/persons/:id/filmography`: `{ filmography: [...] }`.
+
+These endpoints validate IDs and preserve sanitized 429/502/504 behavior and safe
+Retry-After headers. Retry affects only the selected section, guards pending
+requests, and cancels/ignores obsolete work. Successful sections, media controls,
+biography state and filmography URL controls remain intact. Local states have
+section headings, loading feedback, explicit empty text, and compact unavailable
+messages. After recovery, focus moves to the surviving local status only if the
+retry control still held focus, without scrolling.
+
+Unified autocomplete independently settles movie/person searches while retaining
+provider ordering within each group. Partial results stay selectable, with subtle
+unavailable feedback. A successful empty group alongside failure does not claim
+that no suggestions exist. Both failures preserve existing classified error UX.
+Enter still submits a search.
+
+The frontend validates new availability discriminants, required section fields,
+recovered section content, and partial suggestion structures at the API boundary.
+Broader validation of legacy successful JSON and a shared error schema remain
+separate follow-ups. The intentional white-on-coral contrast exception remains;
+this feature does not claim complete WCAG AA compliance.
 
 ## Project structure
 

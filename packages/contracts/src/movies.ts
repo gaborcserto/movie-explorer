@@ -1,3 +1,5 @@
+import type { MovieSection, SectionAvailability } from './availability';
+
 export type MovieId = number;
 
 export type MovieSortField =
@@ -60,6 +62,7 @@ export interface MovieVideo {
 }
 
 export interface MovieDetails extends MovieSummary {
+  sections?: Record<MovieSection, SectionAvailability>;
   /** Small poster image for a decorative loading preview. */
   posterPreviewUrl?: string;
   cast: string[];
@@ -72,6 +75,17 @@ export interface MovieDetails extends MovieSummary {
   rating?: number;
   runtimeMinutes?: number;
   backdropUrl?: string;
+  photos?: MoviePhoto[];
+  videos?: MovieVideo[];
+}
+
+export interface MovieSectionResponse {
+  cast?: string[];
+  castMembers?: MovieCastMember[];
+  director?: string;
+  directors?: MovieDirector[];
+  writers?: MovieCrewMember[];
+  producers?: MovieCrewMember[];
   photos?: MoviePhoto[];
   videos?: MovieVideo[];
 }

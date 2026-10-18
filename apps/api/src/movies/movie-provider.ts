@@ -1,5 +1,7 @@
 import type {
   MovieDetails,
+  MovieSection,
+  MovieSectionResponse,
   MovieListResponse,
   MovieQueryParams,
   MovieSuggestionsResponse,
@@ -8,6 +10,11 @@ import type {
 } from '@movie-explorer/contracts';
 
 export interface MovieProvider {
+  findMovieSection(
+    id: number,
+    section: MovieSection,
+  ): Promise<MovieSectionResponse>;
+  findFilmography(id: number): Promise<Pick<PersonDetails, 'filmography'>>;
   findPeople(query: string, page: number): Promise<PersonListResponse>;
   findPerson(id: number): Promise<PersonDetails | undefined>;
   findAll(query: MovieQueryParams): Promise<MovieListResponse>;

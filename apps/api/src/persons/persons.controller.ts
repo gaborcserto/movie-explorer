@@ -54,4 +54,8 @@ export class PersonsController {
     if (!person) throw new NotFoundException('Person not found');
     return person;
   }
+  @Get(':id/filmography')
+  public getFilmography(@Param() params: GetPersonParams) {
+    return this.personsService.findFilmography(params.id);
+  }
 }

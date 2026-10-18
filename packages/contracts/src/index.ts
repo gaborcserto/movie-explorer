@@ -26,3 +26,5 @@ export type {
   PersonFilmographyEntry,
   PersonCrewCredit,
 } from './persons';
+export type { SectionAvailability, MovieSection } from './availability';
+export type { MovieSectionResponse } from './movies';

@@ -65,6 +65,7 @@ describe('TmdbMovieProvider person integration', () => {
       id: 1,
       name: 'Person',
       filmography: [],
+      filmographyAvailability: { status: 'available' },
     });
   });
 
@@ -74,17 +75,32 @@ describe('TmdbMovieProvider person integration', () => {
     { ...person, id: 0 },
     { ...person, id: 2 },
     { ...person, name: ' ' },
-    { ...person, movie_credits: undefined },
-    { ...person, movie_credits: null },
-    { ...person, movie_credits: { cast: [] } },
-    { ...person, movie_credits: { cast: {}, crew: [] } },
-    { ...person, movie_credits: { cast: [], crew: [], success: false } },
   ])('rejects invalid or incomplete responses: %j', async (payload) => {
     fetchMock.mockResolvedValue(Response.json(payload));
     await expect(provider.findPerson(1)).rejects.toBeInstanceOf(
       BadGatewayException,
     );
   });
+
+  it.each([
+    { ...person, movie_credits: undefined },
+    { ...person, movie_credits: null },
+    { ...person, movie_credits: { cast: [] } },
+    { ...person, movie_credits: { cast: {}, crew: [] } },
+    { ...person, movie_credits: { cast: [], crew: [], success: false } },
+  ])(
+    'retains profile when optional credits are malformed: %j',
+    async (payload) => {
+      fetchMock.mockResolvedValue(Response.json(payload));
+      await expect(provider.findPerson(1)).resolves.toMatchObject({
+        id: 1,
+        name: 'Person',
+        filmography: [],
+        filmographyAvailability: { status: 'unavailable' },
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it('returns undefined for upstream 404', async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 404 }));

@@ -8,6 +8,9 @@ import {
 import { parseRetryAfter } from './retry-after';
 import type {
   MovieDetails,
+  MovieSection,
+  MovieSectionResponse,
+  SectionAvailability,
   MovieListResponse,
   MovieQueryParams,
   MovieSortField,
@@ -32,6 +35,12 @@ import {
   TmdbMovieListItem,
   TmdbPagedResponse,
 } from './tmdb.types';
+
+function detailRecord(value: unknown): Record<string, unknown> | undefined {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
 
 @Injectable()
 export class TmdbMovieProvider implements MovieProvider {
@@ -126,57 +135,210 @@ export class TmdbMovieProvider implements MovieProvider {
     };
   }
 
+  // Successful appends stay a single request. Only an atomic transport/upstream
+  // failure needs a profile-only fallback; there are no retry loops.
+  private async detailRequest<T>(path: string, query: Record<string, string>) {
+    try {
+      return await this.request<T>(path, query, true);
+    } catch (error) {
+      if (
+        !(error instanceof HttpException) ||
+        error.getStatus() !== 502 ||
+        error.message === 'Movie provider response was invalid'
+      )
+        throw error;
+      return this.request<T>(path, {}, true);
+    }
+  }
+
   public async findOne(id: number): Promise<MovieDetails | undefined> {
-    const movie = await this.request<TmdbMovieDetails>(
-      `/movie/${id}`,
-      {
-        append_to_response: 'credits,images,videos',
-        // Images use ISO 639-1 language codes; also include language-neutral stills.
-        include_image_language: `${this.config.language.split('-')[0]},null`,
-      },
-      true,
-    );
-
+    const movie = await this.detailRequest<TmdbMovieDetails>(`/movie/${id}`, {
+      append_to_response: 'credits,images,videos',
+      include_image_language: `${this.config.language.split('-')[0]},null`,
+    });
     if (!movie) return undefined;
-
-    // A successful details request can contain missing/failed appended resources.
-    // Reject partial responses rather than presenting failures as empty collections.
     if (
       movie.id !== id ||
       typeof movie.title !== 'string' ||
-      !Array.isArray(movie.credits?.cast) ||
-      !Array.isArray(movie.credits?.crew) ||
-      !Array.isArray(movie.images?.backdrops) ||
-      !Array.isArray(movie.videos?.results)
+      !movie.title.trim() ||
+      typeof movie.overview !== 'string' ||
+      !Array.isArray(movie.genres) ||
+      !movie.genres.every(
+        (genre) =>
+          genre &&
+          Number.isSafeInteger(genre.id) &&
+          typeof genre.name === 'string',
+      )
     ) {
       this.logFailure('movie-detail', 'invalid-response', 502, 200);
-      throw new BadGatewayException('Movie provider response was incomplete');
+      throw new BadGatewayException('Movie provider response was invalid');
     }
-
+    let details: MovieDetails;
     try {
-      return this.mapper.toMovieDetails(movie);
+      details = this.mapper.toMovieDetails({
+        ...movie,
+        credits: undefined,
+        images: undefined,
+        videos: undefined,
+      });
     } catch {
       this.logFailure('movie-detail', 'invalid-response', 502, 200);
       throw new BadGatewayException('Movie provider response was invalid');
     }
+    const sections: Record<MovieSection, SectionAvailability> = {
+      credits: { status: 'unavailable' },
+      photos: { status: 'unavailable' },
+      videos: { status: 'unavailable' },
+    };
+    for (const section of ['credits', 'videos', 'photos'] as const) {
+      try {
+        Object.assign(
+          details,
+          this.mapMovieSection(
+            section,
+            section === 'photos' ? movie.images : movie[section],
+          ),
+        );
+        sections[section] = { status: 'available' };
+      } catch {
+        this.logFailure(`movie-${section}`, 'invalid-response', 502, 200);
+        sections[section] = { status: 'unavailable' };
+      }
+    }
+    return { ...details, sections };
+  }
+
+  private mapMovieSection(
+    section: MovieSection,
+    value: unknown,
+  ): MovieSectionResponse {
+    const resource = detailRecord(value);
+    if (
+      !resource ||
+      resource.success === false ||
+      (section === 'credits'
+        ? !Array.isArray(resource.cast) || !Array.isArray(resource.crew)
+        : !Array.isArray(
+            resource[section === 'photos' ? 'backdrops' : 'results'],
+          ))
+    ) {
+      throw new BadGatewayException('Movie section response was invalid');
+    }
+    const validEntries = (key: string, fields: string[]) =>
+      Array.isArray(resource[key]) &&
+      resource[key].every((entry: unknown) => {
+        const item = detailRecord(entry);
+        return item && fields.every((field) => typeof item[field] === 'string');
+      });
+    if (
+      section === 'credits'
+        ? !validEntries('cast', ['name']) ||
+          !validEntries('crew', ['name', 'job'])
+        : section === 'photos'
+          ? !validEntries('backdrops', ['file_path'])
+          : !validEntries('results', ['name', 'key', 'site'])
+    ) {
+      throw new BadGatewayException('Movie section response was invalid');
+    }
+    const movie: TmdbMovieDetails = {
+      id: 1,
+      title: '',
+      overview: '',
+      genres: [],
+      poster_path: null,
+      runtime: null,
+      vote_average: 0,
+    };
+    // Mapping errors are isolated to their section, including malformed entries.
+    if (section === 'credits')
+      movie.credits = value as TmdbMovieDetails['credits'];
+    if (section === 'photos')
+      movie.images = value as TmdbMovieDetails['images'];
+    if (section === 'videos')
+      movie.videos = value as TmdbMovieDetails['videos'];
+    const mapped = this.mapper.toMovieDetails(movie);
+    if (section === 'photos') return { photos: mapped.photos ?? [] };
+    if (section === 'videos') return { videos: mapped.videos ?? [] };
+    return {
+      cast: mapped.cast,
+      castMembers: mapped.castMembers ?? [],
+      director: mapped.director,
+      directors: mapped.directors ?? [],
+      writers: mapped.writers ?? [],
+      producers: mapped.producers ?? [],
+    };
+  }
+
+  public async findMovieSection(
+    id: number,
+    section: MovieSection,
+  ): Promise<MovieSectionResponse> {
+    const source = section === 'photos' ? 'images' : section;
+    const value = await this.request<unknown>(
+      `/movie/${id}/${source}`,
+      section === 'photos'
+        ? {
+            include_image_language: `${this.config.language.split('-')[0]},null`,
+          }
+        : {},
+      true,
+    );
+    try {
+      return this.mapMovieSection(section, value);
+    } catch {
+      this.logFailure(`movie-${section}`, 'invalid-response', 502, 200);
+      throw new BadGatewayException('Movie section response was invalid');
+    }
   }
 
   public async findPerson(id: number): Promise<PersonDetails | undefined> {
-    const person = await this.request<unknown>(
-      `/person/${id}`,
-      {
-        append_to_response: 'movie_credits',
-      },
-      true,
-    );
+    const person = await this.detailRequest<unknown>(`/person/${id}`, {
+      append_to_response: 'movie_credits',
+    });
     if (person === undefined) return undefined;
-    if (!isTmdbPersonDetails(person) || person.id !== id) {
+    const record = detailRecord(person);
+    const primary = record && {
+      ...record,
+      movie_credits: { cast: [], crew: [] },
+    };
+    if (!isTmdbPersonDetails(primary) || primary.id !== id) {
       this.logFailure('person-detail', 'invalid-response', 502, 200);
       throw new BadGatewayException('Person provider response was invalid');
     }
+    const mapped = new TmdbPersonMapper(
+      this.config.imageBaseUrl,
+    ).toPersonDetails(primary);
+    try {
+      mapped.filmography = this.mapFilmography(id, record.movie_credits);
+      mapped.filmographyAvailability = { status: 'available' };
+    } catch {
+      this.logFailure('person-filmography', 'invalid-response', 502, 200);
+      mapped.filmographyAvailability = { status: 'unavailable' };
+    }
+    return mapped;
+  }
+
+  private mapFilmography(id: number, value: unknown) {
+    const person = { id, name: 'Profile', movie_credits: value };
+    if (!isTmdbPersonDetails(person))
+      throw new BadGatewayException('Filmography response was invalid');
     return new TmdbPersonMapper(this.config.imageBaseUrl).toPersonDetails(
       person,
+    ).filmography;
+  }
+
+  public async findFilmography(id: number) {
+    const value = await this.request<unknown>(
+      `/person/${id}/movie_credits`,
+      {},
+      true,
     );
+    try {
+      return { filmography: this.mapFilmography(id, value) };
+    } catch {
+      this.logFailure('person-filmography', 'invalid-response', 502, 200);
+      throw new BadGatewayException('Filmography response was invalid');
+    }
   }
 
   private async fetchMoviePage(

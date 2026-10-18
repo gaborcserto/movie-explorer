@@ -269,3 +269,75 @@ test('caps each suggestion group at six options', async () => {
   await tick();
   expect(screen.getAllByRole('option')).toHaveLength(6);
 });
+
+test.each(['movie', 'person'] as const)(
+  'partial %s suggestions retain keyboard selection and ARIA',
+  async (type) => {
+    const suggestions = mixed.suggestions.filter(
+      (item) => item.mediaType === type
+    );
+    api.mockResolvedValue({
+      suggestions,
+      groups: {
+        movie: { status: type === 'movie' ? 'available' : 'unavailable' },
+        person: { status: type === 'person' ? 'available' : 'unavailable' },
+      },
+    });
+    const router = createMemoryRouter([
+      { path: '/', element: <HeaderSearch /> },
+      { path: '/movie/:id', element: <h1>Selected movie</h1> },
+      { path: '/person/:id', element: <h1>Selected person</h1> },
+    ]);
+    render(<RouterProvider router={router} />);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Search movies and people' })
+    );
+    const input = screen.getByRole('combobox');
+    fireEvent.change(input, { target: { value: 'alien' } });
+    await tick();
+    expect(screen.getAllByRole('option')).toHaveLength(2);
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Some suggestions unavailable.'
+    );
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(input).toHaveAttribute(
+      'aria-activedescendant',
+      screen.getAllByRole('option')[0].id
+    );
+    fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input).toHaveAttribute(
+      'aria-activedescendant',
+      screen.getAllByRole('option')[1].id
+    );
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(router.state.location.pathname).toBe(`/${type}/43`);
+  }
+);
+
+test('empty successful group with failed sibling avoids misleading no-suggestions copy and supports search on Enter', async () => {
+  api.mockResolvedValue({
+    suggestions: [],
+    groups: {
+      movie: { status: 'available' },
+      person: { status: 'unavailable' },
+    },
+  });
+  const router = createMemoryRouter([
+    { path: '/', element: <HeaderSearch /> },
+    { path: '/search/:query', element: <h1>Search results</h1> },
+  ]);
+  render(<RouterProvider router={router} />);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Search movies and people' })
+  );
+  const input = screen.getByRole('combobox');
+  fireEvent.change(input, { target: { value: 'alien' } });
+  await tick();
+  expect(input).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'Some suggestions unavailable. Press Enter to search.'
+  );
+  expect(screen.queryByText(/No suggestions found/)).not.toBeInTheDocument();
+  fireEvent.submit(input.closest('form')!);
+  expect(router.state.location.pathname).toBe('/search/alien');
+});

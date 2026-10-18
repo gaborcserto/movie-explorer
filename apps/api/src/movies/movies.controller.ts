@@ -77,4 +77,18 @@ export class MoviesController {
     }
     return movie;
   }
+  @Get(':id/credits')
+  public getCredits(@Param() params: DetailIdParams) {
+    return this.moviesService.findMovieSection(params.id, 'credits');
+  }
+
+  @Get(':id/videos')
+  public getVideos(@Param() params: DetailIdParams) {
+    return this.moviesService.findMovieSection(params.id, 'videos');
+  }
+
+  @Get(':id/photos')
+  public getPhotos(@Param() params: DetailIdParams) {
+    return this.moviesService.findMovieSection(params.id, 'photos');
+  }
 }

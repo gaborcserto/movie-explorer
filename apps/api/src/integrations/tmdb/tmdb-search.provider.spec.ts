@@ -60,6 +60,10 @@ describe('search provider and public contracts', () => {
       provider,
     ).suggestions(' Query ', 1);
     expect(result).toEqual({
+      groups: {
+        movie: { status: 'available' },
+        person: { status: 'available' },
+      },
       suggestions: [
         {
           mediaType: 'movie',
