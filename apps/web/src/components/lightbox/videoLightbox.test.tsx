@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { MovieDetails } from '@movie-explorer/contracts';
-import { DetailsLowerContent } from './detailsContent';
+import { DetailsLowerContent } from '../details/detailsContent';
 
 const movie: MovieDetails = {
   id: 1,
@@ -27,12 +27,14 @@ const movie: MovieDetails = {
 describe('video lightbox', () => {
   it('opens a lazy YouTube embed from the thumbnail and closes with its button', async () => {
     const user = userEvent.setup();
+
     render(<DetailsLowerContent movieData={movie} />);
     const trigger = screen.getByRole('button', {
       name: 'Play Official Trailer',
     });
 
     expect(document.querySelector('iframe')).toBeNull();
+
     await user.click(trigger);
 
     const dialog = screen.getByRole('dialog', { name: 'Official Trailer' });

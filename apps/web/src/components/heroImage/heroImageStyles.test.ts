@@ -4,7 +4,8 @@ import { compile } from 'sass';
 import postcss from 'postcss';
 
 const movieStylesheet = postcss.parse(
-  compile(fileURLToPath(new URL('./details.scss', import.meta.url))).css
+  compile(fileURLToPath(new URL('../details/details.scss', import.meta.url)))
+    .css
 );
 const personStylesheet = postcss.parse(
   compile(
@@ -19,9 +20,11 @@ const interactionStylesheet = postcss.parse(
 
 function declarations(stylesheet: postcss.Root, selector: string) {
   const values: Record<string, string> = {};
+
   stylesheet.walkRules((rule) => {
-    if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector))
+    if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector)) {
       return;
+    }
     rule.walkDecls((declaration) => {
       values[declaration.prop] = declaration.value;
     });
@@ -71,6 +74,7 @@ test('both detail hero images have matching ten pixel rounded corners', () => {
 
 test('hero images have visible keyboard focus and reduced-motion hover behavior', () => {
   const selectors = new Set<string>();
+
   interactionStylesheet.walkRules((rule) => {
     selectors.add(rule.selector);
   });
@@ -86,9 +90,12 @@ test('hero images have visible keyboard focus and reduced-motion hover behavior'
   );
   let hoverShadow = '';
   let hoverTransform = '';
+
   if (hover?.type === 'atrule') {
     hover.walkRules((rule) => {
-      if (!rule.selectors.includes('.hero-image--loaded:hover')) return;
+      if (!rule.selectors.includes('.hero-image--loaded:hover')) {
+        return;
+      }
       rule.walkDecls('box-shadow', (declaration) => {
         hoverShadow = declaration.value;
       });
@@ -104,10 +111,15 @@ test('hero images have visible keyboard focus and reduced-motion hover behavior'
     transition: expect.stringContaining('box-shadow 0.24s ease'),
   });
   let reducedMotionHoverTransform: string | undefined;
+
   interactionStylesheet.walkAtRules('media', (media) => {
-    if (media.params !== '(prefers-reduced-motion: reduce)') return;
+    if (media.params !== '(prefers-reduced-motion: reduce)') {
+      return;
+    }
     media.walkRules((rule) => {
-      if (!rule.selectors.includes('.hero-image--loaded:hover')) return;
+      if (!rule.selectors.includes('.hero-image--loaded:hover')) {
+        return;
+      }
       rule.walkDecls('transform', (declaration) => {
         reducedMotionHoverTransform = declaration.value;
       });

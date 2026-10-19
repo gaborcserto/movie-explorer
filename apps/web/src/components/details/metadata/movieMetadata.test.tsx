@@ -11,7 +11,9 @@ const base: MovieDetails = {
 };
 function value(label: string) {
   const row = screen.getByText(label, { selector: 'dt' }).parentElement;
-  if (!row) throw new Error('Missing metadata row');
+  if (!row) {
+    throw new Error('Missing metadata row');
+  }
   return within(row).getByRole('definition');
 }
 

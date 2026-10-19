@@ -7,7 +7,9 @@ const usd = new Intl.NumberFormat('en-US', {
 });
 
 function languageName(code: string | undefined) {
-  if (!code?.trim()) return 'Unknown';
+  if (!code?.trim()) {
+    return 'Unknown';
+  }
   try {
     return (
       new Intl.DisplayNames(['en'], { type: 'language', fallback: 'code' }).of(
@@ -36,6 +38,7 @@ export default function MovieMetadata({ movie }: { movie: MovieDetails }) {
     ['Budget', money(movie.budget)],
     ['Revenue', money(movie.revenue)],
   ];
+
   return (
     <section
       className="movie-details__section movie-details__information"

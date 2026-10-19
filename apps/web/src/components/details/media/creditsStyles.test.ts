@@ -10,8 +10,9 @@ const stylesheet = postcss.parse(
 function declarations(selector: string) {
   const values: Record<string, string> = {};
   stylesheet.walkRules((rule) => {
-    if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector))
+    if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector)) {
       return;
+    }
     rule.walkDecls((declaration) => {
       values[declaration.prop] = declaration.value;
     });
@@ -26,10 +27,13 @@ function declarationsForMedia(selector: string, query: string) {
       query.includes('prefers-reduced-motion')
         ? !media.params.includes(query)
         : media.params !== query
-    )
+    ) {
       return;
+    }
     media.walkRules((rule) => {
-      if (!rule.selectors.includes(selector)) return;
+      if (!rule.selectors.includes(selector)) {
+        return;
+      }
       rule.walkDecls((declaration) => {
         values[declaration.prop] = declaration.value;
       });
@@ -76,7 +80,9 @@ test('keeps all card names coral and role labels muted without changing typograp
 test('uses five desktop columns, four tablet columns and horizontal Cast scrolling on mobile', () => {
   const mediaRules: Array<{ query: string; display?: string }> = [];
   stylesheet.walkAtRules('media', (media) => {
-    if (!media.params.includes('max-width')) return;
+    if (!media.params.includes('max-width')) {
+      return;
+    }
     media.walkRules('.cast-grid', (rule) => {
       mediaRules.push({
         query: media.params,
@@ -149,10 +155,14 @@ test('provides visible focus outlines on summary and complete card links', () =>
 test('disables Cast animations when reduced motion is requested', () => {
   const selectors: string[] = [];
   stylesheet.walkAtRules('media', (media) => {
-    if (media.params !== '(prefers-reduced-motion: reduce)') return;
+    if (media.params !== '(prefers-reduced-motion: reduce)') {
+      return;
+    }
     media.walkRules((rule) => {
       rule.walkDecls('transition', (declaration) => {
-        if (declaration.value === 'none') selectors.push(...rule.selectors);
+        if (declaration.value === 'none') {
+          selectors.push(...rule.selectors);
+        }
       });
     });
   });

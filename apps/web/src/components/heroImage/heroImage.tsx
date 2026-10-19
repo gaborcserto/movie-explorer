@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { MoviePhoto } from '@movie-explorer/contracts';
+
 import MovieImage from '../utility/customImage';
-import PhotoLightbox from './photoLightbox';
+import { Lightbox } from '../lightbox';
 import {
   getDisplaySrcSet,
   getPosterDisplaySrcSet,
@@ -98,7 +99,8 @@ function HeroImageContent({
         <div className={className}>{image}</div>
       )}
       {open && loaded && (
-        <PhotoLightbox
+        <Lightbox
+          type="photo"
           photos={gallery}
           initialIndex={0}
           title={title}
@@ -111,5 +113,6 @@ function HeroImageContent({
 
 export default function HeroImage(props: Props) {
   const { src } = props;
+
   return <HeroImageContent key={src ?? 'no-image'} {...props} />;
 }

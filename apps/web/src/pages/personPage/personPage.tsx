@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { PersonDetails } from '@movie-explorer/contracts';
 
-import SectionRecovery from '../../components/details/sectionRecovery';
-import HeroImage from '../../components/details/heroImage';
-import PhotoPreview from '../../components/details/photoPreview';
+import {
+  SectionRecovery,
+  DetailError,
+} from '../../components/details/recovery';
+import HeroImage from '../../components/heroImage';
+import PhotoPreview from '../../components/details/media';
 import Footer from '../../layouts/footer';
 import Loading from '../../layouts/loading';
-import DetailError from '../../components/details/detailError';
 import presentApiError, {
   isCancelledError,
 } from '../../util/errorPresentation';
@@ -20,7 +22,7 @@ import './personPage.scss';
 import Filmography from './filmography';
 import HeaderSearch from '../../components/search/headerSearch';
 import getPersonAge from './personAge';
-import useDetailPage from '../../components/details/useDetailPage';
+import useDetailPage from '../../components/details/hooks';
 import parseDetailId from '../../util/detailId';
 
 type PersonState =

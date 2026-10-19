@@ -18,19 +18,25 @@ const stylesheets = [
 
 function declarations(selector: string) {
   let result: Record<string, string> | undefined;
+
   stylesheets.forEach((stylesheet) => {
     let values: Record<string, string> | undefined;
     stylesheet.walkRules((rule) => {
-      if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector))
+      if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector)) {
         return;
+      }
       values = {};
       rule.walkDecls((declaration) => {
         values![declaration.prop] = declaration.value;
       });
     });
-    if (values) result = values;
+    if (values) {
+      result = values;
+    }
   });
-  if (result) return result;
+  if (result) {
+    return result;
+  }
   throw new Error(`Missing rule: ${selector}`);
 }
 
@@ -39,8 +45,9 @@ function contrastRatio(foreground: string, background: string) {
     const channels = hex
       .match(/[\da-f]{2}/gi)
       ?.map((channel) => parseInt(channel, 16) / 255);
-    if (!channels || channels.length !== 3)
+    if (!channels || channels.length !== 3) {
       throw new Error(`Invalid color ${hex}`);
+    }
     const [r, g, b] = channels.map((channel) =>
       channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
     );
@@ -49,11 +56,13 @@ function contrastRatio(foreground: string, background: string) {
   const values = [luminance(foreground), luminance(background)].sort(
     (a, b) => b - a
   );
+
   return (values[0]! + 0.05) / (values[1]! + 0.05);
 }
 
 test('movie rating uses the requested white-on-coral styling', () => {
   const style = declarations('.movie-details__rating');
+
   expect(style.background).toBe('#f65261');
   expect(style.color).toBe('#ffffff');
   expect(style['font-weight']).toBe('700');
@@ -67,7 +76,9 @@ test('movie rating uses the requested white-on-coral styling', () => {
   });
   let mobileStyle: Record<string, string> | undefined;
   stylesheets[0]!.walkAtRules('media', (media) => {
-    if (media.params !== '(max-width: 767.98px)') return;
+    if (media.params !== '(max-width: 767.98px)') {
+      return;
+    }
     media.walkRules('.movie-details__rating', (rule) => {
       mobileStyle = {};
       rule.walkDecls((declaration) => {
@@ -103,6 +114,7 @@ test('selected filmography view preserves the intentional white-on-coral contras
 test('selected view keeps white text through hover, active, and focus states', () => {
   const selector = '.filmography__controls [aria-pressed=true]';
   const base = declarations(selector);
+
   expect(base.color).toBe('#ffffff');
   [':hover', ':active', ':focus-visible'].forEach((state) => {
     const rule = stylesheets[1]!.nodes?.find(

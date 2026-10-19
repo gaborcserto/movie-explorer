@@ -39,9 +39,11 @@ export default function VideoLightbox({
     dialog?.focus();
 
     const focusInside = (event: FocusEvent) => {
-      if (event.target instanceof Node && !dialog?.contains(event.target))
+      if (event.target instanceof Node && !dialog?.contains(event.target)) {
         dialog?.focus();
+      }
     };
+
     const keydown = (event: KeyboardEvent) => {
       const { key, target } = event;
       if (key === 'Escape') {
@@ -74,7 +76,9 @@ export default function VideoLightbox({
         return;
       }
 
-      if (key !== 'ArrowLeft' && key !== 'ArrowRight') return;
+      if (key !== 'ArrowLeft' && key !== 'ArrowRight') {
+        return;
+      }
       const { activeElement } = document;
       const interactiveSelector =
         'button, a, input, textarea, select, iframe, [contenteditable="true"]';
@@ -84,7 +88,9 @@ export default function VideoLightbox({
       const activeElementIsInteractive =
         activeElement instanceof Element &&
         Boolean(activeElement.closest(interactiveSelector));
-      if (targetIsInteractive || activeElementIsInteractive) return;
+      if (targetIsInteractive || activeElementIsInteractive) {
+        return;
+      }
 
       event.preventDefault();
       setIndex((current) =>
@@ -97,6 +103,7 @@ export default function VideoLightbox({
 
     document.addEventListener('keydown', keydown);
     document.addEventListener('focusin', focusInside);
+
     return () => {
       document.removeEventListener('keydown', keydown);
       document.removeEventListener('focusin', focusInside);
@@ -104,12 +111,15 @@ export default function VideoLightbox({
       siblings.forEach((element, position) => {
         element.inert = inertValues[position];
       });
-      if (previousFocus instanceof HTMLElement && previousFocus.isConnected)
+      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) {
         previousFocus.focus();
+      }
     };
   }, [videos.length]);
 
-  if (!video) return null;
+  if (!video) {
+    return null;
+  }
 
   return createPortal(
     <div

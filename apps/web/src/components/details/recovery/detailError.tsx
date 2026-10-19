@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import ErrorPresentation from '../errorPresentation/errorPresentation';
-import { useSearchHistory } from '../list/useSearchHistory';
+import ErrorPresentation from '../../errorPresentation/errorPresentation';
+import { useSearchHistory } from '../../list/useSearchHistory';
 
 export default function DetailError({
   heading,
@@ -20,14 +20,20 @@ export default function DetailError({
   const retryRef = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
     const button = retryRef.current;
+
     return () => {
       if (button && document.activeElement === button) {
         button.closest('main')?.focus({ preventScroll: true });
       }
     };
   }, []);
+
   const locked = useRef(false);
-  if (!pending) locked.current = false;
+
+  if (!pending) {
+    locked.current = false;
+  }
+
   return (
     <>
       <div role="status" className="visually-hidden">
@@ -47,7 +53,10 @@ export default function DetailError({
                 aria-label="Try again"
                 aria-disabled={pending}
                 onClick={() => {
-                  if (pending || locked.current) return;
+                  if (pending || locked.current) {
+                    return;
+                  }
+
                   locked.current = true;
                   retry();
                 }}

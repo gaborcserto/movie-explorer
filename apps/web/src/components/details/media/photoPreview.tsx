@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { MoviePhoto } from '@movie-explorer/contracts';
-import MovieImage from '../utility/customImage';
-import PhotoLightbox from './photoLightbox';
-import './media.scss';
+
+import MovieImage from '../../utility/customImage';
+import { Lightbox } from '../../lightbox';
 
 interface Props {
   photos: MoviePhoto[];
@@ -28,27 +28,38 @@ export default function PhotoPreview({
   const [selected, setSelected] = useState<number | null>(null);
   const lastPhotoRef = useRef<HTMLButtonElement>(null);
   const focusLastPhoto = useRef(false);
+
   const seen = new Set<string>();
   const available = photos.filter((photo) => {
-    if (!photo.fullUrl?.trim() || seen.has(photo.fullUrl)) return false;
+    if (!photo.fullUrl?.trim() || seen.has(photo.fullUrl)) {
+      return false;
+    }
+
     seen.add(photo.fullUrl);
     return true;
   });
+
   const plural = category ?? 'photos';
   const singular = plural.slice(0, -1);
   const batchSize = PHOTO_BATCH_SIZES[plural];
   const [visibleCount, setVisibleCount] = useState<number>(batchSize);
   const visiblePhotos = available.slice(0, visibleCount);
+
   useEffect(() => {
     setVisibleCount(batchSize);
     setSelected(null);
     focusLastPhoto.current = false;
   }, [batchSize, resetKey]);
+
   useEffect(() => {
-    if (!focusLastPhoto.current) return;
+    if (!focusLastPhoto.current) {
+      return;
+    }
+
     focusLastPhoto.current = false;
     lastPhotoRef.current?.focus({ preventScroll: true });
   }, [visibleCount]);
+
   return (
     <>
       <div className="media-preview__summary">
@@ -96,7 +107,8 @@ export default function PhotoPreview({
         ))}
       </div>
       {selected !== null && (
-        <PhotoLightbox
+        <Lightbox
+          type="photo"
           photos={available}
           initialIndex={selected}
           title={title}

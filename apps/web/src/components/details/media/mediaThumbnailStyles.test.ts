@@ -9,9 +9,11 @@ const stylesheet = postcss.parse(
 
 function declarations(selector: string) {
   const values: Record<string, string> = {};
+
   stylesheet.walkRules((rule) => {
-    if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector))
+    if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector)) {
       return;
+    }
     rule.walkDecls((declaration) => {
       values[declaration.prop] = declaration.value;
     });
@@ -21,15 +23,19 @@ function declarations(selector: string) {
 
 function declarationsForMedia(selector: string, query: string) {
   const values: Record<string, string> = {};
+
   stylesheet.walkAtRules('media', (media) => {
     if (
       query.includes('prefers-reduced-motion')
         ? !media.params.includes(query)
         : media.params !== query
-    )
+    ) {
       return;
+    }
     media.walkRules((rule) => {
-      if (!rule.selectors.includes(selector)) return;
+      if (!rule.selectors.includes(selector)) {
+        return;
+      }
       rule.walkDecls((declaration) => {
         values[declaration.prop] = declaration.value;
       });

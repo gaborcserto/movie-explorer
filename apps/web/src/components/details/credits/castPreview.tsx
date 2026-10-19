@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { MovieDirector } from '@movie-explorer/contracts';
-import MovieImage from '../utility/customImage';
-import { getDisplaySrcSet } from '../../util/imageSizing';
+
+import MovieImage from '../../utility/customImage';
+import { getDisplaySrcSet } from '../../../util/imageSizing';
 
 interface CastCredit extends MovieDirector {
   key: string;
@@ -12,8 +13,12 @@ interface CastCredit extends MovieDirector {
 export default function CastPreview({ members }: { members: CastCredit[] }) {
   const [visibleCount, setVisibleCount] = useState(10);
   const countRef = useRef<HTMLSpanElement>(null);
-  if (members.length === 0) return null;
+  if (members.length === 0) {
+    return null;
+  }
+
   const visible = members.slice(0, visibleCount);
+
   return (
     <>
       <div className="media-preview__summary">
@@ -28,8 +33,10 @@ export default function CastPreview({ members }: { members: CastCredit[] }) {
             aria-controls="movie-cast-grid"
             onClick={() => {
               setVisibleCount((count) => count + 10);
-              if (visibleCount + 10 >= members.length)
+
+              if (visibleCount + 10 >= members.length) {
                 countRef.current?.focus({ preventScroll: true });
+              }
             }}
           >
             Show more

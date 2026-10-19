@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
-import App from '../../App';
+import App from '../../../App';
 import {
   ApiRequestError,
   getMovie,
@@ -9,11 +9,11 @@ import {
   getPerson,
   getMovies,
   getPeople,
-} from '../../util/apiUtils';
+} from '../../../util/apiUtils';
 
-vi.mock('../../util/apiUtils', async () => ({
-  ...(await vi.importActual<typeof import('../../util/apiUtils')>(
-    '../../util/apiUtils'
+vi.mock('../../../util/apiUtils', async () => ({
+  ...(await vi.importActual<typeof import('../../../util/apiUtils')>(
+    '../../../util/apiUtils'
   )),
   getMovie: vi.fn(),
   getMovieSection: vi.fn(),
@@ -50,7 +50,7 @@ test.each(['movie', 'person'] as const)(
         reject = fail;
       })
     );
-    if (kind === 'movie')
+    if (kind === 'movie') {
       vi.mocked(getMovie).mockResolvedValueOnce({
         id: 42,
         title: 'Recovered movie',
@@ -58,12 +58,13 @@ test.each(['movie', 'person'] as const)(
         cast: [],
         posterUrl: '',
       });
-    else
+    } else {
       vi.mocked(getPerson).mockResolvedValueOnce({
         id: 42,
         name: 'Recovered person',
         filmography: [],
       });
+    }
     setup(`/${kind}/42`);
     await screen.findByRole('heading', { name: 'Connection problem' });
     const retry = screen.getByRole('button', { name: 'Try again' });
@@ -117,16 +118,17 @@ test.each(['movies', 'people'] as const)(
       resolve = done;
     });
     const page = { page: 1, totalPages: 0, totalResults: 0 };
-    if (view === 'movies')
+    if (view === 'movies') {
       vi.mocked(getMovies).mockImplementationOnce(async () => {
         await ready;
         return { ...page, movies: [] };
       });
-    else
+    } else {
       vi.mocked(getPeople).mockImplementationOnce(async () => {
         await ready;
         return { ...page, people: [] };
       });
+    }
     setup(`/search/Example${view === 'people' ? '?view=people' : ''}`);
     await screen.findByRole('heading', { name: 'Connection problem' });
     const retry = screen.getByRole('button', { name: 'Try again' });

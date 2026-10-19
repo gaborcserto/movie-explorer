@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StrictMode, useLayoutEffect } from 'react';
 import type { MovieDetails } from '@movie-explorer/contracts';
-import { DetailsLowerContent } from './detailsContent';
+import { DetailsLowerContent } from '../details/detailsContent';
 import PhotoLightbox from './photoLightbox';
 
 const movie: MovieDetails = {
@@ -30,12 +30,16 @@ async function open() {
 
 function load(image: HTMLElement) {
   fireEvent.load(image);
+
   Object.defineProperties(image, {
     clientWidth: { configurable: true, value: 800 },
     clientHeight: { configurable: true, value: 400 },
   });
   const viewport = image.parentElement;
-  if (!viewport) throw new Error('Missing viewport');
+  if (!viewport) {
+    throw new Error('Missing viewport');
+  }
+
   Object.defineProperties(viewport, {
     clientWidth: { configurable: true, value: 800 },
     clientHeight: { configurable: true, value: 600 },
@@ -120,7 +124,9 @@ describe('photo lightbox', () => {
     async (first) => {
       const { dialog, image } = await open();
       const preview = dialog.querySelector('.image-preview');
-      if (!preview) throw new Error('Missing preview');
+      if (!preview) {
+        throw new Error('Missing preview');
+      }
       expect(preview).toHaveAttribute('src', '/thumb1.jpg');
       expect(preview).toHaveAttribute('aria-hidden', 'true');
       expect(image).toHaveAttribute('src', '/original1.jpg');
@@ -140,7 +146,9 @@ describe('photo lightbox', () => {
   it('recovers from preview failure and ignores stale events during rapid navigation', async () => {
     const { user, dialog, image } = await open();
     const preview = dialog.querySelector('.image-preview');
-    if (!preview) throw new Error('Missing preview');
+    if (!preview) {
+      throw new Error('Missing preview');
+    }
     fireEvent.error(preview);
     expect(screen.queryByRole('alert')).toBeNull();
     fireEvent.load(image);
@@ -154,7 +162,9 @@ describe('photo lightbox', () => {
     expect(current).toHaveStyle({ opacity: '0' });
     expect(screen.getByRole('button', { name: 'Zoom in' })).toBeDisabled();
     const currentPreview = dialog.querySelector('.image-preview');
-    if (!currentPreview) throw new Error('Missing preview');
+    if (!currentPreview) {
+      throw new Error('Missing preview');
+    }
     fireEvent.load(currentPreview);
     expect(currentPreview).toHaveStyle({ opacity: '1' });
     fireEvent.error(current);

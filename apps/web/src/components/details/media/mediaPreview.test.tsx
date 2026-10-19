@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { MovieDetails } from '@movie-explorer/contracts';
 import PhotoPreview from './photoPreview';
-import { DetailsLowerContent } from './detailsContent';
+import { DetailsLowerContent } from '../detailsContent';
 
 const photos = Array.from({ length: 25 }, (_, index) => ({
   thumbnailUrl: `/thumb-${index}.jpg`,
@@ -31,14 +31,16 @@ test.each([0, 2, 6, 8, 10])(
     expect(
       screen.queryByRole('button', { name: /Show more photos/ }) !== null
     ).toBe(count > 10);
-    if (count)
+    if (count) {
       expect(screen.getByText(`${count} photos available`)).toBeVisible();
+    }
     expect(document.querySelector('img[src^="/original"]')).toBeNull();
   }
 );
 
 test('person photos reveal ten at a time, preserve order and hide the final partial batch control', async () => {
   const user = userEvent.setup();
+
   render(<PhotoPreview photos={photos} title="Person" />);
   const tiles = () =>
     screen.getAllByRole('button', { name: /View Person photo/ });
@@ -63,6 +65,7 @@ test('person photos reveal ten at a time, preserve order and hide the final part
 
 test('resets the visible photo count when the route key changes', async () => {
   const user = userEvent.setup();
+
   const { rerender } = render(
     <PhotoPreview photos={photos} title="First" resetKey={1} />
   );
@@ -80,6 +83,7 @@ test('resets the visible photo count when the route key changes', async () => {
 
 test('lightbox navigates the complete backdrop collection without revealing grid items', async () => {
   const user = userEvent.setup();
+
   render(<DetailsLowerContent movieData={{ ...movie, photos }} />);
   const trigger = screen.getByRole('button', { name: 'View Movie backdrop 6' });
   trigger.focus();
@@ -233,8 +237,9 @@ test.each([0, 2, 4, 5])(
     expect(
       screen.queryByRole('button', { name: /Show more videos/ }) !== null
     ).toBe(count > 4);
-    if (count)
+    if (count) {
       expect(screen.getByText(`${count} videos available`)).toBeVisible();
+    }
     expect(document.querySelector('iframe')).toBeNull();
   }
 );

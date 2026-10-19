@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import './details.scss';
 import { Link, useParams } from 'react-router-dom';
 import type { MovieDetails, MovieSection } from '@movie-explorer/contracts';
-import useDetailPage from './useDetailPage';
+import useDetailPage from './hooks';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
-import DetailError from './detailError';
+import { DetailError } from './recovery';
 import presentApiError, {
   isCancelledError,
 } from '../../util/errorPresentation';
@@ -36,23 +36,35 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
       setDetailsState('not-found');
       return undefined;
     }
+
     const controller = new AbortController();
     setPending(true);
+
     getMovie(movieId, controller.signal)
       .then((movie) => {
-        if (!current || controller.signal.aborted) return;
+        if (!current || controller.signal.aborted) {
+          return;
+        }
+
         setMovieData(movie);
         setDetailsState('success');
       })
       .catch((error: unknown) => {
-        if (!current || controller.signal.aborted) return;
-        if (isCancelledError(error)) return;
+        if (!current || controller.signal.aborted) {
+          return;
+        }
+        if (isCancelledError(error)) {
+          return;
+        }
+
         setRequestError(error);
         setMovieData(null);
         setDetailsState(isNotFoundError(error) ? 'not-found' : 'error');
       })
       .finally(() => {
-        if (current) setPending(false);
+        if (current) {
+          setPending(false);
+        }
       });
     return () => {
       current = false;
@@ -62,7 +74,10 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
 
   const recoverSection = async (section: MovieSection, signal: AbortSignal) => {
     const result = await getMovieSection(movieId, section, signal);
-    if (signal.aborted) return;
+    if (signal.aborted) {
+      return;
+    }
+
     setMovieData(
       (previous) =>
         previous && {

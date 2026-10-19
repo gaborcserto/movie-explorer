@@ -6,8 +6,8 @@ import {
   RouterProvider,
 } from 'react-router-dom';
 import type { MovieDetails, PersonDetails } from '@movie-explorer/contracts';
-import DetailsContent, { DetailsLowerContent } from './detailsContent';
-import App from '../../App';
+import DetailsContent, { DetailsLowerContent } from '../detailsContent';
+import App from '../../../App';
 
 const movie: MovieDetails = {
   id: 10,
@@ -187,9 +187,9 @@ test.each(['crew director', 'cast member', 'card portrait'])(
       });
       render(<RouterProvider router={router} />);
       await screen.findByRole('heading', { level: 1, name: movie.title });
-      if (source === 'card portrait')
+      if (source === 'card portrait') {
         await user.click(cards().getByRole('img', { name: 'Director One' }));
-      else {
+      } else {
         const link =
           source === 'cast member'
             ? cards().getByRole('link', { name: 'Director One' })

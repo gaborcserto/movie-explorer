@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import SectionRecovery from './sectionRecovery';
-import { ApiRequestError } from '../../util/apiUtils';
+import { ApiRequestError } from '../../../util/apiUtils';
 
 afterEach(() => vi.useRealTimers());
 

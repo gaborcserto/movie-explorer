@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 
 import './errorBoundary.scss';
 import ErrorPresentation from '../errorPresentation/errorPresentation';
-import useDetailPage from '../details/useDetailPage';
+import useDetailPage from '../details/hooks';
 
 function FatalErrorFallback() {
   const mainRef = useDetailPage('Something went wrong');

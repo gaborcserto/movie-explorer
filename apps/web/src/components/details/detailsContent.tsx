@@ -7,14 +7,15 @@ import type {
   MovieDirector,
   MovieVideo,
 } from '@movie-explorer/contracts';
-import SectionRecovery from './sectionRecovery';
-import PhotoPreview from './photoPreview';
-import VideoLightbox from './videoLightbox';
-import HeroImage from './heroImage';
-import MovieMetadata from './movieMetadata';
-import CastPreview from './castPreview';
+
+import { SectionRecovery } from './recovery';
+import PhotoPreview from './media';
+import { Lightbox } from '../lightbox';
+import HeroImage from '../heroImage';
+import MovieMetadata from './metadata';
+import CastPreview from './credits';
 import MovieImage from '../utility/customImage';
-import './media.scss';
+import './media/media.scss';
 
 interface DetailsProps {
   movieData: MovieDetails;
@@ -46,10 +47,15 @@ function getPersonCredits(movie: MovieDetails) {
     const unlinkedByName = new Map<string, PersonCredit>();
     const people: PersonCredit[] = [];
     members.forEach((person, index) => {
-      if (!person.name.trim()) return;
+      if (!person.name.trim()) {
+        return;
+      }
+
       let credit = hasPersonId(person.id) ? byId.get(person.id) : undefined;
-      if (!hasPersonId(person.id) && category !== 'cast')
+      if (!hasPersonId(person.id) && category !== 'cast') {
         credit = unlinkedByName.get(person.name.trim());
+      }
+
       if (!credit) {
         credit = {
           ...person,
@@ -60,16 +66,25 @@ function getPersonCredits(movie: MovieDetails) {
           roles: [],
         };
         people.push(credit);
-        if (hasPersonId(person.id)) byId.set(person.id, credit);
-        else if (category !== 'cast') unlinkedByName.set(credit.name, credit);
+        if (hasPersonId(person.id)) {
+          byId.set(person.id, credit);
+        } else if (category !== 'cast') {
+          unlinkedByName.set(credit.name, credit);
+        }
       }
+
       credit.profileUrl ||= person.profileUrl;
       credit.profileSrcSet ||= person.profileSrcSet;
+
       (person.roles ?? []).forEach((role) => {
         const label = role.trim();
-        if (label && !credit.roles.includes(label)) credit.roles.push(label);
+
+        if (label && !credit.roles.includes(label)) {
+          credit.roles.push(label);
+        }
       });
     });
+
     return people;
   };
   const directors = groupPeople(movie.directors ?? [], 'director');
@@ -78,17 +93,23 @@ function getPersonCredits(movie: MovieDetails) {
   const structuredCast = (movie.castMembers ?? []).filter((person) =>
     person.name.trim()
   );
+
   // Keep legacy names missing from a partial structured response as plain text.
   // Consume occurrences only for display; names never supply or merge identities.
   const legacyNames = movie.cast.map((name) => name.trim()).filter(Boolean);
+
   structuredCast.forEach((person) => {
     const index = legacyNames.indexOf(person.name.trim());
-    if (index >= 0) legacyNames.splice(index, 1);
+    if (index >= 0) {
+      legacyNames.splice(index, 1);
+    }
   });
+
   const castMembers: MovieCastMember[] = [
     ...structuredCast,
     ...legacyNames.map((name) => ({ name })),
   ];
+
   const cast = groupPeople(
     castMembers.map((person) => ({
       ...person,
@@ -96,6 +117,7 @@ function getPersonCredits(movie: MovieDetails) {
     })),
     'cast'
   );
+
   return {
     directors,
     writers,
@@ -151,17 +173,22 @@ function getYouTubeVideoId(url: string): string | undefined {
       hostname === 'youtube.com' ||
       hostname.endsWith('.youtube.com') ||
       hostname === 'youtu.be';
-    if (!isYouTubeHost) return undefined;
+    if (!isYouTubeHost) {
+      return undefined;
+    }
 
     const [firstSegment, secondSegment] = parsed.pathname
       .split('/')
       .filter(Boolean);
+
     let candidate: string | null | undefined;
-    if (hostname === 'youtu.be') candidate = firstSegment;
-    else if (parsed.pathname === '/watch')
+    if (hostname === 'youtu.be') {
+      candidate = firstSegment;
+    } else if (parsed.pathname === '/watch') {
       candidate = parsed.searchParams.get('v');
-    else if (['embed', 'shorts', 'live'].includes(firstSegment ?? ''))
+    } else if (['embed', 'shorts', 'live'].includes(firstSegment ?? '')) {
       candidate = secondSegment;
+    }
 
     return candidate && /^[\w-]{11}$/.test(candidate) ? candidate : undefined;
   } catch {
@@ -260,16 +287,22 @@ export function DetailsLowerContent({
   const rememberLastVideo = (element: HTMLElement | null) => {
     lastVideoRef.current = element;
   };
+
   useEffect(() => {
     setVisibleVideoCount(4);
     setSelectedVideo(null);
     focusLastVideo.current = false;
   }, [movieData.id]);
+
   useEffect(() => {
-    if (!focusLastVideo.current) return;
+    if (!focusLastVideo.current) {
+      return;
+    }
+
     focusLastVideo.current = false;
     lastVideoRef.current?.focus({ preventScroll: true });
   }, [visibleVideoCount]);
+
   const { cast, directors, writers, producers } = getPersonCredits(movieData);
   const crewGroups = [
     { label: 'Directors', people: directors },
@@ -450,7 +483,7 @@ export function DetailsLowerContent({
                       </>
                     );
 
-                    if (playerIndex >= 0)
+                    if (playerIndex >= 0) {
                       return (
                         <button
                           type="button"
@@ -467,7 +500,8 @@ export function DetailsLowerContent({
                           {content}
                         </button>
                       );
-                    if (video.url)
+                    }
+                    if (video.url) {
                       return (
                         <a
                           className="video-tile"
@@ -485,6 +519,7 @@ export function DetailsLowerContent({
                           {content}
                         </a>
                       );
+                    }
                     return (
                       <div
                         className="video-tile"
@@ -510,7 +545,8 @@ export function DetailsLowerContent({
         )}
 
         {selectedVideo !== null && (
-          <VideoLightbox
+          <Lightbox
+            type="video"
             videos={supportedVideos}
             initialIndex={selectedVideo}
             title={title}
