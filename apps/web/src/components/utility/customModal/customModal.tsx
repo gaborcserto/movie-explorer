@@ -11,7 +11,9 @@ interface CustomModalProps {
 
 function CustomModal({ children, open, onClose, titleId }: CustomModalProps) {
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open) {
+      return undefined;
+    }
 
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -20,6 +22,7 @@ function CustomModal({ children, open, onClose, titleId }: CustomModalProps) {
     };
 
     document.addEventListener('keydown', closeOnEscape);
+
     return () => document.removeEventListener('keydown', closeOnEscape);
   }, [onClose, open]);
 

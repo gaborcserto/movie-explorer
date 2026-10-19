@@ -18,6 +18,7 @@ function Error({
   pending = false,
 }: ErrorProps) {
   const retryRef = useRef<HTMLButtonElement>(null);
+
   useLayoutEffect(() => {
     const button = retryRef.current;
     return () => {
@@ -46,7 +47,9 @@ function Error({
           aria-label={actionLabel}
           aria-disabled={pending}
           onClick={() => {
-            if (!pending) onAction();
+            if (!pending) {
+              onAction();
+            }
           }}
         >
           {pending ? 'Trying again...' : actionLabel}

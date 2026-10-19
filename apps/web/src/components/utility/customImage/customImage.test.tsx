@@ -38,7 +38,9 @@ describe('<MovieImage />', () => {
       );
       const final = screen.getByAltText('Poster');
       const preview = container.querySelector('.image-preview');
-      if (!preview) throw new Error('Missing preview');
+      if (!preview) {
+        throw new Error('Missing preview');
+      }
       expect(final).toHaveAttribute('src', '/poster.jpg');
       expect(final).toHaveAttribute('loading', 'eager');
       expect(final).toHaveAttribute('decoding', 'async');
@@ -68,7 +70,9 @@ describe('<MovieImage />', () => {
     );
     const final = screen.getByAltText('Poster');
     const preview = container.querySelector('.image-preview');
-    if (!preview) throw new Error('Missing preview');
+    if (!preview) {
+      throw new Error('Missing preview');
+    }
     fireEvent.error(preview);
     expect(final).toHaveAttribute('src', '/poster.jpg');
     expect(preview).toHaveStyle({ opacity: '0' });
@@ -93,11 +97,15 @@ describe('<MovieImage />', () => {
       <MovieImage {...props} previewSrc="/first.jpg" />
     );
     const first = container.querySelector('.image-preview');
-    if (!first) throw new Error('Missing preview');
+    if (!first) {
+      throw new Error('Missing preview');
+    }
     fireEvent.load(first);
     rerender(<MovieImage {...props} previewSrc="/second.jpg" />);
     const second = container.querySelector('.image-preview');
-    if (!second) throw new Error('Missing preview');
+    if (!second) {
+      throw new Error('Missing preview');
+    }
     fireEvent.load(first);
     expect(second).toHaveStyle({ opacity: '0' });
     fireEvent.load(second);
@@ -106,7 +114,9 @@ describe('<MovieImage />', () => {
     fireEvent.error(second);
     expect(screen.getByAltText('Poster')).toHaveStyle({ opacity: '0' });
     const third = container.querySelector('.image-preview');
-    if (!third) throw new Error('Missing preview');
+    if (!third) {
+      throw new Error('Missing preview');
+    }
     fireEvent.load(third);
     expect(third).toHaveStyle({ opacity: '1' });
   });

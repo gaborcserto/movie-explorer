@@ -34,7 +34,9 @@ describe('<CustomModal />', () => {
     const closeButton = container.querySelector('.modal__close');
 
     expect(closeButton).not.toBeNull();
+
     fireEvent.click(closeButton as Element);
+
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

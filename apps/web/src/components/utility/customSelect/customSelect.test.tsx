@@ -69,9 +69,11 @@ describe('CustomSelect', () => {
 
     fireEvent.click(screen.getByRole('button'));
     fireEvent.click(screen.getByText('Option 1'));
+
     expect(mockOnChange).toHaveBeenCalledWith(['Option 1']);
 
     fireEvent.click(screen.getByText('Option 2'));
+
     expect(mockOnChange).toHaveBeenCalledWith(['Option 1', 'Option 2']);
   });
 });

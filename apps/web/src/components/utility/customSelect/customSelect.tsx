@@ -49,7 +49,9 @@ function CustomSelect({
   };
 
   useEffect(() => {
-    if (!isOpen) return undefined;
+    if (!isOpen) {
+      return undefined;
+    }
 
     const handleOutsideClick = (event: MouseEvent) => {
       if (
@@ -68,6 +70,7 @@ function CustomSelect({
 
     document.addEventListener('click', handleOutsideClick);
     document.addEventListener('keydown', handleEscape);
+
     return () => {
       document.removeEventListener('click', handleOutsideClick);
       document.removeEventListener('keydown', handleEscape);
