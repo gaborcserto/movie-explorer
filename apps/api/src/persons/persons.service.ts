@@ -15,6 +15,7 @@ export class PersonsService {
   public findOne(id: number): Promise<PersonDetails | undefined> {
     return this.movieProvider.findPerson(id);
   }
+
   public findFilmography(id: number) {
     return this.movieProvider.findFilmography(id);
   }

@@ -12,6 +12,7 @@ export class HttpErrorFilter implements ExceptionFilter {
     const response = host.switchToHttp().getResponse<Response>();
     const status = exception.getStatus();
     const body = exception.getResponse();
+
     if (status === 429 && typeof body === 'object' && 'retryAfter' in body) {
       const delay = body.retryAfter;
       if (
@@ -23,6 +24,7 @@ export class HttpErrorFilter implements ExceptionFilter {
         response.setHeader('Retry-After', String(delay));
       }
     }
+
     response
       .status(status)
       .json(

@@ -75,8 +75,10 @@ export class MoviesController {
     if (!movie) {
       throw new NotFoundException('Movie not found');
     }
+
     return movie;
   }
+
   @Get(':id/credits')
   public getCredits(@Param() params: DetailIdParams) {
     return this.moviesService.findMovieSection(params.id, 'credits');

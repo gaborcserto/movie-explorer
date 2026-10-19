@@ -51,9 +51,14 @@ export class PersonsController {
     @Param() params: GetPersonParams,
   ): Promise<PersonDetails> {
     const person = await this.personsService.findOne(params.id);
-    if (!person) throw new NotFoundException('Person not found');
+
+    if (!person) {
+      throw new NotFoundException('Person not found');
+    }
+
     return person;
   }
+
   @Get(':id/filmography')
   public getFilmography(@Param() params: GetPersonParams) {
     return this.personsService.findFilmography(params.id);

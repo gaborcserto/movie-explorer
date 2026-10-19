@@ -8,7 +8,10 @@ import { MOVIE_PROVIDER, MovieProvider } from '../movies/movie-provider';
 function groupAvailability(
   result: PromiseSettledResult<unknown>,
 ): SectionAvailability {
-  if (result.status === 'fulfilled') return { status: 'available' };
+  if (result.status === 'fulfilled') {
+    return { status: 'available' };
+  }
+
   const error: unknown = result.reason;
   if (error instanceof HttpException && error.getStatus() === 429) {
     const body = error.getResponse();
@@ -23,6 +26,7 @@ function groupAvailability(
       return { status: 'unavailable', retryAfterSeconds: body.retryAfter };
     }
   }
+
   return { status: 'unavailable' };
 }
 
@@ -40,15 +44,19 @@ export class SearchService {
       this.provider.findSuggestions(query, limit),
       this.provider.findPeople(query, 1),
     ]);
+
     if (movies.status === 'rejected' && people.status === 'rejected') {
       const personError: unknown = people.reason;
       if (
         personError instanceof HttpException &&
         personError.getStatus() === 429
-      )
+      ) {
         throw personError;
+      }
+
       throw movies.reason;
     }
+
     return {
       groups: {
         movie: groupAvailability(movies),
