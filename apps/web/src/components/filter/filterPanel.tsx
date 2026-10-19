@@ -39,6 +39,7 @@ function FilterSection({
 }) {
   const [expanded, setExpanded] = useState(false);
   const id = useId();
+
   return (
     <section className="filter-section">
       <h3>
@@ -99,7 +100,9 @@ export default function FilterPanel({
   useEffect(() => {
     const media = window.matchMedia?.('(max-width: 767px)');
     const change = () => setMobile(media?.matches ?? false);
+
     media?.addEventListener('change', change);
+
     return () => media?.removeEventListener('change', change);
   }, []);
 
@@ -107,6 +110,7 @@ export default function FilterPanel({
     const element = panel.current;
     const position = () => {
       if (!element) return;
+
       const viewport = window.visualViewport;
       if (mobile) {
         element.style.setProperty(
@@ -119,8 +123,10 @@ export default function FilterPanel({
         );
         return;
       }
+
       const anchor = element.parentElement?.getBoundingClientRect();
       if (!anchor) return;
+
       const below = window.innerHeight - anchor.bottom - 26;
       const above = anchor.top - 26;
       const flip = below < 300 && above > below;
@@ -134,11 +140,13 @@ export default function FilterPanel({
       element.style.left = `${Math.max(16, Math.min(anchor.right - element.offsetWidth, window.innerWidth - element.offsetWidth - 16))}px`;
       element.style.setProperty('--filter-available-height', `${available}px`);
     };
+
     position();
     window.addEventListener('resize', position);
     window.addEventListener('scroll', position, true);
     window.visualViewport?.addEventListener('resize', position);
     window.visualViewport?.addEventListener('scroll', position);
+
     return () => {
       window.removeEventListener('resize', position);
       window.removeEventListener('scroll', position, true);
@@ -150,6 +158,7 @@ export default function FilterPanel({
   useEffect(() => {
     const element = panel.current;
     if (!element) return undefined;
+
     const previousFocus = document.activeElement;
     element.focus();
     const previousOverflow = document.body.style.overflow;
@@ -163,6 +172,7 @@ export default function FilterPanel({
     background.forEach((node) => {
       node.inert = true;
     });
+
     const focusables = () =>
       Array.from(
         element.querySelectorAll<HTMLElement>(
@@ -171,6 +181,7 @@ export default function FilterPanel({
       ).filter(
         (node) => !node.closest('[inert]') && !node.hasAttribute('disabled')
       );
+
     const containFocus = (event: FocusEvent) => {
       if (
         mobile &&
@@ -179,6 +190,7 @@ export default function FilterPanel({
       )
         element.focus();
     };
+
     const keydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -205,8 +217,10 @@ export default function FilterPanel({
         }
       }
     };
+
     document.addEventListener('keydown', keydown);
     document.addEventListener('focusin', containFocus);
+
     return () => {
       document.body.style.overflow = previousOverflow;
       background.forEach((node, index) => {
@@ -434,6 +448,7 @@ export default function FilterPanel({
       </form>
     </div>
   );
+
   return mobile
     ? createPortal(
         <div className={`filter-overlay${closing ? ' is-closing' : ''}`}>
