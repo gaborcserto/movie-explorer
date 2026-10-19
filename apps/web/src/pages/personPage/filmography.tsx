@@ -19,14 +19,18 @@ function uniqueText(values: string[]) {
 }
 
 function roleKey(credit: PersonCrewCredit) {
-  if (credit.job?.trim()) return `job:${credit.job.trim()}`;
+  if (credit.job?.trim()) {
+    return `job:${credit.job.trim()}`;
+  }
   return credit.department?.trim()
     ? `department:${credit.department.trim()}`
     : '';
 }
 
 function matchesRole(credit: PersonCrewCredit, role: string) {
-  if (!role) return true;
+  if (!role) {
+    return true;
+  }
   return role.startsWith('department:')
     ? `department:${credit.department?.trim()}` === role
     : roleKey(credit) === role;
@@ -57,9 +61,15 @@ function compareTitles(a: PersonFilmographyEntry, b: PersonFilmographyEntry) {
 
 function sortMovies(movies: PersonFilmographyEntry[], sort: Sort) {
   return [...movies].sort((a, b) => {
-    if (sort === 'title') return compareTitles(a, b);
-    if (!a.releaseDate && b.releaseDate) return 1;
-    if (a.releaseDate && !b.releaseDate) return -1;
+    if (sort === 'title') {
+      return compareTitles(a, b);
+    }
+    if (!a.releaseDate && b.releaseDate) {
+      return 1;
+    }
+    if (a.releaseDate && !b.releaseDate) {
+      return -1;
+    }
     const dates = (a.releaseDate ?? '').localeCompare(b.releaseDate ?? '');
     return (sort === 'oldest' ? dates : -dates) || compareTitles(a, b);
   });
@@ -77,6 +87,7 @@ function FilmographyResults({
   const [visibleCount, setVisibleCount] = useState(FILMOGRAPHY_BATCH_SIZE);
   const countRef = useRef<HTMLParagraphElement>(null);
   const visibleMovies = movies.slice(0, visibleCount);
+
   return (
     <>
       <p
@@ -167,8 +178,9 @@ function FilmographyResults({
               const nextCount = visibleCount + FILMOGRAPHY_BATCH_SIZE;
               setVisibleCount(nextCount);
               // Keep focus on a useful, surviving element after the final batch.
-              if (nextCount >= movies.length)
+              if (nextCount >= movies.length) {
                 countRef.current?.focus({ preventScroll: true });
+              }
             }}
           >
             Load more
@@ -215,23 +227,38 @@ export default function Filmography({
   canonicalParams.delete('personView');
   canonicalParams.delete('personRole');
   canonicalParams.delete('personSort');
-  if (view !== defaultView) canonicalParams.set('personView', view);
-  if (role) canonicalParams.set('personRole', role);
-  if (sort !== 'newest') canonicalParams.set('personSort', sort);
+  if (view !== defaultView) {
+    canonicalParams.set('personView', view);
+  }
+  if (role) {
+    canonicalParams.set('personRole', role);
+  }
+  if (sort !== 'newest') {
+    canonicalParams.set('personSort', sort);
+  }
+
   const canonicalQuery = canonicalParams.toString();
   const query = searchParams.toString();
+
   useEffect(() => {
-    if (!unavailable && query !== canonicalQuery)
+    if (!unavailable && query !== canonicalQuery) {
       setSearchParams(canonicalQuery, { replace: true });
+    }
   }, [query, canonicalQuery, setSearchParams, unavailable]);
 
   const updateSelection = (name: string, value: string) => {
     const next = new URLSearchParams(searchParams);
-    if (value) next.set(name, value);
-    else next.delete(name);
-    if (name === 'personView') next.delete('personRole');
+    if (value) {
+      next.set(name, value);
+    } else {
+      next.delete(name);
+    }
+    if (name === 'personView') {
+      next.delete('personRole');
+    }
     setSearchParams(next);
   };
+
   const matchingMovies = movies.filter((movie) =>
     view === 'acting'
       ? movie.actingCredits !== undefined

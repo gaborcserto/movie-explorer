@@ -375,10 +375,13 @@ test.each([
 ])('hides Load More when all %s movies are visible', async (total, clicks) => {
   const user = userEvent.setup();
   await renderFilmography(batch.slice(0, total));
-  if (clicks > 0)
+  if (clicks > 0) {
     await user.click(section().getByRole('button', { name: 'Load more' }));
-  if (clicks > 1)
+  }
+  if (clicks > 1) {
     await user.click(section().getByRole('button', { name: 'Load more' }));
+  }
+
   expect(section().queryByRole('button', { name: 'Load more' })).toBeNull();
 });
 

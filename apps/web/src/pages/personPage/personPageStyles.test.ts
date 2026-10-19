@@ -10,12 +10,14 @@ const stylesheet = postcss.parse(
 function declarations(selector: string) {
   const values: Record<string, string> = {};
   stylesheet.walkRules((rule) => {
-    if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector))
+    if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector)) {
       return;
+    }
     rule.walkDecls((declaration) => {
       values[declaration.prop] = declaration.value;
     });
   });
+
   return values;
 }
 
@@ -73,7 +75,9 @@ test('matches the movie title typography and preserves a ten pixel portrait radi
 test('keeps the person name and biography readable in the mobile layout', () => {
   const mobileDeclarations = new Map<string, Record<string, string>>();
   stylesheet.walkAtRules('media', (media) => {
-    if (media.params !== '(max-width: 767.98px)') return;
+    if (media.params !== '(max-width: 767.98px)') {
+      return;
+    }
     media.walkRules((rule) => {
       const values: Record<string, string> = {};
       rule.walkDecls((declaration) => {

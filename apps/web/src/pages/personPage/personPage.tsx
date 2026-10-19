@@ -149,7 +149,9 @@ function PersonDetailsPage({ id }: { id: string }) {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!validId) return undefined;
+    if (!validId) {
+      return undefined;
+    }
 
     const controller = new AbortController();
     setPending(true);
@@ -157,19 +159,24 @@ function PersonDetailsPage({ id }: { id: string }) {
 
     getPerson(personId, controller.signal)
       .then((person) => {
-        if (current && !controller.signal.aborted)
+        if (current && !controller.signal.aborted) {
           setState({ status: 'success', person });
+        }
       })
       .catch((error: unknown) => {
         if (current && !controller.signal.aborted) {
-          if (isCancelledError(error)) return;
+          if (isCancelledError(error)) {
+            return;
+          }
 
           setRequestError(error);
           setState({ status: isNotFoundError(error) ? 'not-found' : 'error' });
         }
       })
       .finally(() => {
-        if (current) setPending(false);
+        if (current) {
+          setPending(false);
+        }
       });
 
     return () => {
@@ -278,7 +285,9 @@ function PersonDetailsPage({ id }: { id: string }) {
                       availability={state.person.filmographyAvailability}
                       recover={async (signal) => {
                         const result = await getFilmography(personId, signal);
-                        if (signal.aborted) return;
+                        if (signal.aborted) {
+                          return;
+                        }
 
                         setState((previous) =>
                           previous.status === 'success'

@@ -74,6 +74,7 @@ afterEach(() => {
 
 test('direct person navigation loads the complete contract through the API without search', async () => {
   renderPage();
+
   expect(
     await screen.findByRole('heading', { level: 1, name: person.name })
   ).toBeVisible();
@@ -119,6 +120,7 @@ test('direct person navigation loads the complete contract through the API witho
   await waitFor(() =>
     expect(document.title).toBe(`${person.name} | Movie Explorer`)
   );
+
   expect(screen.getAllByRole('link', { name: 'Movie Explorer' })).toHaveLength(
     2
   );
@@ -341,14 +343,20 @@ test('opens the primary portrait first, deduplicates profiles and navigates with
   const firstImage = dialog.querySelector('img');
   expect(firstImage).toHaveAttribute('src', '/portrait-original.jpg');
   expect(within(dialog).getByRole('status')).toHaveTextContent('Loading photo');
-  if (!firstImage) throw new Error('Missing primary image');
+  if (!firstImage) {
+    throw new Error('Missing primary image');
+  }
+
   fireEvent.load(firstImage);
   expect(within(dialog).queryByRole('status')).toBeNull();
   await user.click(within(dialog).getByRole('button', { name: 'Next photo' }));
   expect(firstImage).not.toHaveAttribute('src');
   const nextImage = dialog.querySelector('img');
   expect(nextImage).toHaveAttribute('src', second.fullUrl);
-  if (!nextImage) throw new Error('Missing next image');
+  if (!nextImage) {
+    throw new Error('Missing next image');
+  }
+
   fireEvent.error(nextImage);
   expect(within(dialog).getByRole('alert')).toHaveTextContent(
     'Unable to load photo'
@@ -483,9 +491,12 @@ test.each(['network', 'HTTP'])(
   'recovers from a %s failure through Retry and returns focus to main on success',
   async (failure) => {
     const user = userEvent.setup();
-    if (failure === 'network')
+    if (failure === 'network') {
       fetchMock.mockRejectedValueOnce(new TypeError('Network failed'));
-    else fetchMock.mockResolvedValueOnce(response(undefined, 502));
+    } else {
+      fetchMock.mockResolvedValueOnce(response(undefined, 502));
+    }
+
     renderPage();
     expect(await screen.findByRole('alert')).toHaveTextContent(
       failure === 'network'
@@ -520,8 +531,11 @@ test.each(['success', 'failure'])(
     expect(screen.getByRole('main')).toHaveFocus();
     expect(signal?.aborted).toBe(true);
     await act(async () => {
-      if (result === 'success') pending.resolve(response());
-      else pending.reject(new TypeError('Old request failed'));
+      if (result === 'success') {
+        pending.resolve(response());
+      } else {
+        pending.reject(new TypeError('Old request failed'));
+      }
     });
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       'New person'
@@ -635,25 +649,30 @@ test('person photos reveal progressively, retain full lightbox navigation and re
   const more = await screen.findByRole('button', {
     name: `Show more photos for ${person.name}`,
   });
+
   expect(
     screen.getAllByRole('button', {
       name: new RegExp(`View ${person.name} photo`),
     })
   ).toHaveLength(10);
+
   await user.click(more);
   expect(
     screen.getAllByRole('button', {
       name: new RegExp(`View ${person.name} photo`),
     })
   ).toHaveLength(18);
+
   await user.click(
     screen.getByRole('button', { name: `View ${person.name} photo 6` })
   );
   expect(within(screen.getByRole('dialog')).getByText('6 / 18')).toBeVisible();
   await user.keyboard('{Escape}');
+
   expect(
     screen.getByRole('button', { name: `View ${person.name} photo 6` })
   ).toHaveFocus();
+
   await user.click(
     screen.getByRole('button', { name: `View ${person.name} photo 6` })
   );
@@ -662,6 +681,7 @@ test('person photos reveal progressively, retain full lightbox navigation and re
     'src',
     '/full-profile-6.jpg'
   );
+
   await act(async () => router.navigate('/person/43'));
   await screen.findByRole('heading', { name: 'Next person' });
   expect(screen.queryByRole('dialog')).toBeNull();

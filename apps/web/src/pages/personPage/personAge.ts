@@ -1,6 +1,8 @@
 function parseDate(value?: string) {
   const match = value?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return undefined;
+  if (!match) {
+    return undefined;
+  }
 
   const [, yearText, monthText, dayText] = match;
   const year = Number(yearText);
@@ -13,8 +15,9 @@ function parseDate(value?: string) {
     date.getFullYear() !== year ||
     date.getMonth() !== month - 1 ||
     date.getDate() !== day
-  )
+  ) {
     return undefined;
+  }
 
   return { year, month, day, date };
 }
@@ -25,22 +28,29 @@ export default function getPersonAge(
   today = new Date()
 ): number | undefined {
   const birth = parseDate(birthday);
-  if (!birth || Number.isNaN(today.getTime())) return undefined;
+  if (!birth || Number.isNaN(today.getTime())) {
+    return undefined;
+  }
 
   const deceased = Boolean(deathDate?.trim());
   const end = deceased ? parseDate(deathDate) : undefined;
-  if (deceased && !end) return undefined;
+  if (deceased && !end) {
+    return undefined;
+  }
 
   const reference = end?.date ?? today;
-  if (reference < birth.date) return undefined;
+  if (reference < birth.date) {
+    return undefined;
+  }
 
   let age = reference.getFullYear() - birth.year;
   if (
     reference.getMonth() + 1 < birth.month ||
     (reference.getMonth() + 1 === birth.month &&
       reference.getDate() < birth.day)
-  )
+  ) {
     age -= 1;
+  }
 
   return age;
 }

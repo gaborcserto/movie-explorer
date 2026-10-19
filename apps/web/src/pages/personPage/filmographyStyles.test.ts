@@ -11,12 +11,19 @@ function declarations(selector: string, within?: postcss.AtRule) {
   const values: Record<string, string> = {};
   const root = within ?? stylesheet;
   root.walkRules((rule) => {
-    if (rule.parent !== root) return;
-    if (!rule.selectors.includes(selector)) return;
+    if (rule.parent !== root) {
+      return;
+    }
+    if (!rule.selectors.includes(selector)) {
+      return;
+    }
     rule.nodes?.forEach((node) => {
-      if (node.type === 'decl') values[node.prop] = node.value;
+      if (node.type === 'decl') {
+        values[node.prop] = node.value;
+      }
     });
   });
+
   return values;
 }
 
