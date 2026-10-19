@@ -83,13 +83,21 @@ export class TmdbMovieMapper {
     const directorIds = new Set<number>();
     const directors: MovieDirector[] = (movie.credits?.crew ?? [])
       .filter((credit) => {
-        if (credit.job !== 'Director' || !credit.name.trim()) return false;
-        if (!Number.isSafeInteger(credit.id) || credit.id <= 0) return true;
-        if (directorIds.has(credit.id)) return false;
+        if (credit.job !== 'Director' || !credit.name.trim()) {
+          return false;
+        }
+        if (!Number.isSafeInteger(credit.id) || credit.id <= 0) {
+          return true;
+        }
+        if (directorIds.has(credit.id)) {
+          return false;
+        }
+
         directorIds.add(credit.id);
         return true;
       })
       .map((credit) => this.toPersonReference(credit));
+
     const director = directors?.length
       ? [...new Set(directors.map((credit) => credit.name))].join(', ')
       : undefined;
@@ -100,16 +108,23 @@ export class TmdbMovieMapper {
     const charactersByPerson = new Map<number, Set<string>>();
     orderedCast.forEach((credit) => {
       const character = credit.character?.trim();
-      if (!Number.isSafeInteger(credit.id) || credit.id <= 0 || !character)
+      if (!Number.isSafeInteger(credit.id) || credit.id <= 0 || !character) {
         return;
+      }
+
       const characters = charactersByPerson.get(credit.id) ?? new Set<string>();
       characters.add(character);
       charactersByPerson.set(credit.id, characters);
     });
     const castMembers = orderedCast
       .filter((credit) => {
-        if (!Number.isSafeInteger(credit.id) || credit.id <= 0) return true;
-        if (castIds.has(credit.id)) return false;
+        if (!Number.isSafeInteger(credit.id) || credit.id <= 0) {
+          return true;
+        }
+        if (castIds.has(credit.id)) {
+          return false;
+        }
+
         castIds.add(credit.id);
         return true;
       })
@@ -129,7 +144,10 @@ export class TmdbMovieMapper {
         const identity = `${video.site}:${video.key}`;
         // TMDB currently supports YouTube and Vimeo. Vimeo remains an external
         // link; only YouTube is embedded by the application player.
-        if (!video.key || seenVideos.has(identity)) return [];
+        if (!video.key || seenVideos.has(identity)) {
+          return [];
+        }
+
         const url =
           video.site === 'YouTube'
             ? `https://www.youtube.com/watch?v=${encodeURIComponent(video.key)}`
@@ -168,45 +186,75 @@ export class TmdbMovieMapper {
       cast,
     };
 
-    if (typeof movie.original_title === 'string' && movie.original_title.trim())
+    if (
+      typeof movie.original_title === 'string' &&
+      movie.original_title.trim()
+    ) {
       details.originalTitle = movie.original_title;
-    if (typeof movie.status === 'string' && movie.status.trim())
+    }
+    if (typeof movie.status === 'string' && movie.status.trim()) {
       details.status = movie.status;
+    }
     if (
       typeof movie.original_language === 'string' &&
       movie.original_language.trim()
-    )
+    ) {
       details.originalLanguage = movie.original_language;
+    }
     if (
       typeof movie.budget === 'number' &&
       Number.isFinite(movie.budget) &&
       movie.budget >= 0
-    )
+    ) {
       details.budget = movie.budget;
+    }
     if (
       typeof movie.revenue === 'number' &&
       Number.isFinite(movie.revenue) &&
       movie.revenue >= 0
-    )
+    ) {
       details.revenue = movie.revenue;
+    }
 
     if (castMembers.length) {
       details.castMembers = castMembers;
     }
+
     const description = movie.overview.trim();
     const backdropUrl = this.toImageUrl(movie.backdrop_path);
-    if (description) details.description = description;
-    if (director) details.director = director;
-    if (directors.length) details.directors = directors;
-    if (writers.length) details.writers = writers;
-    if (producers.length) details.producers = producers;
-    if (movie.vote_average > 0) details.rating = movie.vote_average;
-    if (movie.runtime && movie.runtime > 0)
+    if (description) {
+      details.description = description;
+    }
+    if (director) {
+      details.director = director;
+    }
+    if (directors.length) {
+      details.directors = directors;
+    }
+    if (writers.length) {
+      details.writers = writers;
+    }
+    if (producers.length) {
+      details.producers = producers;
+    }
+    if (movie.vote_average > 0) {
+      details.rating = movie.vote_average;
+    }
+    if (movie.runtime && movie.runtime > 0) {
       details.runtimeMinutes = movie.runtime;
-    if (backdropUrl) details.backdropUrl = backdropUrl;
-    if (backdrops.length) details.backdrops = backdrops;
-    if (posters.length) details.posters = posters;
-    if (videos.length) details.videos = videos;
+    }
+    if (backdropUrl) {
+      details.backdropUrl = backdropUrl;
+    }
+    if (backdrops.length) {
+      details.backdrops = backdrops;
+    }
+    if (posters.length) {
+      details.posters = posters;
+    }
+    if (videos.length) {
+      details.videos = videos;
+    }
 
     return details;
   }
@@ -214,8 +262,10 @@ export class TmdbMovieMapper {
   private toImages(images: TmdbImage[]): MoviePhoto[] {
     const seen = new Set<string>();
     return images.flatMap((image) => {
-      if (!image.file_path?.startsWith('/') || seen.has(image.file_path))
+      if (!image.file_path?.startsWith('/') || seen.has(image.file_path)) {
         return [];
+      }
+
       seen.add(image.file_path);
       return [
         {
@@ -243,12 +293,16 @@ export class TmdbMovieMapper {
     const people: MovieCrewMember[] = [];
     const byId = new Map<number, MovieCrewMember>();
     crew.forEach((credit) => {
-      if (!jobs.includes(credit.job) || !credit.name.trim()) return;
+      if (!jobs.includes(credit.job) || !credit.name.trim()) {
+        return;
+      }
+
       const person = this.toPersonReference(credit);
       const existing = person.id ? byId.get(person.id) : undefined;
       if (existing) {
-        if (!existing.roles.includes(credit.job))
+        if (!existing.roles.includes(credit.job)) {
           existing.roles.push(credit.job);
+        }
         existing.profileUrl ||= person.profileUrl;
         existing.profileSrcSet ||= person.profileSrcSet;
       } else {

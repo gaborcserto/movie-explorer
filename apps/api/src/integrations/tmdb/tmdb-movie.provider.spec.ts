@@ -55,6 +55,7 @@ describe('TmdbMovieProvider', () => {
       provider.findAll({}),
       provider.findAll({ search: 'a' }),
     ]);
+
     expect(
       started.filter((path) => path.endsWith('/genre/movie/list')),
     ).toHaveLength(1);

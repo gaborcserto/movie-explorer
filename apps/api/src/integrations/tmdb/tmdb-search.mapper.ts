@@ -38,8 +38,10 @@ export function searchPage(value: unknown): {
 export function searchRecord(
   value: unknown,
 ): Record<string, unknown> | undefined {
-  if (!value || typeof value !== 'object' || Array.isArray(value))
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return undefined;
+  }
+
   const record = value as Record<string, unknown>;
   return typeof record.id === 'number' &&
     Number.isSafeInteger(record.id) &&
@@ -66,8 +68,10 @@ export function mapPeople(
       !record ||
       !name ||
       (record.media_type && record.media_type !== 'person')
-    )
+    ) {
       continue;
+    }
+
     const path = searchText(record.profile_path);
     people.set(Number(record.id), {
       id: Number(record.id),

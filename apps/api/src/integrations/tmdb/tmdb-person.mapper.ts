@@ -46,8 +46,9 @@ export class TmdbPersonMapper {
         !Number.isSafeInteger(value.id) ||
         value.id <= 0 ||
         !text(value.title)
-      )
+      ) {
         return;
+      }
 
       let entry = movies.get(value.id);
       if (!entry) {
@@ -65,11 +66,13 @@ export class TmdbPersonMapper {
         };
         movies.set(value.id, entry);
       }
+
       if (acting) {
         entry.actingCredits ??= [];
         const character = text(value.character);
-        if (character && !entry.actingCredits.includes(character))
+        if (character && !entry.actingCredits.includes(character)) {
           entry.actingCredits.push(character);
+        }
       } else {
         const department = text(value.department);
         const job = text(value.job);

@@ -30,6 +30,7 @@ describe('TMDB request failures', () => {
             Response.json({ genres: kind === 'genres' ? [null] : [] }),
           );
       }
+
       await expect(
         kind === 'details' ? provider.findOne(1) : provider.findAll({}),
       ).rejects.toMatchObject({ status: 502 });
@@ -201,12 +202,14 @@ describe('TMDB request failures', () => {
     'diagnoses and sanitizes %s failure',
     async (failure) => {
       jest.useFakeTimers();
-      if (failure === 'connection')
+      if (failure === 'connection') {
         fetchMock.mockRejectedValue(new Error('private error'));
-      else
+      } else {
         fetchMock.mockResolvedValue(
           new Response(failure === 'json' ? 'private invalid json' : 'null'),
         );
+      }
+
       await expect(provider.findOne(1)).rejects.toMatchObject({ status: 502 });
       expect(log).toHaveBeenCalledWith(
         expect.objectContaining({

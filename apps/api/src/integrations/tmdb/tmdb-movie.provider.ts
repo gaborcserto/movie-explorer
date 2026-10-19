@@ -121,8 +121,10 @@ export class TmdbMovieProvider implements MovieProvider {
         !movie ||
         !title ||
         (movie.media_type && movie.media_type !== 'movie')
-      )
+      ) {
         return [];
+      }
+
       return [
         this.mapper.toMovieSuggestion({
           id: Number(movie.id),
@@ -151,8 +153,10 @@ export class TmdbMovieProvider implements MovieProvider {
         !(error instanceof HttpException) ||
         error.getStatus() !== 502 ||
         error.message === 'Movie provider response was invalid'
-      )
+      ) {
         throw error;
+      }
+
       return this.request<T>(path, {}, true);
     }
   }
@@ -162,7 +166,10 @@ export class TmdbMovieProvider implements MovieProvider {
       append_to_response: 'credits,images,videos',
       ...this.mediaLanguages(),
     });
-    if (!movie) return undefined;
+    if (!movie) {
+      return undefined;
+    }
+
     if (
       movie.id !== id ||
       typeof movie.title !== 'string' ||
@@ -233,6 +240,7 @@ export class TmdbMovieProvider implements MovieProvider {
     ) {
       throw new BadGatewayException('Movie section response was invalid');
     }
+
     const validEntries = (
       key: string,
       fields: string[],
@@ -282,6 +290,7 @@ export class TmdbMovieProvider implements MovieProvider {
     ) {
       throw new BadGatewayException('Movie section response was invalid');
     }
+
     const movie: TmdbMovieDetails = {
       id: 1,
       title: '',
@@ -292,18 +301,29 @@ export class TmdbMovieProvider implements MovieProvider {
       vote_average: 0,
     };
     // Mapping errors are isolated to their section, including malformed entries.
-    if (section === 'credits')
+    if (section === 'credits') {
       movie.credits = value as TmdbMovieDetails['credits'];
-    if (isImages)
+    }
+    if (isImages) {
       movie.images = {
         [imageKey]: resource[imageKey],
       } as TmdbMovieDetails['images'];
-    if (section === 'videos')
+    }
+    if (section === 'videos') {
       movie.videos = value as TmdbMovieDetails['videos'];
+    }
+
     const mapped = this.mapper.toMovieDetails(movie);
-    if (section === 'photos') return { backdrops: mapped.backdrops ?? [] };
-    if (section === 'posters') return { posters: mapped.posters ?? [] };
-    if (section === 'videos') return { videos: mapped.videos ?? [] };
+    if (section === 'photos') {
+      return { backdrops: mapped.backdrops ?? [] };
+    }
+    if (section === 'posters') {
+      return { posters: mapped.posters ?? [] };
+    }
+    if (section === 'videos') {
+      return { videos: mapped.videos ?? [] };
+    }
+
     return {
       cast: mapped.cast,
       castMembers: mapped.castMembers ?? [],
@@ -348,7 +368,10 @@ export class TmdbMovieProvider implements MovieProvider {
     const person = await this.detailRequest<unknown>(`/person/${id}`, {
       append_to_response: 'movie_credits,images',
     });
-    if (person === undefined) return undefined;
+    if (person === undefined) {
+      return undefined;
+    }
+
     const record = detailRecord(person);
     const primary = record && {
       ...record,
@@ -373,8 +396,10 @@ export class TmdbMovieProvider implements MovieProvider {
 
   private mapFilmography(id: number, value: unknown) {
     const person = { id, name: 'Profile', movie_credits: value };
-    if (!isTmdbPersonDetails(person))
+    if (!isTmdbPersonDetails(person)) {
       throw new BadGatewayException('Filmography response was invalid');
+    }
+
     return new TmdbPersonMapper(this.config.imageBaseUrl).toPersonDetails(
       person,
     ).filmography;
@@ -459,10 +484,14 @@ export class TmdbMovieProvider implements MovieProvider {
   private async getGenres(): Promise<TmdbGenre[]> {
     const key = this.config.language;
     const cached = this.genreCache.get(key);
-    if (cached && cached.expiresAt > Date.now()) return cached.genres;
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.genres;
+    }
 
     const inFlight = this.genreRequests.get(key);
-    if (inFlight) return inFlight;
+    if (inFlight) {
+      return inFlight;
+    }
 
     const request = this.request<TmdbGenreListResponse>(
       '/genre/movie/list',
@@ -626,8 +655,10 @@ export class TmdbMovieProvider implements MovieProvider {
       try {
         const body: unknown = await response.json();
         controller.signal.throwIfAborted();
-        if (!body || typeof body !== 'object' || Array.isArray(body))
+        if (!body || typeof body !== 'object' || Array.isArray(body)) {
           throw new Error();
+        }
+
         if (!allowNotFound) {
           if (path === '/genre/movie/list') {
             if (
@@ -642,13 +673,18 @@ export class TmdbMovieProvider implements MovieProvider {
                   'name' in genre &&
                   typeof genre.name === 'string',
               )
-            )
+            ) {
               throw new Error();
-          } else searchPage(body);
+            }
+          } else {
+            searchPage(body);
+          }
         }
         return body as T;
       } catch {
-        if (controller.signal.aborted) throw controller.signal.reason;
+        if (controller.signal.aborted) {
+          throw controller.signal.reason;
+        }
         throw new BadGatewayException('Movie provider response was invalid');
       }
     } catch (error: unknown) {

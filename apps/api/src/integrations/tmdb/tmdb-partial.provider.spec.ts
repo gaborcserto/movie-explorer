@@ -51,6 +51,7 @@ describe('partial detail recovery', () => {
           [section]: { success: false, message: 'private-token' },
         }),
       );
+
       const result = await provider.findOne(1);
       const key = section === 'images' ? 'photos' : section;
       expect(result).toMatchObject({

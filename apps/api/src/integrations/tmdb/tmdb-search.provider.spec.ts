@@ -56,6 +56,7 @@ describe('search provider and public contracts', () => {
         ),
       ),
     );
+
     const result: SearchSuggestionsResponse = await new SearchService(
       provider,
     ).suggestions(' Query ', 1);
@@ -88,6 +89,7 @@ describe('search provider and public contracts', () => {
       expect(url.searchParams.get('language')).toBe('en-US');
       expect(url.searchParams.get('page')).toBe('1');
     }
+
     expect(result.suggestions[0]).not.toHaveProperty('poster_path');
     expect(result.suggestions[1]).not.toHaveProperty('known_for');
   });
