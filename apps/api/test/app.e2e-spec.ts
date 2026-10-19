@@ -107,6 +107,7 @@ describe('AppController (e2e)', () => {
       await request(app.getHttpServer())
         .get('/api/v1/persons/' + id)
         .expect(200);
+
       expect(movieProvider.findOne).toHaveBeenCalledWith(Number(id));
       expect(movieProvider.findPerson).toHaveBeenCalledWith(Number(id));
     },
@@ -124,6 +125,7 @@ describe('AppController (e2e)', () => {
         429,
       ),
     );
+
     await request(app.getHttpServer())
       .get('/movies/1')
       .expect(429)
@@ -145,6 +147,7 @@ describe('AppController (e2e)', () => {
           status,
         ),
       );
+
       await request(app.getHttpServer())
         .get('/movies/1')
         .expect(status)
@@ -160,11 +163,13 @@ describe('AppController (e2e)', () => {
           ? { cast: ['Recovered actor'] }
           : { [section === 'photos' ? 'backdrops' : section]: [] };
       movieProvider.findMovieSection.mockResolvedValueOnce(body);
+
       await request(app.getHttpServer())
         .get(`/movies/42/${section}`)
         .expect(200)
         .expect(body);
       expect(movieProvider.findMovieSection).toHaveBeenCalledWith(42, section);
+
       await request(app.getHttpServer())
         .get(`/movies/0/${section}`)
         .expect(400);
@@ -174,12 +179,14 @@ describe('AppController (e2e)', () => {
 
   it('serves localized filmography recovery without loading a profile', async () => {
     movieProvider.findFilmography.mockResolvedValueOnce({ filmography: [] });
+
     await request(app.getHttpServer())
       .get('/api/v1/persons/42/filmography')
       .expect(200)
       .expect({ filmography: [] });
     expect(movieProvider.findFilmography).toHaveBeenCalledWith(42);
     expect(movieProvider.findPerson).not.toHaveBeenCalled();
+
     await request(app.getHttpServer())
       .get('/api/v1/persons/0/filmography')
       .expect(400);
@@ -222,6 +229,7 @@ describe('AppController (e2e)', () => {
       },
     };
     movieProvider.findOne.mockResolvedValueOnce(movie);
+
     await request(app.getHttpServer())
       .get('/movies/269149')
       .expect(200)
@@ -239,6 +247,7 @@ describe('AppController (e2e)', () => {
       },
     };
     movieProvider.findOne.mockResolvedValueOnce(movie);
+
     await request(app.getHttpServer())
       .get('/movies/1')
       .expect(200)
@@ -251,6 +260,7 @@ describe('AppController (e2e)', () => {
       filmographyAvailability: { status: 'unavailable' as const },
     };
     movieProvider.findPerson.mockResolvedValueOnce(person);
+
     await request(app.getHttpServer())
       .get('/api/v1/persons/1')
       .expect(200)
@@ -262,6 +272,7 @@ describe('AppController (e2e)', () => {
     movieProvider.findPeople.mockRejectedValueOnce(
       new HttpException('Safe failure', 502),
     );
+
     await request(app.getHttpServer())
       .get('/api/v1/search/suggestions?query=Query')
       .expect(200)
@@ -284,6 +295,7 @@ describe('AppController (e2e)', () => {
     movieProvider.findSuggestions.mockResolvedValue({
       suggestions: [{ id: 5, title: 'Movie' }],
     });
+
     await request(app.getHttpServer())
       .get('/api/v1/search/suggestions?query=Query&limit=2')
       .expect(200)
@@ -298,6 +310,7 @@ describe('AppController (e2e)', () => {
         ],
       });
     expect(movieProvider.findPeople).toHaveBeenCalledWith('Query', 1);
+
     await request(app.getHttpServer())
       .get('/movies/suggestions?query=Query')
       .expect(200)
@@ -312,11 +325,13 @@ describe('AppController (e2e)', () => {
       totalResults: 21,
     };
     movieProvider.findPeople.mockResolvedValueOnce(result);
+
     await request(app.getHttpServer())
       .get('/api/v1/persons?query=Person&page=2')
       .expect(200)
       .expect(result);
     expect(movieProvider.findPeople).toHaveBeenCalledWith('Person', 2);
+
     for (const query of [
       '',
       'query=%20%20',
@@ -328,6 +343,7 @@ describe('AppController (e2e)', () => {
         .get('/api/v1/persons?' + query)
         .expect(400);
     }
+
     for (const query of [
       'query=x',
       'query=Query&limit=0',

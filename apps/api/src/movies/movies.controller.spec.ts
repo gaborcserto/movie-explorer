@@ -51,6 +51,7 @@ describe('MoviesController', () => {
     service.findAll.mockResolvedValue(response);
 
     await expect(controller.getAllMovies(query)).resolves.toBe(response);
+
     expect(service.findAll).toHaveBeenCalledWith(query);
   });
 
@@ -58,6 +59,7 @@ describe('MoviesController', () => {
     service.findOne.mockResolvedValue(movie);
 
     await expect(controller.getMovie({ id: 1 })).resolves.toBe(movie);
+
     expect(service.findOne).toHaveBeenCalledWith(1);
   });
 
@@ -67,6 +69,7 @@ describe('MoviesController', () => {
     await expect(
       controller.getMovieSuggestions({ query: 'Alien', limit: 5 }),
     ).resolves.toEqual({ suggestions: [] });
+
     expect(service.findSuggestions).toHaveBeenCalledWith('Alien', 5);
   });
 
