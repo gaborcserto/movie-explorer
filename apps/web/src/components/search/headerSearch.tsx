@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { FaMagnifyingGlass, FaXmark } from 'react-icons/fa6';
+
 import useAutocomplete from './useAutocomplete';
 import Suggestions from './suggestions';
 import './headerSearch.scss';

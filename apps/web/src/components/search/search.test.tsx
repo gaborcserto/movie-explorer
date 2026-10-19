@@ -56,6 +56,7 @@ describe('Search Component', () => {
     const input = screen.getByPlaceholderText(
       'What do you want to watch?'
     ) as HTMLInputElement;
+
     fireEvent.change(input, { target: { value: 'Inception' } });
 
     expect(input.value).toBe('Inception');

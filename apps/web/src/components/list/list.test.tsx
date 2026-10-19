@@ -94,8 +94,10 @@ describe('<List />', () => {
         ],
       });
     renderList('/search/Alien?filter=drama');
+
     await screen.findByText('First 1');
     fireEvent.click(screen.getByRole('button', { name: /load more/i }));
+
     await screen.findByText('Next 10');
     expect(screen.getAllByRole('article')).toHaveLength(13);
     expect(screen.queryByText('Last 1')).toBeNull();

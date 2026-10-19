@@ -8,6 +8,7 @@ test('disables opening and closing transitions when reduced motion is requested'
     compile(fileURLToPath(new URL('./headerSearch.scss', import.meta.url))).css
   );
   const transitions: string[] = [];
+
   stylesheet.walkAtRules('media', (media) => {
     if (media.params !== '(prefers-reduced-motion: reduce)') return;
     media.walkRules('.detail-search__form', (rule) => {
@@ -24,6 +25,7 @@ test('keeps the magnifier anchored while the shared field and its content animat
     compile(fileURLToPath(new URL('./headerSearch.scss', import.meta.url))).css
   );
   const transitions: string[] = [];
+
   stylesheet.walkRules((rule) => {
     if (
       !rule.selectors.some((selector) =>
@@ -52,6 +54,7 @@ test('morphs both icons in the anchored toggle and disables that motion for redu
     compile(fileURLToPath(new URL('./headerSearch.scss', import.meta.url))).css
   );
   const iconTransitions: string[] = [];
+
   stylesheet.walkRules('.detail-search__trigger svg', (rule) => {
     rule.walkDecls('transition', (declaration) => {
       iconTransitions.push(declaration.value);
@@ -77,6 +80,7 @@ test('lets the expanded input opacity override its collapsed state', () => {
     compile(fileURLToPath(new URL('./headerSearch.scss', import.meta.url))).css
   );
   const inputRules: { selector: string; opacity: string }[] = [];
+
   stylesheet.walkRules((rule) => {
     if (
       rule.selectors.some(
@@ -101,6 +105,7 @@ test('lets the expanded input opacity override its collapsed state', () => {
   const expandedIndex = inputRules.findIndex(
     ({ selector }) => selector === '.detail-search__form--expanded input'
   );
+
   expect(inputRules[collapsedIndex]?.opacity).toBe('0');
   expect(inputRules[expandedIndex]?.opacity).toBe('1');
   expect(expandedIndex).toBeGreaterThan(collapsedIndex);

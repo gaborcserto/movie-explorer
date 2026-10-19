@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
+
 import useAutocomplete from './useAutocomplete';
 import Suggestions from './suggestions';
 import './search.scss';
@@ -6,6 +7,7 @@ import './search.scss';
 function Search() {
   const { searchQuery } = useParams();
   const autocomplete = useAutocomplete(searchQuery);
+
   return (
     <header className="header" data-testid="search-component">
       <div className="header__container container">
