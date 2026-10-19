@@ -1,7 +1,9 @@
 import './filter.scss';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { FaSliders } from 'react-icons/fa6';
+
 import { normalizeFilters, readFilters, writeFilters } from './filterState';
 import FilterPanel from './filterPanel';
 
@@ -9,10 +11,14 @@ export default function Filter() {
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const { searchQuery } = useParams();
+
   const isSearch = Boolean(searchQuery);
+
   const [openAt, setOpenAt] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
+
   const wrapper = useRef<HTMLDivElement>(null);
+
   const committed = readFilters(params, isSearch);
   const open = openAt === location.key;
   const count =
@@ -24,26 +30,34 @@ export default function Filter() {
       !isSearch &&
         committed.order !== (committed.sorting === 'title' ? 'asc' : 'desc')
     );
+
   const closePanel = useCallback(() => {
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
       setOpenAt(null);
     else setClosing(true);
   }, []);
+
   useEffect(() => {
     if (!closing) return undefined;
+
     const timeout = window.setTimeout(() => {
       setOpenAt(null);
       setClosing(false);
     }, 220);
+
     return () => window.clearTimeout(timeout);
   }, [closing]);
+
   useEffect(() => {
     const normalized = normalizeFilters(params, isSearch);
+
     if (normalized.toString() !== params.toString())
       setParams(normalized, { replace: true });
   }, [params, isSearch, setParams]);
+
   useEffect(() => {
     if (!open) return undefined;
+
     const outside = (event: PointerEvent) => {
       if (
         event.target instanceof Node &&
@@ -55,15 +69,19 @@ export default function Filter() {
       )
         closePanel();
     };
+
     document.addEventListener('pointerdown', outside);
+
     return () => document.removeEventListener('pointerdown', outside);
   }, [open, closePanel]);
+
   useEffect(() => {
     if (openAt !== null && openAt !== location.key) {
       setOpenAt(null);
       setClosing(false);
     }
   }, [location.key, openAt]);
+
   return (
     <section className="movie-filters" aria-label="Movie filters and sorting">
       <div ref={wrapper} className="movie-filters__anchor">
@@ -99,6 +117,7 @@ export default function Filter() {
             onClose={closePanel}
             onApply={(values) => {
               const next = writeFilters(params, values, isSearch);
+
               closePanel();
               if (next.toString() !== params.toString()) setParams(next);
             }}

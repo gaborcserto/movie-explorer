@@ -33,12 +33,47 @@ instructions and configured tools take precedence over the recommendations here.
 - Limit edits to selected files; exclude generated output, vendor code, caches,
   dependencies, snapshots, and lockfiles unless the task specifically targets them.
 
+## Import organization
+
+Keep external and workspace-package imports together in one block, then separate
+relative imports from that block with exactly one blank line. Consolidate
+duplicate imports from the same module when safe. Preserve each import's existing
+type-only versus runtime form; do not automatically add or remove `type` based
+only on apparent usage. Do not reorder imports when evaluation order can change;
+preserve side-effect imports, including stylesheet imports, in their existing
+order. Let the project's ESLint, Prettier, Oxfmt or equivalent rules determine
+syntax and wrapping, and do not add an import sorter for this convention.
+
 ## Recommended visual structure
 
 Keep related statements together. Use one blank line between distinct
 responsibilities, adjacent function/method definitions, independent effects, and
 setup and rendering where it aids scanning. Do not insert blank lines after every
 declaration or return. Small coherent functions may need no interior separation.
+
+Within function bodies, including callbacks, React hooks, class methods and async
+functions, use one blank line to separate a guard clause from the next operation,
+setup or initialization from the next distinct operation, and a final return or
+cleanup return from preceding work when that boundary improves scanning. Keep
+tightly related statements together; do not add a blank line mechanically after
+each statement or inside a coupled expression. In a component, leave exactly one
+blank line before its final JSX return when another statement precedes it.
+Preserve statement and hook order. Accept only spacing that the existing
+Prettier, ESLint, Stylelint, Oxfmt or equivalent configuration permits.
+
+Also separate a local function or callback declaration from subsequent
+operations such as event listener registration. Where present, keep guard
+clauses, local function/callback declarations, subsequent operations, and final
+return or cleanup as distinct blocks with exactly one blank line between them.
+Do not add a blank line between statements that form one logical operation.
+
+Inside `test()` and `it()` callbacks, group statements by scenario intent and
+separate distinct phases with exactly one blank line. Typical boundaries include
+fixture setup, user interaction, input editing, submit/apply actions, navigation
+or state transitions, assertions, and later phases. Keep paired operations and
+an action with its immediate outcome together. Multi-step interaction tests do
+not need a rigid Arrange/Act/Assert shape; never add spacing mechanically after
+each `await`, assertion or call. See [Testing](references/testing.md) for examples.
 
 Before:
 
@@ -57,6 +92,23 @@ const normalized = normalizeFilters(filters);
 
 saveFilters(normalized);
 return normalized;
+```
+
+Within an async function, preparation, the request, and the final response can
+form distinct phases. A guard and a final return stay visually separate from the
+following or preceding work:
+
+```ts
+async function loadMovie(id: number) {
+  if (!id) return undefined;
+
+  const options = createRequestOptions();
+
+  const response = await fetchMovie(id, options);
+  if (!response.ok) throw new Error('Request failed');
+
+  return response.json();
+}
 ```
 
 Use descriptive existing names and comments explaining reasons. Naming changes

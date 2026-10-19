@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { PersonDetails } from '@movie-explorer/contracts';
+
 import SectionRecovery from '../../components/details/sectionRecovery';
 import HeroImage from '../../components/details/heroImage';
 import PhotoPreview from '../../components/details/photoPreview';
@@ -38,10 +39,12 @@ function getPosterUrls(person: PersonDetails) {
 
 function PersonProfile({ person }: { person: PersonDetails }) {
   const [expanded, setExpanded] = useState(false);
+
   const biography = person.biography?.trim() ?? '';
   const isLong = biography.length > 800;
   // Prefer a word boundary, while retaining meaningful line breaks.
   const excerpt = biography.slice(0, 800).replace(/\s+\S*$/, '');
+
   const age = getPersonAge(person.birthday, person.deathDate);
   const metadata: [string, string | number | undefined][] = [
     ['Known for', person.knownForDepartment],
@@ -53,6 +56,7 @@ function PersonProfile({ person }: { person: PersonDetails }) {
   const visibleMetadata = metadata.filter(([, value]) =>
     typeof value === 'number' ? Number.isFinite(value) : value?.trim()
   );
+
   return (
     <div className="person-profile">
       <HeroImage
@@ -136,15 +140,19 @@ function PersonProfileLoading() {
 function PersonDetailsPage({ id }: { id: string }) {
   const personId = parseDetailId(id);
   const validId = Number.isSafeInteger(personId) && personId > 0;
+
   const [state, setState] = useState<PersonState>({ status: 'loading' });
   const [requestError, setRequestError] = useState<unknown>(null);
   const [pending, setPending] = useState(false);
   const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
     if (!validId) return undefined;
+
     const controller = new AbortController();
     setPending(true);
     let current = true;
+
     getPerson(personId, controller.signal)
       .then((person) => {
         if (current && !controller.signal.aborted)
@@ -153,6 +161,7 @@ function PersonDetailsPage({ id }: { id: string }) {
       .catch((error: unknown) => {
         if (current && !controller.signal.aborted) {
           if (isCancelledError(error)) return;
+
           setRequestError(error);
           setState({ status: isNotFoundError(error) ? 'not-found' : 'error' });
         }
@@ -160,6 +169,7 @@ function PersonDetailsPage({ id }: { id: string }) {
       .finally(() => {
         if (current) setPending(false);
       });
+
     return () => {
       current = false;
       controller.abort();
@@ -182,6 +192,7 @@ function PersonDetailsPage({ id }: { id: string }) {
               : (presentApiError(requestError)?.heading ?? 'Person details'),
           }[state.status];
   }
+
   const mainRef = useDetailPage(pageTitle);
 
   return (
@@ -266,6 +277,7 @@ function PersonDetailsPage({ id }: { id: string }) {
                       recover={async (signal) => {
                         const result = await getFilmography(personId, signal);
                         if (signal.aborted) return;
+
                         setState((previous) =>
                           previous.status === 'success'
                             ? {
@@ -296,6 +308,7 @@ function PersonDetailsPage({ id }: { id: string }) {
 
 export default function PersonPage() {
   const { id = '' } = useParams();
+
   // Each route owns its request, biography state, and initial focus.
   return <PersonDetailsPage key={id} id={id} />;
 }

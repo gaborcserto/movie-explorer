@@ -13,6 +13,7 @@ export function getDisplaySrcSet(srcSet?: string) {
 export function getPosterDisplaySrcSet(src?: string, srcSet?: string) {
   const display = getDisplaySrcSet(srcSet);
   if (!display) return undefined;
+
   const urls = [
     ...new Set(
       [
@@ -27,8 +28,10 @@ export function getPosterDisplaySrcSet(src?: string, srcSet?: string) {
     url,
     width: Number(url.match(/\/w(\d+)\/[^/]+$/)?.[1]),
   }));
+
   // Custom provider URLs need not encode widths. Keep their density semantics.
   if (candidates.some(({ width }) => !width)) return display;
+
   return candidates
     .sort((first, second) => first.width - second.width)
     .map(({ url, width }) => `${url} ${width}w`)

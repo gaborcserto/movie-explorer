@@ -9,6 +9,10 @@
 - Keep thin controllers and service delegation compact. Separate validation,
   integration requests, mapping and responses inside larger methods when they
   are distinct phases. Do not create helper methods just to shorten a block.
+- Inside methods, separate guard clauses from the next distinct operation, setup
+  from a subsequent request or other operation, and a final value or cleanup
+  return from preceding work with one blank line where those phases differ. Keep
+  tightly coupled statements together; do not space every statement.
 - Keep each DTO property's validation, transformation and documentation
   decorators together; separate property groups with one blank line. Preserve
   decorator order, initializers, defaults and emitted runtime metadata.
@@ -29,6 +33,21 @@ public findOne(id: number) {
 }
 public findRelated(id: number) {
   return this.provider.findRelated(id);
+}
+```
+
+Within a method, a guard, request setup, external operation and final return can
+be visually separated without changing their order:
+
+```ts
+async findMovie(id: number) {
+  if (!id) return undefined;
+
+  const options = this.createOptions();
+
+  const movie = await this.provider.findOne(id, options);
+
+  return movie;
 }
 ```
 
