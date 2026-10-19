@@ -19,6 +19,7 @@ describe('<Card />', () => {
         <Card movie={mockMovie} />
       </MemoryRouter>
     );
+
     expect(screen.getByRole('link', { name: mockMovie.title })).toHaveAttribute(
       'href',
       '/movie/1234?sorting=title&filter=comedy'
@@ -44,6 +45,7 @@ describe('<Card />', () => {
         />
       </MemoryRouter>
     );
+
     expect(screen.getByRole('link', { name: mockMovie.title })).toHaveAttribute(
       'href',
       '/movie/1234'
@@ -94,6 +96,7 @@ describe('<Card />', () => {
         <Card movie={mockMovie} loading="eager" />
       </MemoryRouter>
     );
+
     const image = screen.getByAltText(mockMovie.title);
     expect(image).toHaveAttribute('loading', 'eager');
     expect(image).toHaveAttribute('sizes', '300px');

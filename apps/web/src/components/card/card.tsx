@@ -1,9 +1,10 @@
 import { Fragment } from 'react';
-import './card.scss';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { MovieSummary } from '@movie-explorer/contracts';
+
 import MovieImage from '../utility/customImage';
 import { getPosterDisplaySrcSet } from '../../util/imageSizing';
+import './card.scss';
 
 interface CardProps {
   movie: MovieSummary;
