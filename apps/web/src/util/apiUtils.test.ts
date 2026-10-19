@@ -2,6 +2,7 @@ import type {
   MovieDetails,
   MovieListResponse,
 } from '@movie-explorer/contracts';
+
 import {
   getMovie,
   getMovieSection,
@@ -195,6 +196,7 @@ describe('API functions', () => {
       });
     }
   );
+
   afterEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
@@ -261,8 +263,10 @@ describe('API functions', () => {
     const result = expect(
       getSearchSuggestions('Alien', caller.signal)
     ).rejects.toMatchObject({ category: 'timeout' });
+
     await vi.advanceTimersByTimeAsync(API_REQUEST_TIMEOUT_MS);
     await result;
+
     expect(caller.signal.aborted).toBe(false);
     expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
     expect(vi.getTimerCount()).toBe(0);
@@ -275,8 +279,10 @@ describe('API functions', () => {
     const result = expect(
       getSearchSuggestions('Alien', caller.signal)
     ).rejects.toMatchObject({ category: 'cancelled' });
+
     caller.abort(new Error('custom reason'));
     await result;
+
     expect(fetchMock.mock.calls.at(-1)?.[1].signal.aborted).toBe(true);
     expect(vi.getTimerCount()).toBe(0);
   });
@@ -463,12 +469,19 @@ describe('API functions', () => {
   });
 
   it('should normalize display sort labels to API sort fields', () => {
+    expect(sortParams(undefined)).toBe('popularity');
+    expect(sortParams('')).toBe('popularity');
     expect(sortParams('Release Date')).toBe('releaseDate');
+    expect(sortParams('releaseDate')).toBe('releaseDate');
     expect(sortParams('Rating')).toBe('rating');
+    expect(sortParams('rating')).toBe('rating');
     expect(sortParams(null)).toBe('popularity');
     expect(sortParams('Popularity')).toBe('popularity');
     expect(sortParams('Relevance')).toBeUndefined();
+    expect(sortParams('relevance')).toBeUndefined();
     expect(sortParams('Title')).toBe('title');
+    expect(sortParams('title')).toBe('title');
+    expect(sortParams('unknown')).toBe('popularity');
   });
 
   it('should identify 404 API errors as not found', async () => {

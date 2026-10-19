@@ -11,6 +11,7 @@ import type {
   PersonListResponse,
   SearchSuggestionsResponse,
 } from '@movie-explorer/contracts';
+
 import {
   record,
   availability,
@@ -54,26 +55,46 @@ export class ApiRequestError extends Error {
 export const API_REQUEST_TIMEOUT_MS = 12_000;
 
 export function classifyHttpStatus(status: number): ApiErrorCategory {
-  if (status === 400 || status === 422) return 'invalid-request';
-  if (status === 404) return 'not-found';
-  if (status === 429) return 'rate-limited';
-  if (status === 500) return 'internal-server';
-  if ([502, 503, 504].includes(status)) return 'service-unavailable';
-  return 'http';
+  switch (status) {
+    case 400:
+    case 422:
+      return 'invalid-request';
+    case 404:
+      return 'not-found';
+    case 429:
+      return 'rate-limited';
+    case 500:
+      return 'internal-server';
+    case 502:
+    case 503:
+    case 504:
+      return 'service-unavailable';
+    default:
+      return 'http';
+  }
 }
 
 async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
   const controller = new AbortController();
   const callerSignal = init.signal;
   const cancel = () => {
-    if (!controller.signal.aborted) controller.abort('cancelled');
+    if (!controller.signal.aborted) {
+      controller.abort('cancelled');
+    }
   };
-  if (callerSignal?.aborted) cancel();
-  else callerSignal?.addEventListener('abort', cancel, { once: true });
+  if (callerSignal?.aborted) {
+    cancel();
+  } else {
+    callerSignal?.addEventListener('abort', cancel, { once: true });
+  }
+
   const timer = setTimeout(() => {
-    if (!controller.signal.aborted) controller.abort('timeout');
+    if (!controller.signal.aborted) {
+      controller.abort('timeout');
+    }
   }, API_REQUEST_TIMEOUT_MS);
   let status: number | undefined;
+
   try {
     controller.signal.throwIfAborted();
     const response = await fetch(url, { ...init, signal: controller.signal });
@@ -101,7 +122,9 @@ async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
       controller.signal.throwIfAborted();
       return body as T;
     } catch {
-      if (controller.signal.aborted) throw controller.signal.reason;
+      if (controller.signal.aborted) {
+        throw controller.signal.reason;
+      }
       throw new ApiRequestError('invalid-response', status);
     }
   } catch (error: unknown) {
@@ -111,7 +134,9 @@ async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
         status
       );
     }
-    if (error instanceof ApiRequestError) throw error;
+    if (error instanceof ApiRequestError) {
+      throw error;
+    }
     throw new ApiRequestError('network', status);
   } finally {
     clearTimeout(timer);
@@ -133,15 +158,20 @@ export const getMovie = async (
     `${moviesUrl}/${id}`,
     signal ? { signal } : {}
   );
-  if (!record(body)) throw new ApiRequestError('invalid-response');
+  if (!record(body)) {
+    throw new ApiRequestError('invalid-response');
+  }
   // Optional metadata must not turn an otherwise usable movie into an error.
   (['originalTitle', 'status', 'originalLanguage'] as const).forEach((key) => {
-    if (typeof body[key] !== 'string') delete body[key];
+    if (typeof body[key] !== 'string') {
+      delete body[key];
+    }
   });
   (['budget', 'revenue'] as const).forEach((key) => {
     const value = body[key];
-    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0)
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
       delete body[key];
+    }
   });
   if (body.sections !== undefined) {
     if (
@@ -165,16 +195,21 @@ export const getMovie = async (
           (typeof body[key] === 'number' && Number.isFinite(body[key]))
       ) ||
       typeof body.posterUrl !== 'string'
-    )
+    ) {
       throw new ApiRequestError('invalid-response');
+    }
+
     const { sections } = body;
     (['credits', 'videos', 'photos', 'posters'] as const).forEach((section) => {
-      if (!sections[section]) return;
+      if (!sections[section]) {
+        return;
+      }
       if (
         sections[section].status === 'available' &&
         !movieSection(body, section)
-      )
+      ) {
         throw new ApiRequestError('invalid-response');
+      }
       if (sections[section].status === 'unavailable') {
         if (section === 'credits') {
           body.cast = [];
@@ -201,7 +236,9 @@ export const getPerson = async (
     `${apiBaseUrl}/api/v1/persons/${id}`,
     signal ? { signal } : {}
   );
-  if (!record(body)) throw new ApiRequestError('invalid-response');
+  if (!record(body)) {
+    throw new ApiRequestError('invalid-response');
+  }
   if (
     body.filmographyAvailability !== undefined &&
     (!availability(body.filmographyAvailability) ||
@@ -217,18 +254,20 @@ export const getPerson = async (
         'profileSrcSet',
       ]) ||
       !filmography(body.filmography))
-  )
+  ) {
     throw new ApiRequestError('invalid-response');
+  }
   // Optional gallery metadata must never prevent the profile from rendering.
   if (
     body.profilePhotos !== undefined &&
     !movieSection({ photos: body.profilePhotos }, 'photos')
-  )
+  ) {
     body.profilePhotos = undefined;
-  else
+  } else {
     body.profilePhotos = body.profilePhotos?.filter(
       (photo) => photo.fullUrl.trim() && photo.thumbnailUrl.trim()
     );
+  }
   return body;
 };
 
@@ -241,8 +280,9 @@ export const getMovieSection = async (
     `${moviesUrl}/${id}/${section}`,
     { signal }
   );
-  if (!movieSection(body, section))
+  if (!movieSection(body, section)) {
     throw new ApiRequestError('invalid-response');
+  }
   if (section === 'photos' && body.backdrops === undefined && body.photos) {
     body.backdrops = body.photos;
   }
@@ -257,31 +297,37 @@ export const getFilmography = async (
     `${apiBaseUrl}/api/v1/persons/${id}/filmography`,
     { signal }
   );
-  if (!record(body) || !filmography(body.filmography))
+  if (!record(body) || !filmography(body.filmography)) {
     throw new ApiRequestError('invalid-response');
+  }
   return body;
 };
 
 export const sortParams = (
   data: string | undefined | null
 ): MovieSortField | undefined => {
-  if (!data || data === 'Popularity' || data === 'popularity') {
-    return 'popularity';
+  switch (data) {
+    case null:
+    case undefined:
+    case '':
+    case 'Popularity':
+    case 'popularity':
+      return 'popularity';
+    case 'Relevance':
+    case 'relevance':
+      return undefined;
+    case 'Release Date':
+    case 'releaseDate':
+      return 'releaseDate';
+    case 'Rating':
+    case 'rating':
+      return 'rating';
+    case 'Title':
+    case 'title':
+      return 'title';
+    default:
+      return 'popularity';
   }
-
-  if (data === 'Relevance' || data === 'relevance') return undefined;
-
-  if (data === 'Release Date' || data === 'releaseDate') {
-    return 'releaseDate';
-  }
-
-  if (data === 'Rating' || data === 'rating') {
-    return 'rating';
-  }
-
-  if (data === 'Title' || data === 'title') return 'title';
-
-  return 'popularity';
 };
 
 export const defaultSortOrder = (sort: MovieSortField): MovieSortOrder =>
@@ -291,8 +337,12 @@ export const sortOrderParams = (
   data: string | undefined | null,
   sort: MovieSortField | undefined
 ): MovieSortOrder | undefined => {
-  if (!sort) return undefined;
-  if (data === 'asc' || data === 'desc') return data;
+  if (!sort) {
+    return undefined;
+  }
+  if (data === 'asc' || data === 'desc') {
+    return data;
+  }
   return defaultSortOrder(sort);
 };
 
@@ -374,7 +424,9 @@ export const getSearchSuggestions = async (
     `${apiBaseUrl}/api/v1/search/suggestions?${params}`,
     signal ? { signal } : {}
   );
-  if (!record(body)) throw new ApiRequestError('invalid-response');
+  if (!record(body)) {
+    throw new ApiRequestError('invalid-response');
+  }
   if (
     body.groups !== undefined &&
     (!availabilityMap(body.groups, ['movie', 'person']) ||
@@ -397,8 +449,9 @@ export const getSearchSuggestions = async (
             ? typeof item.title === 'string'
             : item.mediaType === 'person' && typeof item.name === 'string')
       ))
-  )
+  ) {
     throw new ApiRequestError('invalid-response');
+  }
   return body;
 };
 

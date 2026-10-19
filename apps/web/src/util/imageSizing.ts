@@ -12,7 +12,9 @@ export function getDisplaySrcSet(srcSet?: string) {
 /** Use only supplied URLs; width variants let the browser account for card size. */
 export function getPosterDisplaySrcSet(src?: string, srcSet?: string) {
   const display = getDisplaySrcSet(srcSet);
-  if (!display) return undefined;
+  if (!display) {
+    return undefined;
+  }
 
   const urls = [
     ...new Set(
@@ -30,7 +32,9 @@ export function getPosterDisplaySrcSet(src?: string, srcSet?: string) {
   }));
 
   // Custom provider URLs need not encode widths. Keep their density semantics.
-  if (candidates.some(({ width }) => !width)) return display;
+  if (candidates.some(({ width }) => !width)) {
+    return display;
+  }
 
   return candidates
     .sort((first, second) => first.width - second.width)

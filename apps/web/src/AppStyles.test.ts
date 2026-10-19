@@ -10,8 +10,10 @@ const stylesheet = postcss.parse(
 function declarations(selector: string) {
   const values: Record<string, string> = {};
   stylesheet.walkRules((rule) => {
-    if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector))
+    if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector)) {
       return;
+    }
+
     rule.walkDecls((declaration) => {
       values[declaration.prop] = declaration.value;
     });

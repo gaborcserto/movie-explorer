@@ -10,6 +10,7 @@ export function isCancelledError(error: unknown) {
 export default function presentApiError(error: unknown) {
   const category =
     error instanceof ApiRequestError ? error.category : undefined;
+
   switch (category) {
     case 'cancelled':
       return null;

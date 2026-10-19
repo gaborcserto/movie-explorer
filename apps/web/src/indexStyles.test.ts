@@ -11,6 +11,7 @@ test('overrides reset smooth scrolling when reduced motion is requested', () => 
       ],
     }).css
   );
+
   const scrollBehavior: { query: string; value: string }[] = [];
   stylesheet.walkRules('html:focus-within', (rule) => {
     rule.walkDecls('scroll-behavior', (declaration) => {
@@ -18,6 +19,7 @@ test('overrides reset smooth scrolling when reduced motion is requested', () => 
       scrollBehavior.push({ query, value: declaration.value });
     });
   });
+
   expect(scrollBehavior).toEqual([
     { query: 'all', value: 'smooth' },
     { query: '(prefers-reduced-motion: reduce)', value: 'auto' },

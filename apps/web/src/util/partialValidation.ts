@@ -5,9 +5,12 @@ export function record(value: unknown): value is Record<string, unknown> {
 }
 
 export function availability(value: unknown): value is SectionAvailability {
-  if (!record(value)) return false;
-  if (value.status === 'available')
+  if (!record(value)) {
+    return false;
+  }
+  if (value.status === 'available') {
     return value.retryAfterSeconds === undefined;
+  }
   return (
     value.status === 'unavailable' &&
     (value.retryAfterSeconds === undefined ||
@@ -43,8 +46,10 @@ function named(value: unknown): boolean {
 }
 
 export function movieSection(value: unknown, section: string): boolean {
-  if (!record(value)) return false;
-  if (section === 'credits')
+  if (!record(value)) {
+    return false;
+  }
+  if (section === 'credits') {
     return (
       strings(value.cast) &&
       ['castMembers', 'directors', 'writers', 'producers'].every(
@@ -60,6 +65,8 @@ export function movieSection(value: unknown, section: string): boolean {
       ) &&
       (value.director === undefined || typeof value.director === 'string')
     );
+  }
+
   const items =
     section === 'photos' ? (value.backdrops ?? value.photos) : value[section];
   return (
