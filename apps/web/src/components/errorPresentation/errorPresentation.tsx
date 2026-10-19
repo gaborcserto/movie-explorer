@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+
 import PopcornIllustration from './popcornIllustration';
 import './errorPresentation.scss';
 

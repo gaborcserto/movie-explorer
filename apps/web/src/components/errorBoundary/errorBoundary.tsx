@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+
 import './errorBoundary.scss';
 import ErrorPresentation from '../errorPresentation/errorPresentation';
 import useDetailPage from '../details/useDetailPage';

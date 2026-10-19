@@ -13,12 +13,38 @@
 - Keep assertions about one outcome together. Separate distinct outcomes only
   when the boundary helps. Avoid repetitive Arrange/Act/Assert comments when
   spacing and names already communicate the phases.
+- When a test uses callbacks, visitors, traversals, or event handlers to collect
+  data, visually separate the setup, collection operation, and subsequent
+  assertions. Separate independent verification phases with one blank line,
+  while keeping related assertions together. Apply this to callback-based tests
+  across frontend, Node.js, backend, and other test frameworks.
 - Preserve fixture values, mock setup, reset/restore choices, waits, timers and
   cleanup. Never replace awaited interactions, weaken assertions or update
   snapshots to conceal a formatting regression.
 - Keep parameterized case tables adjacent to their test. Let the formatter wrap
   rows; do not manually align columns or extract fixtures to reduce line counts.
   Existing local helpers are useful; adding helpers is a separate refactor.
+
+For callback-based collection, separate setup, traversal, and assertions while
+keeping a visitor's guard next to the collection it controls.
+
+Before:
+
+```ts
+const names: string[] = [];
+collection.visit((item) => names.push(item.name));
+expect(names).toEqual(['one', 'two']);
+```
+
+After:
+
+```ts
+const names: string[] = [];
+
+collection.visit((item) => names.push(item.name));
+
+expect(names).toEqual(['one', 'two']);
+```
 
 Before:
 

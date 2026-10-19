@@ -75,6 +75,11 @@ an action with its immediate outcome together. Multi-step interaction tests do
 not need a rigid Arrange/Act/Assert shape; never add spacing mechanically after
 each `await`, assertion or call. See [Testing](references/testing.md) for examples.
 
+When a test uses callbacks, visitors, traversals, or event handlers to collect
+data, visually separate the setup, collection operation, and subsequent
+assertions. Separate independent verification phases with one blank line, while
+keeping related assertions together.
+
 Before:
 
 ```ts

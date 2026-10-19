@@ -50,6 +50,7 @@ test('allows an alternative decorative illustration', () => {
       primaryAction={<button type="button">Try again</button>}
     />
   );
+
   expect(screen.getByText('Decorative scene').parentElement).toHaveAttribute(
     'aria-hidden',
     'true'

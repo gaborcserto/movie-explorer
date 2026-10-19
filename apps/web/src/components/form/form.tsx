@@ -1,5 +1,6 @@
-import './form.scss';
 import type { FormEventHandler, ReactNode } from 'react';
+
+import './form.scss';
 
 interface FormProps {
   children: ReactNode;
