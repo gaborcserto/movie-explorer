@@ -128,6 +128,211 @@ if (!response.ok) throw new Error("Request failed");
 return response.json();
 ```
 
+## Choosing Clearer Language Constructs
+
+Choose a construct when it makes the operation and its ordering easier to see.
+These are options, not a requirement to rewrite familiar loops or conditionals.
+Preserve evaluation order, early exits, mutation, side effects, sparse-array
+behavior, and distinctions among `null`, `undefined`, `false`, `0`, and empty
+strings. Avoid extra passes or intermediate arrays when they do not improve
+clarity.
+The loop-to-array examples below assume dense arrays and side-effect-free
+callbacks; verify sparse-array and short-circuit behavior before applying them
+to existing code.
+
+### Fixed-value branches: `switch`
+
+Use `switch` when one value is compared against several fixed alternatives:
+
+```ts
+// Before
+if (status === 404) {
+  return "not-found";
+}
+if (status === 429) {
+  return "rate-limited";
+}
+return "http";
+
+// After
+switch (status) {
+  case 404:
+    return "not-found";
+  case 429:
+    return "rate-limited";
+  default:
+    return "http";
+}
+```
+
+Keep `if` for ranges, compound predicates, or a small number of unrelated
+conditions; a switch with complex case work can obscure the decision.
+
+### Array selection and transformation
+
+Use `map` for one output per input, `filter` to keep matching values, and
+`find` when only the first match is needed:
+
+```ts
+// Before
+const titles: string[] = [];
+for (const movie of movies) {
+  titles.push(movie.title);
+}
+
+// After
+const titles = movies.map((movie) => movie.title);
+```
+
+Use `filter` when the result should contain only matching values:
+
+```ts
+// Before
+const adults: Person[] = [];
+for (const person of people) {
+  if (person.age >= 18) {
+    adults.push(person);
+  }
+}
+
+// After
+const adults = people.filter((person) => person.age >= 18);
+```
+
+```ts
+// Before
+let match: (typeof movies)[number] | undefined;
+for (const movie of movies) {
+  if (movie.id === id) {
+    match = movie;
+    break;
+  }
+}
+
+// After
+const match = movies.find((movie) => movie.id === id);
+```
+
+Use `some` when one match is enough and `every` when all values must match:
+
+```ts
+// Before
+let hasUnavailable = false;
+for (const section of sections) {
+  if (section.status === "unavailable") {
+    hasUnavailable = true;
+    break;
+  }
+}
+
+// After
+const hasUnavailable = sections.some(
+  (section) => section.status === "unavailable",
+);
+```
+
+For the opposite question, `every` checks whether all values match:
+
+```ts
+// Before
+let allReady = true;
+for (const task of tasks) {
+  if (!task.ready) {
+    allReady = false;
+    break;
+  }
+}
+
+// After
+const allReady = tasks.every((task) => task.ready);
+```
+
+Do not replace a loop that exits early, mutates state, performs ordered side
+effects, or intentionally visits sparse array slots without checking the
+construct's semantics. Do not use `filter()[0]` when `find` expresses the
+intent, or chain passes and temporary arrays solely to avoid a clear loop.
+
+### Accumulation and flattening: `reduce` and `flatMap`
+
+Use `reduce` when several values form one clear accumulated result. This sum
+example assumes a dense array of numbers:
+
+```ts
+// Before
+let total = 0;
+for (const price of prices) {
+  total += price;
+}
+
+// After
+const total = prices.reduce((sum, price) => sum + price, 0);
+```
+
+Keep the loop when it is easier to follow. Avoid `reduce` for filtering,
+mapping, or callbacks with several branches and mutations. Use `flatMap` for a
+one-level mapping that returns zero or more values per item:
+
+```ts
+// Before
+const tags = groups.map((group) => group.tags).flat();
+
+// After
+const tags = groups.flatMap((group) => group.tags);
+```
+
+Keep `map` when nested arrays are meaningful, and do not use `flatMap` when it
+adds a less familiar step or changes the intended flattening depth.
+
+### Missing values: `?.` and `??`
+
+Use optional chaining for safe access through a nullable value, and nullish
+coalescing when only `null` or `undefined` should select the fallback:
+
+```ts
+// Before
+const title = movie === null || movie === undefined ? undefined : movie.title;
+
+// After
+const title = movie?.title;
+```
+
+```ts
+// Before
+const page = query.page === null || query.page === undefined ? 1 : query.page;
+
+// After
+const page = query.page ?? 1;
+```
+
+Do not replace `||` with `??` or the reverse without checking falsy values:
+`0`, `false`, and `''` trigger `||`, while `??` preserves them. Optional
+chaining also returns `undefined` for a missing receiver; confirm that matches
+the existing fallback and result type.
+
+### Conditional expressions
+
+Use a ternary for a short, direct choice. Prefer an `if`/`else` when choices
+nest or require multiple statements:
+
+```ts
+// Before
+return isMovie ? (hasTitle ? title : "Untitled") : personName;
+
+// After
+if (!isMovie) {
+  return personName;
+}
+if (!hasTitle) {
+  return "Untitled";
+}
+return title;
+```
+
+Do not add early returns if they change evaluation order, side effects, or the
+surrounding control flow. A readable `if`/`else` is preferable to a long
+conditional expression; a simple ternary is preferable to ceremony around a
+single value choice.
+
 ## Components and hooks
 
 ### Control flow and logical phases
