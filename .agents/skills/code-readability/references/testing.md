@@ -21,6 +21,9 @@
 - Preserve fixture values, mock setup, reset/restore choices, waits, timers and
   cleanup. Never replace awaited interactions, weaken assertions or update
   snapshots to conceal a formatting regression.
+- Prefer explicit braces for test `if`, `else`, and loop bodies when bracing is
+  behavior-preserving. Keep multiline conditions braced; do not change the
+  fixture, callback, or assertion while adding braces.
 - Keep parameterized case tables adjacent to their test. Let the formatter wrap
   rows; do not manually align columns or extract fixtures to reduce line counts.
   Existing local helpers are useful; adding helpers is a separate refactor.
@@ -33,7 +36,7 @@ Before:
 ```ts
 const names: string[] = [];
 collection.visit((item) => names.push(item.name));
-expect(names).toEqual(['one', 'two']);
+expect(names).toEqual(["one", "two"]);
 ```
 
 After:
@@ -43,31 +46,31 @@ const names: string[] = [];
 
 collection.visit((item) => names.push(item.name));
 
-expect(names).toEqual(['one', 'two']);
+expect(names).toEqual(["one", "two"]);
 ```
 
 Before:
 
 ```ts
-const router = setup('/search?extra=keep');
+const router = setup("/search?extra=keep");
 await open();
 await apply();
 await closed();
-expect(router.state.location.search).toBe('?extra=keep');
-expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+expect(router.state.location.search).toBe("?extra=keep");
+expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 ```
 
 After:
 
 ```ts
-const router = setup('/search?extra=keep');
+const router = setup("/search?extra=keep");
 
 await open();
 await apply();
 await closed();
 
-expect(router.state.location.search).toBe('?extra=keep');
-expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+expect(router.state.location.search).toBe("?extra=keep");
+expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 ```
 
 For a longer scenario, separate draft checks, commit interaction, committed-state
@@ -79,7 +82,7 @@ Separate navigation from the UI checks that follow it:
 
 ```tsx
 await userEvent.clear(input);
-await userEvent.type(input, '2024');
+await userEvent.type(input, "2024");
 
 await apply();
 
@@ -90,5 +93,5 @@ await act(async () => {
 await closed();
 await open();
 
-expect(screen.getByLabelText('Release year')).toHaveValue('2000');
+expect(screen.getByLabelText("Release year")).toHaveValue("2000");
 ```

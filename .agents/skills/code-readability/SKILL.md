@@ -46,26 +46,100 @@ syntax and wrapping, and do not add an import sorter for this convention.
 
 ## Recommended visual structure
 
-Keep related statements together. Use one blank line between distinct
-responsibilities, adjacent function/method definitions, independent effects, and
-setup and rendering where it aids scanning. Do not insert blank lines after every
-declaration or return. Small coherent functions may need no interior separation.
+Keep related statements together. Use exactly one blank line between distinct
+logical phases when it helps the reader follow the operation:
 
-Within function bodies, including callbacks, React hooks, class methods and async
-functions, use one blank line to separate a guard clause from the next operation,
-setup or initialization from the next distinct operation, and a final return or
-cleanup return from preceding work when that boundary improves scanning. Keep
-tightly related statements together; do not add a blank line mechanically after
-each statement or inside a coupled expression. In a component, leave exactly one
+- Preconditions or guard clauses and subsequent work.
+- Setup and initialization, then state/ref mutation or calculations that form a
+  later phase.
+- Data collection and processing, or calculations and a decision based on them.
+- Local event-handler declarations, listener registration, and cleanup.
+- Independent effects and meaningful phases inside callbacks.
+- Component setup and its final JSX return.
+
+Keep tightly related statements together. Do not insert blank lines after every
+declaration, assignment, `await`, function call, or return. Small coherent
+functions may need no interior separation. In a component, leave exactly one
 blank line before its final JSX return when another statement precedes it.
 Preserve statement and hook order. Accept only spacing that the existing
 Prettier, ESLint, Stylelint, Oxfmt or equivalent configuration permits.
 
-Also separate a local function or callback declaration from subsequent
-operations such as event listener registration. Where present, keep guard
-clauses, local function/callback declarations, subsequent operations, and final
-return or cleanup as distinct blocks with exactly one blank line between them.
-Do not add a blank line between statements that form one logical operation.
+Within longer functions, use visual boundaries for preconditions, input/state
+updates, collection, calculations, decisions, side effects, and final cleanup or
+return. These are conceptual phases, not mandatory sections. For example, keep
+an early guard apart from the successful path, but keep a state mutation with
+the branch that requires it:
+
+```ts
+if (!points.current.has(event.pointerId)) {
+  return;
+}
+
+points.current.set(event.pointerId, {
+  x: event.clientX,
+  y: event.clientY,
+});
+
+const [first, second] = [...points.current.values()];
+const dx = first.x - current.x;
+const dy = first.y - current.y;
+
+if (Math.hypot(dx, dy) > threshold) {
+  current.moved = true;
+}
+
+if (second) {
+  updatePinch(dx, dy);
+} else if (zoomed) {
+  updatePan(dx, dy);
+}
+```
+
+### Braced control flow
+
+Prefer explicit braces for `if`, `else`, and loop bodies. Add braces to existing
+unbraced bodies only when the change clearly preserves the body statement,
+condition, association with any `else`, evaluation order, and scope. Always use
+braces for multiline conditions and for both sides of `if`/`else` branches. Do
+not rewrite the condition, body, or surrounding control flow as part of adding
+braces. This applies to source, callbacks, and tests in React, Next.js, NestJS,
+Node.js, and plain TypeScript.
+
+Before:
+
+```ts
+if (
+  status !== "loaded" ||
+  (event.pointerType === "mouse" && event.button !== 0)
+)
+  return;
+```
+
+After:
+
+```ts
+if (
+  status !== "loaded" ||
+  (event.pointerType === "mouse" && event.button !== 0)
+) {
+  return;
+}
+```
+
+Keep `else` blocks explicit too:
+
+```ts
+if (now - lastTap.current < 300) {
+  update(view.scale > 1 ? 1 : 2);
+  lastTap.current = 0;
+} else {
+  lastTap.current = now;
+}
+```
+
+Do not add an ESLint rule, formatter setting, or automated rewrite to enforce
+this preference. Leave syntax alone when bracing could change scope or when the
+transformation is not plainly behavior-preserving.
 
 Inside `test()` and `it()` callbacks, group statements by scenario intent and
 separate distinct phases with exactly one blank line. Typical boundaries include
@@ -110,7 +184,7 @@ async function loadMovie(id: number) {
   const options = createRequestOptions();
 
   const response = await fetchMovie(id, options);
-  if (!response.ok) throw new Error('Request failed');
+  if (!response.ok) throw new Error("Request failed");
 
   return response.json();
 }
@@ -122,6 +196,8 @@ code or force visual symmetry where responsibilities differ.
 
 Read only relevant references:
 
+- [File organization](references/file-organization.md): component cohesion,
+  directory ownership, and safe moves.
 - [TypeScript and React](references/typescript-react.md): imports, expressions,
   hooks, component structure, JSX, Next.js and Node.js boundaries.
 - [Backend](references/backend.md): NestJS classes, DTOs, integrations, PHP/Laravel.

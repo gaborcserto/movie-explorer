@@ -15,16 +15,16 @@
   semantics of every imported name:
 
   ```ts
-  import { Inject, Injectable } from '@nestjs/common';
+  import { Inject, Injectable } from "@nestjs/common";
   import type {
     MovieDetails,
     MovieListResponse,
     MovieQueryParams,
     MovieSection,
     MovieSuggestionsResponse,
-  } from '@movie-explorer/contracts';
+  } from "@movie-explorer/contracts";
 
-  import { MOVIE_PROVIDER, MovieProvider } from './movie-provider';
+  import { MOVIE_PROVIDER, MovieProvider } from "./movie-provider";
   ```
 
   For example, consolidate duplicate imports from the same type-only module
@@ -32,16 +32,17 @@
 
   ```ts
   // Before
-  import type { MovieSection } from '@example/contracts';
-  import type { MovieDetails, MovieQueryParams } from '@example/contracts';
+  import type { MovieSection } from "@example/contracts";
+  import type { MovieDetails, MovieQueryParams } from "@example/contracts";
 
   // After
   import type {
     MovieDetails,
     MovieQueryParams,
     MovieSection,
-  } from '@example/contracts';
+  } from "@example/contracts";
   ```
+
 - Keep side-effect imports, CSS/SCSS imports, polyfills and framework setup in
   their original execution order. Add group-separating blank lines around them
   only where that preserves the existing sequence. Do not sort specifiers or
@@ -74,7 +75,7 @@ Before:
 const controller = new AbortController();
 const options = { signal: controller.signal };
 const response = await fetch(url, options);
-if (!response.ok) throw new Error('Request failed');
+if (!response.ok) throw new Error("Request failed");
 return response.json();
 ```
 
@@ -109,9 +110,9 @@ useEffect(() => {
     if (isOutside(event)) closePanel();
   };
 
-  document.addEventListener('pointerdown', outside);
+  document.addEventListener("pointerdown", outside);
 
-  return () => document.removeEventListener('pointerdown', outside);
+  return () => document.removeEventListener("pointerdown", outside);
 }, [open, closePanel]);
 ```
 
@@ -122,12 +123,51 @@ const controller = new AbortController();
 const options = { signal: controller.signal };
 
 const response = await fetch(url, options);
-if (!response.ok) throw new Error('Request failed');
+if (!response.ok) throw new Error("Request failed");
 
 return response.json();
 ```
 
 ## Components and hooks
+
+### Control flow and logical phases
+
+Prefer braces around `if`, `else`, and loop bodies. Multiline conditions and
+both branches of an `if`/`else` always use braces. When adding braces to existing
+code, preserve the condition and body exactly, along with evaluation order and
+`else` association; skip transformations with scope or behavior ambiguity.
+Apply the same preference in React handlers, NestJS/Node.js code, and tests.
+
+Separate distinct phases with one blank line: a guard from subsequent work,
+input/state mutation from calculations, collection from processing, calculations
+from a resulting decision, and a callback declaration from registration or
+cleanup. Keep dependent statements together and do not space every statement.
+For example:
+
+```ts
+if (!points.current.has(event.pointerId)) {
+  return;
+}
+
+points.current.set(event.pointerId, {
+  x: event.clientX,
+  y: event.clientY,
+});
+
+const [first, second] = [...points.current.values()];
+const dx = first.x - current.x;
+const dy = first.y - current.y;
+
+if (Math.hypot(dx, dy) > threshold) {
+  current.moved = true;
+}
+
+if (second) {
+  updatePinch(dx, dy);
+} else if (zoomed) {
+  updatePan(dx, dy);
+}
+```
 
 For new code, a useful default is router/context hooks, local state/refs, derived
 values, existing memoized calculations, event handlers, effects, early returns,
@@ -135,6 +175,12 @@ then JSX. This is guidance, not a sorting algorithm. Dependencies often justify
 another order. In existing components, add boundaries without reordering hooks
 or statements. Never move a hook below a conditional return or add useMemo or
 useCallback to make a section fit the outline.
+
+Keep related `useState` and `useRef` declarations together, then separate them
+from effects and handlers where that clarifies ownership. Separate independent
+effects and meaningful handler implementations. Put one blank line before a
+hook's final return when preceding work exists. Preserve hook order, effect
+dependencies, callback identity, and event-handler behavior.
 
 Before:
 
