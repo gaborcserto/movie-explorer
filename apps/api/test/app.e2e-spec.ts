@@ -10,6 +10,7 @@ import type { MovieProvider } from '../src/movies/movie-provider';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { MOVIE_PROVIDER } from './../src/movies/movie-provider';
+import { TV_PROVIDER } from '../src/tv/tv-provider';
 
 const movies = [
   {
@@ -40,6 +41,8 @@ describe('AppController (e2e)', () => {
     })
       .overrideProvider(MOVIE_PROVIDER)
       .useValue(movieProvider)
+      .overrideProvider(TV_PROVIDER)
+      .useValue({ findOne: jest.fn() })
       .compile();
 
     app = moduleFixture.createNestApplication();

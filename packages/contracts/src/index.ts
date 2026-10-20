@@ -28,3 +28,10 @@ export type {
 } from './persons';
 export type { SectionAvailability, MovieSection } from './availability';
 export type { MovieSectionResponse } from './movies';
+export type {
+  TvSeriesSummary,
+  TvSeriesDetails,
+  TvSeasonSummary,
+  TvOrganization,
+  CreditPerson,
+} from './tv';

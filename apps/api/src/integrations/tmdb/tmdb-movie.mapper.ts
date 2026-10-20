@@ -17,6 +17,7 @@ import type {
   TmdbMovieListItem,
   TmdbImage,
 } from './tmdb.types';
+import { TmdbImageMapper } from './tmdb-image.mapper';
 
 type MovieCredits = {
   cast: MovieDetails['cast'];
@@ -48,12 +49,12 @@ const PRODUCING_JOBS = [
 ];
 
 export class TmdbMovieMapper {
+  private readonly images: TmdbImageMapper;
   private readonly originalImageBaseUrl: string;
 
   constructor(private readonly imageBaseUrl: string) {
-    const imageBaseUrlParts = imageBaseUrl.split('/');
-    imageBaseUrlParts[imageBaseUrlParts.length - 1] = 'original';
-    this.originalImageBaseUrl = imageBaseUrlParts.join('/');
+    this.images = new TmdbImageMapper(imageBaseUrl);
+    this.originalImageBaseUrl = this.images.originalImageBaseUrl;
   }
 
   public toMovieSummary(
@@ -363,19 +364,7 @@ export class TmdbMovieMapper {
     name: string;
     profile_path?: string | null;
   }): MovieDirector {
-    return {
-      ...(Number.isSafeInteger(person.id) &&
-        person.id > 0 && { id: person.id }),
-      name: person.name.trim(),
-      ...(person.profile_path && {
-        profileUrl: this.toImageUrl(person.profile_path),
-        profileSrcSet: this.toSrcSet(person.profile_path, [
-          ['w185', '1x'],
-          ['h632', '2x'],
-          ['original', '3x'],
-        ]),
-      }),
-    };
+    return this.images.toPersonReference(person);
   }
 
   public toProfilePhoto(path: string, name: string) {
@@ -395,24 +384,11 @@ export class TmdbMovieMapper {
   }
 
   private toPosterSrcSet(path: string): string {
-    // Live /configuration sizes: w342 covers 320 CSS px, w780 covers DPR 2.
-    // DPR 3 needs original: the next required width (960) exceeds w780.
-    return this.toSrcSet(path, [
-      ['w342', '1x'],
-      ['w780', '2x'],
-      ['original', '3x'],
-    ]);
-  }
-
-  private toSrcSet(path: string, candidates: [string, string][]): string {
-    const baseUrl = this.originalImageBaseUrl.replace(/\/original$/, '');
-    return candidates
-      .map(([size, descriptor]) => `${baseUrl}/${size}${path} ${descriptor}`)
-      .join(', ');
+    return this.images.toPosterSrcSet(path);
   }
 
   private toImageUrl(path: string | null): string {
-    return path ? `${this.imageBaseUrl}${path}` : '';
+    return this.images.toImageUrl(path);
   }
 
   private toOriginalImageUrl(path: string | null): string {
