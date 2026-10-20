@@ -292,3 +292,85 @@ test('resets the video reveal count when the movie changes', async () => {
     screen.getByRole('button', { name: 'Show more videos' })
   ).toBeVisible();
 });
+
+test('keeps mixed video order and selects the supported player independently of tile position', async () => {
+  const user = userEvent.setup();
+  render(
+    <DetailsLowerContent
+      movieData={{
+        ...movie,
+        videos: [
+          { name: 'External', url: 'https://vimeo.com/123456789' },
+          { name: 'Unknown', url: '', site: 'Unknown' },
+          { name: 'First', url: 'https://youtu.be/dQw4w9WgXcQ' },
+          { name: 'Second', url: 'https://youtube.com/embed/9bZkp7q19f0' },
+        ],
+      }}
+    />
+  );
+  expect(
+    [...document.querySelectorAll('.video-tile')].map(
+      (tile) => tile.querySelector('span')?.textContent
+    )
+  ).toEqual(['External', 'Unknown', 'First', 'Second']);
+
+  const trigger = screen.getByRole('button', { name: 'Play Second' });
+  await user.click(trigger);
+  expect(screen.getByTitle('Second')).toHaveAttribute(
+    'src',
+    'https://www.youtube-nocookie.com/embed/9bZkp7q19f0?autoplay=0&playsinline=1&rel=0'
+  );
+  expect(within(screen.getByRole('dialog')).getByText('2 / 2')).toBeVisible();
+  await user.keyboard('{Escape}');
+  expect(trigger).toHaveFocus();
+  await user.click(trigger);
+  expect(screen.getByTitle('Second')).toBeInTheDocument();
+});
+
+test('closes active playback and resets previews on movie change without resetting same-movie updates', async () => {
+  const user = userEvent.setup();
+  const { rerender } = render(
+    <DetailsLowerContent movieData={{ ...movie, videos }} />
+  );
+  await user.click(screen.getByRole('button', { name: 'Show more videos' }));
+  await user.click(screen.getByRole('button', { name: 'Play Trailer 4' }));
+
+  rerender(
+    <DetailsLowerContent movieData={{ ...movie, videos, title: 'Updated' }} />
+  );
+  expect(screen.getByRole('dialog', { name: 'Trailer 4' })).toBeVisible();
+
+  rerender(<DetailsLowerContent movieData={{ ...movie, id: 2, videos }} />);
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(document.querySelector('iframe')).toBeNull();
+  expect(document.body.style.overflow).toBe('');
+  expect(document.querySelectorAll('.video-tile')).toHaveLength(4);
+  expect(
+    screen.getByRole('button', { name: 'Show more videos' })
+  ).toBeVisible();
+});
+
+test('unmounting active video playback restores scroll and background interaction', async () => {
+  const user = userEvent.setup();
+  const { container, unmount } = render(
+    <DetailsLowerContent movieData={{ ...movie, videos }} />
+  );
+  const previousOverflow = document.body.style.overflow;
+  const previousInert = container.inert;
+  await user.click(screen.getByRole('button', { name: 'Play Trailer 0' }));
+  expect(container.inert).toBe(true);
+  expect(document.body.style.overflow).toBe('hidden');
+
+  unmount();
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(document.querySelector('iframe')).toBeNull();
+  expect(container.inert).toBe(previousInert);
+  expect(document.body.style.overflow).toBe(previousOverflow);
+
+  const outside = document.createElement('button');
+  document.body.append(outside);
+  outside.focus();
+  fireEvent.keyDown(outside, { key: 'Escape' });
+  expect(outside).toHaveFocus();
+  outside.remove();
+});
