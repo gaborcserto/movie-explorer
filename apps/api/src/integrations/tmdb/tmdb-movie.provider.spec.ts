@@ -32,10 +32,16 @@ const detailsResponse: TmdbMovieDetails = {
 
 describe('TmdbMovieProvider', () => {
   const fetchMock = jest.fn();
+  const originalFetch = global.fetch;
 
   beforeEach(() => {
     fetchMock.mockReset();
     global.fetch = fetchMock;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    jest.useRealTimers();
   });
 
   it('shares concurrent genre lookups and reuses successful results for one hour', async () => {
@@ -70,7 +76,6 @@ describe('TmdbMovieProvider', () => {
     expect(
       started.filter((path) => path.endsWith('/genre/movie/list')),
     ).toHaveLength(2);
-    jest.useRealTimers();
   });
 
   it('does not cache a failed genre lookup and allows retry', async () => {

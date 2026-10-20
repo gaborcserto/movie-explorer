@@ -52,7 +52,7 @@ describe('AppController (e2e)', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     movieProvider.findPerson.mockResolvedValue({
       id: 1,
       name: 'Person',
