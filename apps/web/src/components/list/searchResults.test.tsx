@@ -1,6 +1,9 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { createMemoryRouter, Outlet, RouterProvider } from 'react-router-dom';
-import type { PersonListResponse } from '@movie-explorer/contracts';
+import type {
+  MovieListResponse,
+  PersonListResponse,
+} from '@movie-explorer/contracts';
 import SearchResults from './searchResults';
 import { ApiRequestError, getMovies, getPeople } from '../../util/apiUtils';
 import SearchHistoryProvider from './searchHistory';
@@ -377,6 +380,143 @@ test('sparse People pages reveal at most ten additional cards per interaction', 
   expect(screen.getAllByRole('article')).toHaveLength(23);
   expect(getPeople).toHaveBeenCalledTimes(2);
 });
+
+test('returning from Details resumes the next provider page and changing filters resets to page one', async () => {
+  const moviePage = (page: number): MovieListResponse => ({
+    movies: [
+      { id: page, title: `Page ${page} movie`, posterUrl: '', genres: [] },
+    ],
+    page,
+    totalPages: 3,
+    totalResults: 3,
+  });
+  vi.mocked(getMovies).mockImplementation(async ({ page = 1 }) =>
+    moviePage(page)
+  );
+  const router = setup('/search/Actor?filter=drama');
+  await screen.findByRole('link', { name: 'Page 1 movie' });
+  fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+  fireEvent.click(await screen.findByRole('link', { name: 'Page 2 movie' }));
+  await screen.findByRole('heading', { name: 'Movie details' });
+
+  await act(async () => router.navigate(-1));
+  expect(screen.getByRole('link', { name: 'Page 2 movie' })).toBeVisible();
+  expect(getMovies).toHaveBeenCalledTimes(2);
+  fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+  await screen.findByRole('link', { name: 'Page 3 movie' });
+  expect(getMovies).toHaveBeenLastCalledWith(
+    expect.objectContaining({ page: 3, genres: 'drama' }),
+    expect.any(AbortSignal)
+  );
+  expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
+
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Remove Drama genre filter' })
+  );
+  await screen.findByRole('link', { name: 'Page 1 movie' });
+  expect(screen.getAllByRole('article')).toHaveLength(1);
+  expect(getMovies).toHaveBeenLastCalledWith(
+    expect.objectContaining({ page: 1, genres: null }),
+    expect.any(AbortSignal)
+  );
+});
+
+test('history evicts the oldest movie snapshot after thirty entries while retaining newer entries', async () => {
+  const router = setup('/search/Actor?year=1900');
+  await screen.findByRole('link', { name: 'Movie result' });
+
+  await Array.from({ length: 30 }, (_, index) => 1901 + index).reduce(
+    async (previousVisit, year) => {
+      await previousVisit;
+      await act(async () => router.navigate(`/search/Actor?year=${year}`));
+      await screen.findByRole('link', { name: 'Movie result' });
+    },
+    Promise.resolve()
+  );
+  expect(getMovies).toHaveBeenCalledTimes(31);
+  vi.mocked(getMovies).mockResolvedValueOnce({
+    movies: [
+      { id: 2, title: 'Fresh oldest result', posterUrl: '', genres: [] },
+    ],
+    page: 1,
+    totalPages: 1,
+    totalResults: 1,
+  });
+
+  await act(async () => router.navigate(-30));
+  expect(
+    await screen.findByRole('link', { name: 'Fresh oldest result' })
+  ).toBeVisible();
+  expect(router.state.location.search).toBe('?year=1900');
+  expect(getMovies).toHaveBeenCalledTimes(32);
+
+  await act(async () => router.navigate(2));
+  expect(screen.getByRole('link', { name: 'Movie result' })).toBeVisible();
+  expect(router.state.location.search).toBe('?year=1902');
+  expect(getMovies).toHaveBeenCalledTimes(32);
+});
+
+test.each(['success', 'failure'])(
+  'leaving during pagination preserves the snapshot and ignores late %s after Back',
+  async (outcome) => {
+    let resolve!: (response: MovieListResponse) => void;
+    let reject!: (error: Error) => void;
+    const obsolete = new Promise<MovieListResponse>((done, fail) => {
+      resolve = done;
+      reject = fail;
+    });
+    vi.mocked(getMovies)
+      .mockResolvedValueOnce({
+        movies: [{ id: 1, title: 'Saved movie', posterUrl: '', genres: [] }],
+        page: 1,
+        totalPages: 2,
+        totalResults: 2,
+      })
+      .mockReturnValueOnce(obsolete)
+      .mockResolvedValueOnce({
+        movies: [{ id: 2, title: 'Movie result', posterUrl: '', genres: [] }],
+        page: 2,
+        totalPages: 2,
+        totalResults: 2,
+      });
+    const router = setup('/search/Actor');
+    await screen.findByRole('link', { name: 'Saved movie' });
+    fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+    const signal = vi.mocked(getMovies).mock.calls[1][1];
+    fireEvent.click(screen.getByRole('link', { name: 'Saved movie' }));
+    await screen.findByRole('heading', { name: 'Movie details' });
+    expect(signal?.aborted).toBe(true);
+
+    await act(async () => router.navigate(-1));
+    expect(screen.getByRole('link', { name: 'Saved movie' })).toBeVisible();
+    expect(getMovies).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      if (outcome === 'success') {
+        resolve({
+          movies: [
+            { id: 2, title: 'Obsolete movie', posterUrl: '', genres: [] },
+          ],
+          page: 2,
+          totalPages: 2,
+          totalResults: 2,
+        });
+      } else {
+        reject(new Error('Obsolete page failed'));
+      }
+    });
+    expect(screen.queryByRole('link', { name: 'Obsolete movie' })).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Load more' })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+    await screen.findByRole('link', { name: 'Movie result' });
+    expect(getMovies).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 2 }),
+      expect.any(AbortSignal)
+    );
+    expect(screen.getByRole('link', { name: 'Saved movie' })).toBeVisible();
+  }
+);
 
 test.each(['movies', 'people'] as const)(
   '%s inline classified failures retain Retry focus and guard pending requests',

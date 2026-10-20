@@ -5,6 +5,7 @@ import {
   render,
   waitFor,
   screen,
+  within,
 } from '@testing-library/react';
 import type { MovieListResponse } from '@movie-explorer/contracts';
 import userEvent from '@testing-library/user-event';
@@ -532,6 +533,82 @@ describe('<List />', () => {
       }),
       expect.any(AbortSignal)
     );
+  });
+
+  describe.each(['initial', 'additional page'])(
+    '%s request unmount',
+    (phase) => {
+      test.each(['success', 'failure'])(
+        'aborts and ignores late %s without disturbing a newly mounted list',
+        async (outcome) => {
+          const obsolete = deferredResponse();
+          const current = deferredResponse();
+          if (phase === 'additional page') {
+            getMovies.mockResolvedValueOnce(moviePage('Original'));
+          }
+          getMovies
+            .mockReturnValueOnce(obsolete.promise)
+            .mockReturnValueOnce(current.promise);
+          renderList('/search/Old');
+          if (phase === 'additional page') {
+            fireEvent.click(
+              await screen.findByRole('button', { name: 'Load more' })
+            );
+          }
+          const signal = getMovies.mock.lastCall?.[1];
+
+          cleanup();
+          expect(signal?.aborted).toBe(true);
+          renderList('/search/Current');
+          await settleObsoleteRequest(obsolete, outcome);
+
+          expect(screen.getByText(/loading/i)).toBeInTheDocument();
+          expect(screen.queryByText('Obsolete 1')).not.toBeInTheDocument();
+          expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+          await act(async () => current.resolve(moviePage('Current')));
+          expect(screen.getByText('Current 1')).toBeInTheDocument();
+          expect(screen.getByText('10 movies loaded')).toBeInTheDocument();
+        }
+      );
+    }
+  );
+
+  test('overlapping pages replace movie metadata in first-seen order, including duplicates within a page', async () => {
+    const [first, second, third] = moviePage('Original').movies;
+    getMovies
+      .mockResolvedValueOnce({
+        ...moviePage('Original'),
+        movies: [first, second, { ...first, title: 'First revised' }],
+      })
+      .mockResolvedValueOnce({
+        ...moviePage('Next', 2),
+        movies: [{ ...second, title: 'Second revised' }, third],
+      })
+      .mockResolvedValueOnce({
+        ...moviePage('Last', 3),
+        movies: [{ ...first, title: 'First final' }],
+      });
+    renderList();
+    await screen.findByRole('link', { name: 'First revised' });
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+    await screen.findByRole('link', { name: 'Second revised' });
+    fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+    await screen.findByRole('link', { name: 'First final' });
+
+    expect(
+      screen
+        .getAllByRole('article')
+        .map((article) =>
+          within(article).getByRole('link').getAttribute('aria-label')
+        )
+    ).toEqual(['First final', 'Second revised', third.title]);
+    expect(screen.getByText('3 movies loaded')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
+    expect(getMovies.mock.calls.map(([params]) => params.page)).toEqual([
+      1, 2, 3,
+    ]);
   });
 
   test('it displays the unfiltered result total', async () => {
