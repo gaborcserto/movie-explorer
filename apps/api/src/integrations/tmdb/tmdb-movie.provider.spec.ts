@@ -98,6 +98,51 @@ describe('TmdbMovieProvider', () => {
     expect(genreCalls).toBe(2);
   });
 
+  it('clears a shared invalid genre lookup before retrying and caching valid genres', async () => {
+    let genreCalls = 0;
+    fetchMock.mockImplementation((url: URL) => {
+      if (url.pathname.endsWith('/genre/movie/list')) {
+        genreCalls += 1;
+        return Promise.resolve(
+          jsonResponse(genreCalls === 1 ? { genres: [null] } : genreResponse),
+        );
+      }
+      return Promise.resolve(moviePage(1, 1, [movieListItem(1, [18])]));
+    });
+    const provider = new TmdbMovieProvider(config);
+
+    const results = await Promise.allSettled([
+      provider.findAll({}),
+      provider.findAll({ search: 'Alpha' }),
+    ]);
+
+    expect(results).toEqual([
+      {
+        status: 'rejected',
+        reason: expect.objectContaining({
+          status: 502,
+          message: 'Movie provider response was invalid',
+        }),
+      },
+      {
+        status: 'rejected',
+        reason: expect.objectContaining({
+          status: 502,
+          message: 'Movie provider response was invalid',
+        }),
+      },
+    ]);
+    expect(genreCalls).toBe(1);
+
+    await expect(provider.findAll({})).resolves.toMatchObject({
+      movies: [expect.objectContaining({ genres: ['Drama'] })],
+    });
+    await expect(provider.findAll({})).resolves.toMatchObject({
+      movies: [expect.objectContaining({ genres: ['Drama'] })],
+    });
+    expect(genreCalls).toBe(2);
+  });
+
   it('maps TMDB popular results to the public movie list contract', async () => {
     fetchMock
       .mockResolvedValueOnce(

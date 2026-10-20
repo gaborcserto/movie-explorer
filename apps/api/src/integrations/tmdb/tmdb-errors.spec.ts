@@ -66,6 +66,201 @@ describe('TMDB request failures', () => {
     jest.useRealTimers();
   });
 
+  it('uses the configured base path, region, encoded query, and authorization', async () => {
+    provider = new TmdbMovieProvider({
+      accessToken: 'private-token',
+      apiBaseUrl: 'https://example.com/3',
+      imageBaseUrl: 'https://example.com/images',
+      language: 'hu-HU',
+      region: 'HU',
+    });
+    fetchMock.mockResolvedValueOnce(
+      Response.json({ results: [], page: 2, total_pages: 0, total_results: 0 }),
+    );
+
+    await provider.findPeople(' A&B / C ', 2);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init]: [URL, RequestInit] = fetchMock.mock.calls[0];
+    expect(url.href).toBe(
+      'https://example.com/3/search/person?language=hu-HU&region=HU&query=A%26B+%2F+C&include_adult=false&page=2',
+    );
+    expect(init.headers).toEqual({
+      accept: 'application/json',
+      Authorization: 'Bearer private-token',
+    });
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+    expect(init.signal.aborted).toBe(true);
+  });
+
+  it.each([
+    ['people', 429],
+    ['suggestions', 503],
+    ['section', 503],
+    ['filmography', 429],
+  ] as const)('does not retry %s after HTTP %s', async (kind, status) => {
+    jest.useFakeTimers();
+    fetchMock.mockResolvedValue(
+      new Response(null, { status, headers: { 'Retry-After': '15' } }),
+    );
+    const calls = {
+      people: () => provider.findPeople('test', 1),
+      suggestions: () => provider.findSuggestions('test', 6),
+      section: () => provider.findMovieSection(1, 'videos'),
+      filmography: () => provider.findFilmography(1),
+    };
+
+    await expect(calls[kind]()).rejects.toMatchObject({
+      status: status === 429 ? 429 : 502,
+      response:
+        status === 429
+          ? {
+              statusCode: 429,
+              error: 'Too Many Requests',
+              message: 'Movie provider rate limit reached',
+              retryAfter: 15,
+            }
+          : {
+              statusCode: 502,
+              error: 'Bad Gateway',
+              message: 'Movie provider request failed',
+            },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const init: RequestInit = fetchMock.mock.calls[0][1];
+    expect(init.signal.aborted).toBe(true);
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it.each(['section', 'filmography'] as const)(
+    'turns an upstream 404 for standalone %s into an invalid-response error',
+    async (kind) => {
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 404 }));
+
+      await expect(
+        kind === 'section'
+          ? provider.findMovieSection(1, 'videos')
+          : provider.findFilmography(1),
+      ).rejects.toMatchObject({
+        status: 502,
+        message:
+          kind === 'section'
+            ? 'Movie section response was invalid'
+            : 'Filmography response was invalid',
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(log.mock.calls.map(([entry]) => entry)).toEqual([
+        {
+          operation: kind === 'section' ? 'movie-detail' : 'person-detail',
+          failure: 'not-found',
+          upstreamStatus: 404,
+          applicationStatus: 404,
+        },
+        {
+          operation: kind === 'section' ? 'movie-videos' : 'person-filmography',
+          failure: 'invalid-response',
+          upstreamStatus: 200,
+          applicationStatus: 502,
+        },
+      ]);
+    },
+  );
+
+  it.each([
+    ['movie', 'fetch'],
+    ['movie', 'body'],
+    ['person', 'fetch'],
+    ['person', 'body'],
+  ] as const)(
+    'rejects late %s %s completion after the deadline without fallback',
+    async (kind, stage) => {
+      jest.useFakeTimers();
+      const primary =
+        kind === 'movie'
+          ? { id: 1, title: 'Movie', overview: '', genres: [] }
+          : { id: 1, name: 'Person' };
+      let complete: (value: unknown) => void;
+      const pending = new Promise<unknown>((resolve) => {
+        complete = resolve;
+      });
+      fetchMock.mockReturnValueOnce(
+        stage === 'fetch'
+          ? pending
+          : Promise.resolve({ ok: true, status: 200, json: () => pending }),
+      );
+      const result = expect(
+        kind === 'movie' ? provider.findOne(1) : provider.findPerson(1),
+      ).rejects.toMatchObject({
+        status: 504,
+        message: 'Movie provider request timed out',
+      });
+
+      await jest.advanceTimersByTimeAsync(8000);
+      const init: RequestInit = fetchMock.mock.calls[0][1];
+      expect(init.signal.aborted).toBe(true);
+      complete(stage === 'fetch' ? Response.json(primary) : primary);
+
+      await result;
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(log).toHaveBeenCalledWith({
+        operation: `${kind}-detail`,
+        failure: 'timeout',
+        applicationStatus: 504,
+        upstreamStatus: 200,
+      });
+      expect(jest.getTimerCount()).toBe(0);
+    },
+  );
+
+  it.each(['movie', 'person'] as const)(
+    'gives the %s fallback a fresh deadline without a third attempt',
+    async (kind) => {
+      jest.useFakeTimers();
+      let complete: (response: Response) => void;
+      fetchMock
+        .mockReturnValueOnce(
+          new Promise<Response>((resolve) => {
+            complete = resolve;
+          }),
+        )
+        .mockImplementationOnce(
+          (_url: URL, init: RequestInit) =>
+            new Promise((_resolve, reject) => {
+              init.signal.addEventListener(
+                'abort',
+                () => reject(new Error('private timeout error')),
+                { once: true },
+              );
+            }),
+        );
+      const result = expect(
+        kind === 'movie' ? provider.findOne(1) : provider.findPerson(1),
+      ).rejects.toMatchObject({
+        status: 504,
+        message: 'Movie provider request timed out',
+      });
+
+      await jest.advanceTimersByTimeAsync(7999);
+      complete(new Response(null, { status: 502 }));
+      await jest.advanceTimersByTimeAsync(1);
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      const first: RequestInit = fetchMock.mock.calls[0][1];
+      const second: RequestInit = fetchMock.mock.calls[1][1];
+      expect(first.signal).not.toBe(second.signal);
+      expect(first.signal.aborted).toBe(true);
+      expect(second.signal.aborted).toBe(false);
+      expect(jest.getTimerCount()).toBe(1);
+
+      await jest.advanceTimersByTimeAsync(7999);
+      await result;
+
+      expect(second.signal.aborted).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(jest.getTimerCount()).toBe(0);
+    },
+  );
+
   it.each(['movie', 'person'])('allows missing %s details', async (kind) => {
     fetchMock.mockResolvedValue(new Response(null, { status: 404 }));
     await expect(

@@ -136,6 +136,140 @@ describe('partial detail recovery', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  describe.each(['movie', 'person'] as const)('%s detail fallback', (kind) => {
+    const primary =
+      kind === 'movie'
+        ? { ...movie, credits: undefined, images: undefined, videos: undefined }
+        : { id: 1, name: 'Primary person' };
+    const load = () =>
+      kind === 'movie' ? provider.findOne(1) : provider.findPerson(1);
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it.each(['connection', 401, 403, 500, 503, 504] as const)(
+      'falls back immediately once after %s without append parameters',
+      async (failure) => {
+        if (failure === 'connection') {
+          fetchMock.mockRejectedValueOnce(
+            new Error('private connection error'),
+          );
+        } else {
+          fetchMock.mockResolvedValueOnce(
+            new Response(null, { status: failure }),
+          );
+        }
+        fetchMock.mockResolvedValueOnce(Response.json(primary));
+
+        await expect(load()).resolves.toMatchObject(
+          kind === 'movie'
+            ? {
+                title: movie.title,
+                sections: {
+                  credits: { status: 'unavailable' },
+                  photos: { status: 'unavailable' },
+                  posters: { status: 'unavailable' },
+                  videos: { status: 'unavailable' },
+                },
+              }
+            : {
+                name: 'Primary person',
+                filmography: [],
+                filmographyAvailability: { status: 'unavailable' },
+              },
+        );
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        const urls: URL[] = fetchMock.mock.calls.map(([url]: [URL]) => url);
+        expect(urls.map((url) => url.pathname)).toEqual([
+          `/${kind}/1`,
+          `/${kind}/1`,
+        ]);
+        expect(urls[0].searchParams.get('append_to_response')).toBe(
+          kind === 'movie' ? 'credits,images,videos' : 'movie_credits,images',
+        );
+        expect([...urls[1].searchParams]).toEqual([['language', 'en-US']]);
+      },
+    );
+
+    it.each(['json', 'shape', 'rate-limit'] as const)(
+      'does not fall back after an appended %s failure',
+      async (failure) => {
+        fetchMock
+          .mockResolvedValueOnce(
+            failure === 'rate-limit'
+              ? new Response(null, {
+                  status: 429,
+                  headers: { 'Retry-After': '15' },
+                })
+              : failure === 'json'
+                ? new Response('invalid JSON')
+                : Response.json([]),
+          )
+          .mockResolvedValueOnce(Response.json(primary));
+
+        await expect(load()).rejects.toMatchObject({
+          status: failure === 'rate-limit' ? 429 : 502,
+          message:
+            failure === 'rate-limit'
+              ? 'Movie provider rate limit reached'
+              : 'Movie provider response was invalid',
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      },
+    );
+
+    it.each([404, 429, 503])(
+      'uses the primary-only HTTP %s outcome without a third attempt',
+      async (status) => {
+        fetchMock
+          .mockResolvedValueOnce(new Response(null, { status: 502 }))
+          .mockResolvedValueOnce(
+            new Response(null, { status, headers: { 'Retry-After': '15' } }),
+          );
+
+        if (status === 404) {
+          await expect(load()).resolves.toBeUndefined();
+        } else {
+          await expect(load()).rejects.toMatchObject({
+            status: status === 429 ? 429 : 502,
+            message:
+              status === 429
+                ? 'Movie provider rate limit reached'
+                : 'Movie provider request failed',
+          });
+        }
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      },
+    );
+
+    it.each(['json', 'primary'] as const)(
+      'rejects invalid primary-only %s without a third attempt',
+      async (failure) => {
+        fetchMock
+          .mockResolvedValueOnce(new Response(null, { status: 502 }))
+          .mockResolvedValueOnce(
+            failure === 'json'
+              ? new Response('invalid JSON')
+              : Response.json({}),
+          );
+
+        await expect(load()).rejects.toMatchObject({
+          status: 502,
+          message:
+            failure === 'json' || kind === 'movie'
+              ? 'Movie provider response was invalid'
+              : 'Person provider response was invalid',
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      },
+    );
+  });
+
   it.each(['credits', 'photos', 'videos'] as const)(
     'recovers only the requested %s resource',
     async (section) => {
