@@ -27,9 +27,16 @@ import {
   searchRecord,
   searchText,
 } from './tmdb-search.mapper';
-import { isTmdbPersonDetails, TmdbPersonMapper } from './tmdb-person.mapper';
+import {
+  isTmdbPersonProfile,
+  isTmdbPersonMovieCredits,
+  TmdbPersonMapper,
+} from './tmdb-person.mapper';
 import {
   TmdbGenre,
+  TmdbCredits,
+  TmdbImage,
+  TmdbVideos,
   TmdbGenreListResponse,
   TmdbMovieDetails,
   TmdbMovieListItem,
@@ -293,47 +300,16 @@ export class TmdbMovieProvider implements MovieProvider {
       throw new BadGatewayException('Movie section response was invalid');
     }
 
-    const movie: TmdbMovieDetails = {
-      id: 1,
-      title: '',
-      overview: '',
-      genres: [],
-      poster_path: null,
-      runtime: null,
-      vote_average: 0,
-    };
     // Mapping errors are isolated to their section, including malformed entries.
-    if (section === 'credits') {
-      movie.credits = value as TmdbMovieDetails['credits'];
-    }
     if (isImages) {
-      movie.images = {
-        [imageKey]: resource[imageKey],
-      } as TmdbMovieDetails['images'];
+      const images = this.mapper.toImages(resource[imageKey] as TmdbImage[]);
+      return section === 'photos' ? { backdrops: images } : { posters: images };
     }
     if (section === 'videos') {
-      movie.videos = value as TmdbMovieDetails['videos'];
+      return { videos: this.mapper.toMovieVideos(value as TmdbVideos) };
     }
 
-    const mapped = this.mapper.toMovieDetails(movie);
-    if (section === 'photos') {
-      return { backdrops: mapped.backdrops ?? [] };
-    }
-    if (section === 'posters') {
-      return { posters: mapped.posters ?? [] };
-    }
-    if (section === 'videos') {
-      return { videos: mapped.videos ?? [] };
-    }
-
-    return {
-      cast: mapped.cast,
-      castMembers: mapped.castMembers ?? [],
-      director: mapped.director,
-      directors: mapped.directors ?? [],
-      writers: mapped.writers ?? [],
-      producers: mapped.producers ?? [],
-    };
+    return this.mapper.toMovieCredits(value as TmdbCredits);
   }
 
   public async findMovieSection(
@@ -375,17 +351,14 @@ export class TmdbMovieProvider implements MovieProvider {
     }
 
     const record = detailRecord(person);
-    const primary = record && {
-      ...record,
-      movie_credits: { cast: [], crew: [] },
-    };
-    if (!isTmdbPersonDetails(primary) || primary.id !== id) {
+    if (!isTmdbPersonProfile(record) || record.id !== id) {
       this.logFailure('person-detail', 'invalid-response', 502, 200);
       throw new BadGatewayException('Person provider response was invalid');
     }
-    const mapped = new TmdbPersonMapper(
-      this.config.imageBaseUrl,
-    ).toPersonDetails(primary);
+    const mapped: PersonDetails = {
+      ...new TmdbPersonMapper(this.config.imageBaseUrl).toPersonProfile(record),
+      filmography: [],
+    };
     try {
       mapped.filmography = this.mapFilmography(id, record.movie_credits);
       mapped.filmographyAvailability = { status: 'available' };
@@ -397,14 +370,15 @@ export class TmdbMovieProvider implements MovieProvider {
   }
 
   private mapFilmography(id: number, value: unknown) {
-    const person = { id, name: 'Profile', movie_credits: value };
-    if (!isTmdbPersonDetails(person)) {
+    if (
+      !Number.isSafeInteger(id) ||
+      id <= 0 ||
+      !isTmdbPersonMovieCredits(value)
+    ) {
       throw new BadGatewayException('Filmography response was invalid');
     }
 
-    return new TmdbPersonMapper(this.config.imageBaseUrl).toPersonDetails(
-      person,
-    ).filmography;
+    return new TmdbPersonMapper(this.config.imageBaseUrl).toFilmography(value);
   }
 
   public async findFilmography(id: number) {

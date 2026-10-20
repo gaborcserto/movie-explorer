@@ -7,13 +7,25 @@ import type {
   MoviePhoto,
   MovieVideo,
 } from '@movie-explorer/contracts';
+
 import type {
   TmdbGenre,
+  TmdbCredits,
+  TmdbVideos,
   TmdbCrewMember,
   TmdbMovieDetails,
   TmdbMovieListItem,
   TmdbImage,
 } from './tmdb.types';
+
+type MovieCredits = {
+  cast: MovieDetails['cast'];
+  castMembers: NonNullable<MovieDetails['castMembers']>;
+  director: MovieDetails['director'];
+  directors: NonNullable<MovieDetails['directors']>;
+  writers: NonNullable<MovieDetails['writers']>;
+  producers: NonNullable<MovieDetails['producers']>;
+};
 
 // Exact jobs, not department membership: source authors keep their job labels.
 const WRITING_JOBS = [
@@ -77,100 +89,11 @@ export class TmdbMovieMapper {
   }
 
   public toMovieDetails(movie: TmdbMovieDetails): MovieDetails {
-    const crew = movie.credits?.crew ?? [];
-    const writers = this.toCrewMembers(crew, WRITING_JOBS);
-    const producers = this.toCrewMembers(crew, PRODUCING_JOBS);
-    const directorIds = new Set<number>();
-    const directors: MovieDirector[] = (movie.credits?.crew ?? [])
-      .filter((credit) => {
-        if (credit.job !== 'Director' || !credit.name.trim()) {
-          return false;
-        }
-        if (!Number.isSafeInteger(credit.id) || credit.id <= 0) {
-          return true;
-        }
-        if (directorIds.has(credit.id)) {
-          return false;
-        }
-
-        directorIds.add(credit.id);
-        return true;
-      })
-      .map((credit) => this.toPersonReference(credit));
-
-    const director = directors?.length
-      ? [...new Set(directors.map((credit) => credit.name))].join(', ')
-      : undefined;
-    const castIds = new Set<number>();
-    const orderedCast = [...(movie.credits?.cast ?? [])]
-      .sort((first, second) => first.order - second.order)
-      .filter((credit) => credit.name.trim());
-    const charactersByPerson = new Map<number, Set<string>>();
-    orderedCast.forEach((credit) => {
-      const character = credit.character?.trim();
-      if (!Number.isSafeInteger(credit.id) || credit.id <= 0 || !character) {
-        return;
-      }
-
-      const characters = charactersByPerson.get(credit.id) ?? new Set<string>();
-      characters.add(character);
-      charactersByPerson.set(credit.id, characters);
-    });
-    const castMembers = orderedCast
-      .filter((credit) => {
-        if (!Number.isSafeInteger(credit.id) || credit.id <= 0) {
-          return true;
-        }
-        if (castIds.has(credit.id)) {
-          return false;
-        }
-
-        castIds.add(credit.id);
-        return true;
-      })
-      .map((credit) => ({
-        ...this.toPersonReference(credit),
-        character:
-          (charactersByPerson.has(credit.id)
-            ? [...(charactersByPerson.get(credit.id) ?? [])].join(' / ')
-            : credit.character?.trim()) || undefined,
-      }));
-    const cast = castMembers.map((credit) => credit.name);
+    const { cast, castMembers, director, directors, writers, producers } =
+      this.toMovieCredits(movie.credits);
     const backdrops = this.toImages(movie.images?.backdrops ?? []);
     const posters = this.toImages(movie.images?.posters ?? []);
-    const seenVideos = new Set<string>();
-    const videos: MovieVideo[] = (movie.videos?.results ?? []).flatMap(
-      (video) => {
-        const identity = `${video.site}:${video.key}`;
-        // TMDB currently supports YouTube and Vimeo. Vimeo remains an external
-        // link; only YouTube is embedded by the application player.
-        if (!video.key || seenVideos.has(identity)) {
-          return [];
-        }
-
-        const url =
-          video.site === 'YouTube'
-            ? `https://www.youtube.com/watch?v=${encodeURIComponent(video.key)}`
-            : video.site === 'Vimeo' && /^\d+$/.test(video.key)
-              ? `https://vimeo.com/${video.key}`
-              : '';
-        seenVideos.add(identity);
-        return [
-          {
-            ...(video.id && { id: video.id }),
-            key: video.key,
-            site: video.site,
-            ...(video.type && { type: video.type }),
-            ...(video.iso_639_1 !== undefined && { language: video.iso_639_1 }),
-            name: video.name,
-            url,
-            ...(video.site === 'YouTube' && {
-              thumbnailUrl: `https://img.youtube.com/vi/${encodeURIComponent(video.key)}/hqdefault.jpg`,
-            }),
-          },
-        ];
-      },
-    );
+    const videos = this.toMovieVideos(movie.videos);
 
     const details: MovieDetails = {
       id: movie.id,
@@ -259,7 +182,107 @@ export class TmdbMovieMapper {
     return details;
   }
 
-  private toImages(images: TmdbImage[]): MoviePhoto[] {
+  public toMovieCredits(credits: TmdbCredits | undefined): MovieCredits {
+    const crew = credits?.crew ?? [];
+    const writers = this.toCrewMembers(crew, WRITING_JOBS);
+    const producers = this.toCrewMembers(crew, PRODUCING_JOBS);
+    const directorIds = new Set<number>();
+    const directors: MovieDirector[] = (credits?.crew ?? [])
+      .filter((credit) => {
+        if (credit.job !== 'Director' || !credit.name.trim()) {
+          return false;
+        }
+        if (!Number.isSafeInteger(credit.id) || credit.id <= 0) {
+          return true;
+        }
+        if (directorIds.has(credit.id)) {
+          return false;
+        }
+
+        directorIds.add(credit.id);
+        return true;
+      })
+      .map((credit) => this.toPersonReference(credit));
+
+    const director = directors?.length
+      ? [...new Set(directors.map((credit) => credit.name))].join(', ')
+      : undefined;
+    const castIds = new Set<number>();
+    const orderedCast = [...(credits?.cast ?? [])]
+      .sort((first, second) => first.order - second.order)
+      .filter((credit) => credit.name.trim());
+    const charactersByPerson = new Map<number, Set<string>>();
+    orderedCast.forEach((credit) => {
+      const character = credit.character?.trim();
+      if (!Number.isSafeInteger(credit.id) || credit.id <= 0 || !character) {
+        return;
+      }
+
+      const characters = charactersByPerson.get(credit.id) ?? new Set<string>();
+      characters.add(character);
+      charactersByPerson.set(credit.id, characters);
+    });
+    const castMembers = orderedCast
+      .filter((credit) => {
+        if (!Number.isSafeInteger(credit.id) || credit.id <= 0) {
+          return true;
+        }
+        if (castIds.has(credit.id)) {
+          return false;
+        }
+
+        castIds.add(credit.id);
+        return true;
+      })
+      .map((credit) => ({
+        ...this.toPersonReference(credit),
+        character:
+          (charactersByPerson.has(credit.id)
+            ? [...(charactersByPerson.get(credit.id) ?? [])].join(' / ')
+            : credit.character?.trim()) || undefined,
+      }));
+    const cast = castMembers.map((credit) => credit.name);
+
+    return { cast, castMembers, director, directors, writers, producers };
+  }
+
+  public toMovieVideos(payload: TmdbVideos | undefined): MovieVideo[] {
+    const seenVideos = new Set<string>();
+    const videos: MovieVideo[] = (payload?.results ?? []).flatMap((video) => {
+      const identity = `${video.site}:${video.key}`;
+      // TMDB currently supports YouTube and Vimeo. Vimeo remains an external
+      // link; only YouTube is embedded by the application player.
+      if (!video.key || seenVideos.has(identity)) {
+        return [];
+      }
+
+      const url =
+        video.site === 'YouTube'
+          ? `https://www.youtube.com/watch?v=${encodeURIComponent(video.key)}`
+          : video.site === 'Vimeo' && /^\d+$/.test(video.key)
+            ? `https://vimeo.com/${video.key}`
+            : '';
+      seenVideos.add(identity);
+      return [
+        {
+          ...(video.id && { id: video.id }),
+          key: video.key,
+          site: video.site,
+          ...(video.type && { type: video.type }),
+          ...(video.iso_639_1 !== undefined && { language: video.iso_639_1 }),
+          name: video.name,
+          url,
+          ...(video.site === 'YouTube' && {
+            thumbnailUrl: `https://img.youtube.com/vi/${encodeURIComponent(video.key)}/hqdefault.jpg`,
+          }),
+        },
+      ];
+    });
+
+    return videos;
+  }
+
+  public toImages(images: TmdbImage[]): MoviePhoto[] {
     const seen = new Set<string>();
     return images.flatMap((image) => {
       if (!image.file_path?.startsWith('/') || seen.has(image.file_path)) {

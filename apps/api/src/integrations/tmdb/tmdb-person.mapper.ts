@@ -2,8 +2,13 @@ import type {
   PersonDetails,
   PersonFilmographyEntry,
 } from '@movie-explorer/contracts';
+
 import { TmdbMovieMapper } from './tmdb-movie.mapper';
-import type { TmdbPersonDetails } from './tmdb.types';
+import type {
+  TmdbPersonDetails,
+  TmdbPersonProfile,
+  TmdbPersonMovieCredits,
+} from './tmdb.types';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -13,19 +18,26 @@ function text(value: unknown): string | undefined {
   return typeof value === 'string' ? value.trim() || undefined : undefined;
 }
 
-export function isTmdbPersonDetails(
+export function isTmdbPersonProfile(
   value: unknown,
-): value is TmdbPersonDetails {
+): value is TmdbPersonProfile {
   return (
     isRecord(value) &&
     typeof value.id === 'number' &&
     Number.isSafeInteger(value.id) &&
     value.id > 0 &&
-    Boolean(text(value.name)) &&
-    isRecord(value.movie_credits) &&
-    value.movie_credits.success !== false &&
-    Array.isArray(value.movie_credits.cast) &&
-    Array.isArray(value.movie_credits.crew)
+    Boolean(text(value.name))
+  );
+}
+
+export function isTmdbPersonMovieCredits(
+  value: unknown,
+): value is TmdbPersonMovieCredits {
+  return (
+    isRecord(value) &&
+    value.success !== false &&
+    Array.isArray(value.cast) &&
+    Array.isArray(value.crew)
   );
 }
 
@@ -37,6 +49,13 @@ export class TmdbPersonMapper {
   }
 
   public toPersonDetails(person: TmdbPersonDetails): PersonDetails {
+    const filmography = this.toFilmography(person.movie_credits);
+    return { ...this.toPersonProfile(person), filmography };
+  }
+
+  public toFilmography(
+    credits: TmdbPersonMovieCredits,
+  ): PersonDetails['filmography'] {
     const movies = new Map<number, PersonFilmographyEntry>();
     const addCredit = (value: unknown, acting: boolean) => {
       if (
@@ -88,9 +107,15 @@ export class TmdbPersonMapper {
         }
       }
     };
-    person.movie_credits.cast.forEach((credit) => addCredit(credit, true));
-    person.movie_credits.crew.forEach((credit) => addCredit(credit, false));
+    credits.cast.forEach((credit) => addCredit(credit, true));
+    credits.crew.forEach((credit) => addCredit(credit, false));
 
+    return [...movies.values()];
+  }
+
+  public toPersonProfile(
+    person: TmdbPersonProfile,
+  ): Omit<PersonDetails, 'filmography'> {
     const profiles =
       isRecord(person.images) &&
       person.images.success !== false &&
@@ -126,7 +151,6 @@ export class TmdbPersonMapper {
       }),
       ...(text(person.biography) && { biography: text(person.biography) }),
       ...(profilePhotos.length > 0 && { profilePhotos }),
-      filmography: [...movies.values()],
     };
   }
 }

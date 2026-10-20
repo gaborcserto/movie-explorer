@@ -66,7 +66,7 @@ export interface TmdbCrewMember {
   name: string;
 }
 
-export interface TmdbPersonDetails {
+export interface TmdbPersonProfile {
   images?: unknown;
   id: number;
   name: string;
@@ -76,7 +76,15 @@ export interface TmdbPersonDetails {
   place_of_birth?: unknown;
   biography?: unknown;
   profile_path?: unknown;
-  movie_credits: { cast: unknown[]; crew: unknown[] };
+}
+
+export interface TmdbPersonMovieCredits {
+  cast: unknown[];
+  crew: unknown[];
+}
+
+export interface TmdbPersonDetails extends TmdbPersonProfile {
+  movie_credits: TmdbPersonMovieCredits;
 }
 
 export interface TmdbImages {

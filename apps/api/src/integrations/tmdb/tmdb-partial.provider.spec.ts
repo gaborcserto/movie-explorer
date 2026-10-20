@@ -1,5 +1,8 @@
 import { HttpException, Logger } from '@nestjs/common';
 import { TmdbMovieProvider } from './tmdb-movie.provider';
+import { TmdbMovieMapper } from './tmdb-movie.mapper';
+import { TmdbPersonMapper } from './tmdb-person.mapper';
+import type { TmdbMovieDetails } from './tmdb.types';
 
 const config = {
   accessToken: 'private-token',
@@ -294,6 +297,159 @@ describe('partial detail recovery', () => {
       filmography: [],
     });
     expect(fetchMock.mock.calls[0][0].pathname).toBe('/person/1/movie_credits');
+  });
+
+  describe.each([false, true])('section equivalence (empty: %s)', (empty) => {
+    const credits = {
+      cast: empty
+        ? []
+        : [
+            { id: 2, name: ' Actor ', order: 2, character: 'Narrator' },
+            { id: 2, name: 'Actor', order: 0, character: ' Hero ' },
+            { name: 'Unlinked', order: 1 },
+          ],
+      crew: empty
+        ? []
+        : [
+            { id: 3, name: ' Director ', job: 'Director' },
+            { id: 3, name: 'Director', job: 'Director' },
+            { id: 4, name: 'Author', job: 'Novel' },
+            { id: 4, name: 'Author', job: 'Screenplay' },
+            { id: 5, name: 'Producer', job: 'Producer' },
+          ],
+    };
+    const image = {
+      file_path: '/still.jpg',
+      width: 1200,
+      height: 800,
+      iso_639_1: null,
+    };
+    const video = {
+      name: 'Trailer',
+      key: 'a b',
+      site: 'YouTube',
+      type: 'Trailer',
+      official: true,
+      iso_639_1: 'hu',
+    };
+    const payload: TmdbMovieDetails = {
+      ...movie,
+      credits,
+      images: {
+        backdrops: empty ? [] : [image, image],
+        posters: empty ? [] : [{ ...image, file_path: '/poster.jpg' }],
+      },
+      videos: { results: empty ? [] : [video, video] },
+    };
+
+    it.each(['credits', 'photos', 'posters', 'videos'] as const)(
+      'preserves full-mapper, appended and recovered %s outputs',
+      async (section) => {
+        const source =
+          section === 'photos' || section === 'posters' ? 'images' : section;
+        const mapped = new TmdbMovieMapper(config.imageBaseUrl).toMovieDetails(
+          payload,
+        );
+        const expected =
+          section === 'credits'
+            ? {
+                cast: mapped.cast,
+                castMembers: mapped.castMembers ?? [],
+                director: mapped.director,
+                directors: mapped.directors ?? [],
+                writers: mapped.writers ?? [],
+                producers: mapped.producers ?? [],
+              }
+            : section === 'photos'
+              ? { backdrops: mapped.backdrops ?? [] }
+              : section === 'posters'
+                ? { posters: mapped.posters ?? [] }
+                : { videos: mapped.videos ?? [] };
+        fetchMock
+          .mockResolvedValueOnce(Response.json(payload))
+          .mockResolvedValueOnce(Response.json(payload[source]));
+
+        const full = await provider.findOne(1);
+        const recovered = await provider.findMovieSection(1, section);
+
+        expect(recovered).toStrictEqual(expected);
+        expect(full).toMatchObject(expected);
+        expect(full.sections[section]).toEqual({ status: 'available' });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        if (empty) {
+          expect(mapped).not.toHaveProperty(
+            section === 'credits'
+              ? 'castMembers'
+              : section === 'photos'
+                ? 'backdrops'
+                : section,
+          );
+        }
+      },
+    );
+
+    it('preserves full-mapper, appended and recovered person credits', async () => {
+      const entry = { id: 9, title: ' First title ', character: ' Hero ' };
+      const movieCredits = {
+        cast: empty ? [] : [null, entry, { ...entry, character: 'Narrator' }],
+        crew: empty
+          ? []
+          : [
+              { ...entry, title: 'Later title', job: 'Writer' },
+              { ...entry, job: 'Writer' },
+              { id: 10, title: 'Crew only' },
+            ],
+      };
+      const person = {
+        id: 7,
+        name: 'Actual person',
+        biography: ' Biography ',
+        profile_path: '/profile.jpg',
+        movie_credits: movieCredits,
+      };
+      const expected = new TmdbPersonMapper(
+        config.imageBaseUrl,
+      ).toPersonDetails(person);
+      fetchMock
+        .mockResolvedValueOnce(Response.json(person))
+        .mockResolvedValueOnce(Response.json(movieCredits));
+
+      const full = await provider.findPerson(7);
+      const recovered = await provider.findFilmography(7);
+
+      expect(full).toStrictEqual({
+        ...expected,
+        filmographyAvailability: { status: 'available' },
+      });
+      expect(recovered).toStrictEqual({ filmography: expected.filmography });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it.each([
+    { cast: [] },
+    { cast: [], crew: null },
+    { success: false, cast: [], crew: [] },
+  ])(
+    'rejects invalid standalone filmography envelopes: %j',
+    async (payload) => {
+      fetchMock.mockResolvedValueOnce(Response.json(payload));
+
+      await expect(provider.findFilmography(1)).rejects.toMatchObject({
+        status: 502,
+        message: 'Filmography response was invalid',
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('retains person ID validation for standalone filmography', async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ cast: [], crew: [] }));
+
+    await expect(provider.findFilmography(-1)).rejects.toMatchObject({
+      status: 502,
+      message: 'Filmography response was invalid',
+    });
   });
 
   it('preserves rate-limit metadata on section retries', async () => {
