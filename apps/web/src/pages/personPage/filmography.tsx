@@ -1,79 +1,18 @@
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import type {
-  PersonCrewCredit,
-  PersonFilmographyEntry,
-} from '@movie-explorer/contracts';
+import type { PersonFilmographyEntry } from '@movie-explorer/contracts';
+
 import MovieImage from '../../components/utility/customImage';
 import { getPosterDisplaySrcSet } from '../../util/imageSizing';
 import './filmography.scss';
-
-type View = 'acting' | 'crew';
-type Sort = 'newest' | 'oldest' | 'title';
+import {
+  getFilmographySelection,
+  getFilmographyRoles,
+} from './filmographyRules';
+import type { FilmographyView } from './filmographyRules';
 
 const FILMOGRAPHY_BATCH_SIZE = 10;
-
-function uniqueText(values: string[]) {
-  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
-}
-
-function roleKey(credit: PersonCrewCredit) {
-  if (credit.job?.trim()) {
-    return `job:${credit.job.trim()}`;
-  }
-  return credit.department?.trim()
-    ? `department:${credit.department.trim()}`
-    : '';
-}
-
-function matchesRole(credit: PersonCrewCredit, role: string) {
-  if (!role) {
-    return true;
-  }
-  return role.startsWith('department:')
-    ? `department:${credit.department?.trim()}` === role
-    : roleKey(credit) === role;
-}
-
-function mergeMovies(entries: PersonFilmographyEntry[]) {
-  const movies = new Map<number, PersonFilmographyEntry>();
-  entries.forEach((entry) => {
-    const previous = movies.get(entry.id);
-    movies.set(entry.id, {
-      ...entry,
-      actingCredits:
-        previous?.actingCredits || entry.actingCredits
-          ? uniqueText([
-              ...(previous?.actingCredits ?? []),
-              ...(entry.actingCredits ?? []),
-            ])
-          : undefined,
-      crewCredits: [...(previous?.crewCredits ?? []), ...entry.crewCredits],
-    });
-  });
-  return [...movies.values()];
-}
-
-function compareTitles(a: PersonFilmographyEntry, b: PersonFilmographyEntry) {
-  return a.title.localeCompare(b.title, 'en') || a.id - b.id;
-}
-
-function sortMovies(movies: PersonFilmographyEntry[], sort: Sort) {
-  return [...movies].sort((a, b) => {
-    if (sort === 'title') {
-      return compareTitles(a, b);
-    }
-    if (!a.releaseDate && b.releaseDate) {
-      return 1;
-    }
-    if (a.releaseDate && !b.releaseDate) {
-      return -1;
-    }
-    const dates = (a.releaseDate ?? '').localeCompare(b.releaseDate ?? '');
-    return (sort === 'oldest' ? dates : -dates) || compareTitles(a, b);
-  });
-}
 
 function FilmographyResults({
   movies,
@@ -81,7 +20,7 @@ function FilmographyResults({
   role,
 }: {
   movies: PersonFilmographyEntry[];
-  view: View;
+  view: FilmographyView;
   role: string;
 }) {
   const [visibleCount, setVisibleCount] = useState(FILMOGRAPHY_BATCH_SIZE);
@@ -102,23 +41,7 @@ function FilmographyResults({
       {movies.length === 0 && <p>No movie credits available.</p>}
       <ul className="filmography__list">
         {visibleMovies.map((movie) => {
-          const roles =
-            view === 'acting'
-              ? uniqueText(movie.actingCredits ?? [])
-              : uniqueText(
-                  movie.crewCredits
-                    .filter((credit) => matchesRole(credit, role))
-                    .map((credit) => {
-                      const job = credit.job?.trim();
-                      const department = credit.department?.trim();
-                      return [
-                        job,
-                        department && department !== job ? department : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' — ');
-                    })
-                );
+          const roles = getFilmographyRoles(movie, view, role);
           const metadataId = `filmography-metadata-${movie.id}`;
           const content = (
             <>
@@ -201,43 +124,16 @@ export default function Filmography({
   recovery?: ReactNode;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const movies = mergeMovies(entries);
-  const hasActing = movies.some((movie) => movie.actingCredits !== undefined);
-  const hasCrew = movies.some((movie) => movie.crewCredits.length > 0);
-  const defaultView = hasActing ? 'acting' : 'crew';
-  const requestedView = searchParams.get('personView');
-  const view: View =
-    (requestedView === 'acting' && hasActing) ||
-    (requestedView === 'crew' && hasCrew)
-      ? requestedView
-      : defaultView;
-  const roles = uniqueText(
-    movies.flatMap((movie) => movie.crewCredits.map(roleKey))
-  ).sort((a, b) => a.localeCompare(b, 'en'));
-  const requestedRole = searchParams.get('personRole') ?? '';
-  const role =
-    view === 'crew' && roles.includes(requestedRole) ? requestedRole : '';
-  const requestedSort = searchParams.get('personSort');
-  const sort: Sort =
-    requestedSort === 'oldest' || requestedSort === 'title'
-      ? requestedSort
-      : 'newest';
-
-  const canonicalParams = new URLSearchParams(searchParams);
-  canonicalParams.delete('personView');
-  canonicalParams.delete('personRole');
-  canonicalParams.delete('personSort');
-  if (view !== defaultView) {
-    canonicalParams.set('personView', view);
-  }
-  if (role) {
-    canonicalParams.set('personRole', role);
-  }
-  if (sort !== 'newest') {
-    canonicalParams.set('personSort', sort);
-  }
-
-  const canonicalQuery = canonicalParams.toString();
+  const {
+    hasActing,
+    hasCrew,
+    view,
+    role,
+    roles,
+    sort,
+    canonicalQuery,
+    sortedMovies,
+  } = getFilmographySelection(entries, searchParams);
   const query = searchParams.toString();
 
   useEffect(() => {
@@ -258,13 +154,6 @@ export default function Filmography({
     }
     setSearchParams(next);
   };
-
-  const matchingMovies = movies.filter((movie) =>
-    view === 'acting'
-      ? movie.actingCredits !== undefined
-      : movie.crewCredits.some((credit) => matchesRole(credit, role))
-  );
-  const sortedMovies = sortMovies(matchingMovies, sort);
 
   return (
     <section className="filmography" aria-labelledby="filmography-heading">

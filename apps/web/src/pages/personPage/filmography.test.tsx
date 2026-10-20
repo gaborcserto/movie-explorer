@@ -190,6 +190,40 @@ test('renders missing posters, dates, characters and job information without fab
   ).toEqual(['All jobs', 'Newest first', 'Oldest first', 'Title A–Z']);
 });
 
+test('duplicate movies use later metadata while retaining trimmed roles from earlier credits', async () => {
+  await renderFilmography([
+    movie(1, { title: 'Earlier title', actingCredits: [' Hero ', '', 'Hero'] }),
+    movie(1, {
+      title: 'Later title',
+      posterUrl: '/later.jpg',
+      releaseDate: undefined,
+      actingCredits: undefined,
+    }),
+  ]);
+
+  expect(titles()).toEqual(['Later title']);
+  const link = section().getByRole('link', { name: 'Later title' });
+  expect(link).toHaveAccessibleDescription('Hero');
+  expect(link.querySelector('time')).toBeNull();
+  expect(link.querySelector('img')).toHaveAttribute('src', '/later.jpg');
+  expect(section().getByRole('status')).toHaveTextContent(
+    'Showing 1 of 1 movie'
+  );
+});
+
+test('canonical selection replaces history and preserves repeated unrelated parameters', async () => {
+  const router = await renderFilmography(
+    both,
+    '?keep=one&personView=invalid&keep=two&personRole=job%3ADirector&personSort=newest'
+  );
+
+  await waitFor(() =>
+    expect(router.state.location.search).toBe('?keep=one&keep=two')
+  );
+  expect(router.state.historyAction).toBe('REPLACE');
+  expect(titles()).toEqual(['Movie 01', 'Movie 03']);
+});
+
 test('switches views, offers distinct real jobs, and displays only matching roles', async () => {
   const user = userEvent.setup();
   const router = await renderFilmography(both, '?keep=value');
