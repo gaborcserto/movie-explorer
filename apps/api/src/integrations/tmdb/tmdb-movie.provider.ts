@@ -1,11 +1,9 @@
 import {
   BadGatewayException,
-  GatewayTimeoutException,
   HttpException,
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { parseRetryAfter } from './retry-after';
 import type {
   MovieDetails,
   MovieSection,
@@ -18,9 +16,11 @@ import type {
   MovieSuggestionsResponse,
   PersonDetails,
 } from '@movie-explorer/contracts';
+
 import type { MovieProvider } from '../../movies/movie-provider';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbMovieMapper } from './tmdb-movie.mapper';
+import { TmdbTransport } from './tmdb.transport';
 import {
   mapPeople,
   searchPage,
@@ -49,6 +49,7 @@ export class TmdbMovieProvider implements MovieProvider {
   private readonly logger = new Logger(TmdbMovieProvider.name);
   private readonly config: TmdbConfig;
   private readonly mapper: TmdbMovieMapper;
+  private readonly transport: TmdbTransport;
   private readonly genreCache = new Map<
     string,
     { genres: TmdbGenre[]; expiresAt: number }
@@ -58,6 +59,7 @@ export class TmdbMovieProvider implements MovieProvider {
   constructor(config: TmdbConfig = getTmdbConfig()) {
     this.config = config;
     this.mapper = new TmdbMovieMapper(config.imageBaseUrl);
+    this.transport = new TmdbTransport(config, this.logger);
   }
 
   public async findAll(query: MovieQueryParams): Promise<MovieListResponse> {
@@ -597,64 +599,18 @@ export class TmdbMovieProvider implements MovieProvider {
     query: Record<string, string | undefined> = {},
     allowNotFound = false,
   ): Promise<T | undefined> {
-    const url = new URL(`${this.config.apiBaseUrl}${path}`);
-    url.searchParams.set('language', this.config.language);
-
-    if (this.config.region) {
-      url.searchParams.set('region', this.config.region);
-    }
-
-    Object.entries(query).forEach(([key, value]) => {
-      if (value) {
-        url.searchParams.set(key, value);
-      }
-    });
-
     const operation = allowNotFound
       ? path.startsWith('/person/')
         ? 'person-detail'
         : 'movie-detail'
       : path;
-    const controller = new AbortController();
-    const timer = setTimeout(
-      () => controller.abort(),
-      this.config.requestTimeoutMs ?? 8000,
-    );
-    let upstreamStatus: number | undefined;
-    try {
-      const response = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          accept: 'application/json',
-          Authorization: `Bearer ${this.config.accessToken}`,
-        },
-      });
-      upstreamStatus = response.status;
-      controller.signal.throwIfAborted();
-      if (response.status === 404 && allowNotFound) {
-        this.logFailure(operation, 'not-found', 404, upstreamStatus);
-        return undefined;
-      }
-      if (!response.ok) {
-        if (response.status === 429) {
-          const retryAfter = parseRetryAfter(
-            response.headers.get('Retry-After'),
-          );
-          throw new HttpException(
-            {
-              statusCode: 429,
-              error: 'Too Many Requests',
-              message: 'Movie provider rate limit reached',
-              ...(retryAfter !== undefined && { retryAfter }),
-            },
-            429,
-          );
-        }
-        throw new BadGatewayException('Movie provider request failed');
-      }
-      try {
-        const body: unknown = await response.json();
-        controller.signal.throwIfAborted();
+    return (await this.transport.request({
+      path,
+      query,
+      allowNotFound,
+      operation,
+      // Validate before transport cleanup to preserve abort and error ordering.
+      validateBody: (body) => {
         if (!body || typeof body !== 'object' || Array.isArray(body)) {
           throw new Error();
         }
@@ -680,36 +636,8 @@ export class TmdbMovieProvider implements MovieProvider {
             searchPage(body);
           }
         }
-        return body as T;
-      } catch {
-        if (controller.signal.aborted) {
-          throw controller.signal.reason;
-        }
-        throw new BadGatewayException('Movie provider response was invalid');
-      }
-    } catch (error: unknown) {
-      if (controller.signal.aborted) {
-        this.logFailure(operation, 'timeout', 504, upstreamStatus);
-        throw new GatewayTimeoutException('Movie provider request timed out');
-      }
-      if (error instanceof HttpException) {
-        this.logFailure(
-          operation,
-          error.message === 'Movie provider response was invalid'
-            ? 'invalid-response'
-            : 'http',
-          error.getStatus(),
-          upstreamStatus,
-        );
-        throw error;
-      }
-      this.logFailure(operation, 'connection', 502, upstreamStatus);
-      throw new BadGatewayException('Movie provider request failed');
-    } finally {
-      clearTimeout(timer);
-      // Release unread error bodies as well as an interrupted JSON body read.
-      controller.abort();
-    }
+      },
+    })) as T | undefined;
   }
 
   private logFailure(
