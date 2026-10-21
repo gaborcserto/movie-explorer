@@ -151,6 +151,186 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Series hierarchy', () => {
+  it('reveals crew in bounded increments and retains focus after the final reveal', async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({
+        ...series,
+        credits: {
+          cast: [],
+          crew: Array.from({ length: 21 }, (_, index) => ({
+            id: index + 100,
+            name: `Crew ${index + 1}`,
+            departments: [
+              { department: 'Production', totalEpisodeCount: null },
+            ],
+            jobs: [
+              {
+                creditId: `job-${index}`,
+                job: 'Producer',
+                department: 'Production',
+                episodeCount: null,
+              },
+            ],
+          })),
+          sections: {
+            cast: { status: 'available' },
+            crew: { status: 'available' },
+          },
+        },
+      })
+    );
+    setup('/tv/1');
+    const reveal = await screen.findByRole('button', {
+      name: 'Show more crew',
+    });
+    expect(
+      screen.queryByRole('link', { name: 'Crew 21' })
+    ).not.toBeInTheDocument();
+    await userEvent.click(reveal);
+    expect(screen.getByRole('link', { name: 'Crew 21' })).toHaveAttribute(
+      'href',
+      '/person/120'
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Show more crew' })
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Showing 21 of 21 crew members')).toHaveFocus();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders aggregate characters/jobs and bounded galleries from one details request', async () => {
+    const photos = Array.from({ length: 12 }, (_, i) => ({
+      filePath: `/p${i}.jpg`,
+      thumbnailUrl: `https://images.test/w500/p${i}.jpg`,
+      fullUrl: `https://images.test/original/p${i}.jpg`,
+    }));
+    fetchMock.mockResolvedValue(
+      Response.json({
+        ...series,
+        credits: {
+          cast: [
+            {
+              id: 11,
+              name: 'Series Actor',
+              totalEpisodeCount: 5,
+              characters: [
+                { creditId: 'a', character: 'Guide', episodeCount: 4 },
+                { creditId: 'b', character: 'Visitor', episodeCount: 2 },
+              ],
+            },
+          ],
+          crew: [
+            {
+              id: 12,
+              name: 'Series Producer',
+              departments: [{ department: 'Production', totalEpisodeCount: 5 }],
+              jobs: [
+                {
+                  creditId: 'p',
+                  job: 'Executive Producer',
+                  department: 'Production',
+                  episodeCount: 5,
+                },
+              ],
+            },
+          ],
+          sections: {
+            cast: { status: 'available' },
+            crew: { status: 'available' },
+          },
+        },
+        images: {
+          posters: photos,
+          backdrops: [],
+          sections: {
+            posters: { status: 'available' },
+            backdrops: { status: 'available' },
+          },
+        },
+        videos: { videos: [], availability: { status: 'available' } },
+      })
+    );
+    setup('/tv/1');
+    expect(
+      await screen.findByRole('link', { name: 'Series Actor' })
+    ).toHaveAttribute('href', '/person/11');
+    expect(screen.getByText(/Guide.*4 episodes/)).toHaveTextContent(
+      /Visitor.*2 episodes/
+    );
+    expect(
+      screen.getByText(/Executive Producer.*5 episodes/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('button', { name: /View The Journey poster/ })
+    ).toHaveLength(10);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await userEvent.click(
+      screen.getByRole('button', { name: 'View The Journey poster 1' })
+    );
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText(/1.*12/)).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    expect(
+      screen.getByRole('button', { name: 'View The Journey poster 1' })
+    ).toHaveFocus();
+    await userEvent.click(screen.getByRole('link', { name: 'Series Actor' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Person profile' })
+    ).toBeInTheDocument();
+  });
+
+  it('keeps metadata visible and recovers only a failed optional section', async () => {
+    setup('/tv/1');
+    expect(
+      await screen.findByRole('heading', { name: 'The Journey' })
+    ).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fetchMock.mockResolvedValueOnce(
+      Response.json({ videos: [], availability: { status: 'available' } })
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Retry videos' }));
+    expect(await screen.findByText('No videos available.')).toBeInTheDocument();
+    expect(String(fetchMock.mock.calls[1][0])).toContain(
+      '/api/v1/series/1/videos'
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(
+      screen.getByRole('button', { name: 'Retry images' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'The Journey' })
+    ).toBeInTheDocument();
+  });
+
+  it('aborts section recovery on navigation and ignores an obsolete result', async () => {
+    setup('/tv/1');
+    await screen.findByRole('heading', { name: 'The Journey' });
+    let complete: ((response: Response) => void) | undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          complete = resolve;
+        })
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Retry images' }));
+    const signal = fetchMock.mock.calls[1][1]?.signal;
+    await userEvent.click(screen.getByRole('link', { name: 'Other series' }));
+    expect(signal?.aborted).toBe(true);
+    await act(async () =>
+      complete?.(
+        Response.json({
+          posters: [],
+          backdrops: [],
+          sections: {
+            posters: { status: 'available' },
+            backdrops: { status: 'available' },
+          },
+        })
+      )
+    );
+    expect(screen.queryByText('Images loaded.')).not.toBeInTheDocument();
+  });
+
   it('uses canonical API paths for each Series resource', async () => {
     await getSeries(1);
     await getSeason(1, 0);

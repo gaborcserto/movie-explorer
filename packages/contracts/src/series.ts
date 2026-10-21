@@ -1,3 +1,4 @@
+import type { MediaPhoto, MediaVideo } from './movies';
 import type { SectionAvailability } from './availability';
 
 export interface SeriesSummary {
@@ -38,6 +39,9 @@ export interface SeriesOrganization {
 }
 
 export interface SeriesDetails extends SeriesSummary {
+  credits?: SeriesCredits;
+  images?: SeriesImages;
+  videos?: SeriesVideos;
   description: string | null;
   originalLanguage: string | null;
   status: string | null;
@@ -54,6 +58,41 @@ export interface SeriesDetails extends SeriesSummary {
   networks: SeriesOrganization[];
   productionCompanies: SeriesOrganization[];
   seasons: SeasonSummary[];
+}
+
+export interface SeriesCharacter {
+  creditId: string | null;
+  character: string | null;
+  episodeCount: number | null;
+}
+
+export interface SeriesJob {
+  creditId: string | null;
+  job: string | null;
+  department: string | null;
+  episodeCount: number | null;
+}
+
+export interface SeriesCastMember extends CreditPerson {
+  characters: SeriesCharacter[];
+  totalEpisodeCount: number | null;
+}
+
+export interface SeriesCrewDepartment {
+  department: string | null;
+  /** Provider total for this department; departments may overlap. */
+  totalEpisodeCount: number | null;
+}
+
+export interface SeriesCrewMember extends CreditPerson {
+  jobs: SeriesJob[];
+  departments: SeriesCrewDepartment[];
+}
+
+export interface SeriesCredits {
+  cast: SeriesCastMember[];
+  crew: SeriesCrewMember[];
+  sections: { cast: SectionAvailability; crew: SectionAvailability };
 }
 
 export interface EpisodeSummary {
@@ -99,4 +138,15 @@ export interface EpisodeCredits {
 
 export interface EpisodeDetails extends EpisodeSummary {
   credits: EpisodeCredits;
+}
+
+export interface SeriesImages {
+  posters: MediaPhoto[];
+  backdrops: MediaPhoto[];
+  sections: { posters: SectionAvailability; backdrops: SectionAvailability };
+}
+
+export interface SeriesVideos {
+  videos: MediaVideo[];
+  availability: SectionAvailability;
 }

@@ -1,16 +1,18 @@
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import type { PersonFilmographyEntry } from '@movie-explorer/contracts';
+import type { CombinedFilmography } from '@movie-explorer/contracts';
 
 import MovieImage from '../../components/utility/customImage';
 import { getPosterDisplaySrcSet } from '../../util/imageSizing';
 import './filmography.scss';
 import {
+  filmographyIdentity,
+  filmographyDate,
   getFilmographySelection,
   getFilmographyRoles,
 } from './filmographyRules';
-import type { FilmographyView } from './filmographyRules';
+import type { FilmographyView, FilmographyEntry } from './filmographyRules';
 
 const FILMOGRAPHY_BATCH_SIZE = 10;
 
@@ -18,14 +20,17 @@ function FilmographyResults({
   movies,
   view,
   role,
+  combined,
 }: {
-  movies: PersonFilmographyEntry[];
+  movies: FilmographyEntry[];
   view: FilmographyView;
   role: string;
+  combined: boolean;
 }) {
   const [visibleCount, setVisibleCount] = useState(FILMOGRAPHY_BATCH_SIZE);
   const countRef = useRef<HTMLParagraphElement>(null);
   const visibleMovies = movies.slice(0, visibleCount);
+  const countLabel = combined ? 'title' : 'movie';
 
   return (
     <>
@@ -36,20 +41,28 @@ function FilmographyResults({
         role="status"
       >
         Showing {visibleMovies.length} of {movies.length}{' '}
-        {movies.length === 1 ? 'movie' : 'movies'}
+        {movies.length === 1 ? countLabel : `${countLabel}s`}
       </p>
-      {movies.length === 0 && <p>No movie credits available.</p>}
+      {movies.length === 0 && (
+        <p>
+          {combined
+            ? 'No credits available for this selection.'
+            : 'No movie credits available.'}
+        </p>
+      )}
       <ul className="filmography__list">
         {visibleMovies.map((movie) => {
           const roles = getFilmographyRoles(movie, view, role);
-          const metadataId = `filmography-metadata-${movie.id}`;
+          const metadataId = `filmography-metadata-${filmographyIdentity(movie)}`;
+          const date = filmographyDate(movie);
+          const isSeries = 'mediaType' in movie && movie.mediaType === 'tv';
           const content = (
             <>
               <div className="filmography__poster">
                 <MovieImage
-                  src={movie.posterUrl}
+                  src={movie.posterUrl ?? undefined}
                   srcSet={getPosterDisplaySrcSet(
-                    movie.posterUrl,
+                    movie.posterUrl ?? undefined,
                     movie.posterSrcSet
                   )}
                   sizes="48px"
@@ -60,12 +73,12 @@ function FilmographyResults({
               </div>
               <span className="filmography__title">{movie.title}</span>
               <div id={metadataId} className="filmography__metadata">
-                {movie.releaseDate && (
-                  <time
-                    className="filmography__year"
-                    dateTime={movie.releaseDate}
-                  >
-                    {movie.releaseDate.substring(0, 4)}
+                {combined && (
+                  <span>{isSeries ? 'Series premiere' : 'Movie'}</span>
+                )}
+                {date && (
+                  <time className="filmography__year" dateTime={date}>
+                    {date.substring(0, 4)}
                   </time>
                 )}
                 {roles.length > 0 && (
@@ -75,10 +88,10 @@ function FilmographyResults({
             </>
           );
           return (
-            <li key={movie.id}>
+            <li key={filmographyIdentity(movie)}>
               {Number.isSafeInteger(movie.id) && movie.id > 0 ? (
                 <Link
-                  to={`/movie/${movie.id}`}
+                  to={`/${isSeries ? 'tv' : 'movie'}/${movie.id}`}
                   className="filmography__row"
                   aria-label={movie.title}
                   aria-describedby={metadataId}
@@ -118,13 +131,22 @@ export default function Filmography({
   entries,
   unavailable = false,
   recovery,
+  groups,
 }: {
-  entries: PersonFilmographyEntry[];
+  entries: FilmographyEntry[];
   unavailable?: boolean;
   recovery?: ReactNode;
+  groups?: CombinedFilmography['groups'];
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const requestedType = searchParams.get('personType');
+  const partial =
+    groups &&
+    (requestedType === 'movie' || requestedType === 'tv'
+      ? groups[requestedType]?.status === 'unavailable'
+      : Object.values(groups).some((group) => group?.status === 'unavailable'));
   const {
+    mediaType,
     hasActing,
     hasCrew,
     view,
@@ -133,14 +155,20 @@ export default function Filmography({
     sort,
     canonicalQuery,
     sortedMovies,
-  } = getFilmographySelection(entries, searchParams);
+  } = getFilmographySelection(entries, searchParams, unavailable || partial);
   const query = searchParams.toString();
+  let emptyMessage = 'No movie credits available.';
+  if (groups) {
+    emptyMessage = partial
+      ? 'Credits for this selection are unavailable.'
+      : 'No credits available for this selection.';
+  }
 
   useEffect(() => {
-    if (!unavailable && query !== canonicalQuery) {
+    if (!unavailable && !partial && query !== canonicalQuery) {
       setSearchParams(canonicalQuery, { replace: true });
     }
-  }, [query, canonicalQuery, setSearchParams, unavailable]);
+  }, [query, canonicalQuery, setSearchParams, unavailable, partial]);
 
   const updateSelection = (name: string, value: string) => {
     const next = new URLSearchParams(searchParams);
@@ -149,7 +177,7 @@ export default function Filmography({
     } else {
       next.delete(name);
     }
-    if (name === 'personView') {
+    if (name === 'personView' || name === 'personType') {
       next.delete('personRole');
     }
     setSearchParams(next);
@@ -159,6 +187,27 @@ export default function Filmography({
     <section className="filmography" aria-labelledby="filmography-heading">
       <h2 id="filmography-heading">Filmography</h2>
       {recovery}
+      {groups && (
+        <div
+          className="filmography__views"
+          role="group"
+          aria-label="Filmography media type"
+        >
+          {(['all', 'movie', 'tv'] as const).map((type) => (
+            <button
+              key={type}
+              type="button"
+              className="btn btn--outline"
+              aria-pressed={mediaType === type}
+              onClick={() =>
+                updateSelection('personType', type === 'all' ? '' : type)
+              }
+            >
+              {{ all: 'All', movie: 'Movies', tv: 'Series' }[type]}
+            </button>
+          ))}
+        </div>
+      )}
       {!unavailable &&
         (hasActing || hasCrew ? (
           <>
@@ -224,14 +273,15 @@ export default function Filmography({
               </label>
             </div>
             <FilmographyResults
-              key={`${view}:${role}:${sort}`}
+              key={`${mediaType}:${view}:${role}:${sort}`}
+              combined={Boolean(groups)}
               movies={sortedMovies}
               view={view}
               role={role}
             />
           </>
         ) : (
-          <p role="status">No movie credits available.</p>
+          <p role="status">{emptyMessage}</p>
         ))}
     </section>
   );

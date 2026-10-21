@@ -9,6 +9,7 @@ import { Test } from '@nestjs/testing';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as request from 'supertest';
 
+import { PERSON_FILMOGRAPHY_PROVIDER } from '../src/persons/person-filmography-provider';
 import { AppModule } from '../src/app.module';
 import { MOVIE_PROVIDER } from '../src/movies/movie-provider';
 import { SERIES_PROVIDER, SeriesProvider } from '../src/series/series-provider';
@@ -19,11 +20,20 @@ describe('Series details API (e2e)', () => {
   let app: INestApplication;
   const provider: jest.Mocked<SeriesProvider> = {
     findOne: jest.fn(),
+    findCredits: jest.fn(),
+    findImages: jest.fn(),
+    findVideos: jest.fn(),
     findSeason: jest.fn(),
     findEpisode: jest.fn(),
     findEpisodeCredits: jest.fn(),
   };
-  const movieProvider = { findOne: jest.fn(), findPerson: jest.fn() };
+  const movieProvider = {
+    findOne: jest.fn(),
+    findCredits: jest.fn(),
+    findImages: jest.fn(),
+    findVideos: jest.fn(),
+    findPerson: jest.fn(),
+  };
 
   it.each([
     '',
@@ -43,8 +53,79 @@ describe('Series details API (e2e)', () => {
     expect(provider.findEpisodeCredits).not.toHaveBeenCalled();
   });
 
+  it('serves aggregate credits and documents nested roles and counts', async () => {
+    const credits: NonNullable<
+      Awaited<ReturnType<SeriesProvider['findCredits']>>
+    > = {
+      cast: [],
+      crew: [],
+      sections: {
+        cast: { status: 'available' },
+        crew: { status: 'available' },
+      },
+    };
+    provider.findCredits.mockResolvedValue(credits);
+    await request(app.getHttpServer())
+      .get('/api/v1/series/1399/credits')
+      .expect(200)
+      .expect(credits);
+    expect(provider.findCredits).toHaveBeenCalledWith(1399);
+    await request(app.getHttpServer())
+      .get('/api/v1/series/0/credits')
+      .expect(400);
+    provider.findCredits.mockResolvedValue(undefined);
+    await request(app.getHttpServer())
+      .get('/api/v1/series/1399/credits')
+      .expect(404);
+    const document = createApiDocument(app);
+    expect(
+      document.paths['/api/v1/series/{id}/credits'].get.responses['200'],
+    ).toBeDefined();
+    expect(document.components.schemas.SeriesCharacterDto).toMatchObject({
+      properties: { episodeCount: { nullable: true } },
+    });
+  });
+
+  it.each(['images', 'videos'] as const)(
+    'serves %s with availability and canonical Swagger',
+    async (section) => {
+      const images = {
+        posters: [],
+        backdrops: [],
+        sections: {
+          posters: { status: 'available' as const },
+          backdrops: { status: 'available' as const },
+        },
+      };
+      const videos = {
+        videos: [],
+        availability: { status: 'available' as const },
+      };
+      provider.findImages.mockResolvedValue(images);
+      provider.findVideos.mockResolvedValue(videos);
+      await request(app.getHttpServer())
+        .get(`/api/v1/series/1/${section}`)
+        .expect(200)
+        .expect(section === 'images' ? images : videos);
+      await request(app.getHttpServer())
+        .get(`/api/v1/series/invalid/${section}`)
+        .expect(400);
+      provider.findImages.mockResolvedValue(undefined);
+      provider.findVideos.mockResolvedValue(undefined);
+      await request(app.getHttpServer())
+        .get(`/api/v1/series/1/${section}`)
+        .expect(404);
+      expect(
+        createApiDocument(app).paths[`/api/v1/series/{id}/${section}`].get
+          .responses['200'],
+      ).toBeDefined();
+    },
+  );
+
   beforeAll(async () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(PERSON_FILMOGRAPHY_PROVIDER)
+      .useValue({})
       .overrideProvider(SERIES_PROVIDER)
       .useValue(provider)
       .overrideProvider(MOVIE_PROVIDER)

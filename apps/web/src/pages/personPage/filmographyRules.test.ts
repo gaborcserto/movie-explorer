@@ -1,8 +1,12 @@
-import type { PersonFilmographyEntry } from '@movie-explorer/contracts';
+import type {
+  PersonFilmographyEntry,
+  PersonSeriesCredit,
+} from '@movie-explorer/contracts';
 
 import {
   getFilmographyRoles,
   getFilmographySelection,
+  filmographyIdentity,
 } from './filmographyRules';
 
 function movie(
@@ -20,6 +24,98 @@ function movie(
     ...overrides,
   };
 }
+
+const seriesCredit: PersonSeriesCredit = {
+  mediaType: 'tv',
+  id: 1,
+  title: 'Series',
+  originalTitle: null,
+  firstAirDate: '2022-01-01',
+  posterUrl: null,
+  genres: [],
+  actingCredits: ['One', 'Two'],
+  actingRoles: [
+    { creditId: 'a', character: 'One', episodeCount: 4 },
+    { creditId: 'b', character: 'Two', episodeCount: 3 },
+  ],
+  crewCredits: [
+    { job: 'Writer', episodeCount: 2 },
+    { job: 'Producer', episodeCount: null },
+  ],
+};
+
+describe('Combined filmography rules', () => {
+  it('keeps numeric ID collisions separate and counts distinct titles across overlapping credits', () => {
+    const entries = [
+      movie(1),
+      seriesCredit,
+      { ...seriesCredit, actingCredits: ['Third'] },
+    ];
+    const before = JSON.stringify(entries);
+    const selection = getFilmographySelection(entries, new URLSearchParams());
+    expect(selection.sortedMovies.map(filmographyIdentity)).toEqual([
+      'tv:1',
+      'movie:1',
+    ]);
+    expect(selection.sortedMovies[0].actingCredits).toEqual([
+      'One',
+      'Two',
+      'Third',
+    ]);
+    expect(JSON.stringify(entries)).toBe(before);
+    expect(
+      getFilmographySelection(entries, new URLSearchParams('personView=crew'))
+        .sortedMovies
+    ).toHaveLength(1);
+  });
+
+  it('composes media/view/job filters, dates and unrelated repeated URL parameters', () => {
+    const entries = [
+      movie(1),
+      seriesCredit,
+      { ...seriesCredit, id: 2, firstAirDate: null },
+    ];
+    const selection = getFilmographySelection(
+      entries,
+      new URLSearchParams(
+        'personType=tv&personView=crew&personRole=job:Writer&personSort=oldest&tag=a&tag=b'
+      )
+    );
+    expect(selection.sortedMovies.map(filmographyIdentity)).toEqual([
+      'tv:1',
+      'tv:2',
+    ]);
+    expect(new URLSearchParams(selection.canonicalQuery).getAll('tag')).toEqual(
+      ['a', 'b']
+    );
+    expect(selection.role).toBe('job:Writer');
+    expect(
+      getFilmographySelection(entries, new URLSearchParams('personType=movie'))
+        .sortedMovies
+    ).toHaveLength(1);
+    expect(
+      getFilmographySelection([seriesCredit], new URLSearchParams())
+        .sortedMovies
+    ).toHaveLength(1);
+  });
+
+  it('retains unavailable-group selections until recovery and keeps episode counts at role level', () => {
+    const params = new URLSearchParams(
+      'personType=tv&personView=crew&personRole=job:Writer'
+    );
+    const selection = getFilmographySelection([movie(1)], params, true);
+    expect(selection.view).toBe('crew');
+    expect(selection.role).toBe('job:Writer');
+    expect(getFilmographyRoles(seriesCredit, 'acting', '')).toEqual([
+      'One - 4 episodes',
+      'Two - 3 episodes',
+    ]);
+    expect(
+      getFilmographyRoles(seriesCredit, 'crew', 'job:Writer')[0]
+    ).toContain('2 episodes');
+    expect(getFilmographySelection([movie(1)], params).role).toBe('');
+  });
+});
 
 const mixed = [
   movie(1, {

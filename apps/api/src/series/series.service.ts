@@ -17,6 +17,18 @@ export class SeriesService {
     return this.provider.findSeason(id, season);
   }
 
+  findImages(id: number) {
+    return this.provider.findImages(id);
+  }
+
+  findVideos(id: number) {
+    return this.provider.findVideos(id);
+  }
+
+  findCredits(id: number) {
+    return this.provider.findCredits(id);
+  }
+
   findEpisode(id: number, season: number, episode: number) {
     return this.provider.findEpisode(id, season, episode);
   }

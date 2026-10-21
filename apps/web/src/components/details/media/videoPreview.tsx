@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { MovieVideo } from '@movie-explorer/contracts';
 
 import MovieImage from '../../utility/customImage';
@@ -51,6 +51,7 @@ function isSupportedVideo(entry: {
 }
 
 export default function VideoPreview({ videos, title, resetKey }: Props) {
+  const gridId = useId();
   const [visibleVideoCount, setVisibleVideoCount] = useState(4);
   const [selectedVideo, setSelectedVideo] = useState<number | null>(null);
   const lastVideoRef = useRef<HTMLElement>(null);
@@ -92,7 +93,7 @@ export default function VideoPreview({ videos, title, resetKey }: Props) {
           <button
             type="button"
             className="btn btn--outline btn--action media-preview__action"
-            aria-controls="movie-video-grid"
+            aria-controls={gridId}
             aria-label="Show more videos"
             onClick={() => {
               focusLastVideo.current = visibleVideoCount + 4 >= videos.length;
@@ -103,7 +104,7 @@ export default function VideoPreview({ videos, title, resetKey }: Props) {
           </button>
         )}
       </div>
-      <div className="video-grid" id="movie-video-grid">
+      <div className="video-grid" id={gridId}>
         {videoEntries.slice(0, visibleVideoCount).map((entry) => {
           const { video, videoId } = entry;
           const label = video.name || 'Video';

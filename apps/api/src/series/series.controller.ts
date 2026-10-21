@@ -15,6 +15,9 @@ import type { SeriesDetails } from '@movie-explorer/contracts';
 import { DetailIdParams } from '../validation/detail-id.dto';
 import {
   SeriesDetailsDto,
+  SeriesCreditsDto,
+  SeriesImagesDto,
+  SeriesVideosDto,
   SeasonDetailsDto,
   EpisodeDetailsDto,
   EpisodeCreditsDto,
@@ -92,6 +95,57 @@ export class SeriesController {
       throw new NotFoundException('TV episode not found');
     }
     return episode;
+  }
+
+  @Get(':id/images')
+  @ApiOperation({
+    summary:
+      'Get series posters and backdrops; localized, English and untagged images',
+  })
+  @ApiParam({
+    name: 'id',
+    schema: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  })
+  @ApiOkResponse({ type: SeriesImagesDto })
+  async getImages(@Param() params: DetailIdParams) {
+    const images = await this.service.findImages(params.id);
+    if (!images) {
+      throw new NotFoundException('TV series not found');
+    }
+    return images;
+  }
+
+  @Get(':id/videos')
+  @ApiOperation({ summary: 'Get series videos with independent availability' })
+  @ApiParam({
+    name: 'id',
+    schema: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  })
+  @ApiOkResponse({ type: SeriesVideosDto })
+  async getVideos(@Param() params: DetailIdParams) {
+    const videos = await this.service.findVideos(params.id);
+    if (!videos) {
+      throw new NotFoundException('TV series not found');
+    }
+    return videos;
+  }
+
+  @Get(':id/credits')
+  @ApiOperation({
+    summary:
+      'Get whole-series aggregate credits with independent cast/crew availability',
+  })
+  @ApiParam({
+    name: 'id',
+    schema: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  })
+  @ApiOkResponse({ type: SeriesCreditsDto })
+  async getCredits(@Param() params: DetailIdParams) {
+    const credits = await this.service.findCredits(params.id);
+    if (!credits) {
+      throw new NotFoundException('TV series not found');
+    }
+    return credits;
   }
 
   @Get(':id')

@@ -219,7 +219,7 @@ test.each(['crew director', 'cast member', 'card portrait'])(
       expect(router.state.location.pathname).toBe('/movie/10');
       expect(router.state.location.search).toBe('');
       expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:4000/api/v1/persons/11',
+        'http://localhost:4000/api/v1/persons/11?include=combinedFilmography',
         { signal: expect.any(AbortSignal) }
       );
     } finally {

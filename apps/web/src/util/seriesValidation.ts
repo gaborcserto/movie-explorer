@@ -3,9 +3,17 @@ import type {
   SeasonDetails,
   EpisodeDetails,
   EpisodeCredits,
+  SeriesCredits,
+  SeriesImages,
+  SeriesVideos,
 } from '@movie-explorer/contracts';
 
-import { record, availabilityMap } from './partialValidation';
+import {
+  record,
+  availability,
+  availabilityMap,
+  movieSection,
+} from './partialValidation';
 
 function integer(value: unknown, minimum = 0): value is number {
   return (
@@ -211,5 +219,63 @@ export function episodeDetails(
     record(value) &&
     episodeSummary(value, id, season, episode) &&
     episodeCredits(value.credits)
+  );
+}
+
+export function seriesCredits(value: unknown): value is SeriesCredits {
+  return (
+    record(value) &&
+    availabilityMap(value.sections, ['cast', 'crew']) &&
+    ['cast', 'crew'].every(
+      (kind) =>
+        Array.isArray(value[kind]) &&
+        value[kind].every((item: unknown) => {
+          if (
+            !record(item) ||
+            !person(item) ||
+            (kind === 'cast'
+              ? !count(item.totalEpisodeCount)
+              : !Array.isArray(item.departments) ||
+                !item.departments.every(
+                  (department: unknown) =>
+                    record(department) &&
+                    nullableText(department.department) &&
+                    count(department.totalEpisodeCount)
+                ))
+          ) {
+            return false;
+          }
+          const roles = item[kind === 'cast' ? 'characters' : 'jobs'];
+          return (
+            Array.isArray(roles) &&
+            roles.every(
+              (role: unknown) =>
+                record(role) &&
+                nullableText(role.creditId) &&
+                count(role.episodeCount) &&
+                (kind === 'cast'
+                  ? nullableText(role.character)
+                  : nullableText(role.job) && nullableText(role.department))
+            )
+          );
+        })
+    )
+  );
+}
+
+export function seriesImages(value: unknown): value is SeriesImages {
+  return (
+    record(value) &&
+    availabilityMap(value.sections, ['posters', 'backdrops']) &&
+    movieSection(value, 'posters') &&
+    movieSection({ photos: value.backdrops }, 'photos')
+  );
+}
+
+export function seriesVideos(value: unknown): value is SeriesVideos {
+  return (
+    record(value) &&
+    availability(value.availability) &&
+    movieSection(value, 'videos')
   );
 }

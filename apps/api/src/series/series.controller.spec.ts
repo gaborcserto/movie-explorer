@@ -7,6 +7,9 @@ import { minimalSeriesDetails } from '../../test/fixtures/series';
 describe('SeriesController', () => {
   const provider = {
     findOne: jest.fn(),
+    findCredits: jest.fn(),
+    findImages: jest.fn(),
+    findVideos: jest.fn(),
     findSeason: jest.fn(),
     findEpisode: jest.fn(),
     findEpisodeCredits: jest.fn(),

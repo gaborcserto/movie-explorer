@@ -4,6 +4,8 @@ import type { SeriesDetails } from '@movie-explorer/contracts';
 import type { SeriesProvider } from '../../series/series-provider';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbTransport } from './tmdb.transport';
+import { TmdbSeriesMediaMapper } from './tmdb-series-media.mapper';
+import { TmdbSeriesCreditsMapper } from './tmdb-series-credits.mapper';
 import { TmdbSeriesMapper } from './tmdb-series.mapper';
 import {
   validateTmdbSeriesDetails,
@@ -18,7 +20,12 @@ export class TmdbSeriesProvider implements SeriesProvider {
   private readonly transport: TmdbTransport;
   private readonly mapper: TmdbSeriesMapper;
 
+  private readonly imageBaseUrl: string;
+  private readonly language: string;
+
   constructor(config: TmdbConfig = getTmdbConfig()) {
+    this.imageBaseUrl = config.imageBaseUrl;
+    this.language = config.language;
     this.transport = new TmdbTransport(
       config,
       new Logger(TmdbSeriesProvider.name),
@@ -29,6 +36,10 @@ export class TmdbSeriesProvider implements SeriesProvider {
   async findOne(id: number): Promise<SeriesDetails | undefined> {
     const body = await this.transport.request({
       path: `/tv/${id}`,
+      query: {
+        append_to_response: 'aggregate_credits,images,videos',
+        ...this.mediaLanguages(),
+      },
       operation: 'series-details',
       allowNotFound: true,
       validateBody: (value) => validateTmdbSeriesDetails(value, id),
@@ -38,7 +49,84 @@ export class TmdbSeriesProvider implements SeriesProvider {
     }
 
     validateTmdbSeriesDetails(body, id);
-    return this.mapper.toSeriesDetails(body);
+    return {
+      ...this.mapper.toSeriesDetails(body),
+      credits: new TmdbSeriesCreditsMapper(this.imageBaseUrl).map(
+        this.appended(body.aggregate_credits, id),
+      ),
+      images: new TmdbSeriesMediaMapper(this.imageBaseUrl).images(
+        this.appended(body.images, id),
+      ),
+      videos: new TmdbSeriesMediaMapper(this.imageBaseUrl).videos(
+        this.appended(body.videos, id),
+      ),
+    };
+  }
+
+  private appended(value: unknown, parentId: number) {
+    const row = seriesRecord(value);
+    // TMDB omits IDs inside appended namespaces; the validated parent owns identity.
+    return row &&
+      row.success !== false &&
+      (row.id === undefined || row.id === parentId)
+      ? row
+      : undefined;
+  }
+
+  private mediaLanguages() {
+    const languages = [
+      ...new Set([this.language.split('-')[0], 'en', 'null']),
+    ].join(',');
+    return {
+      include_image_language: languages,
+      include_video_language: languages,
+    };
+  }
+
+  private async mediaSection(id: number, section: 'images' | 'videos') {
+    return this.transport.request({
+      path: `/tv/${id}/${section}`,
+      query: this.mediaLanguages(),
+      operation: `series-${section}`,
+      allowNotFound: true,
+      validateBody: (value) => {
+        const row = seriesRecord(value);
+        if (!row || row.success === false || row.id !== id) {
+          throw new Error('Invalid series media identity');
+        }
+      },
+    });
+  }
+
+  async findImages(id: number) {
+    const body = await this.mediaSection(id, 'images');
+    return body === undefined
+      ? undefined
+      : new TmdbSeriesMediaMapper(this.imageBaseUrl).images(body);
+  }
+
+  async findVideos(id: number) {
+    const body = await this.mediaSection(id, 'videos');
+    return body === undefined
+      ? undefined
+      : new TmdbSeriesMediaMapper(this.imageBaseUrl).videos(body);
+  }
+
+  async findCredits(id: number) {
+    const body = await this.transport.request({
+      path: `/tv/${id}/aggregate_credits`,
+      operation: 'series-credits',
+      allowNotFound: true,
+      validateBody: (value) => {
+        const row = seriesRecord(value);
+        if (!row || row.success === false || row.id !== id) {
+          throw new Error('Invalid series credits identity');
+        }
+      },
+    });
+    return body === undefined
+      ? undefined
+      : new TmdbSeriesCreditsMapper(this.imageBaseUrl).map(body);
   }
 
   async findSeason(id: number, season: number) {

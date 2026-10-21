@@ -69,6 +69,12 @@ The running API serves its generated Swagger/OpenAPI documentation at [http://lo
 
 Filmography merges acting and crew credits by movie ID in first-seen order (cast followed by crew), excluding explicitly adult records. `actingCredits` contains distinct character names; an empty array records acting with an unknown character, while an absent field means no acting credit. `crewCredits` contains distinct department/job pairs, with unavailable values omitted. Movie summaries use an empty poster URL for missing posters and an empty genres array because the appended credits do not supply genre names. No per-movie requests, sorting, or pagination are performed.
 
+`GET /api/v1/persons/:id?include=combinedFilmography` opts into one combined profile request with Movie and Series credits while retaining legacy `filmography` rows. The additional `combinedFilmography` envelope contains `entries` and independent `groups.movie` / `groups.tv` availability. Entries use `mediaType: 'movie' | 'tv'` and stable `mediaType:id` identities; Series credits use `firstAirDate` (the series premiere, not person participation) and preserve role-level episode counts. Default Person responses and `/filmography` remain movie-only.
+
+`GET /api/v1/persons/:id/combined-filmography?mediaType=all|movie|tv` recovers only requested sources; scoped responses contain only requested availability keys. Partial success survives, including successful empty collections. All failed sources return a classified error, prioritizing rate limiting. The opted-in profile uses one bounded compound request without automatic fallback.
+
+Person Filmography uses one component and rule implementation for All, Movies and Series, then Acting/Crew/jobs and sorting. `personType=movie|tv` composes with existing `personView`, `personRole` and `personSort` URLs. Existing URLs, browser history, repeated unrelated parameters, ten-title reveal and correct Movie/Series destinations are preserved. Unavailable groups retain URL selections until recovery.
+
 Canonical resources are `/api/v1/movies`, `/api/v1/series`, `/api/v1/persons`, and `/api/v1/search`. The former `/movies` and `/api/v1/tv` route trees have been removed and return 404. Swagger exposes only canonical operations. Movie details retain `cast` and `director` and add structured `castMembers` and `directors` with optional person IDs and responsive portraits. Person pages are available at `/person/:id`, with portraits, biographies, and filmographies.
 
 Unified autocomplete uses `GET /api/v1/search/suggestions?query=Alien&limit=6`. The limit applies to each group (maximum 10); the UI displays up to six movies and six people. Suggestions have a `mediaType` discriminator (`movie` or `person`), stable IDs, optional image URLs, and release year or known-for department. The existing `GET /api/v1/movies/suggestions` response remains movie-only. Separate TMDB movie/person searches preserve movie ranking and prevent TV results from displacing people; no suggestion detail requests are made.
@@ -77,7 +83,10 @@ Unified autocomplete uses `GET /api/v1/search/suggestions?query=Alien&limit=6`. 
 
 ### Series, seasons and episodes
 
-- `GET /api/v1/series/:id`: series metadata, creators, networks and actual season summaries, including Specials. Rating vote counts and origin countries come from the same upstream response.
+- `GET /api/v1/series/:id`: series metadata, creators, networks, actual season summaries (including Specials), aggregate credits, images and videos in one bounded upstream request. Optional sections have independent availability.
+- `GET /api/v1/series/:id/credits`: whole-series aggregate cast/crew, multiple character/job credit records, supplied per-role and total episode counts (never summed), and independent cast/crew availability.
+- `GET /api/v1/series/:id/images`: posters/backdrops with independent availability, thumbnail/original URLs, dimensions, aspect ratios and language.
+- `GET /api/v1/series/:id/videos`: video identifiers, providers, types, languages, optional published dates and availability.
 - `GET /api/v1/series/:id/seasons/:seasonNumber`: season metadata and ordered episode summaries. `episodeCount` is the number of returned records, not an advertised schedule total.
 - `GET /api/v1/series/:id/seasons/:seasonNumber/episodes/:episodeNumber`: episode metadata and independently available cast, guest stars and crew.
 - `GET /api/v1/series/:id/seasons/:seasonNumber/episodes/:episodeNumber/credits`: explicit episode credit recovery. Successful empty categories differ from unavailable categories.
@@ -86,7 +95,7 @@ IDs and episode numbers are decimal safe integers from 1; season numbers start a
 
 Application-owned modules, adapters, contracts and UI helpers use Series naming (Season and Episode where unambiguous). The stable wire discriminator `mediaType: 'tv'` and existing `tv:id` identities are preserved; TMDB paths and payloads keep their official `tv` terminology.
 
-Frontend routes are `/tv/:id`, `/tv/:id/seasons/:seasonNumber`, and `/tv/:id/seasons/:seasonNumber/episodes/:episodeNumber`. Named seasons and Specials link to vertical episode lists. Previous/next links use actual current-season records; direct episode URLs load season context concurrently. Optional context failures leave primary details usable. Series search, whole-series credits/media, combined filmography, saved collections and recommendations remain deferred.
+Frontend routes are `/tv/:id`, `/tv/:id/seasons/:seasonNumber`, and `/tv/:id/seasons/:seasonNumber/episodes/:episodeNumber`. Named seasons and Specials link to vertical episode lists. Previous/next links use actual current-season records; direct episode URLs load season context concurrently. Optional context failures leave primary details usable. Series Details reuses the cast preview, progressive media galleries and photo/video lightboxes. Cast, crew and media have bounded previews and local Show More controls. Standalone recovery only requests the failed resource. Series search, saved collections and recommendations remain deferred.
 
 ## Request failures and deadlines
 
@@ -138,7 +147,7 @@ Manual recovery endpoints return only the mapped section:
 - `GET /api/v1/persons/:id/filmography`: `{ filmography: [...] }`.
 
 Movie details expose complete `backdrops`, `posters`, and `videos` collections,
-with six backdrop previews, six portrait poster previews, and three video cards.
+with six backdrop previews, ten portrait poster previews, and four video cards.
 Gallery buttons open the selected image category in the existing lightbox or
 expand video cards. Originals load only when opened; embeds are created only
 after selection and do not autoplay. Images preserve file paths, dimensions,

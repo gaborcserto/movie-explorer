@@ -2,11 +2,7 @@ import type { MovieSection, SectionAvailability } from './availability';
 
 export type MovieId = number;
 
-export type MovieSortField =
-  | 'popularity'
-  | 'title'
-  | 'releaseDate'
-  | 'rating';
+export type MovieSortField = 'popularity' | 'title' | 'releaseDate' | 'rating';
 export type MovieSortOrder = 'asc' | 'desc';
 
 export interface MovieQueryParams {
@@ -49,7 +45,7 @@ export interface MovieCrewMember extends MovieDirector {
   roles: string[];
 }
 
-export interface MoviePhoto {
+export interface MediaPhoto {
   filePath?: string;
   width?: number;
   height?: number;
@@ -60,7 +56,10 @@ export interface MoviePhoto {
   alt?: string;
 }
 
-export interface MovieVideo {
+export type MoviePhoto = MediaPhoto;
+
+export interface MediaVideo {
+  publishedAt?: string;
   id?: string;
   key?: string;
   site?: string;
@@ -71,6 +70,8 @@ export interface MovieVideo {
   url: string;
   thumbnailUrl?: string;
 }
+
+export type MovieVideo = MediaVideo;
 
 export interface MovieDetails extends MovieSummary {
   originalTitle?: string;

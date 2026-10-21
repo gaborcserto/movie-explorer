@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { MovieDirector } from '@movie-explorer/contracts';
 
@@ -11,6 +11,7 @@ interface CastCredit extends MovieDirector {
 }
 
 export default function CastPreview({ members }: { members: CastCredit[] }) {
+  const gridId = useId();
   const [visibleCount, setVisibleCount] = useState(10);
   const countRef = useRef<HTMLSpanElement>(null);
   if (members.length === 0) {
@@ -30,7 +31,7 @@ export default function CastPreview({ members }: { members: CastCredit[] }) {
             type="button"
             className="btn btn--outline btn--action media-preview__action"
             aria-label="Show more cast"
-            aria-controls="movie-cast-grid"
+            aria-controls={gridId}
             onClick={() => {
               setVisibleCount((count) => count + 10);
 
@@ -43,9 +44,9 @@ export default function CastPreview({ members }: { members: CastCredit[] }) {
           </button>
         )}
       </div>
-      <div className="cast-grid" id="movie-cast-grid">
+      <div className="cast-grid" id={gridId}>
         {visible.map((member) => {
-          const characterId = `cast-character-${member.key}`;
+          const characterId = `${gridId}-character-${member.key}`;
           const content = (
             <>
               <MovieImage

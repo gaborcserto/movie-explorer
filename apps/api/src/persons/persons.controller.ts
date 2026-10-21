@@ -6,6 +6,7 @@ import {
   Query,
 } from '@nestjs/common';
 import {
+  ApiExtraModels,
   ApiBadGatewayResponse,
   ApiBadRequestResponse,
   ApiNotFoundResponse,
@@ -19,8 +20,20 @@ import {
 import type { PersonDetails } from '@movie-explorer/contracts';
 import { GetPersonParams, PersonDetailsDto } from './persons.dto';
 import { PersonsService } from './persons.service';
+import {
+  CombinedFilmographyDto,
+  CombinedFilmographyQuery,
+  PersonIncludeQuery,
+  PersonMovieCreditDto,
+  PersonSeriesCreditDto,
+} from './person-filmography.dto';
 import { GetPeopleQuery } from './people.dto';
 
+@ApiExtraModels(
+  CombinedFilmographyDto,
+  PersonMovieCreditDto,
+  PersonSeriesCreditDto,
+)
 @ApiTags('Persons')
 @ApiBadRequestResponse({
   description: 'Invalid query or decimal safe-integer ID',
@@ -51,7 +64,22 @@ export class PersonsController {
     description: 'Positive integer TMDB person ID',
     schema: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
   })
-  @ApiOkResponse({ type: () => PersonDetailsDto })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        { $ref: '#/components/schemas/PersonDetailsDto' },
+        {
+          type: 'object',
+          properties: {
+            combinedFilmography: {
+              $ref: '#/components/schemas/CombinedFilmographyDto',
+            },
+          },
+        },
+      ],
+    },
+  })
+  @ApiExtraModels(PersonDetailsDto)
   @ApiBadRequestResponse({ description: 'Invalid person ID' })
   @ApiNotFoundResponse({ description: 'Person not found' })
   @ApiBadGatewayResponse({
@@ -59,14 +87,43 @@ export class PersonsController {
   })
   public async getPerson(
     @Param() params: GetPersonParams,
+    @Query() query: PersonIncludeQuery = {},
   ): Promise<PersonDetails> {
-    const person = await this.personsService.findOne(params.id);
+    const person = query.include
+      ? await this.personsService.findOne(params.id, query.include)
+      : await this.personsService.findOne(params.id);
 
     if (!person) {
       throw new NotFoundException('Person not found');
     }
 
     return person;
+  }
+
+  @Get(':id/combined-filmography')
+  @ApiOperation({
+    summary: 'Recover selected Movie/Series filmography groups',
+    description:
+      'Only requested sources are fetched. Available empty arrays differ from unavailable sources. Partial success is retained; all failures return an error with rate-limit priority.',
+  })
+  @ApiParam({
+    name: 'id',
+    schema: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  })
+  @ApiOkResponse({ type: CombinedFilmographyDto })
+  @ApiNotFoundResponse({ description: 'Person not found' })
+  async getCombined(
+    @Param() params: GetPersonParams,
+    @Query() query: CombinedFilmographyQuery,
+  ) {
+    const result = await this.personsService.findCombined(
+      params.id,
+      query.mediaType,
+    );
+    if (!result) {
+      throw new NotFoundException('Person not found');
+    }
+    return result;
   }
 
   @Get(':id/filmography')

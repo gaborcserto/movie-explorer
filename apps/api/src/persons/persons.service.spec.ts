@@ -12,7 +12,10 @@ describe('PersonsService', () => {
     findMovieSection: jest.fn(),
     findFilmography: jest.fn(),
   };
-  const service = new PersonsService(provider);
+  const service = new PersonsService(provider, {
+    findPerson: jest.fn(),
+    findCombined: jest.fn(),
+  });
 
   it('delegates person lookup to the configured provider', async () => {
     const person = { id: 1, name: 'Person', filmography: [] };

@@ -8,6 +8,7 @@ import {
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import type { MovieProvider } from '../src/movies/movie-provider';
 import * as request from 'supertest';
+import { PERSON_FILMOGRAPHY_PROVIDER } from '../src/persons/person-filmography-provider';
 import { AppModule } from './../src/app.module';
 import { MOVIE_PROVIDER } from './../src/movies/movie-provider';
 import { SERIES_PROVIDER } from '../src/series/series-provider';
@@ -66,8 +67,12 @@ describe('AppController (e2e)', () => {
       '/api/v1/persons',
       '/api/v1/persons/{id}',
       '/api/v1/persons/{id}/filmography',
+      '/api/v1/persons/{id}/combined-filmography',
       '/api/v1/search/suggestions',
       '/api/v1/series/{id}',
+      '/api/v1/series/{id}/credits',
+      '/api/v1/series/{id}/images',
+      '/api/v1/series/{id}/videos',
       '/api/v1/series/{id}/seasons/{seasonNumber}',
       '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}',
       '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}/credits',
@@ -114,6 +119,8 @@ describe('AppController (e2e)', () => {
     })
       .overrideProvider(MOVIE_PROVIDER)
       .useValue(movieProvider)
+      .overrideProvider(PERSON_FILMOGRAPHY_PROVIDER)
+      .useValue({})
       .overrideProvider(SERIES_PROVIDER)
       .useValue({ findOne: jest.fn() })
       .compile();

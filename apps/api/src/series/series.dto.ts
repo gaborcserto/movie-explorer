@@ -1,6 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type {
   CreditPerson,
+  SeriesImages,
+  SeriesVideos,
+  MediaPhoto,
+  MediaVideo,
+  SeriesCredits,
+  SeriesCastMember,
+  SeriesCrewMember,
+  SeriesCrewDepartment,
+  SeriesCharacter,
+  SeriesJob,
   SeriesOrganization,
   SeasonSummary,
   SeriesDetails,
@@ -30,6 +40,80 @@ export class CreditPersonDto implements CreditPerson {
 
   @ApiPropertyOptional({ type: String })
   profileSrcSet?: string;
+}
+
+export class SeriesCharacterDto implements SeriesCharacter {
+  @ApiProperty({ type: String, nullable: true })
+  creditId: string | null;
+  @ApiProperty({ type: String, nullable: true })
+  character: string | null;
+  @ApiProperty({ type: 'integer', minimum: 0, nullable: true })
+  episodeCount: number | null;
+}
+
+export class SeriesJobDto implements SeriesJob {
+  @ApiProperty({ type: String, nullable: true })
+  creditId: string | null;
+  @ApiProperty({ type: String, nullable: true })
+  job: string | null;
+  @ApiProperty({ type: String, nullable: true })
+  department: string | null;
+  @ApiProperty({ type: 'integer', minimum: 0, nullable: true })
+  episodeCount: number | null;
+}
+
+export class SeriesCastMemberDto
+  extends CreditPersonDto
+  implements SeriesCastMember
+{
+  @ApiProperty({ type: [SeriesCharacterDto] })
+  characters: SeriesCharacter[];
+  @ApiProperty({
+    type: 'integer',
+    minimum: 0,
+    nullable: true,
+    description: 'Provider total; never a sum of overlapping roles',
+  })
+  totalEpisodeCount: number | null;
+}
+
+export class SeriesCrewDepartmentDto implements SeriesCrewDepartment {
+  @ApiProperty({ type: String, nullable: true })
+  department: string | null;
+  @ApiProperty({
+    type: 'integer',
+    minimum: 0,
+    nullable: true,
+    description:
+      'Supplied department total, not a sum of jobs or a person-wide total',
+  })
+  totalEpisodeCount: number | null;
+}
+
+export class SeriesCrewMemberDto
+  extends CreditPersonDto
+  implements SeriesCrewMember
+{
+  @ApiProperty({ type: [SeriesJobDto] })
+  jobs: SeriesJob[];
+  @ApiProperty({ type: [SeriesCrewDepartmentDto] })
+  departments: SeriesCrewDepartment[];
+}
+
+export class SeriesCreditSectionsDto {
+  @ApiProperty({ type: SectionAvailabilityDto })
+  cast: SeriesCredits['sections']['cast'];
+  @ApiProperty({ type: SectionAvailabilityDto })
+  crew: SeriesCredits['sections']['crew'];
+}
+
+export class SeriesCreditsDto implements SeriesCredits {
+  @ApiProperty({ type: [SeriesCastMemberDto] })
+  cast: SeriesCastMember[];
+  @ApiProperty({ type: [SeriesCrewMemberDto] })
+  crew: SeriesCrewMember[];
+  @ApiProperty({ type: SeriesCreditSectionsDto })
+  sections: SeriesCredits['sections'];
 }
 
 export class SeriesOrganizationDto implements SeriesOrganization {
@@ -89,7 +173,78 @@ export class SeasonSummaryDto implements SeasonSummary {
   posterSrcSet?: string;
 }
 
+export class MediaPhotoDto implements MediaPhoto {
+  @ApiPropertyOptional({ type: String })
+  filePath?: string;
+  @ApiPropertyOptional({ type: Number, minimum: 1 })
+  width?: number;
+  @ApiPropertyOptional({ type: Number, minimum: 1 })
+  height?: number;
+  @ApiPropertyOptional({ type: Number, exclusiveMinimum: true, minimum: 0 })
+  aspectRatio?: number;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  language?: string | null;
+  @ApiProperty({ type: String })
+  thumbnailUrl: string;
+  @ApiProperty({ type: String })
+  fullUrl: string;
+}
+
+export class MediaVideoDto implements MediaVideo {
+  @ApiPropertyOptional({ type: String })
+  id?: string;
+  @ApiPropertyOptional({ type: String })
+  key?: string;
+  @ApiPropertyOptional({ type: String })
+  site?: string;
+  @ApiPropertyOptional({ type: String })
+  type?: string;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  language?: string | null;
+  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  publishedAt?: string;
+  @ApiProperty({ type: String })
+  name: string;
+  @ApiProperty({
+    type: String,
+    description:
+      'Empty for unsupported providers; only supported hosts get links or players',
+  })
+  url: string;
+  @ApiPropertyOptional({ type: String })
+  thumbnailUrl?: string;
+}
+
+export class SeriesImageSectionsDto {
+  @ApiProperty({ type: SectionAvailabilityDto })
+  posters: SeriesImages['sections']['posters'];
+  @ApiProperty({ type: SectionAvailabilityDto })
+  backdrops: SeriesImages['sections']['backdrops'];
+}
+
+export class SeriesImagesDto implements SeriesImages {
+  @ApiProperty({ type: [MediaPhotoDto] })
+  posters: MediaPhoto[];
+  @ApiProperty({ type: [MediaPhotoDto] })
+  backdrops: MediaPhoto[];
+  @ApiProperty({ type: SeriesImageSectionsDto })
+  sections: SeriesImages['sections'];
+}
+
+export class SeriesVideosDto implements SeriesVideos {
+  @ApiProperty({ type: [MediaVideoDto] })
+  videos: MediaVideo[];
+  @ApiProperty({ type: SectionAvailabilityDto })
+  availability: SeriesVideos['availability'];
+}
+
 export class SeriesDetailsDto implements SeriesDetails {
+  @ApiPropertyOptional({ type: SeriesImagesDto })
+  images?: SeriesImages;
+  @ApiPropertyOptional({ type: SeriesVideosDto })
+  videos?: SeriesVideos;
+  @ApiPropertyOptional({ type: SeriesCreditsDto })
+  credits?: SeriesCredits;
   @ApiProperty({ enum: ['tv'] })
   mediaType: 'tv';
 

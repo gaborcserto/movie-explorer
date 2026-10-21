@@ -1,4 +1,6 @@
 import type {
+  CombinedFilmography,
+  FilmographyMediaType,
   MovieDetails,
   MovieSection,
   MovieSectionResponse,
@@ -11,6 +13,9 @@ import type {
   PersonListResponse,
   SearchSuggestionsResponse,
   SeriesDetails,
+  SeriesCredits,
+  SeriesImages,
+  SeriesVideos,
   SeasonDetails,
   EpisodeDetails,
   EpisodeCredits,
@@ -27,10 +32,14 @@ import {
 import type { URLParams } from '../types';
 import {
   seriesDetails,
+  seriesCredits,
+  seriesImages,
+  seriesVideos,
   seasonDetails,
   episodeDetails,
   episodeCredits,
 } from './seriesValidation';
+import combinedFilmography from './filmographyValidation';
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const apiBaseUrl = (configuredApiBaseUrl ?? 'http://localhost:4000').replace(
@@ -170,7 +179,12 @@ export async function getSeries(
   if (!seriesDetails(body, id)) {
     throw new ApiRequestError('invalid-response');
   }
-  return body;
+  return {
+    ...body,
+    credits: seriesCredits(body.credits) ? body.credits : undefined,
+    images: seriesImages(body.images) ? body.images : undefined,
+    videos: seriesVideos(body.videos) ? body.videos : undefined,
+  };
 }
 
 export async function getSeason(
@@ -300,10 +314,11 @@ export const getMovie = async (
 
 export const getPerson = async (
   id: number,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  includeCombined = false
 ): Promise<PersonDetails> => {
   const body = await request<PersonDetails>(
-    `${apiBaseUrl}/api/v1/persons/${id}`,
+    `${apiBaseUrl}/api/v1/persons/${id}${includeCombined ? '?include=combinedFilmography' : ''}`,
     signal ? { signal } : {}
   );
   if (!record(body)) {
@@ -337,6 +352,18 @@ export const getPerson = async (
     body.profilePhotos = body.profilePhotos?.filter(
       (photo) => photo.fullUrl.trim() && photo.thumbnailUrl.trim()
     );
+  }
+  if (
+    body.combinedFilmography !== undefined &&
+    !combinedFilmography(body.combinedFilmography)
+  ) {
+    body.combinedFilmography = {
+      entries: [],
+      groups: {
+        movie: { status: 'unavailable' },
+        tv: { status: 'unavailable' },
+      },
+    };
   }
   return body;
 };
@@ -536,3 +563,60 @@ export const getPeople = (
     signal ? { signal } : {}
   );
 };
+
+export async function getSeriesCredits(
+  id: number,
+  signal?: AbortSignal
+): Promise<SeriesCredits> {
+  const body: unknown = await request(
+    `${apiBaseUrl}/api/v1/series/${id}/credits`,
+    signal ? { signal } : {}
+  );
+  if (!seriesCredits(body)) {
+    throw new ApiRequestError('invalid-response');
+  }
+  return body;
+}
+
+export async function getSeriesImages(
+  id: number,
+  signal?: AbortSignal
+): Promise<SeriesImages> {
+  const body: unknown = await request(
+    `${apiBaseUrl}/api/v1/series/${id}/images`,
+    signal ? { signal } : {}
+  );
+  if (!seriesImages(body)) {
+    throw new ApiRequestError('invalid-response');
+  }
+  return body;
+}
+
+export async function getSeriesVideos(
+  id: number,
+  signal?: AbortSignal
+): Promise<SeriesVideos> {
+  const body: unknown = await request(
+    `${apiBaseUrl}/api/v1/series/${id}/videos`,
+    signal ? { signal } : {}
+  );
+  if (!seriesVideos(body)) {
+    throw new ApiRequestError('invalid-response');
+  }
+  return body;
+}
+
+export async function getCombinedFilmography(
+  id: number,
+  mediaType: FilmographyMediaType,
+  signal: AbortSignal
+): Promise<CombinedFilmography> {
+  const body: unknown = await request(
+    `${apiBaseUrl}/api/v1/persons/${id}/combined-filmography?mediaType=${mediaType}`,
+    { signal }
+  );
+  if (!combinedFilmography(body, mediaType)) {
+    throw new ApiRequestError('invalid-response');
+  }
+  return body;
+}

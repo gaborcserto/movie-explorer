@@ -15,6 +15,7 @@ import presentApiError, {
 } from '../../util/errorPresentation';
 import {
   getPerson,
+  getCombinedFilmography,
   getFilmography,
   isNotFoundError,
 } from '../../util/apiUtils';
@@ -157,7 +158,7 @@ function PersonDetailsPage({ id }: { id: string }) {
     setPending(true);
     let current = true;
 
-    getPerson(personId, controller.signal)
+    getPerson(personId, controller.signal, true)
       .then((person) => {
         if (current && !controller.signal.aborted) {
           setState({ status: 'success', person });
@@ -274,37 +275,95 @@ function PersonDetailsPage({ id }: { id: string }) {
                 )}
               {state.status === 'success' && (
                 <Filmography
-                  entries={state.person.filmography}
+                  entries={
+                    state.person.combinedFilmography?.entries ??
+                    state.person.filmography
+                  }
+                  groups={state.person.combinedFilmography?.groups}
                   unavailable={
+                    !state.person.combinedFilmography &&
                     state.person.filmographyAvailability?.status ===
-                    'unavailable'
+                      'unavailable'
                   }
                   recovery={
-                    <SectionRecovery
-                      label="Filmography"
-                      availability={state.person.filmographyAvailability}
-                      recover={async (signal) => {
-                        const result = await getFilmography(personId, signal);
-                        if (signal.aborted) {
-                          return;
-                        }
-
-                        setState((previous) =>
-                          previous.status === 'success'
-                            ? {
-                                status: 'success',
-                                person: {
-                                  ...previous.person,
-                                  ...result,
-                                  filmographyAvailability: {
-                                    status: 'available',
-                                  },
-                                },
+                    state.person.combinedFilmography ? (
+                      <>
+                        {(['movie', 'tv'] as const).map((type) => (
+                          <SectionRecovery
+                            key={type}
+                            label={
+                              type === 'movie'
+                                ? 'Movie credits'
+                                : 'Series credits'
+                            }
+                            availability={
+                              state.person.combinedFilmography?.groups[type]
+                            }
+                            recover={async (signal) => {
+                              const result = await getCombinedFilmography(
+                                personId,
+                                type,
+                                signal
+                              );
+                              if (signal.aborted) {
+                                return;
                               }
-                            : previous
-                        );
-                      }}
-                    />
+                              setState((previous) =>
+                                previous.status === 'success' &&
+                                previous.person.combinedFilmography
+                                  ? {
+                                      status: 'success',
+                                      person: {
+                                        ...previous.person,
+                                        combinedFilmography: {
+                                          entries: [
+                                            ...previous.person.combinedFilmography.entries.filter(
+                                              (entry) =>
+                                                entry.mediaType !== type
+                                            ),
+                                            ...result.entries,
+                                          ],
+                                          groups: {
+                                            ...previous.person
+                                              .combinedFilmography.groups,
+                                            ...result.groups,
+                                          },
+                                        },
+                                      },
+                                    }
+                                  : previous
+                              );
+                            }}
+                          />
+                        ))}
+                      </>
+                    ) : (
+                      <SectionRecovery
+                        label="Filmography"
+                        availability={state.person.filmographyAvailability}
+                        recover={async (signal) => {
+                          const result = await getFilmography(personId, signal);
+                          if (signal.aborted) {
+                            return;
+                          }
+
+                          setState((previous) =>
+                            previous.status === 'success'
+                              ? {
+                                  status: 'success',
+                                  person: {
+                                    ...previous.person,
+                                    ...result,
+                                    filmographyAvailability: {
+                                      status: 'available',
+                                    },
+                                  },
+                                }
+                              : previous
+                          );
+                        }}
+                      />
+                    )
                   }
                 />
               )}

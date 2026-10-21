@@ -1,12 +1,27 @@
 import type {
+  CombinedFilmographyEntry,
   PersonCrewCredit,
   PersonFilmographyEntry,
 } from '@movie-explorer/contracts';
+
+export type FilmographyEntry =
+  PersonFilmographyEntry | CombinedFilmographyEntry;
+
+export function filmographyIdentity(entry: FilmographyEntry) {
+  return `${'mediaType' in entry ? entry.mediaType : 'movie'}:${entry.id}`;
+}
+
+export function filmographyDate(entry: FilmographyEntry) {
+  return 'mediaType' in entry && entry.mediaType === 'tv'
+    ? entry.firstAirDate
+    : entry.releaseDate;
+}
 
 export type FilmographyView = 'acting' | 'crew';
 type Sort = 'newest' | 'oldest' | 'title';
 
 interface FilmographySelection {
+  mediaType: 'all' | 'movie' | 'tv';
   hasActing: boolean;
   hasCrew: boolean;
   view: FilmographyView;
@@ -14,7 +29,7 @@ interface FilmographySelection {
   roles: string[];
   sort: Sort;
   canonicalQuery: string;
-  sortedMovies: PersonFilmographyEntry[];
+  sortedMovies: FilmographyEntry[];
 }
 
 function uniqueText(values: string[]) {
@@ -39,12 +54,25 @@ function matchesRole(credit: PersonCrewCredit, role: string) {
     : roleKey(credit) === role;
 }
 
-function mergeMovies(entries: readonly PersonFilmographyEntry[]) {
-  const movies = new Map<number, PersonFilmographyEntry>();
+function mergeMovies(entries: readonly FilmographyEntry[]) {
+  const movies = new Map<string, FilmographyEntry>();
   entries.forEach((entry) => {
-    const previous = movies.get(entry.id);
-    movies.set(entry.id, {
+    const previous = movies.get(filmographyIdentity(entry));
+    movies.set(filmographyIdentity(entry), {
       ...entry,
+      ...('mediaType' in entry &&
+        entry.mediaType === 'tv' && {
+          actingRoles: [
+            ...new Map(
+              [
+                ...(previous && 'actingRoles' in previous
+                  ? (previous.actingRoles ?? [])
+                  : []),
+                ...(entry.actingRoles ?? []),
+              ].map((credit) => [JSON.stringify(credit), credit])
+            ).values(),
+          ],
+        }),
       actingCredits:
         previous?.actingCredits || entry.actingCredits
           ? uniqueText([
@@ -58,38 +86,52 @@ function mergeMovies(entries: readonly PersonFilmographyEntry[]) {
   return [...movies.values()];
 }
 
-function compareTitles(a: PersonFilmographyEntry, b: PersonFilmographyEntry) {
-  return a.title.localeCompare(b.title, 'en') || a.id - b.id;
+function compareTitles(a: FilmographyEntry, b: FilmographyEntry) {
+  return (
+    a.title.localeCompare(b.title, 'en') ||
+    a.id - b.id ||
+    filmographyIdentity(a).localeCompare(filmographyIdentity(b))
+  );
 }
 
-function sortMovies(movies: readonly PersonFilmographyEntry[], sort: Sort) {
+function sortMovies(movies: readonly FilmographyEntry[], sort: Sort) {
   return [...movies].sort((a, b) => {
     if (sort === 'title') {
       return compareTitles(a, b);
     }
-    if (!a.releaseDate && b.releaseDate) {
+    if (!filmographyDate(a) && filmographyDate(b)) {
       return 1;
     }
-    if (a.releaseDate && !b.releaseDate) {
+    if (filmographyDate(a) && !filmographyDate(b)) {
       return -1;
     }
-    const dates = (a.releaseDate ?? '').localeCompare(b.releaseDate ?? '');
+    const dates = (filmographyDate(a) ?? '').localeCompare(
+      filmographyDate(b) ?? ''
+    );
     return (sort === 'oldest' ? dates : -dates) || compareTitles(a, b);
   });
 }
 
 export function getFilmographySelection(
-  entries: readonly PersonFilmographyEntry[],
-  searchParams: URLSearchParams
+  entries: readonly FilmographyEntry[],
+  searchParams: URLSearchParams,
+  preserveSelection = false
 ): FilmographySelection {
-  const movies = mergeMovies(entries);
+  const requestedType = searchParams.get('personType');
+  const mediaType =
+    requestedType === 'movie' || requestedType === 'tv' ? requestedType : 'all';
+  const movies = mergeMovies(entries).filter(
+    (entry) =>
+      mediaType === 'all' ||
+      ('mediaType' in entry ? entry.mediaType : 'movie') === mediaType
+  );
   const hasActing = movies.some((movie) => movie.actingCredits !== undefined);
   const hasCrew = movies.some((movie) => movie.crewCredits.length > 0);
   const defaultView = hasActing ? 'acting' : 'crew';
   const requestedView = searchParams.get('personView');
   const view: FilmographyView =
-    (requestedView === 'acting' && hasActing) ||
-    (requestedView === 'crew' && hasCrew)
+    (requestedView === 'acting' && (hasActing || preserveSelection)) ||
+    (requestedView === 'crew' && (hasCrew || preserveSelection))
       ? requestedView
       : defaultView;
   const roles = uniqueText(
@@ -97,7 +139,9 @@ export function getFilmographySelection(
   ).sort((a, b) => a.localeCompare(b, 'en'));
   const requestedRole = searchParams.get('personRole') ?? '';
   const role =
-    view === 'crew' && roles.includes(requestedRole) ? requestedRole : '';
+    view === 'crew' && (roles.includes(requestedRole) || preserveSelection)
+      ? requestedRole
+      : '';
   const requestedSort = searchParams.get('personSort');
   const sort: Sort =
     requestedSort === 'oldest' || requestedSort === 'title'
@@ -105,6 +149,10 @@ export function getFilmographySelection(
       : 'newest';
 
   const canonicalParams = new URLSearchParams(searchParams);
+  canonicalParams.delete('personType');
+  if (mediaType !== 'all') {
+    canonicalParams.set('personType', mediaType);
+  }
   canonicalParams.delete('personView');
   canonicalParams.delete('personRole');
   canonicalParams.delete('personSort');
@@ -126,6 +174,7 @@ export function getFilmographySelection(
   const sortedMovies = sortMovies(matchingMovies, sort);
 
   return {
+    mediaType,
     hasActing,
     hasCrew,
     view,
@@ -138,10 +187,22 @@ export function getFilmographySelection(
 }
 
 export function getFilmographyRoles(
-  movie: PersonFilmographyEntry,
+  movie: FilmographyEntry,
   view: FilmographyView,
   role: string
 ): string[] {
+  const isSeries = 'mediaType' in movie && movie.mediaType === 'tv';
+  const episodes = (count: number | null | undefined) =>
+    count == null ? '' : `${count} ${count === 1 ? 'episode' : 'episodes'}`;
+  if (view === 'acting' && isSeries && movie.actingRoles?.length) {
+    return uniqueText(
+      movie.actingRoles.map((credit) =>
+        [credit.character, episodes(credit.episodeCount)]
+          .filter(Boolean)
+          .join(' - ')
+      )
+    );
+  }
   return view === 'acting'
     ? uniqueText(movie.actingCredits ?? [])
     : uniqueText(
@@ -150,7 +211,11 @@ export function getFilmographyRoles(
           .map((credit) => {
             const job = credit.job?.trim();
             const department = credit.department?.trim();
-            return [job, department && department !== job ? department : '']
+            return [
+              job,
+              department && department !== job ? department : '',
+              ...(isSeries ? [episodes(credit.episodeCount)] : []),
+            ]
               .filter(Boolean)
               .join(' — ');
           })

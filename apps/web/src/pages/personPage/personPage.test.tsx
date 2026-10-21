@@ -81,7 +81,7 @@ test('direct person navigation loads the complete contract through the API witho
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   expect(fetchMock).toHaveBeenCalledTimes(1);
   expect(fetchMock).toHaveBeenCalledWith(
-    'http://localhost:4000/api/v1/persons/42',
+    'http://localhost:4000/api/v1/persons/42?include=combinedFilmography',
     { signal: expect.any(AbortSignal) }
   );
   expect(screen.getByText('Directing')).toBeVisible();
@@ -551,8 +551,10 @@ test('Back/Forward navigation loads the correct person and resets biography expa
   fetchMock.mockImplementation(async (url) =>
     response({
       ...person,
-      id: String(url).endsWith('/43') ? 43 : 42,
-      name: String(url).endsWith('/43') ? 'Second person' : person.name,
+      id: new URL(String(url)).pathname.endsWith('/43') ? 43 : 42,
+      name: new URL(String(url)).pathname.endsWith('/43')
+        ? 'Second person'
+        : person.name,
       biography: 'Long biography. '.repeat(100),
     })
   );

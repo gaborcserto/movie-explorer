@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+
+import { PERSON_FILMOGRAPHY_PROVIDER } from '../persons/person-filmography-provider';
+import { TmdbPersonFilmographyProvider } from '../integrations/tmdb/tmdb-person-filmography.provider';
 import { MoviesController } from './movies.controller';
 import { MoviesService } from './movies.service';
 import { MOVIE_PROVIDER } from './movie-provider';
@@ -11,6 +14,10 @@ import { SearchService } from '../search/search.service';
 @Module({
   controllers: [MoviesController, PersonsController, SearchController],
   providers: [
+    {
+      provide: PERSON_FILMOGRAPHY_PROVIDER,
+      useFactory: () => new TmdbPersonFilmographyProvider(),
+    },
     MoviesService,
     PersonsService,
     SearchService,

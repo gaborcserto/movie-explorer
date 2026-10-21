@@ -11,6 +11,10 @@ import { DetailIdParams } from '../validation/detail-id.dto';
 export class GetPersonParams extends DetailIdParams {}
 
 export class PersonCrewCreditDto implements PersonCrewCredit {
+  @ApiPropertyOptional({ type: String })
+  creditId?: string;
+  @ApiPropertyOptional({ type: 'integer', minimum: 0, nullable: true })
+  episodeCount?: number | null;
   @ApiPropertyOptional()
   department?: string;
 

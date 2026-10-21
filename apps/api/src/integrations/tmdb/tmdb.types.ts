@@ -106,6 +106,7 @@ export interface TmdbVideos {
 }
 
 export interface TmdbVideo {
+  published_at?: string;
   id?: string;
   iso_639_1?: string | null;
   key: string;

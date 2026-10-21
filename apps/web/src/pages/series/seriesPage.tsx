@@ -5,6 +5,7 @@ import { getSeries } from '../../util/apiUtils';
 import parseDetailId from '../../util/detailId';
 import MovieImage from '../../components/utility/customImage';
 import { getPosterDisplaySrcSet } from '../../util/imageSizing';
+import SeriesSections from './seriesSections';
 import useSeriesResource from './useSeriesResource';
 import {
   SeriesLayout,
@@ -99,6 +100,7 @@ function SeriesDetails({ idText }: { idText: string }) {
               />
             </SeriesHero>
           </div>
+          <SeriesSections key={series.id} series={series} />
           <section aria-labelledby="seasons-heading" className="series-section">
             <h2 id="seasons-heading">Seasons</h2>
             {!series.seasons.length && <p>No season information available.</p>}
