@@ -1,6 +1,6 @@
-import type { TvSeriesDetails } from '@movie-explorer/contracts';
+import type { SeriesDetails } from '@movie-explorer/contracts';
 
-export const tvResponse = {
+export const seriesResponse = {
   id: 1399,
   name: 'Localized series',
   original_name: 'Original series',
@@ -44,7 +44,7 @@ export const tvResponse = {
   ],
 };
 
-export const minimalTvDetails: TvSeriesDetails = {
+export const minimalSeriesDetails: SeriesDetails = {
   mediaType: 'tv',
   id: 1399,
   title: 'Series',
@@ -62,6 +62,8 @@ export const minimalTvDetails: TvSeriesDetails = {
   episodeRuntimeMinutes: [],
   rating: null,
   backdropUrl: null,
+  voteCount: null,
+  originCountries: [],
   creators: [],
   networks: [],
   productionCompanies: [],

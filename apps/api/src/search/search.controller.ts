@@ -1,10 +1,21 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiTags,
+  ApiBadRequestResponse,
+  ApiBadGatewayResponse,
+  ApiGatewayTimeoutResponse,
+  ApiTooManyRequestsResponse,
+} from '@nestjs/swagger';
 import type { SearchSuggestionsResponse } from '@movie-explorer/contracts';
 import { GetMovieSuggestionsQuery } from '../movies/movies.dto';
 import { SearchService } from './search.service';
 
-@ApiTags('search')
+@ApiTags('Search')
+@ApiBadRequestResponse({ description: 'Invalid search query or limit' })
+@ApiBadGatewayResponse({ description: 'Search providers failed' })
+@ApiGatewayTimeoutResponse({ description: 'Provider deadline exceeded' })
+@ApiTooManyRequestsResponse({ description: 'Provider rate limit reached' })
 @Controller('api/v1/search')
 export class SearchController {
   constructor(private readonly service: SearchService) {}

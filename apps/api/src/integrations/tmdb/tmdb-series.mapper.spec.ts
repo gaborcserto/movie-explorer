@@ -1,14 +1,17 @@
-import { TmdbTvMapper } from './tmdb-tv.mapper';
-import { validateTmdbTvDetails } from './tmdb-tv.validation';
-import { minimalTvDetails, tvResponse } from '../../../test/fixtures/tv';
+import { TmdbSeriesMapper } from './tmdb-series.mapper';
+import { validateTmdbSeriesDetails } from './tmdb-series.validation';
+import {
+  minimalSeriesDetails,
+  seriesResponse,
+} from '../../../test/fixtures/series';
 
-const mapper = new TmdbTvMapper('https://images.example/w500');
+const mapper = new TmdbSeriesMapper('https://images.example/w500');
 
-describe('TMDB TV mapping and validation', () => {
+describe('TMDB series mapping and validation', () => {
   it('maps complete localized series metadata without provider fields', () => {
-    const result = mapper.toSeriesDetails(tvResponse);
+    const result = mapper.toSeriesDetails(seriesResponse);
     expect(result).toEqual({
-      ...minimalTvDetails,
+      ...minimalSeriesDetails,
       title: 'Localized series',
       originalTitle: 'Original series',
       description: 'A series overview.',
@@ -25,6 +28,7 @@ describe('TMDB TV mapping and validation', () => {
       episodeCount: 73,
       episodeRuntimeMinutes: [50, 60],
       rating: 8.4,
+      voteCount: 200,
       genres: ['Drama'],
       creators: [
         {
@@ -73,8 +77,8 @@ describe('TMDB TV mapping and validation', () => {
 
   it('accepts minimal identity and represents missing metadata as unknown', () => {
     const body = { id: 1399, name: 'Series' };
-    expect(() => validateTmdbTvDetails(body, 1399)).not.toThrow();
-    expect(mapper.toSeriesDetails(body)).toEqual(minimalTvDetails);
+    expect(() => validateTmdbSeriesDetails(body, 1399)).not.toThrow();
+    expect(mapper.toSeriesDetails(body)).toEqual(minimalSeriesDetails);
   });
 
   it('normalizes null, empty and malformed optional fields without inventing values', () => {
@@ -98,7 +102,7 @@ describe('TMDB TV mapping and validation', () => {
         number_of_episodes: 1.5,
         in_production: 'true',
       }),
-    ).toEqual(minimalTvDetails);
+    ).toEqual(minimalSeriesDetails);
   });
 
   it('retains incomplete creators as unlinked names and skips nameless records', () => {
@@ -211,7 +215,7 @@ describe('TMDB TV mapping and validation', () => {
 
   it('rejects contradictory season coordinates and deduplicates repeated IDs', () => {
     expect(() =>
-      validateTmdbTvDetails(
+      validateTmdbSeriesDetails(
         {
           id: 1,
           name: 'Series',
@@ -222,7 +226,7 @@ describe('TMDB TV mapping and validation', () => {
         },
         1,
       ),
-    ).toThrow('Conflicting TV season identities');
+    ).toThrow('Conflicting series season identities');
     const season = { id: 10, season_number: 1, name: 'First' };
     expect(
       mapper.toSeriesDetails({
@@ -234,7 +238,7 @@ describe('TMDB TV mapping and validation', () => {
   });
 
   it('does not mutate nested input', () => {
-    const input = structuredClone(tvResponse);
+    const input = structuredClone(seriesResponse);
     const before = structuredClone(input);
     const result = mapper.toSeriesDetails(input);
     result.seasons.reverse();
@@ -253,8 +257,8 @@ describe('TMDB TV mapping and validation', () => {
     { id: 1, name: ' ' },
     { id: 1, name: 'Series', success: false },
   ])('rejects invalid primary payload %j', (body) => {
-    expect(() => validateTmdbTvDetails(body, 1)).toThrow(
-      'Invalid TV series identity',
+    expect(() => validateTmdbSeriesDetails(body, 1)).toThrow(
+      'Invalid series identity',
     );
   });
 });

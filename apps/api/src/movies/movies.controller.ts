@@ -4,6 +4,10 @@ import {
   ApiResponse,
   ApiNotFoundResponse,
   ApiParam,
+  ApiBadRequestResponse,
+  ApiBadGatewayResponse,
+  ApiGatewayTimeoutResponse,
+  ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 import {
   Get,
@@ -26,8 +30,16 @@ import type {
   MovieSuggestionsResponse,
 } from '@movie-explorer/contracts';
 
-@ApiTags('movies')
-@Controller('movies')
+@ApiTags('Movies')
+@ApiBadRequestResponse({
+  description: 'Invalid query or decimal safe-integer ID',
+})
+@ApiBadGatewayResponse({
+  description: 'Provider failure or malformed response',
+})
+@ApiGatewayTimeoutResponse({ description: 'Provider deadline exceeded' })
+@ApiTooManyRequestsResponse({ description: 'Provider rate limit reached' })
+@Controller('api/v1/movies')
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
 
@@ -48,6 +60,7 @@ export class MoviesController {
 
   // Intentionally public autocomplete; no authentication is required.
   // nestjs-doctor-ignore-next-line security/require-guards-on-endpoints
+  // Static routes must be registered before :id; validation runs after routing.
   @Get('suggestions')
   @ApiOperation({ summary: 'Get compact movie title suggestions' })
   public async getMovieSuggestions(
@@ -66,7 +79,11 @@ export class MoviesController {
     type: () => MovieDetailsDto,
   })
   @ApiNotFoundResponse({ description: 'Movie not found' })
-  @ApiParam({ name: 'id', description: 'Movie unique identifier' })
+  @ApiParam({
+    name: 'id',
+    description: 'Positive decimal safe integer movie ID',
+    schema: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  })
   public async getMovie(
     @Param() params: DetailIdParams,
   ): Promise<MovieDetails> {

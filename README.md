@@ -69,15 +69,28 @@ The running API serves its generated Swagger/OpenAPI documentation at [http://lo
 
 Filmography merges acting and crew credits by movie ID in first-seen order (cast followed by crew), excluding explicitly adult records. `actingCredits` contains distinct character names; an empty array records acting with an unknown character, while an absent field means no acting credit. `crewCredits` contains distinct department/job pairs, with unavailable values omitted. Movie summaries use an empty poster URL for missing posters and an empty genres array because the appended credits do not supply genre names. No per-movie requests, sorting, or pagination are performed.
 
-Existing `/movies` endpoints are unchanged. Movie details retain `cast` and `director` and add structured `castMembers` and `directors` with optional person IDs and responsive portraits. Person pages are available at `/person/:id`, with portraits, biographies, and filmographies.
+Canonical resources are `/api/v1/movies`, `/api/v1/series`, `/api/v1/persons`, and `/api/v1/search`. The former `/movies` and `/api/v1/tv` route trees have been removed and return 404. Swagger exposes only canonical operations. Movie details retain `cast` and `director` and add structured `castMembers` and `directors` with optional person IDs and responsive portraits. Person pages are available at `/person/:id`, with portraits, biographies, and filmographies.
 
-Unified autocomplete uses `GET /api/v1/search/suggestions?query=Alien&limit=6`. The limit applies to each group (maximum 10); the UI displays up to six movies and six people. Suggestions have a `mediaType` discriminator (`movie` or `person`), stable IDs, optional image URLs, and release year or known-for department. The existing `GET /movies/suggestions` response remains movie-only. Separate TMDB movie/person searches preserve movie ranking and prevent TV results from displacing people; no suggestion detail requests are made.
+Unified autocomplete uses `GET /api/v1/search/suggestions?query=Alien&limit=6`. The limit applies to each group (maximum 10); the UI displays up to six movies and six people. Suggestions have a `mediaType` discriminator (`movie` or `person`), stable IDs, optional image URLs, and release year or known-for department. The existing `GET /api/v1/movies/suggestions` response remains movie-only. Separate TMDB movie/person searches preserve movie ranking and prevent TV results from displacing people; no suggestion detail requests are made.
 
 `GET /api/v1/persons?query=Weaver&page=1` returns `people`, `page`, `totalPages`, and `totalResults`. Queries are trimmed, nonempty, and bounded to 100 characters; pages are bounded to 1-500. Search URLs use `/search/:searchQuery?view=people`; Movies is the default when `view` is absent. Movie filters remain in the URL when switching, but are never sent to person search. Each view loads on first visit and retains its own pagination while switching within the current query.
 
+### Series, seasons and episodes
+
+- `GET /api/v1/series/:id`: series metadata, creators, networks and actual season summaries, including Specials. Rating vote counts and origin countries come from the same upstream response.
+- `GET /api/v1/series/:id/seasons/:seasonNumber`: season metadata and ordered episode summaries. `episodeCount` is the number of returned records, not an advertised schedule total.
+- `GET /api/v1/series/:id/seasons/:seasonNumber/episodes/:episodeNumber`: episode metadata and independently available cast, guest stars and crew.
+- `GET /api/v1/series/:id/seasons/:seasonNumber/episodes/:episodeNumber/credits`: explicit episode credit recovery. Successful empty categories differ from unavailable categories.
+
+IDs and episode numbers are decimal safe integers from 1; season numbers start at 0. Invalid coordinates return 400; valid but missing resources return 404. Unknown series metadata uses null or empty collections. Season and episode numbers are preserved, with no filled gaps. Episode details append credits in one upstream request, preserving usable base guest/crew data. There is no automatic compound-request fallback; manual recovery has its own bounded request deadline. Series and season requests never fetch every child detail.
+
+Application-owned modules, adapters, contracts and UI helpers use Series naming (Season and Episode where unambiguous). The stable wire discriminator `mediaType: 'tv'` and existing `tv:id` identities are preserved; TMDB paths and payloads keep their official `tv` terminology.
+
+Frontend routes are `/tv/:id`, `/tv/:id/seasons/:seasonNumber`, and `/tv/:id/seasons/:seasonNumber/episodes/:episodeNumber`. Named seasons and Specials link to vertical episode lists. Previous/next links use actual current-season records; direct episode URLs load season context concurrently. Optional context failures leave primary details usable. Series search, whole-series credits/media, combined filmography, saved collections and recommendations remain deferred.
+
 ## Request failures and deadlines
 
-Browser API requests have a 12-second deadline, including JSON body reads. All existing request types use this default. Caller cancellation remains independent and silent in existing navigation/search flows; timeouts remain genuine failures eligible for manual retry. There are no automatic retry loops; detail requests have the bounded fallback described below. The API utility exposes typed categories (`invalid-request`, `not-found`, `rate-limited`, `internal-server`, `service-unavailable`, `http`, `network`, `timeout`, `cancelled`, `invalid-response`), retains available HTTP status, and keeps `isNotFoundError` compatibility. Rate-limit errors retain validated header delays as `retryAfterSeconds`. Invalid JSON is classified; successful JSON still uses endpoint contract types rather than comprehensive runtime schema validation in the browser.
+Browser API requests have a 12-second deadline, including JSON body reads. All existing request types use this default. Caller cancellation remains independent and silent in existing navigation/search flows; timeouts remain genuine failures eligible for manual retry. There are no automatic retry loops; detail requests have the bounded fallback described below. The API utility exposes typed categories (`invalid-request`, `not-found`, `rate-limited`, `internal-server`, `service-unavailable`, `http`, `network`, `timeout`, `cancelled`, `invalid-response`), retains available HTTP status, and keeps `isNotFoundError` compatibility. Rate-limit errors retain validated header delays as `retryAfterSeconds`. Invalid JSON is classified; Series responses receive runtime identity, coordinate, nested structure, nullability and availability validation. Legacy responses retain their existing validation.
 
 TMDB requests default to 8 seconds, including body reads. Set `TMDB_REQUEST_TIMEOUT_MS` to decimal integer milliseconds from 1 to 60000; invalid configuration fails startup. Keep it below the browser deadline where practical. Each upstream request has its own deadline, so sequential provider calls can exceed one upstream deadline.
 
@@ -118,10 +131,10 @@ still exceed the browser deadline on a slow upstream; cancellation remains silen
 There are no recommendations or independent person photo sections.
 
 Manual recovery endpoints return only the mapped section:
-- `GET /movies/:id/credits`: cast and crew fields.
-- `GET /movies/:id/photos`: `{ backdrops: [...] }` (the existing photo recovery route).
-- `GET /movies/:id/posters`: `{ posters: [...] }`.
-- `GET /movies/:id/videos`: `{ videos: [...] }`.
+- `GET /api/v1/movies/:id/credits`: cast and crew fields.
+- `GET /api/v1/movies/:id/photos`: `{ backdrops: [...] }` (the existing photo recovery route).
+- `GET /api/v1/movies/:id/posters`: `{ posters: [...] }`.
+- `GET /api/v1/movies/:id/videos`: `{ videos: [...] }`.
 - `GET /api/v1/persons/:id/filmography`: `{ filmography: [...] }`.
 
 Movie details expose complete `backdrops`, `posters`, and `videos` collections,

@@ -10,7 +10,8 @@ import type { MovieProvider } from '../src/movies/movie-provider';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { MOVIE_PROVIDER } from './../src/movies/movie-provider';
-import { TV_PROVIDER } from '../src/tv/tv-provider';
+import { SERIES_PROVIDER } from '../src/series/series-provider';
+import { createApiDocument } from '../src/api-document';
 
 const movies = [
   {
@@ -35,13 +36,85 @@ const movieProvider: jest.Mocked<MovieProvider> = {
 describe('AppController (e2e)', () => {
   let app: INestApplication;
 
+  it.each([
+    '',
+    '/1',
+    '/suggestions?query=Alien',
+    '/1/credits',
+    '/1/photos',
+    '/1/posters',
+    '/1/videos',
+  ])('returns 404 for removed movie route /movies%s', async (suffix) => {
+    await request(app.getHttpServer())
+      .get('/movies' + suffix)
+      .expect(404);
+    expect(movieProvider.findAll).not.toHaveBeenCalled();
+    expect(movieProvider.findOne).not.toHaveBeenCalled();
+    expect(movieProvider.findSuggestions).not.toHaveBeenCalled();
+    expect(movieProvider.findMovieSection).not.toHaveBeenCalled();
+  });
+
+  it('documents only canonical operations with unique IDs and current schemas', () => {
+    const document = createApiDocument(app);
+    const expectedPaths = [
+      '/api/v1/movies',
+      '/api/v1/movies/suggestions',
+      '/api/v1/movies/{id}',
+      ...['credits', 'photos', 'posters', 'videos'].map(
+        (section) => '/api/v1/movies/{id}/' + section,
+      ),
+      '/api/v1/persons',
+      '/api/v1/persons/{id}',
+      '/api/v1/persons/{id}/filmography',
+      '/api/v1/search/suggestions',
+      '/api/v1/series/{id}',
+      '/api/v1/series/{id}/seasons/{seasonNumber}',
+      '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}',
+      '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}/credits',
+    ];
+    expect(Object.keys(document.paths).sort()).toEqual(expectedPaths.sort());
+    const operations = Object.values(document.paths).map((item) => item.get);
+    for (const operation of operations) {
+      expect(operation).toBeDefined();
+      expect(operation.deprecated).not.toBe(true);
+      expect(operation.operationId).toBeTruthy();
+      expect(operation.operationId).not.toMatch(/Tv|legacy/);
+    }
+    const ids = operations.map((operation) => operation.operationId);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(new Set(operations.flatMap((operation) => operation.tags))).toEqual(
+      new Set(['Movies', 'Series', 'Persons', 'Search']),
+    );
+    expect(
+      Object.keys(document.components.schemas).filter((name) =>
+        name.startsWith('Tv'),
+      ),
+    ).toEqual([]);
+    expect(document.paths['/api/v1/series/{id}'].get.operationId).toBe(
+      'SeriesController_getSeries',
+    );
+  });
+
+  it.each(['', '/269149', '/suggestions?query=Alien'])(
+    'serves canonical movie responses at %s',
+    async (suffix) => {
+      await request(app.getHttpServer())
+        .get('/api/v1/movies' + suffix)
+        .expect(200);
+      if (suffix.startsWith('/suggestions')) {
+        expect(movieProvider.findSuggestions).toHaveBeenCalledWith('Alien', 6);
+        expect(movieProvider.findOne).not.toHaveBeenCalled();
+      }
+    },
+  );
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(MOVIE_PROVIDER)
       .useValue(movieProvider)
-      .overrideProvider(TV_PROVIDER)
+      .overrideProvider(SERIES_PROVIDER)
       .useValue({ findOne: jest.fn() })
       .compile();
 
@@ -88,7 +161,7 @@ describe('AppController (e2e)', () => {
     '42 ',
     '+42',
   ])('rejects invalid detail ID %s before calling the provider', async (id) => {
-    for (const base of ['/movies', '/api/v1/persons']) {
+    for (const base of ['/api/v1/movies', '/api/v1/persons']) {
       await request(app.getHttpServer())
         .get(base + '/' + encodeURIComponent(id))
         .expect(400)
@@ -105,7 +178,7 @@ describe('AppController (e2e)', () => {
     'accepts safe positive decimal detail ID %s',
     async (id) => {
       await request(app.getHttpServer())
-        .get('/movies/' + id)
+        .get('/api/v1/movies/' + id)
         .expect(200);
       await request(app.getHttpServer())
         .get('/api/v1/persons/' + id)
@@ -130,7 +203,7 @@ describe('AppController (e2e)', () => {
     );
 
     await request(app.getHttpServer())
-      .get('/movies/1')
+      .get('/api/v1/movies/1')
       .expect(429)
       .expect('Retry-After', '15')
       .expect({
@@ -152,7 +225,7 @@ describe('AppController (e2e)', () => {
       );
 
       await request(app.getHttpServer())
-        .get('/movies/1')
+        .get('/api/v1/movies/1')
         .expect(status)
         .expect({ statusCode: status, message: 'Safe provider failure' });
     },
@@ -168,13 +241,13 @@ describe('AppController (e2e)', () => {
       movieProvider.findMovieSection.mockResolvedValueOnce(body);
 
       await request(app.getHttpServer())
-        .get(`/movies/42/${section}`)
+        .get(`/api/v1/movies/42/${section}`)
         .expect(200)
         .expect(body);
       expect(movieProvider.findMovieSection).toHaveBeenCalledWith(42, section);
 
       await request(app.getHttpServer())
-        .get(`/movies/0/${section}`)
+        .get(`/api/v1/movies/0/${section}`)
         .expect(400);
       expect(movieProvider.findMovieSection).toHaveBeenCalledTimes(1);
     },
@@ -234,7 +307,7 @@ describe('AppController (e2e)', () => {
     movieProvider.findOne.mockResolvedValueOnce(movie);
 
     await request(app.getHttpServer())
-      .get('/movies/269149')
+      .get('/api/v1/movies/269149')
       .expect(200)
       .expect(movie);
   });
@@ -252,7 +325,7 @@ describe('AppController (e2e)', () => {
     movieProvider.findOne.mockResolvedValueOnce(movie);
 
     await request(app.getHttpServer())
-      .get('/movies/1')
+      .get('/api/v1/movies/1')
       .expect(200)
       .expect(movie);
     const person = {
@@ -315,7 +388,7 @@ describe('AppController (e2e)', () => {
     expect(movieProvider.findPeople).toHaveBeenCalledWith('Query', 1);
 
     await request(app.getHttpServer())
-      .get('/movies/suggestions?query=Query')
+      .get('/api/v1/movies/suggestions?query=Query')
       .expect(200)
       .expect({ suggestions: [{ id: 5, title: 'Movie' }] });
   });
@@ -358,9 +431,9 @@ describe('AppController (e2e)', () => {
     }
   });
 
-  it('/movies (GET)', () => {
+  it('/api/v1/movies (GET)', () => {
     return request(app.getHttpServer())
-      .get('/movies')
+      .get('/api/v1/movies')
       .expect(200)
       .expect((response) => {
         expect(response.body).toEqual({
@@ -447,7 +520,9 @@ describe('AppController (e2e)', () => {
       '200',
       '400',
       '404',
+      '429',
       '502',
+      '504',
     ]);
     expect(operation.parameters).toContainEqual(
       expect.objectContaining({
@@ -517,15 +592,15 @@ describe('AppController (e2e)', () => {
     });
   });
 
-  it('/movies/:id (GET)', async () => {
+  it('/api/v1/movies/:id (GET)', async () => {
     const moviesResponse = await request(app.getHttpServer())
-      .get('/movies')
+      .get('/api/v1/movies')
       .expect(200);
 
     const movieId = moviesResponse.body.movies[0].id;
 
     return request(app.getHttpServer())
-      .get(`/movies/${movieId}`)
+      .get(`/api/v1/movies/${movieId}`)
       .expect(200)
       .expect((response) => {
         expect(response.body).toEqual({
@@ -562,12 +637,12 @@ describe('AppController (e2e)', () => {
     };
     movieProvider.findOne.mockResolvedValueOnce(details);
     await request(app.getHttpServer())
-      .get(`/movies/${details.id}`)
+      .get(`/api/v1/movies/${details.id}`)
       .expect(200)
       .expect(details);
   });
 
-  it('/movies (GET) supports search, filters, and pagination parameters', () => {
+  it('/api/v1/movies (GET) supports search, filters, and pagination parameters', () => {
     movieProvider.findAll.mockResolvedValueOnce({
       movies,
       page: 2,
@@ -576,7 +651,7 @@ describe('AppController (e2e)', () => {
     });
 
     return request(app.getHttpServer())
-      .get('/movies')
+      .get('/api/v1/movies')
       .query({
         search: 'Zootopia',
         genre: 'animation',
@@ -603,9 +678,9 @@ describe('AppController (e2e)', () => {
       });
   });
 
-  it('/movies (GET) supports explicit popularity direction', async () => {
+  it('/api/v1/movies (GET) supports explicit popularity direction', async () => {
     await request(app.getHttpServer())
-      .get('/movies')
+      .get('/api/v1/movies')
       .query({ sort: 'popularity', sortOrder: 'asc' })
       .expect(200);
 
@@ -617,20 +692,20 @@ describe('AppController (e2e)', () => {
     );
   });
 
-  it('/movies (GET) rejects invalid query parameters', () => {
+  it('/api/v1/movies (GET) rejects invalid query parameters', () => {
     return request(app.getHttpServer())
-      .get('/movies')
+      .get('/api/v1/movies')
       .query({ sort: 'unknown' })
       .expect(400);
   });
 
-  it('/movies/suggestions (GET) validates and forwards compact searches', async () => {
+  it('/api/v1/movies/suggestions (GET) validates and forwards compact searches', async () => {
     movieProvider.findSuggestions.mockResolvedValueOnce({
       suggestions: [{ id: 269149, title: 'Zootopia', releaseYear: 2016 }],
     });
 
     await request(app.getHttpServer())
-      .get('/movies/suggestions')
+      .get('/api/v1/movies/suggestions')
       .query({ query: 'Zoo', limit: 5 })
       .expect(200)
       .expect({
@@ -639,29 +714,37 @@ describe('AppController (e2e)', () => {
     expect(movieProvider.findSuggestions).toHaveBeenCalledWith('Zoo', 5);
 
     await request(app.getHttpServer())
-      .get('/movies/suggestions')
+      .get('/api/v1/movies/suggestions')
       .query({ query: 'Z' })
       .expect(400);
   });
 
-  it('/movies/:id (GET) returns 404 when the provider cannot find the movie', () => {
+  it('/api/v1/movies/:id (GET) returns 404 when the provider cannot find the movie', () => {
     movieProvider.findOne.mockResolvedValueOnce(undefined);
 
     return request(app.getHttpServer())
-      .get('/movies/999')
+      .get('/api/v1/movies/999')
       .expect(404)
       .expect((response) => {
         expect(response.body.message).toBe('Movie not found');
       });
   });
 
-  it('/movies/:id (GET) rejects non-numeric IDs', () => {
-    return request(app.getHttpServer()).get('/movies/not-a-number').expect(400);
+  it('/api/v1/movies/:id (GET) rejects non-numeric IDs', () => {
+    return request(app.getHttpServer())
+      .get('/api/v1/movies/not-a-number')
+      .expect(400);
   });
 
   it('does not expose movie mutation endpoints', async () => {
-    await request(app.getHttpServer()).post('/movies').send({}).expect(404);
-    await request(app.getHttpServer()).put('/movies').send({}).expect(404);
-    await request(app.getHttpServer()).delete('/movies/1').expect(404);
+    await request(app.getHttpServer())
+      .post('/api/v1/movies')
+      .send({})
+      .expect(404);
+    await request(app.getHttpServer())
+      .put('/api/v1/movies')
+      .send({})
+      .expect(404);
+    await request(app.getHttpServer()).delete('/api/v1/movies/1').expect(404);
   });
 });

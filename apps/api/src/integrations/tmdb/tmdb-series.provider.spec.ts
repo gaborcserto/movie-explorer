@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 
-import { TmdbTvProvider } from './tmdb-tv.provider';
-import { minimalTvDetails } from '../../../test/fixtures/tv';
+import { TmdbSeriesProvider } from './tmdb-series.provider';
+import { minimalSeriesDetails } from '../../../test/fixtures/series';
 
 const config = {
   accessToken: 'test-token',
@@ -12,10 +12,10 @@ const config = {
   requestTimeoutMs: 50,
 };
 
-describe('TmdbTvProvider', () => {
+describe('TmdbSeriesProvider', () => {
   const originalFetch = global.fetch;
   const fetchMock = jest.fn();
-  let provider: TmdbTvProvider;
+  let provider: TmdbSeriesProvider;
   let warn: jest.SpyInstance;
 
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe('TmdbTvProvider', () => {
     warn = jest
       .spyOn(Logger.prototype, 'warn')
       .mockImplementation(() => undefined);
-    provider = new TmdbTvProvider(config);
+    provider = new TmdbSeriesProvider(config);
   });
 
   afterEach(() => {
@@ -35,7 +35,7 @@ describe('TmdbTvProvider', () => {
 
   it('makes exactly one authenticated localized details request without appends', async () => {
     fetchMock.mockResolvedValue(Response.json({ id: 1399, name: 'Series' }));
-    await expect(provider.findOne(1399)).resolves.toEqual(minimalTvDetails);
+    await expect(provider.findOne(1399)).resolves.toEqual(minimalSeriesDetails);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init]: [URL, RequestInit] = fetchMock.mock.calls[0];
     expect(url.pathname).toBe('/3/tv/1399');
@@ -48,7 +48,7 @@ describe('TmdbTvProvider', () => {
   });
 
   it('uses default locale and no region when not configured', async () => {
-    provider = new TmdbTvProvider({
+    provider = new TmdbSeriesProvider({
       ...config,
       region: undefined,
       language: 'en-US',
@@ -88,7 +88,7 @@ describe('TmdbTvProvider', () => {
       });
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(warn).toHaveBeenCalledWith({
-        operation: 'tv-details',
+        operation: 'series-details',
         failure: 'http',
         upstreamStatus: status,
         applicationStatus: 502,

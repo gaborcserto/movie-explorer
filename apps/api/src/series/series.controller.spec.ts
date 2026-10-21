@@ -1,19 +1,24 @@
 import { NotFoundException } from '@nestjs/common';
 
-import { TvController } from './tv.controller';
-import { TvService } from './tv.service';
-import { minimalTvDetails } from '../../test/fixtures/tv';
+import { SeriesController } from './series.controller';
+import { SeriesService } from './series.service';
+import { minimalSeriesDetails } from '../../test/fixtures/series';
 
-describe('TvController', () => {
-  const provider = { findOne: jest.fn() };
-  const controller = new TvController(new TvService(provider));
+describe('SeriesController', () => {
+  const provider = {
+    findOne: jest.fn(),
+    findSeason: jest.fn(),
+    findEpisode: jest.fn(),
+    findEpisodeCredits: jest.fn(),
+  };
+  const controller = new SeriesController(new SeriesService(provider));
 
   beforeEach(() => provider.findOne.mockReset());
 
   it('returns normalized details', async () => {
-    provider.findOne.mockResolvedValue(minimalTvDetails);
+    provider.findOne.mockResolvedValue(minimalSeriesDetails);
     await expect(controller.getSeries({ id: 1399 })).resolves.toEqual(
-      minimalTvDetails,
+      minimalSeriesDetails,
     );
     expect(provider.findOne).toHaveBeenCalledWith(1399);
   });

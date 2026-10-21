@@ -7,6 +7,9 @@ import SearchHistoryProvider from './components/list/searchHistory';
 import Loading from './layouts/loading';
 
 const PersonPage = lazy(() => import('./pages/personPage/personPage'));
+const SeriesPage = lazy(() => import('./pages/series/seriesPage'));
+const SeasonPage = lazy(() => import('./pages/series/seasonPage'));
+const EpisodePage = lazy(() => import('./pages/series/episodePage'));
 
 function App() {
   return (
@@ -17,6 +20,51 @@ function App() {
           <Route path="/search/:searchQuery" element={<HomePage />} />
           <Route path="/search" element={<HomePage />} />
           <Route path="/movie/:movieId" element={<HomePage />} />
+          <Route
+            path="/tv/:id"
+            element={
+              <Suspense
+                fallback={
+                  <Loading
+                    className="main route-loading"
+                    title="Loading series"
+                  />
+                }
+              >
+                <SeriesPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/tv/:id/seasons/:seasonNumber"
+            element={
+              <Suspense
+                fallback={
+                  <Loading
+                    className="main route-loading"
+                    title="Loading season"
+                  />
+                }
+              >
+                <SeasonPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/tv/:id/seasons/:seasonNumber/episodes/:episodeNumber"
+            element={
+              <Suspense
+                fallback={
+                  <Loading
+                    className="main route-loading"
+                    title="Loading episode"
+                  />
+                }
+              >
+                <EpisodePage />
+              </Suspense>
+            }
+          />
           <Route
             path="/person/:id"
             element={

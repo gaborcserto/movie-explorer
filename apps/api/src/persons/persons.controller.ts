@@ -13,13 +13,23 @@ import {
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiGatewayTimeoutResponse,
+  ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 import type { PersonDetails } from '@movie-explorer/contracts';
 import { GetPersonParams, PersonDetailsDto } from './persons.dto';
 import { PersonsService } from './persons.service';
 import { GetPeopleQuery } from './people.dto';
 
-@ApiTags('persons')
+@ApiTags('Persons')
+@ApiBadRequestResponse({
+  description: 'Invalid query or decimal safe-integer ID',
+})
+@ApiBadGatewayResponse({
+  description: 'Provider failure or malformed response',
+})
+@ApiGatewayTimeoutResponse({ description: 'Provider deadline exceeded' })
+@ApiTooManyRequestsResponse({ description: 'Provider rate limit reached' })
 @Controller('api/v1/persons')
 export class PersonsController {
   constructor(private readonly personsService: PersonsService) {}

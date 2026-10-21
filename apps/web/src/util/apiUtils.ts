@@ -10,6 +10,10 @@ import type {
   PersonDetails,
   PersonListResponse,
   SearchSuggestionsResponse,
+  SeriesDetails,
+  SeasonDetails,
+  EpisodeDetails,
+  EpisodeCredits,
 } from '@movie-explorer/contracts';
 
 import {
@@ -21,13 +25,19 @@ import {
   optionalText,
 } from './partialValidation';
 import type { URLParams } from '../types';
+import {
+  seriesDetails,
+  seasonDetails,
+  episodeDetails,
+  episodeCredits,
+} from './seriesValidation';
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const apiBaseUrl = (configuredApiBaseUrl ?? 'http://localhost:4000').replace(
   /\/+$/,
   ''
 );
-const moviesUrl = `${apiBaseUrl}/movies`;
+const moviesUrl = `${apiBaseUrl}/api/v1/movies`;
 
 export type ApiErrorCategory =
   | 'invalid-request'
@@ -149,6 +159,66 @@ async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
 export const isNotFoundError = (error: unknown): boolean => {
   return error instanceof ApiRequestError && error.status === 404;
 };
+
+export async function getSeries(
+  id: number,
+  signal?: AbortSignal
+): Promise<SeriesDetails> {
+  const body = await request<unknown>(`${apiBaseUrl}/api/v1/series/${id}`, {
+    signal,
+  });
+  if (!seriesDetails(body, id)) {
+    throw new ApiRequestError('invalid-response');
+  }
+  return body;
+}
+
+export async function getSeason(
+  id: number,
+  season: number,
+  signal?: AbortSignal
+): Promise<SeasonDetails> {
+  const body = await request<unknown>(
+    `${apiBaseUrl}/api/v1/series/${id}/seasons/${season}`,
+    { signal }
+  );
+  if (!seasonDetails(body, id, season)) {
+    throw new ApiRequestError('invalid-response');
+  }
+  return body;
+}
+
+export async function getEpisode(
+  id: number,
+  season: number,
+  episode: number,
+  signal?: AbortSignal
+): Promise<EpisodeDetails> {
+  const body = await request<unknown>(
+    `${apiBaseUrl}/api/v1/series/${id}/seasons/${season}/episodes/${episode}`,
+    { signal }
+  );
+  if (!episodeDetails(body, id, season, episode)) {
+    throw new ApiRequestError('invalid-response');
+  }
+  return body;
+}
+
+export async function getEpisodeCredits(
+  id: number,
+  season: number,
+  episode: number,
+  signal?: AbortSignal
+): Promise<EpisodeCredits> {
+  const body = await request<unknown>(
+    `${apiBaseUrl}/api/v1/series/${id}/seasons/${season}/episodes/${episode}/credits`,
+    { signal }
+  );
+  if (!episodeCredits(body)) {
+    throw new ApiRequestError('invalid-response');
+  }
+  return body;
+}
 
 export const getMovie = async (
   id: number,

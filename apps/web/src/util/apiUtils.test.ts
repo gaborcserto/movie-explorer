@@ -128,7 +128,7 @@ test('accepts categorized media metadata and targets the poster recovery endpoin
     posters: [image],
   });
   expect(fetchMock).toHaveBeenLastCalledWith(
-    'http://localhost:4000/movies/1234/posters',
+    'http://localhost:4000/api/v1/movies/1234/posters',
     { signal: expect.any(AbortSignal) }
   );
 });
@@ -340,7 +340,7 @@ describe('API functions', () => {
 
     await expect(getMovie(mockMovieData.id)).resolves.toEqual(mockMovieData);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:4000/movies/1234',
+      'http://localhost:4000/api/v1/movies/1234',
       { signal: expect.any(AbortSignal) }
     );
   });
@@ -351,7 +351,7 @@ describe('API functions', () => {
 
     await expect(getMovies(params)).resolves.toEqual(mockMoviesData);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:4000/movies?sort=popularity&sortOrder=desc',
+      'http://localhost:4000/api/v1/movies?sort=popularity&sortOrder=desc',
       { signal: expect.any(AbortSignal) }
     );
   });
@@ -368,7 +368,7 @@ describe('API functions', () => {
     await getMovies(params);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:4000/movies?search=zodiac&genre=crime',
+      'http://localhost:4000/api/v1/movies?search=zodiac&genre=crime',
       { signal: expect.any(AbortSignal) }
     );
   });
@@ -388,7 +388,7 @@ describe('API functions', () => {
     await getMovies({ sort, sortOrder });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      `http://localhost:4000/movies?${query}`,
+      `http://localhost:4000/api/v1/movies?${query}`,
       { signal: expect.any(AbortSignal) }
     );
   });
@@ -399,7 +399,7 @@ describe('API functions', () => {
     await getMovies({ genres: 'crime' });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:4000/movies?sort=popularity&sortOrder=desc&genre=crime',
+      'http://localhost:4000/api/v1/movies?sort=popularity&sortOrder=desc&genre=crime',
       { signal: expect.any(AbortSignal) }
     );
   });
@@ -415,7 +415,7 @@ describe('API functions', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:4000/movies?sort=popularity&sortOrder=desc&genre=science+fiction&releaseYear=2024&minimumRating=7&page=3',
+      'http://localhost:4000/api/v1/movies?sort=popularity&sortOrder=desc&genre=science+fiction&releaseYear=2024&minimumRating=7&page=3',
       { signal: expect.any(AbortSignal) }
     );
   });
@@ -427,7 +427,7 @@ describe('API functions', () => {
     await getMovieSuggestions('Alien', controller.signal);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:4000/movies/suggestions?query=Alien&limit=6',
+      'http://localhost:4000/api/v1/movies/suggestions?query=Alien&limit=6',
       { signal: expect.any(AbortSignal) }
     );
   });

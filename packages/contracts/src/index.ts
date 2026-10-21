@@ -29,9 +29,15 @@ export type {
 export type { SectionAvailability, MovieSection } from './availability';
 export type { MovieSectionResponse } from './movies';
 export type {
-  TvSeriesSummary,
-  TvSeriesDetails,
-  TvSeasonSummary,
-  TvOrganization,
+  SeriesSummary,
+  SeriesDetails,
+  SeasonSummary,
+  SeriesOrganization,
   CreditPerson,
-} from './tv';
+  SeasonDetails,
+  EpisodeSummary,
+  EpisodeDetails,
+  EpisodeCredits,
+  EpisodeCastMember,
+  EpisodeCrewMember,
+} from './series';
