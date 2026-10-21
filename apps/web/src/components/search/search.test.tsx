@@ -120,7 +120,7 @@ describe('Search Component', () => {
     });
     renderSearch();
     const input = screen.getByRole('combobox', {
-      name: 'Search movies and people',
+      name: 'Search movies, series and people',
     });
 
     fireEvent.change(input, { target: { value: 'Al' } });
@@ -162,7 +162,7 @@ describe('Search Component', () => {
       });
     renderSearch();
     const input = screen.getByRole('combobox', {
-      name: 'Search movies and people',
+      name: 'Search movies, series and people',
     });
 
     fireEvent.change(input, { target: { value: 'Al' } });

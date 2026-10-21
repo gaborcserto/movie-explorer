@@ -76,12 +76,14 @@ function FilterSection({
 export default function FilterPanel({
   committed,
   isSearch,
+  series = false,
   onApply,
   onClose,
   closing,
 }: {
   committed: FilterValues;
   isSearch: boolean;
+  series?: boolean;
   onApply: (values: FilterValues) => void;
   onClose: () => void;
   closing: boolean;
@@ -264,36 +266,40 @@ export default function FilterPanel({
         }}
       >
         <div className="filter-panel__content">
+          {!series && (
+            <FilterSection
+              title="Genre"
+              value={
+                draft.filter
+                  ? draft.filter[0].toUpperCase() + draft.filter.slice(1)
+                  : 'All Genres'
+              }
+              icon={<FaFilm aria-hidden="true" />}
+            >
+              <div className="filter-chips" role="group" aria-label="Genre">
+                {['', ...genresFilter].map((genre) => (
+                  <button
+                    type="button"
+                    key={genre}
+                    aria-pressed={draft.filter === genre}
+                    onClick={() =>
+                      update({ filter: draft.filter === genre ? '' : genre })
+                    }
+                  >
+                    {genre || 'All genres'}
+                  </button>
+                ))}
+              </div>
+            </FilterSection>
+          )}
           <FilterSection
-            title="Genre"
-            value={
-              draft.filter
-                ? draft.filter[0].toUpperCase() + draft.filter.slice(1)
-                : 'All Genres'
-            }
-            icon={<FaFilm aria-hidden="true" />}
-          >
-            <div className="filter-chips" role="group" aria-label="Genre">
-              {['', ...genresFilter].map((genre) => (
-                <button
-                  type="button"
-                  key={genre}
-                  aria-pressed={draft.filter === genre}
-                  onClick={() =>
-                    update({ filter: draft.filter === genre ? '' : genre })
-                  }
-                >
-                  {genre || 'All genres'}
-                </button>
-              ))}
-            </div>
-          </FilterSection>
-          <FilterSection
-            title="Release Year"
+            title={series ? 'First-air Year' : 'Release Year'}
             value={draft.year || 'Any Year'}
             icon={<FaCalendarDays aria-hidden="true" />}
           >
-            <label htmlFor={yearId}>Release year</label>
+            <label htmlFor={yearId}>
+              {series ? 'First-air year' : 'Release year'}
+            </label>
             <input
               id={yearId}
               type="text"
@@ -337,26 +343,30 @@ export default function FilterPanel({
               Any Year
             </button>
           </FilterSection>
-          <FilterSection
-            title="Minimum Rating"
-            value={draft.rating ? `${draft.rating}+ TMDB rating` : 'Any Rating'}
-            icon={<FaStar aria-hidden="true" />}
-          >
-            <label>
-              Minimum TMDB rating
-              <select
-                value={draft.rating}
-                onChange={(event) => update({ rating: event.target.value })}
-              >
-                <option value="">Any Rating</option>
-                {ratingOptions.map((rating) => (
-                  <option key={rating} value={rating}>
-                    {rating}+
-                  </option>
-                ))}
-              </select>
-            </label>
-          </FilterSection>
+          {!series && (
+            <FilterSection
+              title="Minimum Rating"
+              value={
+                draft.rating ? `${draft.rating}+ TMDB rating` : 'Any Rating'
+              }
+              icon={<FaStar aria-hidden="true" />}
+            >
+              <label>
+                Minimum TMDB rating
+                <select
+                  value={draft.rating}
+                  onChange={(event) => update({ rating: event.target.value })}
+                >
+                  <option value="">Any Rating</option>
+                  {ratingOptions.map((rating) => (
+                    <option key={rating} value={rating}>
+                      {rating}+
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </FilterSection>
+          )}
           <FilterSection
             title="Sort By"
             value={isSearch ? 'Relevance' : getSortLabel(draft.sorting)}

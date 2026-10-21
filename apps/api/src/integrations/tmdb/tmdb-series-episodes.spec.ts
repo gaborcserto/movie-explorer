@@ -203,6 +203,52 @@ describe('series season/episode transport', () => {
     expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(true);
   });
 
+  it('accepts ID-less appended episode credits and matches standalone recovery without an initial waterfall', async () => {
+    const credits = {
+      cast: [{ id: 2, name: 'Actor', character: 'A' }],
+      guest_stars: [],
+      crew: [],
+    };
+    fetchMock
+      .mockResolvedValueOnce(Response.json({ ...episode, credits }))
+      .mockResolvedValueOnce(Response.json({ id: episode.id, ...credits }));
+
+    const result = await provider.findEpisode(1, 0, 3);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.credits.cast).toEqual([
+      { id: 2, name: 'Actor', characters: ['A'] },
+    ]);
+    expect(result.credits.sections).toEqual({
+      cast: { status: 'available' },
+      guestStars: { status: 'available' },
+      crew: { status: 'available' },
+    });
+    await expect(provider.findEpisodeCredits(1, 0, 3)).resolves.toEqual(
+      result.credits,
+    );
+  });
+
+  it.each([31, null, '30'])(
+    'rejects explicitly conflicting appended episode credit identity %j',
+    async (id) => {
+      fetchMock.mockResolvedValue(
+        Response.json({
+          ...episode,
+          credits: {
+            id,
+            cast: [{ id: 2, name: 'Wrong actor' }],
+            guest_stars: [],
+            crew: [],
+          },
+        }),
+      );
+      const result = await provider.findEpisode(1, 0, 3);
+      expect(result.credits.cast).toEqual([]);
+      expect(result.credits.sections.cast.status).toBe('unavailable');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    },
+  );
+
   it.each(['season', 'episode', 'credits'])(
     'preserves resource 404 for %s',
     async (kind) => {

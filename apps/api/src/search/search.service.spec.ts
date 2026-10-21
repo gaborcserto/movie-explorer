@@ -12,7 +12,8 @@ describe('independent autocomplete groups', () => {
     findMovieSection: jest.fn(),
     findFilmography: jest.fn(),
   };
-  const service = new SearchService(provider);
+  const searchProvider = { find: jest.fn() };
+  const service = new SearchService(provider, searchProvider);
 
   beforeEach(() => jest.resetAllMocks());
 
@@ -91,4 +92,51 @@ describe('independent autocomplete groups', () => {
       status: 429,
     });
   });
+
+  it.each([0, 1, 2, 3, 4, 5, 6, 7])(
+    'retains every successful autocomplete group in failure combination %s',
+    async (failures) => {
+      provider.findSuggestions.mockResolvedValue({
+        suggestions: [{ id: 1, title: 'Movie' }],
+      });
+      provider.findPeople.mockResolvedValue({
+        people: [{ id: 1, name: 'Person' }],
+        page: 1,
+        totalPages: 1,
+        totalResults: 1,
+      });
+      searchProvider.find.mockResolvedValue({
+        results: [{ id: 1, mediaType: 'tv', title: 'Series' }],
+        page: 1,
+        totalPages: 1,
+        totalResults: 1,
+      });
+      if (failures & 1)
+        provider.findSuggestions.mockRejectedValue(new BadGatewayException());
+      if (failures & 2)
+        searchProvider.find.mockRejectedValue(
+          new HttpException({ retryAfter: 12 }, 429),
+        );
+      if (failures & 4)
+        provider.findPeople.mockRejectedValue(new BadGatewayException());
+
+      const request = service.suggestions('Query', 1, true);
+      if (failures === 7) {
+        await expect(request).rejects.toMatchObject({ status: 429 });
+        return;
+      }
+      const response = await request;
+      expect(response.suggestions.map((item) => item.mediaType)).toEqual(
+        ['movie', 'tv', 'person'].filter(
+          (_type, index) => !(failures & (1 << index)),
+        ),
+      );
+      expect(response.groups.tv).toEqual(
+        failures & 2
+          ? { status: 'unavailable', retryAfterSeconds: 12 }
+          : { status: 'available' },
+      );
+      expect(searchProvider.find).toHaveBeenCalledTimes(1);
+    },
+  );
 });

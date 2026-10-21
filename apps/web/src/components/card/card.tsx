@@ -11,6 +11,7 @@ interface CardProps {
   loading?: 'lazy' | 'eager';
   destination?: string;
   subtitle?: string;
+  displayDate?: string;
   genreNavigation?: boolean;
 }
 
@@ -19,12 +20,13 @@ function Card({
   loading = 'lazy',
   destination,
   subtitle,
+  displayDate,
   genreNavigation = true,
 }: CardProps) {
   const { id, title, releaseDate, posterUrl, posterSrcSet, genres } = movie;
   const [searchParams] = useSearchParams();
 
-  const releaseYear = releaseDate?.substring(0, 4);
+  const releaseYear = (displayDate ?? releaseDate)?.substring(0, 4);
   const movieUrl = `/movie/${id}${
     searchParams.size ? `?${searchParams.toString()}` : ''
   }`;

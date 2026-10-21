@@ -2,6 +2,8 @@ import MovieImage from '../utility/customImage';
 import type useAutocomplete from './useAutocomplete';
 import './suggestions.scss';
 
+const groupLabels = { movie: 'Movies', tv: 'Series', person: 'People' };
+
 type Props = { autocomplete: ReturnType<typeof useAutocomplete> };
 
 export default function Suggestions({ autocomplete }: Props) {
@@ -25,30 +27,28 @@ export default function Suggestions({ autocomplete }: Props) {
         className="search-suggestions"
         id={autocomplete.listId}
         role="listbox"
-        aria-label="Movie and person suggestions"
+        aria-label="Movie, Series and Person suggestions"
       >
-        {(['movie', 'person'] as const).map((type) => {
+        {(['movie', 'tv', 'person'] as const).map((type) => {
           const items = autocomplete.suggestions.filter(
             (item) => item.mediaType === type
           );
           if (!items.length) return null;
           return (
-            <div
-              key={type}
-              role="group"
-              aria-label={type === 'movie' ? 'Movies' : 'People'}
-            >
+            <div key={type} role="group" aria-label={groupLabels[type]}>
               <div className="search-suggestions__heading" aria-hidden="true">
-                {type === 'movie' ? 'Movies' : 'People'}
+                {groupLabels[type]}
               </div>
               {items.map((item) => {
                 const index = autocomplete.suggestions.indexOf(item);
                 const name =
-                  item.mediaType === 'movie' ? item.title : item.name;
-                const metadata =
-                  item.mediaType === 'movie'
-                    ? item.releaseYear
-                    : item.knownForDepartment;
+                  item.mediaType === 'person' ? item.name : item.title;
+                let metadata: string | number | undefined;
+                if (item.mediaType === 'movie') metadata = item.releaseYear;
+                else if (item.mediaType === 'tv')
+                  metadata = item.firstAirDate?.slice(0, 4);
+                else metadata = item.knownForDepartment;
+
                 return (
                   <div
                     key={item.id}
@@ -67,9 +67,9 @@ export default function Suggestions({ autocomplete }: Props) {
                   >
                     <MovieImage
                       src={
-                        item.mediaType === 'movie'
-                          ? item.posterUrl
-                          : item.profileUrl
+                        item.mediaType === 'person'
+                          ? item.profileUrl
+                          : item.posterUrl
                       }
                       alt=""
                       className="search-suggestions__image"

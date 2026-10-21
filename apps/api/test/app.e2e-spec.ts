@@ -13,6 +13,7 @@ import { AppModule } from './../src/app.module';
 import { MOVIE_PROVIDER } from './../src/movies/movie-provider';
 import { SERIES_PROVIDER } from '../src/series/series-provider';
 import { createApiDocument } from '../src/api-document';
+import { SEARCH_PROVIDER } from '../src/search/search-provider';
 
 const movies = [
   {
@@ -69,6 +70,7 @@ describe('AppController (e2e)', () => {
       '/api/v1/persons/{id}/filmography',
       '/api/v1/persons/{id}/combined-filmography',
       '/api/v1/search/suggestions',
+      '/api/v1/search',
       '/api/v1/series/{id}',
       '/api/v1/series/{id}/credits',
       '/api/v1/series/{id}/images',
@@ -117,6 +119,8 @@ describe('AppController (e2e)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
+      .overrideProvider(SEARCH_PROVIDER)
+      .useValue({})
       .overrideProvider(MOVIE_PROVIDER)
       .useValue(movieProvider)
       .overrideProvider(PERSON_FILMOGRAPHY_PROVIDER)

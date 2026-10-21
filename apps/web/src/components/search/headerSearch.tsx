@@ -42,7 +42,9 @@ export default function HeaderSearch() {
         ref={triggerRef}
         type="button"
         className="detail-search__trigger"
-        aria-label={expanded ? 'Close search' : 'Search movies and people'}
+        aria-label={
+          expanded ? 'Close search' : 'Search movies, series and people'
+        }
         aria-expanded={expanded}
         aria-controls={inputId}
         onClick={() => {
@@ -62,7 +64,7 @@ export default function HeaderSearch() {
       <form
         className={`detail-search__form${expanded ? ' detail-search__form--expanded' : ''}`}
         role="search"
-        aria-label="Movie and person search"
+        aria-label="Movie, Series and Person search"
         aria-hidden={!expanded}
         inert={!expanded}
         onSubmit={(event) => {
@@ -71,13 +73,13 @@ export default function HeaderSearch() {
         }}
       >
         <label className="visually-hidden" htmlFor={inputId}>
-          Search movies and people
+          Search movies, series and people
         </label>
         <input
           ref={inputRef}
           id={inputId}
           type="search"
-          placeholder="Search movies and people..."
+          placeholder="Search movies, series and people..."
           autoComplete="off"
           value={autocomplete.query}
           onChange={(event) => autocomplete.edit(event.target.value)}

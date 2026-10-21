@@ -3,6 +3,7 @@ import type { SearchSuggestionsResponse } from '@movie-explorer/contracts';
 import { TmdbMovieProvider } from './tmdb-movie.provider';
 import { mapPeople, searchPage } from './tmdb-search.mapper';
 import { SearchService } from '../../search/search.service';
+import { TmdbSearchProvider } from './tmdb-search.provider';
 
 const config = {
   accessToken: 'test-token',
@@ -59,6 +60,7 @@ describe('search provider and public contracts', () => {
 
     const result: SearchSuggestionsResponse = await new SearchService(
       provider,
+      new TmdbSearchProvider(config),
     ).suggestions(' Query ', 1);
     expect(result).toEqual({
       groups: {

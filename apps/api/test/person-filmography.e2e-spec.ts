@@ -7,6 +7,7 @@ import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 
 import { AppModule } from '../src/app.module';
+import { SEARCH_PROVIDER } from '../src/search/search-provider';
 import { MOVIE_PROVIDER } from '../src/movies/movie-provider';
 import { SERIES_PROVIDER } from '../src/series/series-provider';
 import { PERSON_FILMOGRAPHY_PROVIDER } from '../src/persons/person-filmography-provider';
@@ -24,6 +25,8 @@ describe('Person combined filmography API', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(SEARCH_PROVIDER)
+      .useValue({})
       .overrideProvider(MOVIE_PROVIDER)
       .useValue(legacy)
       .overrideProvider(SERIES_PROVIDER)

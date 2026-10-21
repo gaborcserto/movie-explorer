@@ -75,7 +75,7 @@ test('defaults to Movies, scopes filters, lazily loads People and retains indepe
     }),
     expect.any(AbortSignal)
   );
-  fireEvent.click(screen.getByRole('link', { name: 'People' }));
+  fireEvent.click(screen.getByRole('link', { name: 'Persons' }));
   await screen.findByRole('link', { name: 'Person 1' });
   expect(router.state.location.pathname).toBe('/search/Actor');
   expect(new URLSearchParams(router.state.location.search).get('view')).toBe(
@@ -235,7 +235,7 @@ test('filter editing makes no requests, Apply refreshes once, and normalization 
   expect(
     screen.getByRole('button', { name: 'Remove Drama genre filter' })
   ).toBeVisible();
-  fireEvent.click(screen.getByRole('link', { name: 'People' }));
+  fireEvent.click(screen.getByRole('link', { name: 'Persons' }));
   expect(screen.getByText('Enter a name to search for people.')).toBeVisible();
   expect(router.state.location.search).toContain('filter=drama');
   expect(getPeople).not.toHaveBeenCalled();

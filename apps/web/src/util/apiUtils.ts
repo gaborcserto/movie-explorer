@@ -12,6 +12,8 @@ import type {
   PersonDetails,
   PersonListResponse,
   SearchSuggestionsResponse,
+  SearchResponse,
+  SearchType,
   SeriesDetails,
   SeriesCredits,
   SeriesImages,
@@ -40,6 +42,7 @@ import {
   episodeCredits,
 } from './seriesValidation';
 import combinedFilmography from './filmographyValidation';
+import { searchResponse, searchResult } from './searchValidation';
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const apiBaseUrl = (configuredApiBaseUrl ?? 'http://localhost:4000').replace(
@@ -516,7 +519,11 @@ export const getSearchSuggestions = async (
   query: string,
   signal?: AbortSignal
 ): Promise<SearchSuggestionsResponse> => {
-  const params = new URLSearchParams({ query, limit: '6' });
+  const params = new URLSearchParams({
+    query,
+    limit: '6',
+    includeSeries: 'true',
+  });
   const body = await request<SearchSuggestionsResponse>(
     `${apiBaseUrl}/api/v1/search/suggestions?${params}`,
     signal ? { signal } : {}
@@ -525,32 +532,37 @@ export const getSearchSuggestions = async (
     throw new ApiRequestError('invalid-response');
   }
   if (
-    body.groups !== undefined &&
-    (!availabilityMap(body.groups, ['movie', 'person']) ||
-      !Array.isArray(body.suggestions) ||
-      !body.suggestions.every(
-        (item) =>
-          record(item) &&
-          Number.isSafeInteger(item.id) &&
-          item.id > 0 &&
-          optionalText(item, [
-            'posterUrl',
-            'profileUrl',
-            'knownForDepartment',
-          ]) &&
-          (!('releaseYear' in item) ||
-            item.releaseYear === undefined ||
-            (typeof item.releaseYear === 'number' &&
-              Number.isSafeInteger(item.releaseYear))) &&
-          (item.mediaType === 'movie'
-            ? typeof item.title === 'string'
-            : item.mediaType === 'person' && typeof item.name === 'string')
-      ))
+    (body.groups !== undefined &&
+      (!availabilityMap(body.groups, ['movie', 'person']) ||
+        (body.groups.tv !== undefined && !availability(body.groups.tv)))) ||
+    !Array.isArray(body.suggestions) ||
+    !body.suggestions.every(searchResult)
   ) {
     throw new ApiRequestError('invalid-response');
   }
   return body;
 };
+
+export async function getSearchResults(
+  query: string,
+  type: SearchType,
+  page: number,
+  signal?: AbortSignal,
+  year?: string
+): Promise<SearchResponse> {
+  const params = new URLSearchParams({ query, type, page: String(page) });
+  if (year) params.set('year', year);
+  const body = await request<unknown>(`${apiBaseUrl}/api/v1/search?${params}`, {
+    signal,
+  });
+  if (
+    !searchResponse(body) ||
+    body.page !== page ||
+    body.results.some((item) => type !== 'all' && item.mediaType !== type)
+  )
+    throw new ApiRequestError('invalid-response');
+  return body;
+}
 
 export const getPeople = (
   query: string,

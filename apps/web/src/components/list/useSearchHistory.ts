@@ -12,6 +12,8 @@ import type {
   MovieSummary,
   PersonListResponse,
   PersonSummary,
+  SearchResponse,
+  SearchResult,
 } from '@movie-explorer/contracts';
 
 export type MovieSnapshot = {
@@ -25,9 +27,16 @@ export type PeopleSnapshot = {
   visible: number;
 };
 
+export type UnifiedSnapshot = {
+  data: SearchResponse;
+  items: SearchResult[];
+  visible: number;
+};
+
 export const SearchHistory = createContext<{
   movies: Map<string, MovieSnapshot>;
   people: Map<string, PeopleSnapshot>;
+  unified?: Map<string, UnifiedSnapshot>;
   scroll: Map<string, number>;
   detailOrigins: Map<string, string>;
 } | null>(null);

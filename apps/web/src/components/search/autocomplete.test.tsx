@@ -47,6 +47,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe.each(['home', 'movie', 'person'])(
@@ -74,10 +75,12 @@ describe.each(['home', 'movie', 'person'])(
       render(<RouterProvider router={router} />);
       if (kind !== 'home')
         fireEvent.click(
-          screen.getByRole('button', { name: 'Search movies and people' })
+          screen.getByRole('button', {
+            name: 'Search movies, series and people',
+          })
         );
       const input = screen.getByRole('combobox', {
-        name: 'Search movies and people',
+        name: 'Search movies, series and people',
       });
       input.focus();
       const type = (text: string) =>
@@ -96,7 +99,7 @@ describe.each(['home', 'movie', 'person'])(
       await tick(1);
       expect(api).toHaveBeenCalledWith('Al', expect.any(AbortSignal));
       const list = screen.getByRole('listbox', {
-        name: 'Movie and person suggestions',
+        name: 'Movie, Series and Person suggestions',
       });
       expect(
         within(list).getByRole('group', { name: 'Movies' })
@@ -194,7 +197,9 @@ describe.each(['home', 'movie', 'person'])(
         expect(input).not.toHaveAttribute('aria-activedescendant');
         if (kind !== 'home' && dismissal === 'Escape')
           expect(
-            screen.getByRole('button', { name: 'Search movies and people' })
+            screen.getByRole('button', {
+              name: 'Search movies, series and people',
+            })
           ).toHaveFocus();
       }
     );
@@ -270,6 +275,53 @@ test('caps each suggestion group at six options', async () => {
   expect(screen.getAllByRole('option')).toHaveLength(6);
 });
 
+test.each(['home', 'header', 'mobile'])(
+  'Series suggestions share keyboard, focus and navigation behavior in %s search',
+  async (kind) => {
+    if (kind === 'mobile') vi.stubGlobal('innerWidth', 390);
+    api.mockResolvedValue({
+      suggestions: [
+        { mediaType: 'person', id: 1, name: 'Person' },
+        {
+          mediaType: 'tv',
+          id: 1,
+          title: 'Series title',
+          firstAirDate: '2005-02-21',
+          posterUrl: '/series.jpg',
+        },
+        { mediaType: 'movie', id: 1, title: 'Movie' },
+      ],
+    });
+    const router = createMemoryRouter([
+      { path: '/', element: kind === 'home' ? <Search /> : <HeaderSearch /> },
+      { path: '/tv/:id', element: <h1>Series details</h1> },
+    ]);
+    render(<RouterProvider router={router} />);
+    if (kind !== 'home')
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Search movies, series and people' })
+      );
+    const input = screen.getByRole('combobox');
+    input.focus();
+    fireEvent.change(input, { target: { value: 'Story' } });
+    await tick();
+    expect(
+      screen.getAllByRole('option').map((item) => item.textContent)
+    ).toEqual(['Movie', 'Series title2005', 'Person']);
+    expect(
+      screen.getByRole('group', { name: 'Series' }).querySelector('img')
+    ).toHaveAttribute('src', '/series.jpg');
+    expect(input).toHaveFocus();
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(
+      screen.getByRole('option', { name: 'Series title, 2005' })
+    ).toHaveAttribute('aria-selected', 'true');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(router.state.location.pathname).toBe('/tv/1');
+  }
+);
+
 test.each(['movie', 'person'] as const)(
   'partial %s suggestions retain keyboard selection and ARIA',
   async (type) => {
@@ -290,7 +342,7 @@ test.each(['movie', 'person'] as const)(
     ]);
     render(<RouterProvider router={router} />);
     fireEvent.click(
-      screen.getByRole('button', { name: 'Search movies and people' })
+      screen.getByRole('button', { name: 'Search movies, series and people' })
     );
     const input = screen.getByRole('combobox');
     fireEvent.change(input, { target: { value: 'alien' } });
@@ -328,7 +380,7 @@ test('empty successful group with failed sibling avoids misleading no-suggestion
   ]);
   render(<RouterProvider router={router} />);
   fireEvent.click(
-    screen.getByRole('button', { name: 'Search movies and people' })
+    screen.getByRole('button', { name: 'Search movies, series and people' })
   );
   const input = screen.getByRole('combobox');
   fireEvent.change(input, { target: { value: 'alien' } });

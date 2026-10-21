@@ -96,7 +96,9 @@ describe('<Details />', () => {
       within(main).getByRole('heading', { name: 'Overview' })
     ).toBeVisible();
     expect(
-      within(main).queryByRole('button', { name: 'Search movies and people' })
+      within(main).queryByRole('button', {
+        name: 'Search movies, series and people',
+      })
     ).toBeNull();
     expect(document.title).toBe('Sample Movie | Movie Explorer');
   });

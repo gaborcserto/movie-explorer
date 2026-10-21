@@ -3,6 +3,11 @@ export type {
   PersonListResponse,
   SearchSuggestion,
   SearchSuggestionsResponse,
+  SearchMediaType,
+  SearchType,
+  SearchResult,
+  SeriesSearchResult,
+  SearchResponse,
 } from './search';
 export type {
   MovieDetails,

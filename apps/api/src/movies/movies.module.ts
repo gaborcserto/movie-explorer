@@ -10,10 +10,13 @@ import { PersonsController } from '../persons/persons.controller';
 import { PersonsService } from '../persons/persons.service';
 import { SearchController } from '../search/search.controller';
 import { SearchService } from '../search/search.service';
+import { SEARCH_PROVIDER } from '../search/search-provider';
+import { TmdbSearchProvider } from '../integrations/tmdb/tmdb-search.provider';
 
 @Module({
   controllers: [MoviesController, PersonsController, SearchController],
   providers: [
+    { provide: SEARCH_PROVIDER, useFactory: () => new TmdbSearchProvider() },
     {
       provide: PERSON_FILMOGRAPHY_PROVIDER,
       useFactory: () => new TmdbPersonFilmographyProvider(),

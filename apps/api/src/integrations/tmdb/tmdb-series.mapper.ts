@@ -142,8 +142,12 @@ export class TmdbSeriesMapper {
 
   toEpisodeCredits(value: unknown, base?: TmdbEpisode): EpisodeCredits {
     const source = seriesRecord(value);
+    // Appended credits inherit the validated parent episode identity; TMDB
+    // omits their ID. An explicit conflicting ID must still be rejected.
     const usable =
-      source && source.success !== false && (!base || source.id === base.id);
+      source &&
+      source.success !== false &&
+      (!base || source.id === undefined || source.id === base.id);
     const cast = usable && Array.isArray(source.cast) ? source.cast : undefined;
     const guests =
       usable &&

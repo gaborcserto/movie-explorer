@@ -2,7 +2,11 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useLocation, useNavigationType } from 'react-router-dom';
 import { SearchHistory } from './useSearchHistory';
-import type { MovieSnapshot, PeopleSnapshot } from './useSearchHistory';
+import type {
+  MovieSnapshot,
+  PeopleSnapshot,
+  UnifiedSnapshot,
+} from './useSearchHistory';
 
 export default function SearchHistoryProvider({
   children,
@@ -13,6 +17,7 @@ export default function SearchHistoryProvider({
   const navigationType = useNavigationType();
   const previous = useRef(location);
   const [history] = useState(() => ({
+    unified: new Map<string, UnifiedSnapshot>(),
     movies: new Map<string, MovieSnapshot>(),
     people: new Map<string, PeopleSnapshot>(),
     scroll: new Map<string, number>(),
@@ -23,7 +28,7 @@ export default function SearchHistoryProvider({
     if (
       navigationType === 'PUSH' &&
       /^\/search(?:\/|$)/.test(from.pathname) &&
-      /^\/(movie|person)\//.test(location.pathname)
+      /^\/(movie|person|tv)\//.test(location.pathname)
     ) {
       history.detailOrigins.set(location.key, from.key);
       if (history.detailOrigins.size > 30) {

@@ -11,6 +11,7 @@ import * as request from 'supertest';
 
 import { PERSON_FILMOGRAPHY_PROVIDER } from '../src/persons/person-filmography-provider';
 import { AppModule } from '../src/app.module';
+import { SEARCH_PROVIDER } from '../src/search/search-provider';
 import { MOVIE_PROVIDER } from '../src/movies/movie-provider';
 import { SERIES_PROVIDER, SeriesProvider } from '../src/series/series-provider';
 import { minimalSeriesDetails } from './fixtures/series';
@@ -128,6 +129,8 @@ describe('Series details API (e2e)', () => {
       .useValue({})
       .overrideProvider(SERIES_PROVIDER)
       .useValue(provider)
+      .overrideProvider(SEARCH_PROVIDER)
+      .useValue({})
       .overrideProvider(MOVIE_PROVIDER)
       .useValue(movieProvider)
       .compile();

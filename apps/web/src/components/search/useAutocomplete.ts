@@ -54,7 +54,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
         const response = await getSearchSuggestions(text, controller.signal);
         if (controller.signal.aborted || current !== generation.current) return;
         // Keep grouping and keyboard order identical even if API order changes.
-        const items = ['movie', 'person'].flatMap((type) =>
+        const items = ['movie', 'tv', 'person'].flatMap((type) =>
           response.suggestions
             .filter((item) => item.mediaType === type)
             .slice(0, 6)

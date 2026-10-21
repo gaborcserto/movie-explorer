@@ -54,19 +54,22 @@ describe.each([
   test('starts collapsed, opens from the keyboard, focuses and closes with Escape', async () => {
     const { user } = await setup();
     const trigger = screen.getByRole('button', {
-      name: 'Search movies and people',
+      name: 'Search movies, series and people',
     });
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('combobox')).toBeNull();
     expect(
-      screen.queryByRole('link', { name: 'Search movies and people' })
+      screen.queryByRole('link', { name: 'Search movies, series and people' })
     ).toBeNull();
     trigger.focus();
     await user.keyboard('{Enter}');
     const input = screen.getByRole('combobox', {
-      name: 'Search movies and people',
+      name: 'Search movies, series and people',
     });
-    expect(input).toHaveAttribute('placeholder', 'Search movies and people...');
+    expect(input).toHaveAttribute(
+      'placeholder',
+      'Search movies, series and people...'
+    );
     expect(input).toHaveFocus();
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
     expect(trigger).toHaveAttribute('aria-controls', input.id);
@@ -76,7 +79,10 @@ describe.each([
     expect(input).toHaveValue('Spider-Man');
     await user.clear(input);
     expect(input).toHaveValue('');
-    expect(input).toHaveAttribute('placeholder', 'Search movies and people...');
+    expect(input).toHaveAttribute(
+      'placeholder',
+      'Search movies, series and people...'
+    );
     trigger.focus();
     expect(screen.getByRole('button', { name: 'Close search' })).toHaveFocus();
     await user.keyboard('{Enter}');
@@ -94,7 +100,7 @@ describe.each([
     const { router, user } = await setup();
     const originalLocation = router.state.location;
     await user.click(
-      screen.getByRole('button', { name: 'Search movies and people' })
+      screen.getByRole('button', { name: 'Search movies, series and people' })
     );
     const input = screen.getByRole('combobox');
     await user.type(input, '   {Enter}');
@@ -137,10 +143,10 @@ describe.each([
     });
     const { router, user } = await setup();
     await user.click(
-      screen.getByRole('button', { name: 'Search movies and people' })
+      screen.getByRole('button', { name: 'Search movies, series and people' })
     );
     const input = screen.getByRole('combobox', {
-      name: 'Search movies and people',
+      name: 'Search movies, series and people',
     });
     await user.type(input, 'Shared');
     await screen.findByRole('option', { name: 'Shared person, Acting' });
@@ -155,7 +161,7 @@ describe.each([
   test('close button restores focus and Tab can leave the search', async () => {
     const { user } = await setup();
     const trigger = screen.getByRole('button', {
-      name: 'Search movies and people',
+      name: 'Search movies, series and people',
     });
     await user.click(trigger);
     await user.click(screen.getByRole('button', { name: 'Close search' }));

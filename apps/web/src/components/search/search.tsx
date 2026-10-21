@@ -16,7 +16,7 @@ function Search() {
             <strong>Movie</strong> Explorer
           </Link>
         </div>
-        <h1 className="header__title">FIND YOUR MOVIE</h1>
+        <h1 className="header__title">FIND YOUR NEXT STORY</h1>
         <form
           className="header__search"
           role="search"
@@ -32,7 +32,7 @@ function Search() {
             className="header__search__combobox"
           >
             <label className="visually-hidden" htmlFor="movie-search">
-              Search movies and people
+              Search movies, series and people
             </label>
             <input
               id="movie-search"

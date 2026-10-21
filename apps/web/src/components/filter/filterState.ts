@@ -9,6 +9,11 @@ export const ratingOptions = ['5', '6', '7', '8', '9'];
 export const validYear = (value: string) =>
   /^\d{4}$/.test(value) && Number(value) >= 1874 && Number(value) <= 9999;
 
+export function readSearchView(params: URLSearchParams) {
+  const view = params.get('view');
+  return view === 'all' || view === 'tv' || view === 'people' ? view : 'movies';
+}
+
 export function readFilters(params: URLSearchParams, isSearch: boolean) {
   const genre = params.get('filter') ?? '';
   const year = params.get('year') ?? '';
@@ -54,4 +59,15 @@ export function writeFilters(
 
 export function normalizeFilters(params: URLSearchParams, isSearch: boolean) {
   return writeFilters(params, readFilters(params, isSearch), isSearch);
+}
+
+export function normalizeSearchFilters(
+  params: URLSearchParams,
+  isSearch: boolean
+) {
+  const next = normalizeFilters(params, isSearch);
+  const view = readSearchView(params);
+  if (view === 'movies') next.delete('view');
+  else next.set('view', view);
+  return next;
 }

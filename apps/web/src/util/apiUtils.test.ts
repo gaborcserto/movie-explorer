@@ -445,7 +445,7 @@ describe('API functions', () => {
       getSearchSuggestions('A&B / test?', controller.signal)
     ).resolves.toEqual(result);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:4000/api/v1/search/suggestions?query=A%26B+%2F+test%3F&limit=6',
+      'http://localhost:4000/api/v1/search/suggestions?query=A%26B+%2F+test%3F&limit=6&includeSeries=true',
       { signal: expect.any(AbortSignal) }
     );
   });
