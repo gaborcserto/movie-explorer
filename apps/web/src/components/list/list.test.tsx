@@ -116,8 +116,8 @@ describe('<List />', () => {
       renderList('/search/Alien?filter=drama');
       await screen.findByText(
         page === 500
-          ? 'No matches in the accessible result pages.'
-          : 'No matches in the pages checked so far. Load more to check the next page.'
+          ? 'No matching movies found.'
+          : 'No matching movies yet. Load more to continue.'
       );
       expect(
         Boolean(screen.queryByRole('button', { name: /load more/i }))
@@ -198,7 +198,7 @@ describe('<List />', () => {
     );
   });
 
-  test('uses the Home coral outline style without changing Search results buttons', async () => {
+  test('uses the same coral outline style for default and query Movies listings', async () => {
     const response = {
       movies: Array.from({ length: 11 }, (_, index) => ({
         id: index + 1,
@@ -225,8 +225,8 @@ describe('<List />', () => {
     const resultsLoadMore = await screen.findByRole('button', {
       name: 'Load more',
     });
-    expect(resultsLoadMore).toHaveClass('btn--primary');
-    expect(resultsLoadMore).not.toHaveClass('btn--action');
+    expect(resultsLoadMore).toHaveClass('btn--outline', 'btn--action');
+    expect(resultsLoadMore).not.toHaveClass('btn--primary');
   });
 
   test('it keeps the results page rendered when a movie has no release date', async () => {

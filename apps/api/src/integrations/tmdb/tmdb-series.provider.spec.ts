@@ -33,6 +33,62 @@ describe('TmdbSeriesProvider', () => {
     jest.useRealTimers();
   });
 
+  it('discovers one Series page, maps application fields, and forwards only applicable filters', async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({
+        results: [
+          {
+            id: 1,
+            name: 'Series',
+            first_air_date: '2005-02-21',
+            poster_path: null,
+          },
+          { id: 2, name: 'Adult', adult: true },
+        ],
+        page: 2,
+        total_pages: 900,
+        total_results: 17000,
+      }),
+    );
+    await expect(
+      provider.findPopular({
+        page: 2,
+        year: 2005,
+        minimumRating: 7,
+        sort: 'title',
+        order: 'asc',
+      }),
+    ).resolves.toEqual({
+      results: [
+        { id: 1, mediaType: 'tv', title: 'Series', firstAirDate: '2005-02-21' },
+      ],
+      page: 2,
+      totalPages: 500,
+      totalResults: 17000,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const url: URL = fetchMock.mock.calls[0][0];
+    expect(url.pathname).toBe('/3/discover/tv');
+    expect(Object.fromEntries(url.searchParams)).toMatchObject({
+      page: '2',
+      include_adult: 'false',
+      sort_by: 'name.asc',
+      'first_air_date.gte': '2005-01-01',
+      'first_air_date.lte': '2005-12-31',
+      'vote_average.gte': '7',
+    });
+  });
+
+  it.each([
+    { page: 2, results: [], total_pages: 2, total_results: 0 },
+    { results: [] },
+  ])('rejects invalid Series listing pages', async (body) => {
+    fetchMock.mockResolvedValue(Response.json(body));
+    await expect(
+      provider.findPopular({ page: 1, sort: 'popularity', order: 'desc' }),
+    ).rejects.toMatchObject({ status: 502 });
+  });
+
   it('makes exactly one authenticated localized details request with aggregate credits', async () => {
     fetchMock.mockResolvedValue(Response.json({ id: 1399, name: 'Series' }));
     await expect(provider.findOne(1399)).resolves.toEqual({

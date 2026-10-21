@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { SeriesDetails } from '@movie-explorer/contracts';
 
+import type { SeriesListQuery } from './series-list.dto';
 import { SERIES_PROVIDER, SeriesProvider } from './series-provider';
 
 @Injectable()
@@ -8,6 +9,10 @@ export class SeriesService {
   constructor(
     @Inject(SERIES_PROVIDER) private readonly provider: SeriesProvider,
   ) {}
+
+  findPopular(query: SeriesListQuery) {
+    return this.provider.findPopular(query);
+  }
 
   findOne(id: number): Promise<SeriesDetails | undefined> {
     return this.provider.findOne(id);

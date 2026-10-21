@@ -6,6 +6,7 @@ import type {
   MovieSnapshot,
   PeopleSnapshot,
   UnifiedSnapshot,
+  GroupedSnapshot,
 } from './useSearchHistory';
 
 export default function SearchHistoryProvider({
@@ -17,6 +18,7 @@ export default function SearchHistoryProvider({
   const navigationType = useNavigationType();
   const previous = useRef(location);
   const [history] = useState(() => ({
+    grouped: new Map<string, GroupedSnapshot>(),
     unified: new Map<string, UnifiedSnapshot>(),
     movies: new Map<string, MovieSnapshot>(),
     people: new Map<string, PeopleSnapshot>(),

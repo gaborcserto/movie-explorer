@@ -105,11 +105,14 @@ export class TmdbMovieProvider implements MovieProvider {
   }
 
   public async findPeople(query: string, page: number) {
-    const response = await this.request<unknown>('/search/person', {
-      query: query.trim(),
-      include_adult: 'false',
-      page: String(page),
-    });
+    const response = await this.request<unknown>(
+      query.trim() ? '/search/person' : '/person/popular',
+      {
+        ...(query.trim() && { query: query.trim() }),
+        include_adult: 'false',
+        page: String(page),
+      },
+    );
     return mapPeople(response, this.config.imageBaseUrl);
   }
 

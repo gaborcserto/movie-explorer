@@ -27,7 +27,7 @@ import {
   PersonMovieCreditDto,
   PersonSeriesCreditDto,
 } from './person-filmography.dto';
-import { GetPeopleQuery } from './people.dto';
+import { PersonListingQuery, PersonListResponseDto } from './people.dto';
 
 @ApiExtraModels(
   CombinedFilmographyDto,
@@ -50,8 +50,9 @@ export class PersonsController {
   // Intentionally public person search.
   // nestjs-doctor-ignore-next-line security/require-guards-on-endpoints
   @Get()
-  @ApiOperation({ summary: 'Search people by name' })
-  public getPeople(@Query() query: GetPeopleQuery) {
+  @ApiOperation({ summary: 'Browse popular persons or search by name' })
+  @ApiOkResponse({ type: PersonListResponseDto })
+  public getPeople(@Query() query: PersonListingQuery) {
     return this.personsService.findPeople(query.query, query.page);
   }
 

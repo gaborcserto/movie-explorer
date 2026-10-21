@@ -9,6 +9,7 @@ import {
   getMovies,
   getPeople,
   getSearchResults,
+  getPopularSeries,
 } from '../../util/apiUtils';
 
 vi.mock('../../util/apiUtils', async () => ({
@@ -18,6 +19,7 @@ vi.mock('../../util/apiUtils', async () => ({
   getMovies: vi.fn(),
   getPeople: vi.fn(),
   getSearchResults: vi.fn(),
+  getPopularSeries: vi.fn(),
 }));
 const api = vi.mocked(getSearchResults);
 const page = (current = 1, totalPages = 2, count = 20): SearchResponse => ({
@@ -40,7 +42,7 @@ const deferred = () => {
   return { promise, resolve };
 };
 
-function setup(path = '/search/Story?view=all') {
+function setup(path = '/search/Story?view=tv') {
   const router = createMemoryRouter(
     [
       {
@@ -67,57 +69,67 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   api.mockResolvedValue(page());
+  vi.mocked(getPopularSeries).mockResolvedValue(page());
+  vi.mocked(getMovies).mockResolvedValue({
+    movies: [{ id: 1, title: 'Default Movie', posterUrl: '', genres: [] }],
+    page: 1,
+    totalPages: 1,
+    totalResults: 1,
+  });
+  vi.mocked(getPeople).mockResolvedValue({
+    people: [{ id: 1, name: 'Default Person' }],
+    page: 1,
+    totalPages: 1,
+    totalResults: 1,
+  });
 });
 afterEach(() => vi.restoreAllMocks());
 
-test('renders mixed identities with existing cards, correct destinations, type labels and dates', async () => {
-  api.mockResolvedValue({
-    ...page(1, 1),
-    results: [
-      { id: 1, mediaType: 'movie', title: 'Movie', releaseDate: '1979-05-25' },
-      {
-        id: 1,
-        mediaType: 'tv',
-        title: 'Series',
-        firstAirDate: '2005-02-21',
-        rating: 8,
-      },
-      {
-        id: 1,
-        mediaType: 'person',
-        name: 'Person',
-        knownForDepartment: 'Acting',
-      },
-    ],
-  });
-  setup('/search/Story?view=all&filter=drama&year=2005&rating=8');
+test('groups category previews with independent available counts, stable identities and no global pagination', async () => {
+  api.mockImplementation(async (_query, type) => ({
+    ...page(),
+    totalResults: type === 'movie' ? 700 : 900,
+    results: Array.from(
+      { length: type === 'person' ? 2 : 8 },
+      (_, i): SearchResult =>
+        type === 'person'
+          ? {
+              id: i + 1,
+              mediaType: type,
+              name: `Person ${i + 1}`,
+              knownForDepartment: 'Acting',
+            }
+          : {
+              id: i + 1,
+              mediaType: type === 'movie' ? 'movie' : 'tv',
+              title: `${type} ${i + 1}`,
+            }
+    ),
+  }));
+  setup('/search/Story?view=all');
   const region = await screen.findByRole('region', { name: 'All results' });
-  expect(within(region).getAllByRole('article')).toHaveLength(3);
-  expect(screen.getByRole('link', { name: 'Movie' })).toHaveAttribute(
-    'href',
-    '/movie/1'
-  );
-  expect(within(region).getByRole('link', { name: 'Series' })).toHaveAttribute(
-    'href',
-    '/tv/1'
-  );
-  expect(screen.getByRole('link', { name: 'Person' })).toHaveAttribute(
-    'href',
-    '/person/1'
-  );
-  expect(region).toHaveTextContent('1979');
-  expect(region).toHaveTextContent('2005');
-  expect(region).toHaveTextContent('Person / Acting');
-  expect(api).toHaveBeenCalledWith(
-    'Story',
-    'all',
-    1,
-    expect.any(AbortSignal),
-    undefined
-  );
+  await screen.findByRole('heading', { name: 'Persons', level: 2 });
+  (
+    [
+      ['Movies', 'movie', 5, 8],
+      ['Series', 'tv', 5, 8],
+      ['Persons', 'person', 2, 2],
+    ] as const
+  ).forEach(([label, type, count, available]) => {
+    const section = within(region).getByRole('region', { name: label });
+    expect(within(section).getAllByRole('article')).toHaveLength(count);
+    expect(section).toHaveTextContent(`${available} available results`);
+    expect(
+      within(section).getByRole('link', {
+        name: `${type} 1`.replace('person', 'Person'),
+      })
+    ).toHaveAttribute('href', `/${type}/1`);
+    expect(api).toHaveBeenCalledWith('Story', type, 1, expect.any(AbortSignal));
+  });
+  expect(api).toHaveBeenCalledTimes(3);
+  expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
   expect(getMovies).not.toHaveBeenCalled();
   expect(getPeople).not.toHaveBeenCalled();
-  expect(screen.queryByRole('button', { name: /Filters & Sort/ })).toBeNull();
 });
 
 test('Series reuses the filter panel and applies only first-air year, retaining Movie selections', async () => {
@@ -169,11 +181,11 @@ test('reveals ten at a time, retries the same next page, deduplicates composite 
       ...page(2, 2, 2),
       results: [
         page().results[0],
-        { mediaType: 'movie', id: 1, title: 'Same numeric ID' },
+        { mediaType: 'tv', id: 99, title: 'New series' },
       ],
     });
   setup();
-  const region = await screen.findByRole('region', { name: 'All results' });
+  const region = await screen.findByRole('region', { name: 'Series results' });
   expect(within(region).getAllByRole('article')).toHaveLength(10);
   fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
   expect(within(region).getAllByRole('article')).toHaveLength(20);
@@ -181,7 +193,7 @@ test('reveals ten at a time, retries the same next page, deduplicates composite 
   fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
   await screen.findByRole('alert');
   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-  await screen.findByRole('link', { name: 'Same numeric ID' });
+  await screen.findByRole('link', { name: 'New series' });
   expect(within(region).getAllByRole('article')).toHaveLength(21);
   expect(api.mock.calls.slice(1).map((call) => call[2])).toEqual([2, 2]);
   expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
@@ -191,10 +203,13 @@ test.each(['query', 'type', 'year'] as const)(
   'cancels stale results after a rapid %s change',
   async (change) => {
     const stale = deferred();
-    api.mockReturnValueOnce(stale.promise).mockResolvedValueOnce({
-      ...page(1, 1),
-      results: [{ id: 99, mediaType: 'tv', title: 'Current' }],
-    });
+    api
+      .mockReturnValueOnce(stale.promise)
+      .mockImplementation(async (_query, type) => ({
+        ...page(1, 1),
+        results:
+          type === 'tv' ? [{ id: 99, mediaType: 'tv', title: 'Current' }] : [],
+      }));
     const router = setup('/search/Old?view=tv&year=2005');
     const signal = api.mock.calls[0][3];
     await act(async () => {
@@ -216,17 +231,21 @@ test.each(['query', 'type', 'year'] as const)(
 );
 
 test.each(['movie', 'tv', 'person'] as const)(
-  'restores reveal count and scroll after %s detail and Back without refetching',
+  'restores grouped results and scroll after %s detail and Back without refetching',
   async (type) => {
-    const target: SearchResult =
-      type === 'person'
-        ? { id: 99, mediaType: type, name: 'Target' }
-        : { id: 99, mediaType: type, title: 'Target' };
-    api.mockResolvedValue({ ...page(), results: [...page().results, target] });
-    const router = setup();
-    await screen.findByRole('link', { name: 'Series 1' });
-    fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+    api.mockImplementation(async (_query, requested) => ({
+      ...page(1, 1),
+      results:
+        requested === type
+          ? [
+              type === 'person'
+                ? { id: 99, mediaType: type, name: 'Target' }
+                : { id: 99, mediaType: type, title: 'Target' },
+            ]
+          : [],
+    }));
+    const router = setup('/search/Story?view=all');
+    await screen.findByRole('link', { name: 'Target' });
     Object.defineProperty(window, 'scrollY', {
       configurable: true,
       value: 650,
@@ -238,7 +257,7 @@ test.each(['movie', 'tv', 'person'] as const)(
       await router.navigate(-1);
     });
     expect(screen.getByRole('link', { name: 'Target' })).toBeVisible();
-    expect(api).toHaveBeenCalledTimes(1);
+    expect(api).toHaveBeenCalledTimes(3);
     expect(window.scrollTo).toHaveBeenCalledWith({
       top: 650,
       behavior: 'instant',
@@ -251,12 +270,12 @@ test('normalizes invalid URLs before requesting and displays empty state with up
   const router = setup(
     '/search/Story?view=tv&year=bad&filter=unknown&sorting=title&order=asc'
   );
-  await screen.findByText('No results in the accessible result pages.');
+  await screen.findByText('No matching series found.');
   expect(router.state.location.search).toBe('?view=tv');
   expect(api).toHaveBeenCalledTimes(1);
   expect(
     screen.getByRole('region', { name: 'Series results' })
-  ).toHaveTextContent('5 reported matches');
+  ).toHaveTextContent('5 series found');
 });
 
 test('initial failure is recoverable and an empty successful retry is announced', async () => {
@@ -275,13 +294,177 @@ test('initial failure is recoverable and an empty successful retry is announced'
   ).toHaveAttribute('role', 'status');
 });
 
-test.each(['all', 'tv'])('does not fetch %s without a query', (type) => {
-  setup(`/search?view=${type}`);
+test.each(['all', 'tv', 'people'] as const)(
+  'loads the default listing and hides All without a query (%s)',
+  async (type) => {
+    const router = setup(`/search?view=${type}`);
+    await screen.findByRole('link', {
+      name: { all: 'Default Movie', tv: 'Series 1', people: 'Default Person' }[
+        type
+      ],
+    });
+    expect(screen.queryByRole('link', { name: 'All' })).toBeNull();
+    expect(api).not.toHaveBeenCalled();
+    if (type === 'all') {
+      expect(router.state.location.search).toBe('');
+      expect(screen.getByRole('link', { name: 'Movies' })).toHaveAttribute(
+        'aria-current',
+        'page'
+      );
+      expect(getMovies).toHaveBeenCalledTimes(1);
+    } else if (type === 'tv') {
+      expect(getPopularSeries).toHaveBeenCalledWith(
+        1,
+        {},
+        expect.any(AbortSignal)
+      );
+      expect(getMovies).not.toHaveBeenCalled();
+    } else
+      expect(getPeople).toHaveBeenCalledWith('', 1, expect.any(AbortSignal));
+  }
+);
+
+test.each(['movie', 'tv', 'person'] as const)(
+  'View all preserves query and filters for %s with Back/Forward',
+  async (type) => {
+    api.mockImplementation(async (_query, requested) => ({
+      ...page(),
+      results:
+        requested === 'person'
+          ? [{ id: 1, mediaType: 'person', name: 'Person' }]
+          : [
+              {
+                id: 1,
+                mediaType: requested === 'movie' ? 'movie' : 'tv',
+                title: requested,
+              },
+            ],
+    }));
+    const router = setup('/search/Story?view=all&year=2005&filter=drama');
+    const label = { movie: 'movies', tv: 'series', person: 'persons' }[type];
+    fireEvent.click(
+      await screen.findByRole('link', { name: `View all ${label}` })
+    );
+    await screen.findByRole('link', {
+      name: { movie: 'Default Movie', tv: 'tv', person: 'Default Person' }[
+        type
+      ],
+    });
+    expect(router.state.location.pathname).toBe('/search/Story');
+    expect(new URLSearchParams(router.state.location.search).get('view')).toBe(
+      { movie: null, tv: 'tv', person: 'people' }[type]
+    );
+    expect(router.state.location.search).toContain('year=2005&filter=drama');
+    await act(async () => {
+      await router.navigate(-1);
+    });
+    expect(screen.getByRole('region', { name: 'All results' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
+    await act(async () => {
+      await router.navigate(1);
+    });
+    expect(screen.queryByRole('region', { name: 'All results' })).toBeNull();
+  }
+);
+
+test('omits empty groups, reports one empty state, and retries only a failed category', async () => {
+  api.mockImplementation(async (_query, type) => {
+    if (type === 'person') throw new ApiRequestError('network');
+    return { ...page(1, 0, 0), totalResults: 0 };
+  });
+  setup('/search/None?view=all');
+  await screen.findByRole('alert');
+  expect(screen.queryByRole('heading', { name: 'Movies' })).toBeNull();
+  expect(screen.queryByRole('heading', { name: 'Series' })).toBeNull();
+  api.mockResolvedValue({ ...page(1, 0, 0), totalResults: 0 });
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
   expect(
-    screen.getByText(
-      'Enter a title or name to search Movies, Series and Persons.'
-    )
-  ).toBeVisible();
-  expect(api).not.toHaveBeenCalled();
-  expect(getMovies).not.toHaveBeenCalled();
+    await screen.findByText('No results found for "None".')
+  ).toHaveAttribute('role', 'status');
+  expect(api).toHaveBeenCalledTimes(4);
+  expect(api).toHaveBeenLastCalledWith(
+    'None',
+    'person',
+    1,
+    expect.any(AbortSignal)
+  );
+  expect(screen.queryAllByRole('heading')).toHaveLength(0);
+});
+
+test('clearing All normalizes to default Movies with replace and restores All on Back', async () => {
+  api.mockImplementation(async (_query, type) => ({
+    ...page(),
+    results: type === 'tv' ? page().results : [],
+  }));
+  const router = setup('/search/Story?view=all');
+  await screen.findByRole('link', { name: 'Series 1' });
+  expect(screen.getByRole('link', { name: 'All' })).toHaveAttribute(
+    'aria-current',
+    'page'
+  );
+  await act(async () => {
+    await router.navigate('/search?view=all');
+  });
+  await screen.findByRole('link', { name: 'Default Movie' });
+  expect(router.state.location.search).toBe('');
+  expect(router.state.historyAction).toBe('REPLACE');
+  expect(screen.queryByRole('link', { name: 'All' })).toBeNull();
+  await act(async () => {
+    await router.navigate(-1);
+  });
+  expect(router.state.location.pathname).toBe('/search/Story');
+  expect(screen.getByRole('link', { name: 'All' })).toHaveAttribute(
+    'aria-current',
+    'page'
+  );
+  expect(api).toHaveBeenCalledTimes(3);
+});
+
+test('Series default filters use discover, preserve movie genre and restore on Back', async () => {
+  const router = setup(
+    '/search?view=tv&filter=drama&year=2005&rating=8&sorting=title&order=asc'
+  );
+  await screen.findByRole('link', { name: 'Series 1' });
+  expect(getPopularSeries).toHaveBeenCalledWith(
+    1,
+    { year: '2005', rating: '8', sorting: 'title', order: 'asc' },
+    expect.any(AbortSignal)
+  );
+  fireEvent.click(screen.getByRole('button', { name: /Filters & Sort/ }));
+  expect(screen.queryByRole('button', { name: /^Genre/ })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: /^Minimum Rating/ }));
+  fireEvent.change(screen.getByLabelText('Minimum TMDB rating'), {
+    target: { value: '7' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+  await screen.findByRole('link', { name: 'Series 1' });
+  expect(router.state.location.search).toContain('filter=drama');
+  expect(getPopularSeries).toHaveBeenLastCalledWith(
+    1,
+    expect.objectContaining({ rating: '7' }),
+    expect.any(AbortSignal)
+  );
+  await act(async () => {
+    await router.navigate(-1);
+  });
+  expect(router.state.location.search).toContain('rating=8');
+  expect(getPopularSeries).toHaveBeenCalledTimes(2);
+});
+
+test('query Series Load more shares outline, loading and disabled states and keeps pagination focus', async () => {
+  const next = deferred();
+  api.mockResolvedValueOnce(page(1, 2, 10)).mockReturnValueOnce(next.promise);
+  setup();
+  const button = await screen.findByRole('button', { name: 'Load more' });
+  expect(button).toHaveClass('btn--outline', 'btn--action');
+  button.focus();
+  fireEvent.click(button);
+  expect(button).toBeDisabled();
+  expect(button).toHaveTextContent('Loading more...');
+  expect(button).not.toHaveClass('btn--primary');
+  await act(async () => {
+    next.resolve(page(2, 2, 1));
+  });
+  expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
+  expect(screen.getByText('11 results loaded')).toHaveFocus();
 });

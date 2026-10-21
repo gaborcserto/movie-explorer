@@ -67,7 +67,7 @@ export function normalizeSearchFilters(
 ) {
   const next = normalizeFilters(params, isSearch);
   const view = readSearchView(params);
-  if (view === 'movies') next.delete('view');
+  if (view === 'movies' || (view === 'all' && !isSearch)) next.delete('view');
   else next.set('view', view);
   return next;
 }

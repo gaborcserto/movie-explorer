@@ -191,7 +191,7 @@ test('text search keeps relevance and normalizes unsupported and duplicate URL v
 
   await open();
   await expand(/^Sort By/);
-  expect(screen.getByText(/Text searches use TMDB relevance/)).toBeVisible();
+  expect(screen.getByText(/Sorted by relevance/)).toBeVisible();
   expect(screen.queryByLabelText('Sort field')).toBeNull();
 });
 

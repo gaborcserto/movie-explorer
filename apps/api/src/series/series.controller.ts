@@ -1,4 +1,10 @@
-import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Query,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -23,6 +29,8 @@ import {
   EpisodeCreditsDto,
 } from './series.dto';
 import { SeasonParams, EpisodeParams } from './series-params.dto';
+import { SeriesListQuery } from './series-list.dto';
+import { SearchResponseDto } from '../search/search.dto';
 import { SeriesService } from './series.service';
 
 @ApiTags('Series')
@@ -46,6 +54,18 @@ import { SeriesService } from './series.service';
 @Controller('api/v1/series')
 export class SeriesController {
   constructor(private readonly service: SeriesService) {}
+
+  @Get()
+  @ApiOperation({
+    summary:
+      'Browse Series by popularity, first-air year, minimum rating and sort order',
+    description:
+      'One discover page per request. Counts are provider totals; accessible pages are capped at 500. Results have mediaType tv.',
+  })
+  @ApiOkResponse({ type: SearchResponseDto })
+  findPopular(@Query() query: SeriesListQuery) {
+    return this.service.findPopular(query);
+  }
 
   @Get(':id/seasons/:seasonNumber')
   @ApiOperation({

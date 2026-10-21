@@ -386,6 +386,12 @@ export class EpisodeSummaryDto implements EpisodeSummary {
   @ApiProperty({ type: String, nullable: true })
   stillUrl: string | null;
 
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Display still and original image candidates for the viewer',
+  })
+  stillSrcSet?: string;
+
   @ApiProperty({ type: String, nullable: true, format: 'date' })
   airDate: string | null;
 

@@ -8,6 +8,28 @@ import {
 const mapper = new TmdbSeriesMapper('https://images.example/w500');
 
 describe('TMDB series mapping and validation', () => {
+  it('supplies a display still and an on-demand original candidate for an episode', () => {
+    const result = mapper.toEpisodeSummary(
+      {
+        id: 30,
+        name: 'Arrival',
+        season_number: 0,
+        episode_number: 3,
+        still_path: '/still.jpg',
+      },
+      1,
+    );
+    expect(result.stillSrcSet).toBe(
+      'https://images.example/w300/still.jpg 1x, https://images.example/original/still.jpg 3x',
+    );
+    expect(
+      mapper.toEpisodeSummary(
+        { id: 31, name: 'Missing', season_number: 0, episode_number: 8 },
+        1,
+      ),
+    ).toMatchObject({ stillUrl: null });
+  });
+
   it('maps complete localized series metadata without provider fields', () => {
     const result = mapper.toSeriesDetails(seriesResponse);
     expect(result).toEqual({

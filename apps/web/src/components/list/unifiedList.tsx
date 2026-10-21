@@ -9,32 +9,36 @@ import type { SearchResponse, SearchResult } from '@movie-explorer/contracts';
 import presentApiError, {
   isCancelledError,
 } from '../../util/errorPresentation';
-import { getSearchResults } from '../../util/apiUtils';
-import Card from '../card/card';
+import { getSearchResults, getPopularSeries } from '../../util/apiUtils';
+import SearchResultCard from './searchResultCard';
 import Loading from '../../layouts/loading';
 import Error from '../../layouts/error';
 import { useResultHistory, useSearchHistory } from './useSearchHistory';
-
-const typeLabels = { movie: 'Movie', tv: 'Series', person: 'Person' };
 
 export default function UnifiedList({
   query,
   type,
   year,
+  rating,
+  sorting,
+  order,
 }: {
   query: string;
-  type: 'all' | 'tv';
+  type: 'tv';
   year?: string;
+  rating?: string;
+  sorting?: string;
+  order?: string;
 }) {
   const history = useSearchHistory();
   const { restored, save } = useResultHistory(
     history?.unified,
-    JSON.stringify([query, type, year])
+    JSON.stringify([query, type, year, rating, sorting, order])
   );
   const [data, setData] = useState<SearchResponse | undefined>(restored?.data);
   const [items, setItems] = useState<SearchResult[]>(restored?.items ?? []);
   const [visible, setVisible] = useState(restored?.visible ?? 10);
-  const [loading, setLoading] = useState(Boolean(query) && !restored);
+  const [loading, setLoading] = useState(!restored);
   const [error, setError] = useState<unknown>(null);
   const [moreError, setMoreError] = useState<unknown>(null);
   const controller = useRef<AbortController | null>(null);
@@ -64,13 +68,13 @@ export default function UnifiedList({
       setLoading(true);
       setMoreError(null);
       try {
-        const response = await getSearchResults(
-          query,
-          type,
-          page,
-          request.signal,
-          year
-        );
+        const response = query
+          ? await getSearchResults(query, type, page, request.signal, year)
+          : await getPopularSeries(
+              page,
+              { year, rating, sorting, order },
+              request.signal
+            );
         if (request.signal.aborted) return;
         setError(null);
         setData(response);
@@ -93,11 +97,11 @@ export default function UnifiedList({
         }
       }
     },
-    [query, type, year]
+    [query, type, year, rating, sorting, order]
   );
 
   useEffect(() => {
-    if (query && !restored) load(1);
+    if (!restored) load(1);
     return () => {
       controller.current?.abort();
       busy.current = false;
@@ -108,12 +112,6 @@ export default function UnifiedList({
     if (data) save({ data, items, visible });
   }, [save, data, items, visible]);
 
-  if (!query)
-    return (
-      <p className="list__container container" role="status">
-        Enter a title or name to search Movies, Series and Persons.
-      </p>
-    );
   if (loading && !data && !error)
     return <Loading className="list__container container" />;
   if (error)
@@ -131,58 +129,31 @@ export default function UnifiedList({
   let emptyMessage = `No results found for "${query}".`;
   if (data?.totalResults)
     emptyMessage = more
-      ? 'No results in the pages checked so far. Load more to check the next page.'
-      : 'No results in the accessible result pages.';
+      ? 'No matching series yet. Load more to continue.'
+      : 'No matching series found.';
   return (
     <section
       className="list__container container"
       aria-busy={loading}
-      aria-label={type === 'tv' ? 'Series results' : 'All results'}
+      aria-label="Series results"
     >
       <div className="list__summary" aria-live="polite">
         <h2 className="list__number">
-          <strong>{data?.totalResults ?? 0}</strong> reported matches
+          <strong>{data?.totalResults ?? 0}</strong> series found
         </h2>
         <p ref={countRef} tabIndex={-1} className="list__loaded">
           {loading ? 'Loading more results... ' : ''}
           {Math.min(visible, items.length)} results loaded
         </p>
       </div>
-      <p className="list__context">
-        Results use search relevance. Reported totals may include entries that
-        cannot be displayed. Up to 500 pages are accessible.
-      </p>
+      {year && <p className="list__context">First-air year: {year}</p>}
       {!loading && items.length === 0 && <p role="status">{emptyMessage}</p>}
       <div className="list__items">
         {items.slice(0, visible).map((item) => {
-          const person = item.mediaType === 'person';
-          const label = typeLabels[item.mediaType];
-          let date: string | undefined;
-          let metadata: string | undefined;
-          if (item.mediaType === 'person') {
-            metadata = item.knownForDepartment;
-          } else {
-            date =
-              item.mediaType === 'tv' ? item.firstAirDate : item.releaseDate;
-            if (item.rating !== undefined)
-              metadata = `${item.rating.toFixed(1)} / 10`;
-          }
-
           return (
-            <Card
+            <SearchResultCard
               key={`${item.mediaType}:${item.id}`}
-              movie={{
-                id: item.id,
-                title: person ? item.name : item.title,
-                posterUrl: person
-                  ? (item.profileUrl ?? '')
-                  : (item.posterUrl ?? ''),
-                genres: [],
-              }}
-              destination={`/${item.mediaType}/${item.id}`}
-              displayDate={date}
-              subtitle={[label, metadata].filter(Boolean).join(' / ')}
-              genreNavigation={false}
+              item={item}
             />
           );
         })}
@@ -195,7 +166,7 @@ export default function UnifiedList({
           <button
             ref={moreRef}
             type="button"
-            className="btn btn--primary"
+            className="btn btn--outline btn--action"
             disabled={loading}
             onClick={() => {
               restoreCountFocus.current =

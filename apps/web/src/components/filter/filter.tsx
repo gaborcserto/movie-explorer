@@ -22,16 +22,17 @@ export default function Filter() {
 
   const committed = readFilters(params, isSearch);
   const open = openAt === location.key;
-  const count = series
-    ? Number(Boolean(committed.year))
-    : Number(Boolean(committed.filter)) +
-      Number(Boolean(committed.year)) +
-      Number(Boolean(committed.rating)) +
-      Number(!isSearch && committed.sorting !== 'popularity') +
-      Number(
-        !isSearch &&
-          committed.order !== (committed.sorting === 'title' ? 'asc' : 'desc')
-      );
+  const count =
+    series && isSearch
+      ? Number(Boolean(committed.year))
+      : Number(!series && Boolean(committed.filter)) +
+        Number(Boolean(committed.year)) +
+        Number(Boolean(committed.rating)) +
+        Number(!isSearch && committed.sorting !== 'popularity') +
+        Number(
+          !isSearch &&
+            committed.order !== (committed.sorting === 'title' ? 'asc' : 'desc')
+        );
 
   const closePanel = useCallback(() => {
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
@@ -126,7 +127,13 @@ export default function Filter() {
             onApply={(values) => {
               const next = writeFilters(
                 params,
-                series ? { ...committed, year: values.year } : values,
+                series
+                  ? {
+                      ...values,
+                      filter: committed.filter,
+                      ...(isSearch && { rating: committed.rating }),
+                    }
+                  : values,
                 isSearch
               );
 

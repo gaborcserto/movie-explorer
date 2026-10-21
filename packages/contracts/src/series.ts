@@ -105,6 +105,7 @@ export interface EpisodeSummary {
   airDate: string | null;
   runtimeMinutes: number | null;
   stillUrl: string | null;
+  stillSrcSet?: string;
   rating: number | null;
   voteCount: number | null;
 }

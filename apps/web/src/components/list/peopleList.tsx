@@ -26,7 +26,7 @@ export default function PeopleList({ query }: { query: string }) {
   );
   const [people, setPeople] = useState<PersonSummary[]>(restored?.items ?? []);
   const [visible, setVisible] = useState(restored?.visible ?? 10);
-  const [loading, setLoading] = useState(Boolean(query) && !restored);
+  const [loading, setLoading] = useState(!restored);
   const [error, setError] = useState<unknown>(null);
   const [moreError, setMoreError] = useState<unknown>(null);
   const controller = useRef<AbortController | null>(null);
@@ -69,7 +69,7 @@ export default function PeopleList({ query }: { query: string }) {
   );
 
   useEffect(() => {
-    if (query && !restored) load(1);
+    if (!restored) load(1);
     return () => {
       controller.current?.abort();
       busy.current = false;
@@ -80,12 +80,6 @@ export default function PeopleList({ query }: { query: string }) {
     if (data) save({ data, items: people, visible });
   }, [save, data, people, visible]);
 
-  if (!query)
-    return (
-      <p className="list__container container" role="status">
-        Enter a name to search for people.
-      </p>
-    );
   if (loading && !data && !error)
     return <Loading className="list__container container" />;
   if (error)
@@ -103,13 +97,19 @@ export default function PeopleList({ query }: { query: string }) {
     data &&
     (visible < people.length || data.page < Math.min(data.totalPages, 500));
   const buttonLabel = moreError ? 'Try again' : 'Load more';
-  let emptyMessage = `No people found for "${query}".`;
+  let emptyMessage = query
+    ? `No people found for "${query}".`
+    : 'No people available.';
   if (data?.totalResults)
     emptyMessage = more
-      ? 'No people in the pages checked so far. Load more to check the next page.'
-      : 'No people in the accessible result pages.';
+      ? 'No matching persons yet. Load more to continue.'
+      : 'No matching persons found.';
   return (
-    <section className="list__container container" aria-label="People results">
+    <section
+      className="list__container container"
+      aria-label="People results"
+      aria-busy={loading}
+    >
       <div className="list__summary" aria-live="polite">
         <h2 className="list__number">
           <strong>{data?.totalResults ?? 0}</strong> people found
@@ -142,7 +142,7 @@ export default function PeopleList({ query }: { query: string }) {
         <div className="list__more">
           <button
             type="button"
-            className="btn btn--primary"
+            className="btn btn--outline btn--action"
             disabled={loading}
             onClick={() => {
               if (visible < people.length)

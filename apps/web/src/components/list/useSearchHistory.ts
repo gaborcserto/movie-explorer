@@ -27,6 +27,10 @@ export type PeopleSnapshot = {
   visible: number;
 };
 
+export type GroupedSnapshot = Partial<
+  Record<'movie' | 'tv' | 'person', SearchResponse>
+>;
+
 export type UnifiedSnapshot = {
   data: SearchResponse;
   items: SearchResult[];
@@ -37,6 +41,7 @@ export const SearchHistory = createContext<{
   movies: Map<string, MovieSnapshot>;
   people: Map<string, PeopleSnapshot>;
   unified?: Map<string, UnifiedSnapshot>;
+  grouped?: Map<string, GroupedSnapshot>;
   scroll: Map<string, number>;
   detailOrigins: Map<string, string>;
 } | null>(null);

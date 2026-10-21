@@ -8,6 +8,7 @@ import parseDetailId from '../../util/detailId';
 import MovieImage from '../../components/utility/customImage';
 import useSeriesResource from './useSeriesResource';
 import parseSeasonNumber from './seriesCoordinates';
+import '../../components/details/media/media.scss';
 import {
   SeriesLayout,
   SeriesHero,
@@ -59,16 +60,19 @@ function SeasonDetails({
             title={season.title}
             image={season.posterUrl}
             srcSet={season.posterSrcSet}
+            backdrop={series?.backdropUrl}
+            immersive
           >
             <p>
               <SeasonName number={number} />
             </p>
             <SeriesFacts
               facts={[
-                ['Air date', season.airDate],
-                ['Returned episodes', season.episodeCount],
+                ['First aired', season.airDate],
+                ['Episodes', season.episodeCount],
               ]}
             />
+            <h2>Overview</h2>
             <p className="series-overview">
               {season.description ?? 'No season overview available.'}
             </p>
@@ -113,7 +117,7 @@ function SeasonDetails({
             </p>
           )}
           <section
-            className="series-section"
+            className="series-section details-section"
             aria-labelledby="episodes-heading"
           >
             <h2 id="episodes-heading">Episodes</h2>

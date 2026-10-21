@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { SeriesDetails } from '@movie-explorer/contracts';
 
+import type { SeriesListQuery } from '../../series/series-list.dto';
+import { mapSearch, searchPage } from './tmdb-search.mapper';
 import type { SeriesProvider } from '../../series/series-provider';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbTransport } from './tmdb.transport';
@@ -31,6 +33,37 @@ export class TmdbSeriesProvider implements SeriesProvider {
       new Logger(TmdbSeriesProvider.name),
     );
     this.mapper = new TmdbSeriesMapper(config.imageBaseUrl);
+  }
+
+  async findPopular(query: SeriesListQuery) {
+    const sortFields = {
+      popularity: 'popularity',
+      firstAirDate: 'first_air_date',
+      rating: 'vote_average',
+      title: 'name',
+    };
+    const body = await this.transport.request({
+      path: '/discover/tv',
+      operation: 'series-list',
+      query: {
+        page: String(query.page),
+        include_adult: 'false',
+        sort_by: `${sortFields[query.sort]}.${query.order}`,
+        ...(query.year !== undefined && {
+          'first_air_date.gte': `${query.year}-01-01`,
+          'first_air_date.lte': `${query.year}-12-31`,
+        }),
+        ...(query.minimumRating !== undefined && {
+          'vote_average.gte': String(query.minimumRating),
+        }),
+      },
+      validateBody: (value) => {
+        if (searchPage(value).page !== query.page) {
+          throw new Error('Invalid series listing page');
+        }
+      },
+    });
+    return mapSearch(body, 'tv', this.imageBaseUrl);
   }
 
   async findOne(id: number): Promise<SeriesDetails | undefined> {

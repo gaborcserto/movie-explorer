@@ -30,6 +30,30 @@ describe('search provider and public contracts', () => {
     global.fetch = originalFetch;
   });
 
+  it('browses popular persons with pagination, deduplication and missing-image fallback', async () => {
+    fetchMock.mockResolvedValue(
+      Response.json(
+        page(
+          [
+            { id: 1, name: 'Popular' },
+            { id: 1, name: 'Duplicate' },
+            { id: 2, name: 'Adult', adult: true },
+          ],
+          2,
+        ),
+      ),
+    );
+    await expect(provider.findPeople('', 2)).resolves.toMatchObject({
+      people: [{ id: 1, name: 'Duplicate' }],
+      page: 2,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const url: URL = fetchMock.mock.calls[0][0];
+    expect(url.pathname).toBe('/3/person/popular');
+    expect(url.searchParams.get('page')).toBe('2');
+    expect(url.searchParams.has('query')).toBe(false);
+  });
+
   it('uses separate movie/person searches, retains movie ranking and stable IDs, and returns a discriminated public union', async () => {
     fetchMock.mockImplementation(async (url: URL) =>
       Response.json(

@@ -12,6 +12,7 @@ import { normalizeSearchFilters, readSearchView } from '../filter/filterState';
 import CardList from './list';
 import PeopleList from './peopleList';
 import UnifiedList from './unifiedList';
+import GroupedList from './groupedList';
 import './searchResults.scss';
 import {
   movieHistorySignature,
@@ -55,42 +56,35 @@ function ResultViews({ query }: { query: string }) {
       <div className="search-toolbar list__container container">
         <div className="search-toolbar__content">
           <nav className="search-views" aria-label="Search result views">
-            {(['all', 'movies', 'tv', 'people'] as const).map((target) => {
-              const next = new URLSearchParams(params);
-              if (target === 'movies') next.delete('view');
-              else next.set('view', target);
-              const active = view === target;
-              return (
-                <Link
-                  key={target}
-                  to={{ pathname: location.pathname, search: next.toString() }}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  {target !== 'people' ? (
-                    <FaClapperboard aria-hidden="true" />
-                  ) : (
-                    <FaUsers aria-hidden="true" />
-                  )}
-                  {viewLabels[target]}
-                </Link>
-              );
-            })}
+            {(['all', 'movies', 'tv', 'people'] as const)
+              .filter((target) => query || target !== 'all')
+              .map((target) => {
+                const next = new URLSearchParams(params);
+                if (target === 'movies') next.delete('view');
+                else next.set('view', target);
+                const active = view === target;
+                return (
+                  <Link
+                    key={target}
+                    to={{
+                      pathname: location.pathname,
+                      search: next.toString(),
+                    }}
+                    aria-current={active ? 'page' : undefined}
+                  >
+                    {target !== 'people' ? (
+                      <FaClapperboard aria-hidden="true" />
+                    ) : (
+                      <FaUsers aria-hidden="true" />
+                    )}
+                    {viewLabels[target]}
+                  </Link>
+                );
+              })}
           </nav>
-          {(view === 'movies' || (view === 'tv' && query)) && <Filter />}
+          {(view === 'movies' || view === 'tv') && <Filter />}
         </div>
       </div>
-      {view !== 'movies' && (
-        <p className="list__container container">
-          {view === 'tv'
-            ? 'Series text search uses relevance and first-air year only. Genre, rating and custom sorting are unavailable.'
-            : 'Text search uses relevance. Year, genre, rating and custom sorting are unavailable in this view.'}{' '}
-          Movie genre and rating selections are retained for Movies; they do not
-          affect this view.
-          {view === 'tv' &&
-            params.get('year') &&
-            ` First-air year: ${params.get('year')}.`}
-        </p>
-      )}
       <div hidden={view !== 'movies'}>
         {visited.movies && (view === 'movies' || people) && (
           <CardList
@@ -103,35 +97,42 @@ function ResultViews({ query }: { query: string }) {
       <div hidden={!people}>
         {visited.people && <PeopleList query={query} />}
       </div>
-      {(['all', 'tv'] as const).map((type) => (
-        <div key={type} hidden={view !== type}>
-          {view === type && (
-            <UnifiedList
-              key={`${type}:${type === 'tv' ? params.get('year') : ''}`}
-              query={query}
-              type={type}
-              year={
-                type === 'tv' ? (params.get('year') ?? undefined) : undefined
-              }
-            />
-          )}
-        </div>
-      ))}
+      {view === 'all' && <GroupedList query={query} />}
+      {view === 'tv' && (
+        <UnifiedList
+          key={['year', 'rating', 'sorting', 'order']
+            .map((key) => params.get(key))
+            .join(':')}
+          query={query}
+          type="tv"
+          year={params.get('year') ?? undefined}
+          rating={!query ? (params.get('rating') ?? undefined) : undefined}
+          sorting={!query ? (params.get('sorting') ?? undefined) : undefined}
+          order={!query ? (params.get('order') ?? undefined) : undefined}
+        />
+      )}
     </>
   );
 }
 
 export default function SearchResults() {
-  const { searchQuery = '' } = useParams();
+  const { searchQuery: rawQuery = '' } = useParams();
+  const searchQuery = rawQuery.trim();
   const [params] = useSearchParams();
   const location = useLocation();
   const normalized = normalizeSearchFilters(params, Boolean(searchQuery));
   // Canonicalize before mounting request owners to avoid an intermediate fetch.
-  if (normalized.toString() !== params.toString())
+  if (normalized.toString() !== params.toString() || rawQuery !== searchQuery)
     return (
       <Navigate
         replace
-        to={{ pathname: location.pathname, search: normalized.toString() }}
+        to={{
+          pathname:
+            rawQuery === searchQuery
+              ? location.pathname
+              : `/search${searchQuery ? `/${encodeURIComponent(searchQuery)}` : ''}`,
+          search: normalized.toString(),
+        }}
       />
     );
   return <ResultViews key={searchQuery} query={searchQuery} />;

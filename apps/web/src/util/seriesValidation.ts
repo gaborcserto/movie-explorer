@@ -153,6 +153,8 @@ function episodeSummary(
     text(value.title) &&
     nullableText(value.description) &&
     nullableText(value.stillUrl) &&
+    (value.stillSrcSet === undefined ||
+      typeof value.stillSrcSet === 'string') &&
     date(value.airDate) &&
     (value.runtimeMinutes === null || integer(value.runtimeMinutes, 1)) &&
     rating(value.rating) &&

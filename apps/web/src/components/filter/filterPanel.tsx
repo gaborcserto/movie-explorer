@@ -343,7 +343,7 @@ export default function FilterPanel({
               Any Year
             </button>
           </FilterSection>
-          {!series && (
+          {(!series || !isSearch) && (
             <FilterSection
               title="Minimum Rating"
               value={
@@ -373,10 +373,7 @@ export default function FilterPanel({
             icon={<FaArrowDownWideShort aria-hidden="true" />}
           >
             {isSearch ? (
-              <p>
-                Text searches use TMDB relevance ordering. Custom sorting is
-                unavailable.
-              </p>
+              <p>Sorted by relevance.</p>
             ) : (
               <label>
                 Sort field
@@ -390,7 +387,9 @@ export default function FilterPanel({
                 >
                   {sortOptions.map((option) => (
                     <option key={option} value={sortParams(option)}>
-                      {option}
+                      {series && option === 'Release Date'
+                        ? 'First-air Date'
+                        : option}
                     </option>
                   ))}
                 </select>

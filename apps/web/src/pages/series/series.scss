@@ -223,3 +223,54 @@
     gap: 16px;
   }
 }
+
+.series-hero--immersive {
+  isolation: isolate;
+  padding: 32px 0;
+
+  .series-hero__image {
+    @include hero-image-shadow;
+  }
+}
+
+.series-hero__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.12;
+  z-index: -1;
+  pointer-events: none;
+  mask-image: linear-gradient(#000000 65%, transparent);
+}
+
+.episode-credits {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 24px 36px;
+
+  > section {
+    min-width: 0;
+  }
+
+  > section:last-child {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+}
+
+@media (width < 768px) {
+  .series-hero--immersive {
+    padding: 16px 0;
+  }
+
+  .episode-credits {
+    grid-template-columns: minmax(0, 1fr);
+
+    > section:last-child {
+      grid-column: auto;
+      grid-row: auto;
+    }
+  }
+}

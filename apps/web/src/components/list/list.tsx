@@ -53,8 +53,8 @@ function List() {
   const getEmptyMessage = () => {
     if (searchQuery && (filter || minimumRating) && moviesData?.totalResults) {
       return moviesData.page < Math.min(moviesData.totalPages, 500)
-        ? 'No matches in the pages checked so far. Load more to check the next page.'
-        : 'No matches in the accessible result pages.';
+        ? 'No matching movies yet. Load more to continue.'
+        : 'No matching movies found.';
     }
     const genre = filter ? capitalizeFirstLetter(filter) : null;
     if (searchQuery && genre) {
@@ -233,7 +233,7 @@ function List() {
         <div className="list__more">
           <button
             type="button"
-            className={`btn ${searchQuery ? 'btn--primary' : 'btn--outline btn--action'}`}
+            className="btn btn--outline btn--action"
             disabled={loadingMore}
             onClick={() => loadMore()}
           >

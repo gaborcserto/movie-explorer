@@ -5,9 +5,11 @@ import { getEpisode, getSeason, getEpisodeCredits } from '../../util/apiUtils';
 import { record } from '../../util/partialValidation';
 import { seasonDetails, seriesDetails } from '../../util/seriesValidation';
 import parseDetailId from '../../util/detailId';
+import CastPreview from '../../components/details/credits';
 import { SectionRecovery } from '../../components/details/recovery';
 import useSeriesResource from './useSeriesResource';
 import parseSeasonNumber from './seriesCoordinates';
+import '../../components/details/media/media.scss';
 import {
   SeriesLayout,
   SeriesHero,
@@ -119,7 +121,14 @@ function EpisodeDetails({
       )}
       {episode ? (
         <>
-          <SeriesHero title={episode.title} image={episode.stillUrl} still>
+          <SeriesHero
+            title={episode.title}
+            image={episode.stillUrl}
+            srcSet={episode.stillSrcSet}
+            backdrop={episode.stillUrl}
+            still
+            immersive
+          >
             <p>
               <SeasonName number={seasonNumber} /> · Episode {episodeNumber}
             </p>
@@ -172,31 +181,46 @@ function EpisodeDetails({
             </p>
           )}
           <section
-            className="series-section"
+            className="series-section details-section"
             aria-labelledby="episode-credits-heading"
           >
             <h2 id="episode-credits-heading">Episode credits</h2>
-            {(['cast', 'guestStars', 'crew'] as const).map((category) => {
-              const labels = {
-                cast: 'Cast',
-                guestStars: 'Guest stars',
-                crew: 'Crew',
-              };
-              const people = episode.credits[category];
+            <div className="episode-credits">
+              {(['cast', 'guestStars', 'crew'] as const).map((category) => {
+                const labels = {
+                  cast: 'Cast',
+                  guestStars: 'Guest stars',
+                  crew: 'Crew',
+                };
+                const people = episode.credits[category];
 
-              return (
-                <section key={category}>
-                  <h3>{labels[category]}</h3>
-                  <SeriesPeople people={people} />
-                  {episode.credits.sections[category].status === 'available' &&
-                    people.length === 0 && (
-                      <p>No {labels[category].toLowerCase()} listed.</p>
+                return (
+                  <section key={category}>
+                    <h3>{labels[category]}</h3>
+                    {category === 'crew' ? (
+                      <SeriesPeople people={episode.credits.crew} />
+                    ) : (
+                      <CastPreview
+                        members={episode.credits[category].map(
+                          (person, position) => ({
+                            ...person,
+                            key: `${category}-${person.id ?? position}`,
+                            roles: person.characters,
+                          })
+                        )}
+                      />
                     )}
-                  {episode.credits.sections[category].status ===
-                    'unavailable' && <p>{labels[category]} unavailable.</p>}
-                </section>
-              );
-            })}
+                    {episode.credits.sections[category].status ===
+                      'available' &&
+                      people.length === 0 && (
+                        <p>No {labels[category].toLowerCase()} listed.</p>
+                      )}
+                    {episode.credits.sections[category].status ===
+                      'unavailable' && <p>{labels[category]} unavailable.</p>}
+                  </section>
+                );
+              })}
+            </div>
             <SectionRecovery
               label="Episode credits"
               availability={

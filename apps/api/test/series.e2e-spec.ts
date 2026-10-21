@@ -20,6 +20,7 @@ import { createApiDocument } from '../src/api-document';
 describe('Series details API (e2e)', () => {
   let app: INestApplication;
   const provider: jest.Mocked<SeriesProvider> = {
+    findPopular: jest.fn(),
     findOne: jest.fn(),
     findCredits: jest.fn(),
     findImages: jest.fn(),
@@ -35,6 +36,59 @@ describe('Series details API (e2e)', () => {
     findVideos: jest.fn(),
     findPerson: jest.fn(),
   };
+
+  it('browses paginated Series through the independent provider and documents the response', async () => {
+    const response = {
+      results: [{ id: 1, mediaType: 'tv' as const, title: 'Popular Series' }],
+      page: 2,
+      totalPages: 3,
+      totalResults: 50,
+    };
+    provider.findPopular.mockResolvedValue(response);
+    await request(app.getHttpServer())
+      .get(
+        '/api/v1/series?page=2&year=2005&minimumRating=7&sort=title&order=asc',
+      )
+      .expect(200)
+      .expect(response);
+    expect(provider.findPopular).toHaveBeenCalledWith({
+      page: 2,
+      year: 2005,
+      minimumRating: 7,
+      sort: 'title',
+      order: 'asc',
+    });
+    const document = createApiDocument(app);
+    expect(document.paths['/api/v1/series'].get.responses['200']).toMatchObject(
+      {
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/SearchResponseDto' },
+          },
+        },
+      },
+    );
+    expect(document.components.schemas.EpisodeSummaryDto).toMatchObject({
+      properties: { stillSrcSet: { type: 'string' } },
+    });
+  });
+
+  it.each([
+    'page=0',
+    'page=501',
+    'page=1.5',
+    'year=10000',
+    'year=abc',
+    'minimumRating=11',
+    'minimumRating=-1',
+    'sort=bad',
+    'order=bad',
+  ])('rejects invalid Series listing %s', async (query) => {
+    await request(app.getHttpServer())
+      .get('/api/v1/series?' + query)
+      .expect(400);
+    expect(provider.findPopular).not.toHaveBeenCalled();
+  });
 
   it.each([
     '',
@@ -417,7 +471,7 @@ describe('Series details API (e2e)', () => {
       .expect('Retry-After', '30');
   });
 
-  it.each(['/api/v1/series', '/api/v1/series/1/recommendations'])(
+  it.each(['/api/v1/series/1/recommendations'])(
     'does not expose deferred route %s',
     async (path) => {
       await request(app.getHttpServer()).get(path).expect(404);

@@ -119,6 +119,7 @@ export class TmdbSeriesMapper {
   toEpisodeSummary(episode: TmdbEpisode, seriesId: number): EpisodeSummary {
     const rating = episode.vote_average;
     const runtime = seriesCount(episode.runtime);
+    const stillPath = seriesText(episode.still_path);
     return {
       id: episode.id,
       seriesId,
@@ -129,6 +130,12 @@ export class TmdbSeriesMapper {
       airDate: seriesDate(episode.air_date),
       runtimeMinutes: runtime !== null && runtime > 0 ? runtime : null,
       stillUrl: this.images.toImageUrl(seriesText(episode.still_path)) || null,
+      ...(stillPath && {
+        stillSrcSet: this.images.toSrcSet(stillPath, [
+          ['w300', '1x'],
+          ['original', '3x'],
+        ]),
+      }),
       rating:
         typeof rating === 'number' &&
         Number.isFinite(rating) &&

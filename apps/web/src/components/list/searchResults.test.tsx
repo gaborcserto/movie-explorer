@@ -236,9 +236,9 @@ test('filter editing makes no requests, Apply refreshes once, and normalization 
     screen.getByRole('button', { name: 'Remove Drama genre filter' })
   ).toBeVisible();
   fireEvent.click(screen.getByRole('link', { name: 'Persons' }));
-  expect(screen.getByText('Enter a name to search for people.')).toBeVisible();
+  await screen.findByRole('link', { name: 'Person 1' });
   expect(router.state.location.search).toContain('filter=drama');
-  expect(getPeople).not.toHaveBeenCalled();
+  expect(getPeople).toHaveBeenCalledWith('', 1, expect.any(AbortSignal));
   fireEvent.click(screen.getByRole('link', { name: 'Movies' }));
   expect(screen.getByRole('link', { name: 'Movie result' })).toBeVisible();
   expect(getMovies).toHaveBeenCalledTimes(2);
@@ -546,3 +546,28 @@ test.each(['movies', 'people'] as const)(
     expect(retry).toHaveFocus();
   }
 );
+
+test('query Persons Load more uses the default outline variant during loading and disables repeated requests', async () => {
+  let resolve!: (value: PersonListResponse) => void;
+  vi.mocked(getPeople)
+    .mockResolvedValueOnce(peoplePage(1, 10))
+    .mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done;
+      })
+    );
+  setup('/search/Actor?view=people');
+  const button = await screen.findByRole('button', { name: 'Load more' });
+  expect(button).toHaveClass('btn--outline', 'btn--action');
+  expect(button).not.toHaveClass('btn--primary');
+  fireEvent.click(button);
+  expect(button).toBeDisabled();
+  expect(button).toHaveTextContent('Loading more...');
+  fireEvent.click(button);
+  expect(getPeople).toHaveBeenCalledTimes(2);
+  await act(async () => {
+    resolve(peoplePage(2, 1));
+  });
+  expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
+  expect(screen.getByRole('link', { name: 'Person 21' })).toBeVisible();
+});

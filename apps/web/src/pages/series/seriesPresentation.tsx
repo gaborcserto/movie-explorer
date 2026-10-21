@@ -94,19 +94,39 @@ export function SeriesHero({
   image,
   srcSet,
   still = false,
+  backdrop,
+  immersive = false,
   children,
 }: {
   title: string;
   image: string | null;
   srcSet?: string;
   still?: boolean;
+  backdrop?: string | null;
+  immersive?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className={`series-hero${still ? ' series-hero--episode' : ''}`}>
+    <div
+      className={`series-hero${still ? ' series-hero--episode' : ''}${immersive ? ' series-hero--immersive' : ''}`}
+    >
+      {backdrop && (
+        <img
+          className="series-hero__backdrop"
+          src={backdrop}
+          alt=""
+          decoding="async"
+        />
+      )}
       <HeroImage
         src={image ?? undefined}
         srcSet={srcSet}
+        fullSrcSet={srcSet}
+        sizes={
+          still
+            ? '(max-width: 767px) 100vw, 600px'
+            : '(max-width: 767px) 280px, 320px'
+        }
         alt={still ? `Still from ${title}` : `Poster for ${title}`}
         title={title}
         className="series-hero__image"

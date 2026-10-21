@@ -747,3 +747,79 @@ describe('Series hierarchy', () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe('Season and Episode shared hero images', () => {
+  it.each(['season', 'episode'] as const)(
+    'opens the original %s image only in the shared lightbox and restores focus',
+    async (kind) => {
+      const image = 'https://images.test/w300/hero.jpg';
+      const original = 'https://images.test/original/hero.jpg';
+      const srcSet = `${image} 1x, ${original} 3x`;
+      fetchMock.mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes('/episodes/'))
+          return Response.json({
+            ...episode,
+            stillUrl: image,
+            stillSrcSet: srcSet,
+          });
+        if (url.includes('/seasons/'))
+          return Response.json({
+            ...season,
+            posterUrl: image,
+            posterSrcSet: srcSet,
+          });
+        return Response.json({
+          ...series,
+          backdropUrl: 'https://images.test/w500/backdrop.jpg',
+        });
+      });
+      setup(
+        kind === 'season' ? '/tv/1/seasons/0' : '/tv/1/seasons/0/episodes/3'
+      );
+      const title = kind === 'season' ? season.title : episode.title;
+      const action = await screen.findByRole('button', {
+        name: `${kind === 'season' ? 'Poster for' : 'Still from'} ${title}`,
+      });
+      expect(action).toBeDisabled();
+      const thumbnail = action.querySelector('img');
+      expect(thumbnail).not.toBeNull();
+      expect(thumbnail).not.toHaveAttribute('src', original);
+      expect(thumbnail?.getAttribute('srcset')).not.toContain('/original/');
+      expect(screen.queryByRole('dialog')).toBeNull();
+      if (thumbnail) fireEvent.load(thumbnail);
+      await userEvent.click(action);
+      const dialog = screen.getByRole('dialog', {
+        name: `${title} photo viewer`,
+      });
+      expect(dialog.querySelector('img')).toHaveAttribute('src', original);
+      expect(dialog).toHaveTextContent('1 / 1');
+      await userEvent.keyboard('{Escape}');
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(action).toHaveFocus();
+    }
+  );
+
+  it('keeps missing Episode stills as noninteractive fallbacks while rendering cast cards and crew', async () => {
+    setup('/tv/1/seasons/0/episodes/3');
+    await screen.findByRole('heading', { name: 'Arrival', level: 1 });
+    expect(
+      screen.queryByRole('button', { name: 'Still from Arrival' })
+    ).toBeNull();
+    expect(
+      screen.getByRole('link', { name: 'Regular Actor' }).closest('article')
+    ).toHaveClass('cast-member');
+    expect(
+      screen.getByRole('link', { name: 'Guest Actor' }).closest('article')
+    ).toHaveClass('cast-member');
+    expect(screen.getByRole('link', { name: 'Episode Writer' })).toBeVisible();
+    expect(screen.getByRole('link', { name: /Next: 8/ })).toHaveAttribute(
+      'href',
+      '/tv/1/seasons/0/episodes/8'
+    );
+    expect(screen.getByRole('link', { name: /Previous: 1/ })).toHaveAttribute(
+      'href',
+      '/tv/1/seasons/0/episodes/1'
+    );
+  });
+});

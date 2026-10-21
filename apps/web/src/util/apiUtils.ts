@@ -564,12 +564,41 @@ export async function getSearchResults(
   return body;
 }
 
+export async function getPopularSeries(
+  page: number,
+  filters: { year?: string; rating?: string; sorting?: string; order?: string },
+  signal?: AbortSignal
+): Promise<SearchResponse> {
+  const params = new URLSearchParams({ page: String(page) });
+  if (filters.year) params.set('year', filters.year);
+  if (filters.rating) params.set('minimumRating', filters.rating);
+  if (filters.sorting)
+    params.set(
+      'sort',
+      filters.sorting === 'releaseDate' ? 'firstAirDate' : filters.sorting
+    );
+  if (filters.order) params.set('order', filters.order);
+  const body = await request<unknown>(`${apiBaseUrl}/api/v1/series?${params}`, {
+    signal,
+  });
+  if (
+    !searchResponse(body) ||
+    body.page !== page ||
+    body.results.some((item) => item.mediaType !== 'tv')
+  ) {
+    throw new ApiRequestError('invalid-response');
+  }
+  return body;
+}
+
 export const getPeople = (
   query: string,
   page = 1,
   signal?: AbortSignal
 ): Promise<PersonListResponse> => {
-  const params = new URLSearchParams({ query, page: String(page) });
+  const params = new URLSearchParams();
+  if (query) params.set('query', query);
+  params.set('page', String(page));
   return request<PersonListResponse>(
     `${apiBaseUrl}/api/v1/persons?${params}`,
     signal ? { signal } : {}

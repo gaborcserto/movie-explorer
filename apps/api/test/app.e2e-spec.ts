@@ -71,6 +71,7 @@ describe('AppController (e2e)', () => {
       '/api/v1/persons/{id}/combined-filmography',
       '/api/v1/search/suggestions',
       '/api/v1/search',
+      '/api/v1/series',
       '/api/v1/series/{id}',
       '/api/v1/series/{id}/credits',
       '/api/v1/series/{id}/images',
@@ -404,6 +405,27 @@ describe('AppController (e2e)', () => {
       .expect({ suggestions: [{ id: 5, title: 'Movie' }] });
   });
 
+  it.each(['', '?query=%20%20', '?page=2'])(
+    'browses popular persons without a name (%s)',
+    async (suffix) => {
+      const page = suffix === '?page=2' ? 2 : 1;
+      const result = {
+        people: [{ id: 7, name: 'Popular person' }],
+        page,
+        totalPages: 2,
+        totalResults: 30,
+      };
+      movieProvider.findPeople.mockResolvedValueOnce(result);
+      await request(app.getHttpServer())
+        .get('/api/v1/persons' + suffix)
+        .expect(200)
+        .expect(result);
+      expect(movieProvider.findPeople).toHaveBeenCalledWith('', page);
+      const document = createApiDocument(app);
+      expect(document.components.schemas.PersonListResponseDto).toBeDefined();
+    },
+  );
+
   it('searches person pages and validates query/page/limit bounds', async () => {
     const result = {
       people: [{ id: 7, name: 'Person' }],
@@ -420,8 +442,7 @@ describe('AppController (e2e)', () => {
     expect(movieProvider.findPeople).toHaveBeenCalledWith('Person', 2);
 
     for (const query of [
-      '',
-      'query=%20%20',
+      'query=' + 'x'.repeat(101),
       'query=Person&page=0',
       'query=Person&page=501',
       'query=Person&page=1.5',
@@ -636,7 +657,7 @@ describe('AppController (e2e)', () => {
     }));
     const details = {
       ...movies[0],
-      originalTitle: 'Original — Title',
+      originalTitle: 'Original Ă˘â‚¬â€ť Title',
       status: 'Released',
       originalLanguage: 'en',
       budget: 225000000,
