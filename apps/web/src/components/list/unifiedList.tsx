@@ -138,9 +138,6 @@ export default function UnifiedList({
       aria-label="Series results"
     >
       <div className="list__summary" aria-live="polite">
-        <h2 className="list__number">
-          <strong>{data?.totalResults ?? 0}</strong> series found
-        </h2>
         <p ref={countRef} tabIndex={-1} className="list__loaded">
           {loading ? 'Loading more results... ' : ''}
           {Math.min(visible, items.length)} results loaded

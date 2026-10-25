@@ -14,7 +14,6 @@ import {
   SeriesLayout,
   SeriesHero,
   SeriesFacts,
-  SeriesRating,
   SeriesPeople,
   SeriesRequestState,
   SeriesBreadcrumbs,
@@ -110,29 +109,34 @@ function EpisodeDetails({
   };
 
   return (
-    <SeriesLayout title={episode?.title ?? 'Episode details'}>
-      {valid && (
-        <SeriesBreadcrumbs>
-          <Link to={`/tv/${idText}`}>{series?.title ?? `Series ${id}`}</Link>
-          <Link to={`/tv/${idText}/seasons/${seasonText}`} state={{ series }}>
-            <SeasonName number={seasonNumber} title={season?.title} />
-          </Link>
-        </SeriesBreadcrumbs>
-      )}
-      {episode ? (
-        <>
+    <SeriesLayout
+      title={episode?.title ?? 'Episode details'}
+      backdrop={episode?.stillUrl}
+      navigation={
+        valid && (
+          <SeriesBreadcrumbs>
+            <Link to={`/tv/${idText}`}>{series?.title ?? `Series ${id}`}</Link>
+            <Link to={`/tv/${idText}/seasons/${seasonText}`} state={{ series }}>
+              <SeasonName number={seasonNumber} title={season?.title} />
+            </Link>
+          </SeriesBreadcrumbs>
+        )
+      }
+      hero={
+        episode ? (
           <SeriesHero
             title={episode.title}
+            rating={episode.rating}
+            votes={episode.voteCount}
             image={episode.stillUrl}
             srcSet={episode.stillSrcSet}
-            backdrop={episode.stillUrl}
             still
-            immersive
           >
             <p>
               <SeasonName number={seasonNumber} /> · Episode {episodeNumber}
             </p>
             <SeriesFacts
+              hero
               facts={[
                 ['Air date', episode.airDate],
                 [
@@ -143,12 +147,20 @@ function EpisodeDetails({
                 ],
               ]}
             />
-            <SeriesRating rating={episode.rating} votes={episode.voteCount} />
-            <h2>Overview</h2>
-            <p className="series-overview">
-              {episode.description ?? 'No episode overview available.'}
-            </p>
+            <section className="movie-details__section">
+              <h2 className="movie-details__section-title">Overview</h2>
+              <p className="movie-details__overview">
+                {episode.description ?? 'No episode overview available.'}
+              </p>
+            </section>
           </SeriesHero>
+        ) : (
+          <SeriesRequestState {...resource} valid={valid} resource="Episode" />
+        )
+      }
+    >
+      {episode && (
+        <>
           <nav aria-label="Episode navigation" className="series-neighbors">
             {previous && (
               <Link
@@ -184,7 +196,9 @@ function EpisodeDetails({
             className="series-section details-section"
             aria-labelledby="episode-credits-heading"
           >
-            <h2 id="episode-credits-heading">Episode credits</h2>
+            <div className="details-section__heading">
+              <h2 id="episode-credits-heading">Episode credits</h2>
+            </div>
             <div className="episode-credits">
               {(['cast', 'guestStars', 'crew'] as const).map((category) => {
                 const labels = {
@@ -234,8 +248,6 @@ function EpisodeDetails({
             />
           </section>
         </>
-      ) : (
-        <SeriesRequestState {...resource} valid={valid} resource="Episode" />
       )}
     </SeriesLayout>
   );

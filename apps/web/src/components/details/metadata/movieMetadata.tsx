@@ -1,5 +1,7 @@
 import type { MovieDetails } from '@movie-explorer/contracts';
 
+import DetailsMetadata from './detailsMetadata';
+
 const usd = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
@@ -28,7 +30,7 @@ function money(value: number | undefined) {
 }
 
 export default function MovieMetadata({ movie }: { movie: MovieDetails }) {
-  const entries = [
+  const entries: [string, string][] = [
     [
       'Original title',
       movie.originalTitle?.trim() ? movie.originalTitle : 'Unknown',
@@ -50,14 +52,7 @@ export default function MovieMetadata({ movie }: { movie: MovieDetails }) {
       >
         Movie information
       </h2>
-      <dl className="movie-details__metadata">
-        {entries.map(([label, value]) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
+      <DetailsMetadata entries={entries} />
     </section>
   );
 }

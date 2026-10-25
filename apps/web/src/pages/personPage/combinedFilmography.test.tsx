@@ -86,7 +86,7 @@ it('displays distinct Movie/Series identities, dates, role counts and correct li
 it('combines type, crew, job and sorting controls with history and repeated URL parameters', async () => {
   const router = setup(envelope, '?tag=a&tag=b');
   await screen.findByRole('link', { name: 'A Series' });
-  await userEvent.click(screen.getByRole('button', { name: 'Series' }));
+  await userEvent.click(screen.getByRole('tab', { name: 'Series' }));
   expect(
     screen.queryByRole('link', { name: 'A Movie' })
   ).not.toBeInTheDocument();
@@ -116,15 +116,37 @@ it('combines type, crew, job and sorting controls with history and repeated URL 
   expect(
     screen.getByRole('combobox', { name: 'Sort filmography' })
   ).toHaveValue('oldest');
-  await userEvent.click(screen.getByRole('button', { name: 'Movies' }));
+  await userEvent.click(screen.getByRole('tab', { name: 'Movies' }));
   expect(
     new URLSearchParams(router.state.location.search).has('personRole')
   ).toBe(false);
   expect(screen.getByRole('link', { name: 'A Movie' })).toBeInTheDocument();
-  await userEvent.click(screen.getByRole('button', { name: 'All' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Series' }));
-  expect(screen.getByRole('button', { name: 'Series' })).toHaveAttribute(
+  await userEvent.click(screen.getByRole('tab', { name: 'All' }));
+  await userEvent.click(screen.getByRole('tab', { name: 'Series' }));
+  expect(screen.getByRole('tab', { name: 'Series' })).toHaveAttribute(
+    'aria-selected',
+    'true'
+  );
+});
+
+it('switches media tabs with keyboard controls while keeping Acting and Crew independent', async () => {
+  const user = userEvent.setup();
+  const router = setup();
+  const all = await screen.findByRole('tab', { name: 'All' });
+  all.focus();
+  await user.keyboard('{ArrowRight}');
+  const movies = screen.getByRole('tab', { name: 'Movies' });
+  expect(movies).toHaveFocus();
+  expect(movies).toHaveAttribute('aria-selected', 'true');
+  expect(router.state.location.search).toContain('personType=movie');
+  expect(screen.getByRole('button', { name: 'Acting' })).toHaveAttribute(
     'aria-pressed',
+    'true'
+  );
+  await user.click(screen.getByRole('button', { name: 'Crew' }));
+  expect(router.state.location.search).toContain('personView=crew');
+  expect(screen.getByRole('tab', { name: 'Movies' })).toHaveAttribute(
+    'aria-selected',
     'true'
   );
 });
@@ -157,7 +179,7 @@ it('retains unavailable-group URL selections, recovers only that group and prese
   expect(String(fetchMock.mock.calls[1][0])).toContain(
     '/combined-filmography?mediaType=tv'
   );
-  await userEvent.click(screen.getByRole('button', { name: 'Movies' }));
+  await userEvent.click(screen.getByRole('tab', { name: 'Movies' }));
   expect(screen.getByRole('link', { name: 'A Movie' })).toBeInTheDocument();
   expect(fetchMock).toHaveBeenCalledTimes(2);
 });
@@ -170,8 +192,8 @@ it('restores Series selection after navigating to Series Details and Back', asyn
     await router.navigate(-1);
   });
   await screen.findByRole('heading', { name: 'Filmography' });
-  expect(screen.getByRole('button', { name: 'Series' })).toHaveAttribute(
-    'aria-pressed',
+  expect(screen.getByRole('tab', { name: 'Series' })).toHaveAttribute(
+    'aria-selected',
     'true'
   );
   expect(

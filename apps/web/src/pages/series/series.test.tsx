@@ -3,6 +3,7 @@ import {
   fireEvent,
   render,
   screen,
+  within,
   waitFor,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -148,9 +149,249 @@ beforeEach(() => {
     return Response.json(series);
   });
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth;
+  delete (HTMLElement.prototype as { scrollWidth?: number }).scrollWidth;
+});
 
 describe('Series hierarchy', () => {
+  it('renders accessible Cast and Crew tabs and keeps each preview mounted', async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValue(
+      Response.json({
+        ...series,
+        credits: {
+          cast: Array.from({ length: 40 }, (_, index) => ({
+            id: 20 + index,
+            name: `Actor ${index + 1}`,
+            totalEpisodeCount: 8,
+            characters: [
+              {
+                creditId: `role-${index}`,
+                character: 'Guide',
+                episodeCount: 8,
+              },
+            ],
+          })),
+          crew: [
+            {
+              id: 44,
+              name: 'Writer Producer',
+              departments: [
+                { department: 'Writing', totalEpisodeCount: 8 },
+                { department: 'Production', totalEpisodeCount: 8 },
+              ],
+              jobs: [
+                {
+                  creditId: 'writer',
+                  job: 'Writer',
+                  department: 'Writing',
+                  episodeCount: 8,
+                },
+                {
+                  creditId: 'producer',
+                  job: 'Producer',
+                  department: 'Production',
+                  episodeCount: 8,
+                },
+              ],
+            },
+            ...Array.from({ length: 15 }, (_, index) => ({
+              id: 100 + index,
+              name: `Crew ${index + 1}`,
+              departments: [
+                { department: 'Directing', totalEpisodeCount: index + 1 },
+              ],
+              jobs: [
+                {
+                  creditId: `director-${index}`,
+                  job: 'Director',
+                  department: 'Directing',
+                  episodeCount: index + 1,
+                },
+              ],
+            })),
+          ],
+          sections: {
+            cast: { status: 'available' },
+            crew: { status: 'available' },
+          },
+        },
+      })
+    );
+    setup('/tv/1');
+    const castTab = await screen.findByRole('tab', { name: 'Cast' });
+    const crewTab = screen.getByRole('tab', { name: 'Crew' });
+    expect(castTab).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel', { name: 'Cast' })).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Actor 1' })).toBeVisible();
+    expect(
+      within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
+    ).toHaveTextContent('Showing 16 of 40 cast members');
+    expect(screen.getByRole('link', { name: 'Actor 16' })).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Actor 17' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Writer Producer' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Show more cast' }));
+    expect(
+      within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
+    ).toHaveTextContent('Showing 24 of 40 cast members');
+    expect(screen.getByRole('link', { name: 'Actor 24' })).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Actor 25' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Show more cast' }));
+    expect(
+      within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
+    ).toHaveTextContent('Showing 32 of 40 cast members');
+    expect(screen.getByRole('link', { name: 'Actor 32' })).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Actor 33' })).toBeNull();
+    castTab.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(crewTab).toHaveFocus();
+    expect(crewTab).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel', { name: 'Crew' })).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Writer Producer' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Crew 15' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Show more crew' }));
+    expect(screen.getByRole('link', { name: 'Crew 15' })).toBeVisible();
+    expect(
+      within(screen.getByRole('tabpanel', { name: 'Crew' })).getAllByRole(
+        'link',
+        { name: 'Writer Producer' }
+      )
+    ).toHaveLength(2);
+    expect(screen.getByText('Writer — 8 episodes')).toBeVisible();
+    expect(screen.getByText('Producer — 8 episodes')).toBeVisible();
+    crewTab.focus();
+    await user.keyboard('{Home}');
+    expect(castTab).toHaveFocus();
+    expect(screen.getByRole('link', { name: 'Actor 32' })).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Show less cast' })
+    ).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Show less cast' }));
+    expect(
+      within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
+    ).toHaveTextContent('Showing 16 of 40 cast members');
+    expect(screen.getByRole('link', { name: 'Actor 16' })).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Actor 17' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show less cast' })).toBeNull();
+    castTab.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('link', { name: 'Crew 15' })).toBeVisible();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows short Series Cast lists without progressive controls', async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({
+        ...series,
+        credits: {
+          cast: [
+            {
+              id: 31,
+              name: 'Lead Actor',
+              totalEpisodeCount: 4,
+              characters: [
+                { creditId: 'lead', character: 'Lead', episodeCount: 4 },
+              ],
+            },
+            {
+              id: 32,
+              name: 'Guest Actor',
+              totalEpisodeCount: 1,
+              characters: [
+                { creditId: 'guest', character: 'Guest', episodeCount: 1 },
+              ],
+            },
+          ],
+          crew: [],
+          sections: {
+            cast: { status: 'available' },
+            crew: { status: 'available' },
+          },
+        },
+      })
+    );
+    setup('/tv/1');
+    expect(
+      await screen.findByText('Showing 2 of 2 cast members')
+    ).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Show more cast' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show less cast' })).toBeNull();
+  });
+
+  it('reveals all remaining Series Cast members when fewer than eight remain', async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValue(
+      Response.json({
+        ...series,
+        credits: {
+          cast: Array.from({ length: 19 }, (_, index) => ({
+            id: index + 1,
+            name: `Actor ${index + 1}`,
+            totalEpisodeCount: 1,
+            characters: [
+              {
+                creditId: `role-${index}`,
+                character: 'Guest',
+                episodeCount: 1,
+              },
+            ],
+          })),
+          crew: [],
+          sections: {
+            cast: { status: 'available' },
+            crew: { status: 'available' },
+          },
+        },
+      })
+    );
+    setup('/tv/1');
+    await screen.findByText('Showing 16 of 19 cast members');
+    await user.click(screen.getByRole('button', { name: 'Show more cast' }));
+    expect(
+      await screen.findByText('Showing 19 of 19 cast members')
+    ).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Actor 19' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Show more cast' })).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Show less cast' })
+    ).toBeVisible();
+  });
+
+  it.each([
+    ['/tv/1', 'The Journey'],
+    ['/tv/1/seasons/0', 'Special stories'],
+    ['/tv/1/seasons/0/episodes/3', 'Arrival'],
+  ])(
+    'uses the Movie page, hero and content framework at %s',
+    async (path, title) => {
+      const { container } = setup(path);
+      const heading = await screen.findByRole('heading', {
+        level: 1,
+        name: title,
+      });
+      expect(heading).toHaveClass('movie-details__title');
+      expect(heading.closest('.movie-details__container')).not.toBeNull();
+      expect(
+        heading.closest('.detail-page__hero > .movie-details.container')
+      ).not.toBeNull();
+      expect(container.querySelector('header')).toHaveClass(
+        'detail-page__navigation',
+        'movie-details',
+        'container'
+      );
+      expect(
+        container.querySelector('.movie-details__metadata dt')
+      ).not.toBeNull();
+      expect(
+        container.querySelector('.details-section')?.closest('.container')
+      ).toHaveClass('movie-details__lower-content');
+      expect(screen.getAllByRole('main')).toHaveLength(1);
+      expect(screen.getAllByRole('contentinfo')).toHaveLength(1);
+    }
+  );
+
   it('reveals crew in bounded increments and retains focus after the final reveal', async () => {
     fetchMock.mockResolvedValue(
       Response.json({
@@ -180,6 +421,7 @@ describe('Series hierarchy', () => {
       })
     );
     setup('/tv/1');
+    await userEvent.click(await screen.findByRole('tab', { name: 'Crew' }));
     const reveal = await screen.findByRole('button', {
       name: 'Show more crew',
     });
@@ -216,6 +458,38 @@ describe('Series hierarchy', () => {
               characters: [
                 { creditId: 'a', character: 'Guide', episodeCount: 4 },
                 { creditId: 'b', character: 'Visitor', episodeCount: 2 },
+              ],
+            },
+            {
+              id: 13,
+              name: 'Single Character Actor',
+              totalEpisodeCount: 5,
+              characters: [
+                { creditId: 'c', character: 'Lead', episodeCount: 5 },
+              ],
+            },
+            {
+              id: 14,
+              name: 'Zero Episode Actor',
+              totalEpisodeCount: 0,
+              characters: [
+                { creditId: 'd', character: 'Zero', episodeCount: 0 },
+              ],
+            },
+            {
+              id: 15,
+              name: 'Missing Character Count Actor',
+              totalEpisodeCount: 4,
+              characters: [
+                { creditId: 'e', character: 'Unknown', episodeCount: null },
+              ],
+            },
+            {
+              id: 16,
+              name: 'Different Total Actor',
+              totalEpisodeCount: 6,
+              characters: [
+                { creditId: 'f', character: 'Other', episodeCount: 5 },
               ],
             },
           ],
@@ -257,6 +531,18 @@ describe('Series hierarchy', () => {
     expect(screen.getByText(/Guide.*4 episodes/)).toHaveTextContent(
       /Visitor.*2 episodes/
     );
+    expect(
+      screen.getByText(
+        'Guide · 4 episodes · Visitor · 2 episodes · Total: 5 episodes'
+      )
+    ).toBeVisible();
+    expect(screen.getByText('Lead · 5 episodes')).toBeVisible();
+    expect(screen.queryByText(/Lead.*Total/)).toBeNull();
+    expect(screen.getByText('Zero · 0 episodes')).toBeVisible();
+    expect(screen.getByText('Unknown · Total: 4 episodes')).toBeVisible();
+    expect(
+      screen.getByText('Other · 5 episodes · Total: 6 episodes')
+    ).toBeVisible();
     expect(
       screen.getByText(/Executive Producer.*5 episodes/)
     ).toBeInTheDocument();
@@ -386,8 +672,9 @@ describe('Series hierarchy', () => {
     });
   });
 
-  it('reveals long season catalogs locally and keeps Specials reachable', async () => {
-    const manySeasons = Array.from({ length: 8 }, (_, index) => ({
+  it('selects many seasons locally with keyboard navigation and keeps Specials reachable', async () => {
+    const user = userEvent.setup();
+    const manySeasons = Array.from({ length: 25 }, (_, index) => ({
       ...season,
       id: 100 + index,
       seasonNumber: index + 1,
@@ -396,22 +683,135 @@ describe('Series hierarchy', () => {
     fetchMock.mockResolvedValue(
       Response.json({ ...series, seasons: [...manySeasons, season] })
     );
-    setup('/tv/1');
-    const reveal = await screen.findByRole('button', {
-      name: 'Show all seasons',
+    const originalClientWidth = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'clientWidth'
+    );
+    const originalScrollWidth = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollWidth'
+    );
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+      configurable: true,
+      get() {
+        return this.classList.contains('season-tabs') ? 400 : 0;
+      },
     });
+    Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
+      configurable: true,
+      get() {
+        return this.classList.contains('season-tabs') ? 1800 : 0;
+      },
+    });
+    setup('/tv/1');
+    const first = await screen.findByRole('tab', { name: 'Season 1' });
+    const seasonTabs = within(screen.getByRole('tablist', { name: 'Seasons' }));
+    expect(first).toHaveTextContent('1');
+    expect(seasonTabs.getAllByRole('tab')).toHaveLength(26);
+    expect(first).toHaveAttribute('aria-selected', 'true');
+    first.focus();
+    await user.keyboard('{End}');
+    const specials = seasonTabs.getByRole('tab', {
+      name: 'Specials, Season 0',
+    });
+    expect(specials).toHaveTextContent('Specials');
+    expect(specials).toHaveFocus();
+    expect(specials).toHaveAttribute('aria-selected', 'true');
     expect(
-      screen.queryByRole('link', { name: 'Season 8: Book 8' })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: 'Specials: Special stories' })
-    ).toBeInTheDocument();
-    fireEvent.click(reveal);
-    expect(
-      screen.getByRole('link', { name: 'Season 8: Book 8' })
-    ).toBeInTheDocument();
-    expect(reveal).toHaveAttribute('aria-expanded', 'true');
+      screen.getByRole('tabpanel', { name: 'Specials, Season 0' })
+    ).toBeVisible();
+    expect(screen.getByRole('link', { name: 'View episodes' })).toHaveAttribute(
+      'href',
+      '/tv/1/seasons/0'
+    );
+    await user.keyboard('{ArrowRight}');
+    expect(first).toHaveFocus();
+    expect(screen.getByRole('link', { name: 'View episodes' })).toHaveAttribute(
+      'href',
+      '/tv/1/seasons/1'
+    );
+    await user.click(screen.getByRole('button', { name: 'Next season' }));
+    expect(first).toHaveAttribute('aria-selected', 'true');
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    if (originalClientWidth)
+      Object.defineProperty(
+        HTMLElement.prototype,
+        'clientWidth',
+        originalClientWidth
+      );
+    else delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth;
+    if (originalScrollWidth)
+      Object.defineProperty(
+        HTMLElement.prototype,
+        'scrollWidth',
+        originalScrollWidth
+      );
+    else delete (HTMLElement.prototype as { scrollWidth?: number }).scrollWidth;
+  });
+
+  it('shows season arrows from measured overflow and updates them after resize and scrolling', async () => {
+    const manySeasons = Array.from({ length: 15 }, (_, index) => ({
+      ...season,
+      id: 200 + index,
+      seasonNumber: index + 1,
+      title: `Season ${index + 1}`,
+    }));
+    let resize: ResizeObserverCallback | undefined;
+    class ResizeObserverMock {
+      private readonly observed = new Set<Element>();
+
+      constructor(callback: ResizeObserverCallback) {
+        resize = callback;
+      }
+
+      observe(element: Element) {
+        this.observed.add(element);
+      }
+
+      disconnect() {
+        this.observed.clear();
+      }
+
+      unobserve(element: Element) {
+        this.observed.delete(element);
+      }
+    }
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+      configurable: true,
+      get() {
+        return this.classList.contains('season-tabs') ? 400 : 0;
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
+      configurable: true,
+      get() {
+        if (!this.classList.contains('season-tabs')) return 0;
+        return (this as HTMLElement).dataset.overflow === 'yes' ? 1200 : 400;
+      },
+    });
+    fetchMock.mockResolvedValue(
+      Response.json({ ...series, seasons: manySeasons })
+    );
+    setup('/tv/1');
+    const first = await screen.findByRole('tab', { name: 'Season 1' });
+    expect(screen.queryByRole('button', { name: 'Next season' })).toBeNull();
+    const list = screen.getByRole('tablist', { name: 'Seasons' });
+    list.setAttribute('data-overflow', 'yes');
+    act(() => resize?.([], {} as ResizeObserver));
+    const next = screen.getByRole('button', { name: 'Next season' });
+    const previous = screen.getByRole('button', { name: 'Previous season' });
+    expect(previous).toBeDisabled();
+    expect(next).toBeEnabled();
+    await userEvent.click(next);
+    expect(first).toHaveAttribute('aria-selected', 'true');
+    (list as HTMLDivElement).scrollLeft = 400;
+    fireEvent.scroll(list);
+    expect(previous).toBeEnabled();
+    expect(next).toBeEnabled();
+    (list as HTMLDivElement).scrollLeft = 800;
+    fireEvent.scroll(list);
+    expect(next).toBeDisabled();
   });
 
   it('uses actual season choices with accessible keyboard controls', async () => {
@@ -465,12 +865,18 @@ describe('Series hierarchy', () => {
       'href',
       '/person/7'
     );
+    expect(screen.getByRole('link', { name: 'View episodes' })).toHaveAttribute(
+      'href',
+      '/tv/1/seasons/0'
+    );
+    await userEvent.click(screen.getByRole('tab', { name: 'Season 5' }));
     expect(
-      screen.getByRole('link', { name: 'Season 5: Book Five' })
-    ).toHaveAttribute('href', '/tv/1/seasons/5');
-    expect(
-      screen.getByRole('link', { name: 'Specials: Special stories' })
-    ).toHaveAttribute('href', '/tv/1/seasons/0');
+      screen.getByRole('heading', { name: 'Season 5: Book Five' })
+    ).toBeVisible();
+    expect(screen.getByRole('link', { name: 'View episodes' })).toHaveAttribute(
+      'href',
+      '/tv/1/seasons/5'
+    );
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(document.title).toBe('The Journey | Movie Explorer');
   });
@@ -479,7 +885,7 @@ describe('Series hierarchy', () => {
     const user = userEvent.setup();
     setup('/tv/1');
     await user.click(
-      await screen.findByRole('link', { name: 'Specials: Special stories' })
+      await screen.findByRole('link', { name: 'View episodes' })
     );
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Special stories' })
@@ -821,5 +1227,93 @@ describe('Season and Episode shared hero images', () => {
       'href',
       '/tv/1/seasons/0/episodes/1'
     );
+  });
+});
+
+describe('Series details polish edge cases', () => {
+  it.each([
+    { seasons: [] },
+    { seasons: [season] },
+    { seasons: [{ ...season, seasonNumber: 9, title: 'Season Nine' }] },
+  ])(
+    'handles empty, Specials-only and single sparse seasons %#',
+    async ({ seasons }) => {
+      fetchMock.mockResolvedValue(Response.json({ ...series, seasons }));
+      setup('/tv/1');
+      await screen.findByRole('heading', { level: 1, name: series.title });
+      if (!seasons.length) {
+        expect(
+          screen.getByText('No season information available.')
+        ).toBeVisible();
+        expect(screen.queryByRole('tablist', { name: 'Seasons' })).toBeNull();
+      } else {
+        const seasonTabs = within(
+          screen.getByRole('tablist', { name: 'Seasons' })
+        );
+        expect(seasonTabs.getAllByRole('tab')).toHaveLength(1);
+        expect(seasonTabs.getByRole('tab')).toHaveAttribute(
+          'aria-selected',
+          'true'
+        );
+        expect(
+          screen.queryByRole('button', { name: 'Next season' })
+        ).toBeNull();
+        expect(
+          screen.getByRole('link', { name: 'View episodes' })
+        ).toHaveAttribute('href', `/tv/1/seasons/${seasons[0].seasonNumber}`);
+        const panel = screen.getByRole('tabpanel', {
+          name:
+            seasons[0].seasonNumber === 0
+              ? 'Specials, Season 0'
+              : `Season ${seasons[0].seasonNumber}`,
+        });
+        expect(panel).not.toHaveTextContent('Air date');
+        expect(panel).not.toHaveTextContent('undefined');
+        expect(panel).not.toHaveTextContent('null');
+      }
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it('discloses every creator and network through native summaries', async () => {
+    const user = userEvent.setup();
+    const creators = Array.from({ length: 15 }, (_, index) => ({
+      id: 100 + index,
+      name: `Creator ${index}`,
+    }));
+    const networks = Array.from({ length: 12 }, (_, index) => ({
+      id: 200 + index,
+      name: `Network ${index}`,
+      logoUrl: null,
+      originCountry: null,
+    }));
+    fetchMock.mockResolvedValue(
+      Response.json({ ...series, creators, networks })
+    );
+    setup('/tv/1');
+    await screen.findByRole('heading', { level: 1, name: series.title });
+    const creatorSummary = screen.getByLabelText(
+      'Creators: 15, expand or collapse'
+    );
+    const disclosure = creatorSummary.closest('details');
+    expect(disclosure).not.toHaveAttribute('open');
+    expect(screen.getByRole('link', { name: 'Creator 14' })).not.toBeVisible();
+    creatorSummary.focus();
+    await user.click(creatorSummary);
+    expect(disclosure).toHaveAttribute('open');
+    expect(screen.getByRole('link', { name: 'Creator 14' })).toHaveAttribute(
+      'href',
+      '/person/114'
+    );
+    await user.click(creatorSummary);
+    expect(disclosure).not.toHaveAttribute('open');
+    expect(creatorSummary).toHaveFocus();
+    const networkSummary = screen.getByLabelText(
+      'Networks: 12, expand or collapse'
+    );
+    await user.click(networkSummary);
+    expect(networkSummary.closest('details')).toHaveAttribute('open');
+    expect(screen.getByText('Network 11')).toBeVisible();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

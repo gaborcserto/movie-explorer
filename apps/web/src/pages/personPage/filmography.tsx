@@ -189,16 +189,40 @@ export default function Filmography({
       {recovery}
       {groups && (
         <div
-          className="filmography__views"
-          role="group"
+          className="filmography__media-tabs"
+          role="tablist"
+          tabIndex={-1}
           aria-label="Filmography media type"
+          onKeyDown={(event) => {
+            const tabs = Array.from(
+              event.currentTarget.querySelectorAll<HTMLButtonElement>(
+                '[role="tab"]'
+              )
+            );
+            const current = tabs.indexOf(
+              event.target instanceof HTMLButtonElement
+                ? event.target
+                : (document.activeElement as HTMLButtonElement)
+            );
+            let next: number;
+            if (event.key === 'ArrowRight') next = (current + 1) % tabs.length;
+            else if (event.key === 'ArrowLeft')
+              next = (current - 1 + tabs.length) % tabs.length;
+            else if (event.key === 'Home') next = 0;
+            else if (event.key === 'End') next = tabs.length - 1;
+            else return;
+            event.preventDefault();
+            tabs[next]?.focus();
+            tabs[next]?.click();
+          }}
         >
           {(['all', 'movie', 'tv'] as const).map((type) => (
             <button
               key={type}
               type="button"
-              className="btn btn--outline"
-              aria-pressed={mediaType === type}
+              role="tab"
+              aria-selected={mediaType === type}
+              tabIndex={mediaType === type ? 0 : -1}
               onClick={() =>
                 updateSelection('personType', type === 'all' ? '' : type)
               }

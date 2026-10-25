@@ -168,14 +168,9 @@ describe('<List />', () => {
 
     renderList('/search/Movie?filter=crime&sorting=releaseDate&order=desc');
 
-    await waitFor(() => {
-      const h2Element = screen.getByText(/text search results/i);
-      expect(h2Element).toBeInTheDocument();
-
-      const strongElement = document.querySelector('strong');
-      expect(strongElement).not.toBeNull();
-      expect(strongElement?.textContent).toBe('2');
-    });
+    expect(
+      await screen.findByText('2 matching movies loaded')
+    ).toBeInTheDocument();
 
     expect(screen.getByText('Movie 1')).toBeInTheDocument();
     expect(screen.getByText('Movie 2')).toBeInTheDocument();
@@ -277,9 +272,7 @@ describe('<List />', () => {
     renderList();
 
     expect(await screen.findByText('Movie 10')).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: '25 movies found' })
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /movies found/ })).toBeNull();
     expect(screen.queryByText('Movie 11')).not.toBeInTheDocument();
     expect(screen.getByText('10 movies loaded')).toBeInTheDocument();
     expect(getMovies).toHaveBeenCalledTimes(1);
@@ -345,8 +338,10 @@ describe('<List />', () => {
         expect(screen.queryByText('Obsolete 1')).not.toBeInTheDocument();
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
         expect(
-          screen.getByRole('heading', { name: /30 .*results|30 movies found/ })
-        ).toBeInTheDocument();
+          screen.queryByRole('heading', {
+            name: /30 .*results|30 movies found/,
+          })
+        ).toBeNull();
         expect(
           screen.getByText(/10 (matching )?movies loaded/)
         ).toBeInTheDocument();
@@ -473,8 +468,8 @@ describe('<List />', () => {
             expect(screen.queryByText('Obsolete 1')).not.toBeInTheDocument();
             expect(screen.queryByRole('alert')).not.toBeInTheDocument();
             expect(
-              screen.getByRole('heading', { name: '30 movies found' })
-            ).toBeInTheDocument();
+              screen.queryByRole('heading', { name: /movies found/ })
+            ).toBeNull();
             expect(screen.getByText('10 movies loaded')).toBeInTheDocument();
             await user.click(screen.getByRole('button', { name: 'Load more' }));
             expect(
@@ -611,35 +606,32 @@ describe('<List />', () => {
     ]);
   });
 
-  test('it displays the unfiltered result total', async () => {
+  test('it omits capped default totals and keeps loaded item counts', async () => {
     getMovies.mockResolvedValue(emptyResponse(20_001));
 
     renderList();
 
-    expect(
-      await screen.findByRole('heading', { name: '20001 movies found' })
-    ).toBeInTheDocument();
+    expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();
+    expect(screen.queryByText(/20001 movies found/)).toBeNull();
   });
 
-  test('it displays the genre-filtered result total', async () => {
+  test('it omits query and filter totals when their exactness is unknown', async () => {
     getMovies.mockResolvedValue(emptyResponse(837));
 
     renderList('/search?filter=documentary');
 
-    expect(
-      await screen.findByRole('heading', { name: '837 movies found' })
-    ).toBeInTheDocument();
+    expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();
+    expect(screen.queryByText(/837 movies found/)).toBeNull();
     expect(screen.getByText(/genre:/i)).toHaveTextContent('Genre: Documentary');
   });
 
-  test('it displays the search result total', async () => {
+  test('it omits query-based totals when their exactness is unknown', async () => {
     getMovies.mockResolvedValue(emptyResponse(126));
 
     renderList('/search/Alpha');
 
-    expect(
-      await screen.findByRole('heading', { name: '126 movies found' })
-    ).toBeInTheDocument();
+    expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();
+    expect(screen.queryByText(/126 movies found/)).toBeNull();
     expect(screen.getByText(/search:/i)).toHaveTextContent('Search: "Alpha"');
   });
 
@@ -660,20 +652,14 @@ describe('<List />', () => {
       </MemoryRouter>
     );
 
-    expect(
-      await screen.findByRole('heading', { name: '20001 movies found' })
-    ).toBeInTheDocument();
+    expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();
 
     await user.click(screen.getByRole('link', { name: 'Documentary' }));
-    expect(
-      await screen.findByRole('heading', { name: '837 movies found' })
-    ).toBeInTheDocument();
+    expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();
     expect(screen.getByText(/genre:/i)).toHaveTextContent('Genre: Documentary');
 
     await user.click(screen.getByRole('link', { name: 'All' }));
-    expect(
-      await screen.findByRole('heading', { name: '20001 movies found' })
-    ).toBeInTheDocument();
+    expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();
     expect(screen.queryByText(/genre:/i)).toBeNull();
   });
 
@@ -697,9 +683,7 @@ describe('<List />', () => {
     );
 
     await user.click(screen.getByRole('link', { name: 'Clear search' }));
-    expect(
-      await screen.findByRole('heading', { name: '20001 movies found' })
-    ).toBeInTheDocument();
+    expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();
     expect(screen.queryByText(/search:/i)).toBeNull();
   });
 
@@ -753,9 +737,7 @@ describe('<List />', () => {
     expect(
       await screen.findByText('No movies found for "Nope".')
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: '0 movies found' })
-    ).toBeInTheDocument();
+    expect(screen.getByText('0 movies loaded')).toBeInTheDocument();
   });
 
   test('loads the next page, appends movies, and removes overlapping ids', async () => {

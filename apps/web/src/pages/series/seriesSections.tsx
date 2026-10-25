@@ -1,11 +1,13 @@
-import { useRef, useState } from 'react';
+import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type {
+  SeriesCastMember,
   SeriesDetails,
   SectionAvailability,
 } from '@movie-explorer/contracts';
 
 import CastPreview from '../../components/details/credits';
+import useCrewPreview from '../../components/details/credits/useCrewPreview';
 import PhotoPreview, { VideoPreview } from '../../components/details/media';
 import { SectionRecovery } from '../../components/details/recovery';
 import {
@@ -23,9 +25,33 @@ function episodeLabel(count: number | null) {
     : `${count} ${count === 1 ? 'episode' : 'episodes'}`;
 }
 
+function castRoles(person: SeriesCastMember) {
+  const counts = person.characters.map((role) => role.episodeCount);
+  const characterTotal =
+    counts.length > 0 && counts.every((count) => count !== null)
+      ? counts.reduce<number>((total, count) => total + (count ?? 0), 0)
+      : null;
+  const roles = person.characters.map((role) =>
+    [role.character, episodeLabel(role.episodeCount)]
+      .filter(Boolean)
+      .join(' · ')
+  );
+
+  if (
+    person.totalEpisodeCount !== null &&
+    (characterTotal === null || characterTotal !== person.totalEpisodeCount)
+  ) {
+    roles.push(`Total: ${episodeLabel(person.totalEpisodeCount)}`);
+  }
+
+  return roles.filter(Boolean).join(' · ');
+}
+
 export default function SeriesSections({ series }: { series: SeriesDetails }) {
-  const crewCountRef = useRef<HTMLParagraphElement>(null);
-  const [visibleCrewCount, setVisibleCrewCount] = useState(20);
+  const [activeCreditTab, setActiveCreditTab] = useState<'cast' | 'crew'>(
+    'cast'
+  );
+  const creditTabId = useId();
   const [credits, setCredits] = useState(series.credits);
   const [images, setImages] = useState(series.images);
   const [videos, setVideos] = useState(series.videos);
@@ -57,7 +83,8 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
       );
     return rank(a) - rank(b);
   });
-  crew.slice(0, visibleCrewCount).forEach((person) => {
+  const crewPreview = useCrewPreview(crew, series.id);
+  crewPreview.visible.forEach((person) => {
     const departments = new Set(
       person.departments.map((credit) => credit.department ?? 'Other crew')
     );
@@ -71,37 +98,72 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
 
   return (
     <div className="series-sections">
-      <div className="cast-crew-layout">
-        <section
-          className="series-section"
-          aria-labelledby="series-cast-heading"
+      <section
+        className="details-section series-credits"
+        aria-label="Cast and crew"
+      >
+        <SectionRecovery
+          label="Cast and crew"
+          availability={creditState}
+          recover={async (signal) => {
+            const result = await getSeriesCredits(series.id, signal);
+            if (!signal.aborted) {
+              setCredits(result);
+            }
+          }}
+        />
+        <div
+          className="series-credit-tabs"
+          role="tablist"
+          tabIndex={-1}
+          aria-label="Series credits"
+          onKeyDown={(event) => {
+            if (
+              event.key === 'ArrowLeft' ||
+              event.key === 'ArrowRight' ||
+              event.key === 'Home' ||
+              event.key === 'End'
+            ) {
+              event.preventDefault();
+              let next: 'cast' | 'crew';
+              if (event.key === 'Home') next = 'cast';
+              else if (event.key === 'End') next = 'crew';
+              else next = activeCreditTab === 'cast' ? 'crew' : 'cast';
+              setActiveCreditTab(next);
+              document.getElementById(`${creditTabId}-${next}-tab`)?.focus();
+            }
+          }}
         >
-          <h2 id="series-cast-heading">Cast</h2>
-          <SectionRecovery
-            label="Cast and crew"
-            availability={creditState}
-            recover={async (signal) => {
-              const result = await getSeriesCredits(series.id, signal);
-              if (!signal.aborted) {
-                setCredits(result);
-              }
-            }}
-          />
+          {(['cast', 'crew'] as const).map((tab) => (
+            <button
+              key={tab}
+              id={`${creditTabId}-${tab}-tab`}
+              type="button"
+              role="tab"
+              aria-selected={activeCreditTab === tab}
+              aria-controls={`${creditTabId}-${tab}-panel`}
+              tabIndex={activeCreditTab === tab ? 0 : -1}
+              onClick={() => setActiveCreditTab(tab)}
+            >
+              {tab === 'cast' ? 'Cast' : 'Crew'}
+            </button>
+          ))}
+        </div>
+        <div
+          id={`${creditTabId}-cast-panel`}
+          role="tabpanel"
+          aria-labelledby={`${creditTabId}-cast-tab`}
+          hidden={activeCreditTab !== 'cast'}
+          tabIndex={0}
+        >
           {credits?.cast.length ? (
             <CastPreview
+              initialVisibleCount={16}
+              batchSize={8}
               members={credits.cast.map((person, index) => ({
                 ...person,
                 key: `tv-${series.id}-${person.id ?? index}`,
-                roles: [
-                  ...person.characters.map((role) =>
-                    [role.character, episodeLabel(role.episodeCount)]
-                      .filter(Boolean)
-                      .join(' — ')
-                  ),
-                  ...(person.totalEpisodeCount === null
-                    ? []
-                    : [`Total: ${episodeLabel(person.totalEpisodeCount)}`]),
-                ].filter(Boolean),
+                roles: [castRoles(person)].filter(Boolean),
               }))}
             />
           ) : (
@@ -109,93 +171,91 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
               <p>No cast information available.</p>
             )
           )}
-        </section>
-        <section
-          className="series-section"
-          aria-labelledby="series-crew-heading"
+        </div>
+        <div
+          id={`${creditTabId}-crew-panel`}
+          role="tabpanel"
+          aria-labelledby={`${creditTabId}-crew-tab`}
+          hidden={activeCreditTab !== 'crew'}
+          tabIndex={0}
         >
-          <h2 id="series-crew-heading">Crew</h2>
           {credits?.sections.crew.status === 'unavailable' && (
             <p>Crew information is incomplete.</p>
           )}
-          <p ref={crewCountRef} role="status" tabIndex={-1}>
-            Showing {Math.min(visibleCrewCount, credits?.crew.length ?? 0)} of{' '}
-            {credits?.crew.length ?? 0} crew members
-          </p>
-          <div className="crew-groups">
-            {[...crewGroups].map(([department, people]) => (
-              <section className="crew-group" key={department}>
-                <h3>{department}</h3>
-                <ul className="crew-group__people">
-                  {people.map((person, index) => (
-                    <li key={person.id ?? index}>
-                      {person.id ? (
-                        <Link
-                          to={`/person/${person.id}`}
-                          className="person-credit-link"
-                        >
-                          {person.name}
-                        </Link>
-                      ) : (
-                        person.name
-                      )}
-                      <p>
+          {crewPreview.summary}
+          <div className="crew-groups" id={crewPreview.groupId}>
+            {[...crewGroups]
+              .sort(([a], [b]) => {
+                const rank = (department: string) => {
+                  const index = priority(department);
+                  return index < 0 ? 3 : index;
+                };
+                return rank(a) - rank(b);
+              })
+              .map(([department, people]) => (
+                <section className="crew-group" key={department}>
+                  <h3>{department}</h3>
+                  <ul className="crew-group__people">
+                    {people.map((person, index) => (
+                      <li key={person.id ?? index}>
+                        {person.id ? (
+                          <Link
+                            to={`/person/${person.id}`}
+                            className="person-credit-link"
+                          >
+                            {person.name}
+                          </Link>
+                        ) : (
+                          person.name
+                        )}
                         {person.jobs
                           .filter(
                             (job) =>
                               (job.department ?? 'Other crew') === department
                           )
-                          .map((job) =>
-                            [job.job, episodeLabel(job.episodeCount)]
-                              .filter(Boolean)
-                              .join(' — ')
+                          .map((job) => (
+                            <p
+                              key={
+                                job.creditId ?? `${job.job}:${job.episodeCount}`
+                              }
+                            >
+                              {[job.job, episodeLabel(job.episodeCount)]
+                                .filter(Boolean)
+                                .join(' \u2014 ')}
+                            </p>
+                          ))}
+                        {person.departments
+                          .filter(
+                            (credit) =>
+                              (credit.department ?? 'Other crew') ===
+                                department && credit.totalEpisodeCount !== null
                           )
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </p>
-                      {person.departments
-                        .filter(
-                          (credit) =>
-                            (credit.department ?? 'Other crew') ===
-                              department && credit.totalEpisodeCount !== null
-                        )
-                        .map((credit) => (
-                          <p
-                            key={`${credit.department}:${credit.totalEpisodeCount}`}
-                          >
-                            Department total:{' '}
-                            {episodeLabel(credit.totalEpisodeCount)}
-                          </p>
-                        ))}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
+                          .map((credit) => (
+                            <p
+                              key={`${credit.department}:${credit.totalEpisodeCount}`}
+                            >
+                              Department total:{' '}
+                              {episodeLabel(credit.totalEpisodeCount)}
+                            </p>
+                          ))}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
           </div>
-          {credits && visibleCrewCount < credits.crew.length && (
-            <button
-              type="button"
-              className="btn btn--outline btn--action"
-              onClick={() => {
-                setVisibleCrewCount((count) => count + 20);
-                if (visibleCrewCount + 20 >= credits.crew.length) {
-                  crewCountRef.current?.focus({ preventScroll: true });
-                }
-              }}
-            >
-              Show more crew
-            </button>
-          )}
+          {crewPreview.controls}
           {credits?.sections.crew.status === 'available' &&
             !credits.crew.length && <p>No crew information available.</p>}
-        </section>
-      </div>
+        </div>
+      </section>
       <section
-        className="series-section"
+        className="details-section"
         aria-labelledby="series-images-heading"
       >
-        <h2 id="series-images-heading">Images</h2>
+        <div className="details-section__heading">
+          <h2 id="series-images-heading">Images</h2>
+        </div>
         <SectionRecovery
           label="Images"
           availability={imageState}
@@ -235,10 +295,12 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
         )}
       </section>
       <section
-        className="series-section"
+        className="details-section"
         aria-labelledby="series-videos-heading"
       >
-        <h2 id="series-videos-heading">Videos</h2>
+        <div className="details-section__heading">
+          <h2 id="series-videos-heading">Videos</h2>
+        </div>
         <SectionRecovery
           label="Videos"
           availability={videos?.availability ?? unavailable}

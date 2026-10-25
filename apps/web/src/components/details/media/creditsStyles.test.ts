@@ -196,7 +196,7 @@ test('places Cast and Crew in desktop columns and stacks them at tablet widths',
 test('uses compact Crew name grids, neutral links and visible focus', () => {
   expect(declarations('.crew-group__people')).toMatchObject({
     display: 'grid',
-    'grid-template-columns': 'minmax(0, 1fr)',
+    'grid-template-columns': 'repeat(2, minmax(0, 1fr))',
   });
   expect(declarations('.crew-group + .crew-group')).toMatchObject({
     'border-top': '1px solid rgba(255, 255, 255, 0.1)',
@@ -207,11 +207,6 @@ test('uses compact Crew name grids, neutral links and visible focus', () => {
   expect(
     declarations('.crew-group .person-credit-link')['text-decoration']
   ).toBe('none');
-  expect(
-    declarations('.crew-group--writers .crew-group__people')[
-      'grid-template-columns'
-    ]
-  ).toBe('repeat(2, minmax(0, 1fr))');
   expect(declarations('.crew-group .person-credit-link:hover').color).toBe(
     '#f65261'
   );
@@ -224,11 +219,5 @@ test('uses compact Crew name grids, neutral links and visible focus', () => {
       '(prefers-reduced-motion: reduce)'
     ).transition
   ).toBe('none');
-  expect(
-    declarationsForMedia(
-      '.crew-group--writers .crew-group__people',
-      '(width <= 479.98px)'
-    )['grid-template-columns']
-  ).toBe('minmax(0, 1fr)');
   expect(declarations('.crew-group h3').color).toBe('#f65261');
 });

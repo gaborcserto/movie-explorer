@@ -265,7 +265,7 @@ test.each(['movie', 'tv', 'person'] as const)(
   }
 );
 
-test('normalizes invalid URLs before requesting and displays empty state with upstream totals honestly', async () => {
+test('normalizes invalid URLs before requesting and does not display upstream totals', async () => {
   api.mockResolvedValue({ ...page(1, 1, 0), totalResults: 5 });
   const router = setup(
     '/search/Story?view=tv&year=bad&filter=unknown&sorting=title&order=asc'
@@ -273,9 +273,19 @@ test('normalizes invalid URLs before requesting and displays empty state with up
   await screen.findByText('No matching series found.');
   expect(router.state.location.search).toBe('?view=tv');
   expect(api).toHaveBeenCalledTimes(1);
-  expect(
-    screen.getByRole('region', { name: 'Series results' })
-  ).toHaveTextContent('5 series found');
+  expect(screen.getByText('0 results loaded')).toBeInTheDocument();
+  expect(screen.queryByText(/5 series found/)).toBeNull();
+});
+
+test('Series discovery omits capped totals while retaining the loaded count', async () => {
+  vi.mocked(getPopularSeries).mockResolvedValue({
+    ...page(1, 500),
+    totalResults: 20_001,
+  });
+  setup('/search?view=tv');
+  await screen.findByRole('link', { name: 'Series 1' });
+  expect(screen.getByText('10 results loaded')).toBeInTheDocument();
+  expect(screen.queryByText(/20001 series found/)).toBeNull();
 });
 
 test('initial failure is recoverable and an empty successful retry is announced', async () => {

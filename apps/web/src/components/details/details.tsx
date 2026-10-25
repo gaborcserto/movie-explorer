@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import './details.scss';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import type { MovieDetails, MovieSection } from '@movie-explorer/contracts';
-import useDetailPage from './hooks';
+import DetailsPageLayout from './detailsPageLayout';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
 import { DetailError } from './recovery';
 import presentApiError, {
   isCancelledError,
 } from '../../util/errorPresentation';
 import Loading from '../../layouts/loading';
-import HeaderSearch from '../search/headerSearch';
 import {
   getMovie,
   getMovieSection,
@@ -57,6 +56,7 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
           return;
         }
 
+        setPending(false);
         setRequestError(error);
         setMovieData(null);
         setDetailsState(isNotFoundError(error) ? 'not-found' : 'error');
@@ -102,7 +102,6 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
       ? 'Loading movie'
       : (presentApiError(requestError)?.heading ?? 'Movie details'),
   }[detailsState];
-  const mainRef = useDetailPage(pageTitle);
 
   const renderContent = () => {
     if (detailsState === 'loading') {
@@ -150,30 +149,14 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
   const isLoaded = detailsState === 'success' && movieData;
 
   return (
-    <div className="detail-page">
-      <header className="detail-page__navigation movie-details container">
-        <div className="movie-details__top detail-header">
-          <Link to="/search" className="movie-details__brand brand">
-            <strong>Movie</strong> Explorer
-          </Link>
-          <HeaderSearch />
-        </div>
-      </header>
-      <main ref={mainRef} tabIndex={-1} aria-label={pageTitle}>
-        <div
-          className="header header--movie-details detail-page__hero"
-          data-testid="details-component"
-        >
-          <div className="movie-details container">{renderContent()}</div>
-        </div>
-        {isLoaded && (
-          <DetailsLowerContent
-            movieData={movieData}
-            recoverSection={recoverSection}
-          />
-        )}
-      </main>
-    </div>
+    <DetailsPageLayout title={pageTitle} hero={renderContent()}>
+      {isLoaded && (
+        <DetailsLowerContent
+          movieData={movieData}
+          recoverSection={recoverSection}
+        />
+      )}
+    </DetailsPageLayout>
   );
 }
 

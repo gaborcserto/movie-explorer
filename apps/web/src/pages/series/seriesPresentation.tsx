@@ -1,10 +1,14 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { CreditPerson } from '@movie-explorer/contracts';
 
 import HeroImage from '../../components/heroImage';
-import HeaderSearch from '../../components/search/headerSearch';
+import DetailsMetadata from '../../components/details/metadata/detailsMetadata';
+import DetailsPageLayout, {
+  DetailsLowerLayout,
+  DetailsHeroFrame,
+} from '../../components/details/detailsPageLayout';
 import { DetailError } from '../../components/details/recovery';
-import useDetailPage from '../../components/details/hooks';
 import Loading from '../../layouts/loading';
 import Footer from '../../layouts/footer';
 import presentApiError from '../../util/errorPresentation';
@@ -14,33 +18,29 @@ import './series.scss';
 
 export function SeriesLayout({
   title,
+  hero,
+  navigation,
+  backdrop,
   children,
 }: {
   title: string;
-  children: React.ReactNode;
+  hero: React.ReactNode;
+  navigation?: React.ReactNode;
+  backdrop?: string | null;
+  children?: React.ReactNode;
 }) {
-  const mainRef = useDetailPage(title);
-
   return (
-    <div className="detail-page series-page">
-      <header className="detail-page__navigation container">
-        <div className="detail-header movie-details__top">
-          <Link to="/search" className="brand">
-            <strong>Movie</strong> Explorer
-          </Link>
-          <HeaderSearch />
-        </div>
-      </header>
-      <main
-        ref={mainRef}
-        tabIndex={-1}
-        aria-label={title}
-        className="container series-page__main"
+    <>
+      <DetailsPageLayout
+        title={title}
+        hero={hero}
+        navigation={navigation}
+        backdrop={backdrop}
       >
-        {children}
-      </main>
+        {children && <DetailsLowerLayout>{children}</DetailsLowerLayout>}
+      </DetailsPageLayout>
       <Footer />
-    </div>
+    </>
   );
 }
 
@@ -94,66 +94,78 @@ export function SeriesHero({
   image,
   srcSet,
   still = false,
-  backdrop,
-  immersive = false,
+  rating,
+  votes,
   children,
 }: {
   title: string;
   image: string | null;
   srcSet?: string;
   still?: boolean;
-  backdrop?: string | null;
-  immersive?: boolean;
+  rating?: number | null;
+  votes?: number | null;
   children: React.ReactNode;
 }) {
   return (
-    <div
-      className={`series-hero${still ? ' series-hero--episode' : ''}${immersive ? ' series-hero--immersive' : ''}`}
-    >
-      {backdrop && (
-        <img
-          className="series-hero__backdrop"
-          src={backdrop}
-          alt=""
-          decoding="async"
+    <DetailsHeroFrame
+      title={title}
+      rating={
+        rating !== null && rating !== undefined ? (
+          <div
+            className="movie-details__rating"
+            aria-label={`TMDB rating ${rating} out of 10${votes !== null && votes !== undefined ? ` from ${votes} votes` : ''}`}
+          >
+            {rating.toFixed(1)}
+          </div>
+        ) : undefined
+      }
+      image={
+        <HeroImage
+          src={image ?? undefined}
+          srcSet={srcSet}
+          fullSrcSet={srcSet}
+          sizes={
+            still
+              ? '(max-width: 767.98px) min(500px, calc(100vw - 52px)), (max-width: 991.98px) 260px, 320px'
+              : '(max-width: 767.98px) min(320px, calc(100vw - 52px)), (max-width: 991.98px) 260px, 320px'
+          }
+          alt={still ? `Still from ${title}` : `Poster for ${title}`}
+          title={title}
+          className={`movie-details__image${still ? ' movie-details__image--still' : ''}`}
         />
+      }
+    >
+      {votes !== null && votes !== undefined && (
+        <p className="series-rating">{votes.toLocaleString()} votes</p>
       )}
-      <HeroImage
-        src={image ?? undefined}
-        srcSet={srcSet}
-        fullSrcSet={srcSet}
-        sizes={
-          still
-            ? '(max-width: 767px) 100vw, 600px'
-            : '(max-width: 767px) 280px, 320px'
-        }
-        alt={still ? `Still from ${title}` : `Poster for ${title}`}
-        title={title}
-        className="series-hero__image"
-      />
-      <div className="series-hero__content">
-        <h1 className="movie-details__title">{title}</h1>
-        {children}
-      </div>
-    </div>
+      {children}
+    </DetailsHeroFrame>
   );
 }
 
 export function SeriesFacts({
   facts,
+  hero = false,
 }: {
-  facts: [string, string | number | null][];
+  hero?: boolean;
+  facts: [string, ReactNode][];
 }) {
+  const entries = facts.filter(([, value]) => value !== null && value !== '');
+  if (hero) {
+    return (
+      <div className="movie-details__information">
+        <DetailsMetadata entries={entries} />
+      </div>
+    );
+  }
   return (
     <dl className="series-facts">
-      {facts
-        .filter(([, value]) => value !== null && value !== '')
-        .map(([label, value]) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
+      {entries.map(([label, value]) => (
+        <div key={label}>
+          <dt>{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
     </dl>
   );
 }
@@ -177,6 +189,44 @@ export function SeriesRating({
       <strong>{rating.toFixed(1)} / 10</strong> TMDB{' '}
       {votes !== null && <span>({votes.toLocaleString()} votes)</span>}
     </p>
+  );
+}
+
+// Native disclosures keep long organization/person lists out of the hero flow.
+export function SeriesMetadataList({
+  label,
+  people,
+  linked = false,
+}: {
+  label: string;
+  people: { id?: number | null; name: string }[];
+  linked?: boolean;
+}) {
+  const content = (
+    <ul className="series-people">
+      {people.map((person) => (
+        <li key={`${person.id ?? 'unknown'}-${person.name}`}>
+          {linked && person.id ? (
+            <Link to={`/person/${person.id}`}>{person.name}</Link>
+          ) : (
+            person.name
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+  if (people.length <= 2) return content;
+  return (
+    <details className="series-metadata-disclosure">
+      <summary aria-label={`${label}: ${people.length}, expand or collapse`}>
+        {people
+          .slice(0, 2)
+          .map((person) => person.name)
+          .join(', ')}{' '}
+        (+{people.length - 2})
+      </summary>
+      <div className="series-metadata-disclosure__content">{content}</div>
+    </details>
   );
 }
 

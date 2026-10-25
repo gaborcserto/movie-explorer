@@ -50,33 +50,45 @@ function SeasonDetails({
   const series = parent.data;
 
   return (
-    <SeriesLayout title={season?.title ?? 'Season details'}>
-      <SeriesBreadcrumbs>
-        <Link to={`/tv/${idText}`}>{series?.title ?? 'Series details'}</Link>
-      </SeriesBreadcrumbs>
-      {season ? (
-        <>
+    <SeriesLayout
+      title={season?.title ?? 'Season details'}
+      backdrop={series?.backdropUrl}
+      navigation={
+        <SeriesBreadcrumbs>
+          <Link to={`/tv/${idText}`}>{series?.title ?? 'Series details'}</Link>
+        </SeriesBreadcrumbs>
+      }
+      hero={
+        season ? (
           <SeriesHero
             title={season.title}
             image={season.posterUrl}
             srcSet={season.posterSrcSet}
-            backdrop={series?.backdropUrl}
-            immersive
           >
             <p>
               <SeasonName number={number} />
             </p>
             <SeriesFacts
+              hero
               facts={[
                 ['First aired', season.airDate],
                 ['Episodes', season.episodeCount],
               ]}
             />
-            <h2>Overview</h2>
-            <p className="series-overview">
-              {season.description ?? 'No season overview available.'}
-            </p>
+            <section className="movie-details__section">
+              <h2 className="movie-details__section-title">Overview</h2>
+              <p className="movie-details__overview">
+                {season.description ?? 'No season overview available.'}
+              </p>
+            </section>
           </SeriesHero>
+        ) : (
+          <SeriesRequestState {...resource} valid={valid} resource="Season" />
+        )
+      }
+    >
+      {season && (
+        <>
           {series && series.seasons.length > 0 && (
             <div className="series-season-selector">
               <label htmlFor="season-select">Season</label>
@@ -120,7 +132,9 @@ function SeasonDetails({
             className="series-section details-section"
             aria-labelledby="episodes-heading"
           >
-            <h2 id="episodes-heading">Episodes</h2>
+            <div className="details-section__heading">
+              <h2 id="episodes-heading">Episodes</h2>
+            </div>
             {!season.episodes.length && (
               <p>No episodes available for this season yet.</p>
             )}
@@ -165,8 +179,6 @@ function SeasonDetails({
             </ol>
           </section>
         </>
-      ) : (
-        <SeriesRequestState {...resource} valid={valid} resource="Season" />
       )}
     </SeriesLayout>
   );

@@ -1,20 +1,17 @@
-import { useCallback, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 
 import { getSeries } from '../../util/apiUtils';
 import parseDetailId from '../../util/detailId';
-import MovieImage from '../../components/utility/customImage';
-import { getPosterDisplaySrcSet } from '../../util/imageSizing';
+import SeasonPreview from './seasonPreview';
 import SeriesSections from './seriesSections';
 import useSeriesResource from './useSeriesResource';
 import {
   SeriesLayout,
   SeriesHero,
   SeriesFacts,
-  SeriesRating,
-  SeriesPeople,
+  SeriesMetadataList,
   SeriesRequestState,
-  SeasonName,
 } from './seriesPresentation';
 
 function SeriesDetails({ idText }: { idText: string }) {
@@ -24,31 +21,23 @@ function SeriesDetails({ idText }: { idText: string }) {
     [id]
   );
   const resource = useSeriesResource(load, Number.isSafeInteger(id));
-  const [expanded, setExpanded] = useState(false);
   const series = resource.data;
-  const regular =
-    series?.seasons.filter((season) => season.seasonNumber !== 0) ?? [];
-  const specials =
-    series?.seasons.filter((season) => season.seasonNumber === 0) ?? [];
 
   return (
-    <SeriesLayout title={series?.title ?? 'Series details'}>
-      {series ? (
-        <>
-          <div className="series-series-hero">
-            {series.backdropUrl && (
-              <img
-                className="series-series-hero__backdrop"
-                src={series.backdropUrl}
-                alt=""
-                decoding="async"
-              />
-            )}
-            <SeriesHero
-              title={series.title}
-              image={series.posterUrl}
-              srcSet={series.posterSrcSet}
-            >
+    <SeriesLayout
+      title={series?.title ?? 'Series details'}
+      backdrop={series?.backdropUrl}
+      navigation={null}
+      hero={
+        series ? (
+          <SeriesHero
+            title={series.title}
+            rating={series.rating}
+            votes={series.voteCount}
+            image={series.posterUrl}
+            srcSet={series.posterSrcSet}
+          >
+            <div className="series-hero-metadata">
               {series.originalTitle &&
                 series.originalTitle !== series.title && (
                   <p className="series-original-title">
@@ -56,6 +45,7 @@ function SeriesDetails({ idText }: { idText: string }) {
                   </p>
                 )}
               <SeriesFacts
+                hero
                 facts={[
                   ['First aired', series.firstAirDate],
                   ['Last aired', series.lastAirDate],
@@ -73,94 +63,72 @@ function SeriesDetails({ idText }: { idText: string }) {
                   ['Origin countries', series.originCountries.join(', ')],
                 ]}
               />
-              <SeriesRating rating={series.rating} votes={series.voteCount} />
-              <h2>Overview</h2>
-              <p className="series-overview">
-                {series.description ?? 'No overview available.'}
-              </p>
-              {series.creators.length > 0 && (
-                <section>
-                  <h2>Creators</h2>
-                  <SeriesPeople people={series.creators} />
-                </section>
-              )}
+              <section className="movie-details__section">
+                <h2 className="movie-details__section-title">Overview</h2>
+                <p className="movie-details__overview">
+                  {series.description ?? 'No overview available.'}
+                </p>
+              </section>
               <SeriesFacts
+                hero
                 facts={[
                   [
+                    'Creators',
+                    series.creators.length ? (
+                      <SeriesMetadataList
+                        key="creators"
+                        label="Creators"
+                        people={series.creators}
+                        linked
+                      />
+                    ) : null,
+                  ],
+                  [
                     'Networks',
-                    series.networks.map((network) => network.name).join(', '),
+                    series.networks.length ? (
+                      <SeriesMetadataList
+                        key="networks"
+                        label="Networks"
+                        people={series.networks}
+                      />
+                    ) : null,
                   ],
                   [
                     'Production companies',
-                    series.productionCompanies
-                      .map((company) => company.name)
-                      .join(', '),
+                    series.productionCompanies.length ? (
+                      <SeriesMetadataList
+                        key="companies"
+                        label="Production companies"
+                        people={series.productionCompanies}
+                      />
+                    ) : null,
                   ],
                 ]}
               />
-            </SeriesHero>
-          </div>
+            </div>
+          </SeriesHero>
+        ) : (
+          <SeriesRequestState
+            {...resource}
+            valid={Number.isSafeInteger(id)}
+            resource="Series"
+          />
+        )
+      }
+    >
+      {series && (
+        <>
           <SeriesSections key={series.id} series={series} />
-          <section aria-labelledby="seasons-heading" className="series-section">
-            <h2 id="seasons-heading">Seasons</h2>
-            {!series.seasons.length && <p>No season information available.</p>}
-            <ul className="series-seasons">
-              {[...(expanded ? regular : regular.slice(0, 6)), ...specials].map(
-                (season) => (
-                  <li key={season.id}>
-                    <MovieImage
-                      src={season.posterUrl ?? undefined}
-                      srcSet={getPosterDisplaySrcSet(
-                        season.posterUrl ?? undefined,
-                        season.posterSrcSet
-                      )}
-                      alt=""
-                      className="series-season-poster"
-                    />
-                    <div>
-                      <h3>
-                        <Link
-                          to={`/tv/${id}/seasons/${season.seasonNumber}`}
-                          state={{ series }}
-                        >
-                          <SeasonName
-                            number={season.seasonNumber}
-                            title={season.title}
-                          />
-                        </Link>
-                      </h3>
-                      <SeriesFacts
-                        facts={[
-                          ['Air date', season.airDate],
-                          ['Advertised episodes', season.episodeCount],
-                        ]}
-                      />
-                      {season.description && (
-                        <p className="series-excerpt">{season.description}</p>
-                      )}
-                    </div>
-                  </li>
-                )
-              )}
-            </ul>
-            {regular.length > 6 && (
-              <button
-                type="button"
-                className="btn btn--outline btn--action"
-                aria-expanded={expanded}
-                onClick={() => setExpanded(!expanded)}
-              >
-                {expanded ? 'Show fewer seasons' : 'Show all seasons'}
-              </button>
-            )}
+          <section
+            aria-labelledby="seasons-heading"
+            className="details-section"
+          >
+            <div className="details-section__heading">
+              <h2 id="seasons-heading">Seasons</h2>
+            </div>
+            <SeasonPreview key={series.id} series={series} />
           </section>
         </>
-      ) : (
-        <SeriesRequestState
-          {...resource}
-          valid={Number.isSafeInteger(id)}
-          resource="Series"
-        />
       )}
     </SeriesLayout>
   );

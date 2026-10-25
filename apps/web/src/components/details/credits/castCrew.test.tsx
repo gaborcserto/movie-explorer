@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { afterEach, vi } from 'vitest';
 import {
   createMemoryRouter,
   MemoryRouter,
@@ -48,6 +49,72 @@ function setup(data = movie) {
   );
 }
 
+let resizeCallbacks: (() => void)[] = [];
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  resizeCallbacks = [];
+});
+
+function mockMovieCrewLayout({
+  crewHeight,
+  wide = true,
+}: {
+  crewHeight: number;
+  wide?: boolean;
+}) {
+  class ResizeObserverMock {
+    private readonly notify: () => void;
+
+    constructor(callback: ResizeObserverCallback) {
+      this.notify = () => callback([], this as unknown as ResizeObserver);
+      resizeCallbacks.push(this.notify);
+    }
+
+    observe = vi.fn();
+
+    disconnect = vi.fn();
+  }
+
+  vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches: wide,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  );
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+    function getBoundingClientRectMock(this: HTMLElement) {
+      let height = 100;
+      if (this.classList.contains('movie-crew-measurement')) {
+        height = crewHeight;
+      } else if (this.getAttribute('aria-labelledby') === 'cast-heading') {
+        height = 300 + this.querySelectorAll('.cast-member').length * 20;
+      }
+      return {
+        x: 0,
+        y: 0,
+        width: 600,
+        height,
+        top: 0,
+        right: 600,
+        bottom: height,
+        left: 0,
+        toJSON: () => ({}),
+      };
+    }
+  );
+
+  return {
+    notifyResize() {
+      act(() => resizeCallbacks.forEach((notify) => notify()));
+    },
+  };
+}
+
 test('shows ten actors, appends ten per click then a partial batch without duplicates or replacing cards', async () => {
   const user = userEvent.setup();
   setup();
@@ -58,6 +125,9 @@ test('shows ten actors, appends ten per click then a partial batch without dupli
   expect(cast().getByText('Character 1')).toBeVisible();
   expect(first).toHaveAccessibleDescription('Character 1');
   const more = cast().getByRole('button', { name: 'Show more cast' });
+  expect(
+    more.closest('.credit-preview-controls')?.previousElementSibling
+  ).toHaveClass('cast-grid');
   more.focus();
   await user.keyboard('{Enter}');
   expect(cast().getAllByRole('article')).toHaveLength(20);
@@ -67,12 +137,84 @@ test('shows ten actors, appends ten per click then a partial batch without dupli
   expect(cast().getAllByRole('article')).toHaveLength(25);
   expect(cast().getByRole('status')).toHaveTextContent('Showing 25 of 25');
   expect(cast().getByRole('status')).toHaveFocus();
-  expect(cast().queryByRole('button')).toBeNull();
+  expect(cast().queryByRole('button', { name: 'Show more cast' })).toBeNull();
+  const less = cast().getByRole('button', { name: 'Show less cast' });
+  expect(less).toHaveAttribute('aria-expanded', 'true');
   expect(
     cast()
       .getAllByRole('link')
       .map((link) => link.getAttribute('href'))
   ).toEqual(actors.map((person) => `/person/${person.id}`));
+  less.focus();
+  await user.keyboard(' ');
+  expect(cast().getAllByRole('article')).toHaveLength(10);
+  expect(cast().getByRole('status')).toHaveFocus();
+  expect(cast().queryByRole('button', { name: 'Show less cast' })).toBeNull();
+});
+
+test('automatically shows all Movie Crew when its measured full section fits beside Cast', () => {
+  mockMovieCrewLayout({ crewHeight: 400 });
+  const shortCrewMovie: MovieDetails = {
+    ...base,
+    castMembers: actors.slice(0, 7),
+    directors: Array.from({ length: 13 }, (_, index) => ({
+      id: index + 100,
+      name: `Director ${index + 1}`,
+    })),
+  };
+
+  setup(shortCrewMovie);
+  expect(crew().getByRole('status')).toHaveTextContent(
+    'Showing 13 of 13 crew members'
+  );
+  expect(crew().getAllByRole('link')).toHaveLength(13);
+  expect(crew().queryByRole('button')).toBeNull();
+});
+
+test('keeps progressive Movie Crew controls when the measured full section is taller than Cast', () => {
+  mockMovieCrewLayout({ crewHeight: 900 });
+  const largeCrewMovie: MovieDetails = {
+    ...base,
+    castMembers: actors,
+    directors: Array.from({ length: 30 }, (_, index) => ({
+      id: index + 100,
+      name: `Director ${index + 1}`,
+    })),
+  };
+
+  setup(largeCrewMovie);
+  expect(crew().getByRole('status')).toHaveTextContent(
+    'Showing 12 of 30 crew members'
+  );
+  expect(crew().getByRole('button', { name: 'Show more crew' })).toBeVisible();
+});
+
+test('rechecks Movie Crew fit when Cast expands and keeps stacked layouts bounded', async () => {
+  const user = userEvent.setup();
+  const layout = mockMovieCrewLayout({ crewHeight: 600 });
+  const largeCrewMovie: MovieDetails = {
+    ...base,
+    castMembers: actors,
+    directors: Array.from({ length: 30 }, (_, index) => ({
+      id: index + 100,
+      name: `Director ${index + 1}`,
+    })),
+  };
+
+  const view = setup(largeCrewMovie);
+  expect(crew().getByRole('status')).toHaveTextContent('Showing 12 of 30');
+  await user.click(cast().getByRole('button', { name: 'Show more cast' }));
+  layout.notifyResize();
+  expect(crew().getByRole('status')).toHaveTextContent('Showing 30 of 30');
+  expect(crew().queryByRole('button')).toBeNull();
+  view.unmount();
+
+  const stackedLayout = mockMovieCrewLayout({ crewHeight: 100, wide: false });
+  const stackedView = setup({ ...largeCrewMovie, id: 2 });
+  stackedLayout.notifyResize();
+  expect(crew().getByRole('status')).toHaveTextContent('Showing 12 of 30');
+  expect(crew().getByRole('button', { name: 'Show more crew' })).toBeVisible();
+  stackedView.unmount();
 });
 
 test('resets expansion for a new movie and retains it when optional credits recover for the same movie', async () => {

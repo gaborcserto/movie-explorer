@@ -111,9 +111,6 @@ export default function PeopleList({ query }: { query: string }) {
       aria-busy={loading}
     >
       <div className="list__summary" aria-live="polite">
-        <h2 className="list__number">
-          <strong>{data?.totalResults ?? 0}</strong> people found
-        </h2>
         <p className="list__loaded">
           {Math.min(visible, people.length)} people loaded
         </p>

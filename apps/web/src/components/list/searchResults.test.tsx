@@ -1,3 +1,5 @@
+import { renderToStaticMarkup } from 'react-dom/server';
+import { FaClapperboard, FaTv, FaUsers } from 'react-icons/fa6';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { createMemoryRouter, Outlet, RouterProvider } from 'react-router-dom';
 import type {
@@ -138,6 +140,19 @@ test('direct People links do not fetch movies, reveal ten at a time, paginate, d
   expect(
     await screen.findByRole('heading', { name: 'Person details' })
   ).toBeVisible();
+});
+
+test('People discovery keeps loaded counts without exposing a capped upstream total', async () => {
+  vi.mocked(getPeople).mockResolvedValue({
+    ...peoplePage(),
+    totalResults: 20_001,
+  });
+  setup('/search?view=people');
+  const region = await screen.findByRole('region', {
+    name: 'People results',
+  });
+  expect(within(region).getByText('10 people loaded')).toBeInTheDocument();
+  expect(within(region).queryByText(/20001 people found/)).toBeNull();
 });
 
 test('shows initial loading, error, retry and empty states', async () => {
@@ -570,4 +585,27 @@ test('query Persons Load more uses the default outline variant during loading an
   });
   expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
   expect(screen.getByRole('link', { name: 'Person 21' })).toBeVisible();
+});
+
+test('uses the TV icon for Series while preserving Movie and Person icons', async () => {
+  setup();
+  await screen.findByRole('link', { name: 'Movie result' });
+  const nav = within(
+    screen.getByRole('navigation', { name: 'Search result views' })
+  );
+  (
+    [
+      ['Movies', FaClapperboard],
+      ['Series', FaTv],
+      ['Persons', FaUsers],
+    ] as const
+  ).forEach(([label, Icon]) => {
+    const svg = nav
+      .getByRole('link', { name: String(label) })
+      .querySelector('svg');
+    const expected = document.createElement('div');
+    expected.innerHTML = renderToStaticMarkup(<Icon aria-hidden="true" />);
+    expect(svg?.innerHTML).toBe(expected.querySelector('svg')?.innerHTML);
+    expect(svg).toHaveAttribute('aria-hidden', 'true');
+  });
 });

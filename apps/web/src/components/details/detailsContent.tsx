@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type {
   MovieCastMember,
@@ -12,6 +12,8 @@ import PhotoPreview, { VideoPreview } from './media';
 import HeroImage from '../heroImage';
 import MovieMetadata from './metadata';
 import CastPreview from './credits';
+import useCrewPreview from './credits/useCrewPreview';
+import { DetailsHeroFrame, DetailsLowerLayout } from './detailsPageLayout';
 import './media/media.scss';
 
 interface DetailsProps {
@@ -140,15 +142,20 @@ function CreditNames({ people }: { people: PersonCredit[] }) {
 function CrewGroup({
   label,
   people,
+  measurement = false,
 }: {
   label: string;
   people: PersonCredit[];
+  measurement?: boolean;
 }) {
   const headingId = `crew-${label.toLowerCase()}-heading`;
   const groupClass = `crew-group crew-group--${label.toLowerCase()}`;
   return (
-    <section className={groupClass} aria-labelledby={headingId}>
-      <h3 id={headingId}>{label}</h3>
+    <section
+      className={groupClass}
+      aria-labelledby={measurement ? undefined : headingId}
+    >
+      <h3 id={measurement ? undefined : headingId}>{label}</h3>
       <ul className="crew-group__people">
         {people.map((person) => (
           <li key={person.key}>
@@ -157,6 +164,38 @@ function CrewGroup({
         ))}
       </ul>
     </section>
+  );
+}
+
+function CrewGroups({
+  groups,
+  visibleKeys,
+  groupId,
+  measurement = false,
+}: {
+  groups: { label: string; people: PersonCredit[] }[];
+  visibleKeys: string[];
+  groupId: string;
+  measurement?: boolean;
+}) {
+  const visiblePeople = new Set(visibleKeys);
+
+  return (
+    <div className="crew-groups" id={measurement ? undefined : groupId}>
+      {groups.map(({ label, people: groupPeople }) => {
+        const visible = measurement
+          ? groupPeople
+          : groupPeople.filter((person) => visiblePeople.has(person.key));
+        return visible.length > 0 ? (
+          <CrewGroup
+            key={label}
+            label={label}
+            people={visible}
+            measurement={measurement}
+          />
+        ) : null;
+      })}
+    </div>
   );
 }
 
@@ -183,46 +222,47 @@ export function DetailsHero({ movieData }: DetailsProps) {
     rating !== undefined && Number.isFinite(rating) && rating > 0;
 
   return (
-    <div className="movie-details__container">
-      <HeroImage
-        src={posterUrl}
-        srcSet={posterSrcSet}
-        previewSrc={posterPreviewUrl}
-        sizes="(max-width: 767.98px) min(320px, calc(100vw - 52px)), (max-width: 991.98px) 260px, 320px"
-        alt={title}
-        title={title}
-        className="movie-details__image"
-      />
-      <div className="movie-details__content">
-        <div className="movie-details__title__wrapper">
-          <h1 className="movie-details__title">{title}</h1>
-          {hasRating && (
-            <div
-              className="movie-details__rating"
-              aria-label={`Rating ${rating.toFixed(1)} out of 10`}
-            >
-              {rating.toFixed(1)}
-            </div>
-          )}
-        </div>
-        {genresData.length > 0 && (
-          <div className="movie-details__genre">{genresData.join(', ')}</div>
-        )}
-        {(releaseYear || hasRuntime) && (
-          <div className="movie-details__data">
-            {releaseYear && <span>{releaseYear}</span>}
-            {hasRuntime && <span>{runtimeMinutes} min</span>}
+    <DetailsHeroFrame
+      title={title}
+      image={
+        <HeroImage
+          src={posterUrl}
+          srcSet={posterSrcSet}
+          previewSrc={posterPreviewUrl}
+          sizes="(max-width: 767.98px) min(320px, calc(100vw - 52px)), (max-width: 991.98px) 260px, 320px"
+          alt={title}
+          title={title}
+          className="movie-details__image"
+        />
+      }
+      rating={
+        hasRating && (
+          <div
+            className="movie-details__rating"
+            aria-label={`Rating ${rating.toFixed(1)} out of 10`}
+          >
+            {rating.toFixed(1)}
           </div>
-        )}
-        {overview && (
-          <section className="movie-details__section">
-            <h2 className="movie-details__section-title">Overview</h2>
-            <p className="movie-details__overview">{overview}</p>
-          </section>
-        )}
-        <MovieMetadata movie={movieData} />
-      </div>
-    </div>
+        )
+      }
+    >
+      {genresData.length > 0 && (
+        <div className="movie-details__genre">{genresData.join(', ')}</div>
+      )}
+      {(releaseYear || hasRuntime) && (
+        <div className="movie-details__data">
+          {releaseYear && <span>{releaseYear}</span>}
+          {hasRuntime && <span>{runtimeMinutes} min</span>}
+        </div>
+      )}
+      {overview && (
+        <section className="movie-details__section">
+          <h2 className="movie-details__section-title">Overview</h2>
+          <p className="movie-details__overview">{overview}</p>
+        </section>
+      )}
+      <MovieMetadata movie={movieData} />
+    </DetailsHeroFrame>
   );
 }
 
@@ -246,140 +286,204 @@ export function DetailsLowerContent({
   const showCastSection = cast.length > 0 || Boolean(movieData.sections);
   const showCrewSection =
     crewGroups.length > 0 || movieData.sections?.credits.status === 'available';
+  const crewPeople = [
+    ...new Set(
+      crewGroups.flatMap((group) => group.people.map((person) => person.key))
+    ),
+  ];
+  const castSectionRef = useRef<HTMLElement>(null);
+  const crewMeasurementRef = useRef<HTMLElement>(null);
+  const [crewFitsCast, setCrewFitsCast] = useState(false);
+
+  useLayoutEffect(() => {
+    const breakpoint = window.matchMedia?.('(min-width: 992px)');
+    const measure = () => {
+      const castSection = castSectionRef.current;
+      const crewMeasurement = crewMeasurementRef.current;
+      const castHeight = castSection?.getBoundingClientRect().height ?? 0;
+      const crewHeight = crewMeasurement?.getBoundingClientRect().height ?? 0;
+      const fits = Boolean(
+        cast.length > 0 &&
+        (breakpoint?.matches ?? window.innerWidth >= 992) &&
+        castHeight > 0 &&
+        crewHeight > 0 &&
+        crewHeight <= castHeight
+      );
+      setCrewFitsCast((current) => (current === fits ? current : fits));
+    };
+
+    measure();
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(measure);
+    if (castSectionRef.current) observer?.observe(castSectionRef.current);
+    if (crewMeasurementRef.current)
+      observer?.observe(crewMeasurementRef.current);
+    breakpoint?.addEventListener('change', measure);
+
+    return () => {
+      observer?.disconnect();
+      breakpoint?.removeEventListener('change', measure);
+    };
+  }, [cast.length, crewPeople.length, movieData.id]);
+
+  const crewPreview = useCrewPreview(crewPeople, movieData.id, crewFitsCast);
   const visiblePhotos = backdrops.filter((photo) => photo.fullUrl?.trim());
 
   return (
-    <div className="movie-details__lower">
-      <div className="container movie-details__lower-content">
-        {(showCastSection || showCrewSection) && (
-          <div
-            className={`cast-crew-layout${
-              showCastSection !== showCrewSection
-                ? ' cast-crew-layout--single'
-                : ''
-            }`}
-          >
-            {showCastSection && (
+    <DetailsLowerLayout>
+      {(showCastSection || showCrewSection) && (
+        <div
+          className={`cast-crew-layout${
+            showCastSection !== showCrewSection
+              ? ' cast-crew-layout--single'
+              : ''
+          }`}
+        >
+          {showCastSection && (
+            <section
+              ref={castSectionRef}
+              className="details-section"
+              aria-labelledby="cast-heading"
+            >
+              <div className="details-section__heading">
+                <h2 id="cast-heading">Cast</h2>
+              </div>
+              <SectionRecovery
+                label="Credits"
+                availability={movieData.sections?.credits}
+                recover={(signal) =>
+                  recoverSection
+                    ? recoverSection('credits', signal)
+                    : Promise.reject(new Error('Recovery unavailable'))
+                }
+              />
+              {movieData.sections?.credits.status === 'available' &&
+                cast.length === 0 && <p>No cast available.</p>}
+              <CastPreview key={movieData.id} members={cast} />
+            </section>
+          )}
+
+          {showCrewSection && (
+            <section
+              className="details-section movie-crew-section"
+              aria-labelledby="crew-heading"
+            >
+              <div className="details-section__heading">
+                <h2 id="crew-heading">Crew</h2>
+              </div>
+              {crewGroups.length === 0 && <p>No crew available.</p>}
+              {crewPreview.summary}
+              <CrewGroups
+                groups={crewGroups}
+                visibleKeys={crewPreview.visible}
+                groupId={crewPreview.groupId}
+              />
+              {crewPreview.controls}
               <section
-                className="details-section"
-                aria-labelledby="cast-heading"
+                ref={crewMeasurementRef}
+                className="details-section movie-crew-measurement"
+                aria-hidden="true"
+                inert
               >
                 <div className="details-section__heading">
-                  <h2 id="cast-heading">Cast</h2>
+                  <h2>Crew</h2>
                 </div>
-                <SectionRecovery
-                  label="Credits"
-                  availability={movieData.sections?.credits}
-                  recover={(signal) =>
-                    recoverSection
-                      ? recoverSection('credits', signal)
-                      : Promise.reject(new Error('Recovery unavailable'))
-                  }
+                <p className="cast-count">
+                  Showing {crewPeople.length} of {crewPeople.length} crew
+                  members
+                </p>
+                <CrewGroups
+                  groups={crewGroups}
+                  visibleKeys={crewPeople}
+                  groupId={crewPreview.groupId}
+                  measurement
                 />
-                {movieData.sections?.credits.status === 'available' &&
-                  cast.length === 0 && <p>No cast available.</p>}
-                <CastPreview key={movieData.id} members={cast} />
               </section>
-            )}
+            </section>
+          )}
+        </div>
+      )}
 
-            {showCrewSection && (
-              <section
-                className="details-section"
-                aria-labelledby="crew-heading"
-              >
-                <div className="details-section__heading">
-                  <h2 id="crew-heading">Crew</h2>
-                </div>
-                {crewGroups.length === 0 && <p>No crew available.</p>}
-                <div className="crew-groups">
-                  {crewGroups.map(({ label, people }) => (
-                    <CrewGroup key={label} label={label} people={people} />
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
-        )}
-
-        {(visiblePhotos.length > 0 ||
-          posters.length > 0 ||
-          videos.length > 0 ||
-          movieData.sections) && (
-          <section
-            className="details-section media-section"
-            aria-labelledby="media-heading"
-          >
-            <h2 id="media-heading">Media</h2>
-            {(visiblePhotos.length > 0 || movieData.sections) && (
-              <div className="media-block">
-                <h3>Backdrops</h3>
-                <SectionRecovery
-                  label="Backdrops"
-                  availability={movieData.sections?.photos}
-                  recover={(signal) =>
-                    recoverSection
-                      ? recoverSection('photos', signal)
-                      : Promise.reject(new Error('Recovery unavailable'))
-                  }
-                />
-                {movieData.sections?.photos.status === 'available' &&
-                  visiblePhotos.length === 0 && <p>No backdrops available.</p>}
-                <PhotoPreview
-                  photos={visiblePhotos}
-                  title={title}
-                  category="backdrops"
-                  resetKey={movieData.id}
-                />
-              </div>
-            )}
-            {(posters.length > 0 || movieData.sections?.posters) && (
-              <div className="media-block">
-                <h3>Posters</h3>
-                <SectionRecovery
-                  label="Posters"
-                  availability={movieData.sections?.posters}
-                  recover={(signal) =>
-                    recoverSection
-                      ? recoverSection('posters', signal)
-                      : Promise.reject(new Error('Recovery unavailable'))
-                  }
-                />
-                {movieData.sections?.posters?.status === 'available' &&
-                  posters.length === 0 && <p>No posters available.</p>}
-                <PhotoPreview
-                  photos={posters}
-                  title={title}
-                  portrait
-                  category="posters"
-                  resetKey={movieData.id}
-                />
-              </div>
-            )}
-            {(videos.length > 0 || movieData.sections) && (
-              <div className="media-block">
-                <h3>Videos &amp; Trailers</h3>
-                <SectionRecovery
-                  label="Videos"
-                  availability={movieData.sections?.videos}
-                  recover={(signal) =>
-                    recoverSection
-                      ? recoverSection('videos', signal)
-                      : Promise.reject(new Error('Recovery unavailable'))
-                  }
-                />
-                {movieData.sections?.videos.status === 'available' &&
-                  videos.length === 0 && <p>No videos available.</p>}
-                <VideoPreview
-                  videos={videos}
-                  title={title}
-                  resetKey={movieData.id}
-                />
-              </div>
-            )}
-          </section>
-        )}
-      </div>
-    </div>
+      {(visiblePhotos.length > 0 ||
+        posters.length > 0 ||
+        videos.length > 0 ||
+        movieData.sections) && (
+        <section
+          className="details-section media-section"
+          aria-labelledby="media-heading"
+        >
+          <h2 id="media-heading">Media</h2>
+          {(visiblePhotos.length > 0 || movieData.sections) && (
+            <div className="media-block">
+              <h3>Backdrops</h3>
+              <SectionRecovery
+                label="Backdrops"
+                availability={movieData.sections?.photos}
+                recover={(signal) =>
+                  recoverSection
+                    ? recoverSection('photos', signal)
+                    : Promise.reject(new Error('Recovery unavailable'))
+                }
+              />
+              {movieData.sections?.photos.status === 'available' &&
+                visiblePhotos.length === 0 && <p>No backdrops available.</p>}
+              <PhotoPreview
+                photos={visiblePhotos}
+                title={title}
+                category="backdrops"
+                resetKey={movieData.id}
+              />
+            </div>
+          )}
+          {(posters.length > 0 || movieData.sections?.posters) && (
+            <div className="media-block">
+              <h3>Posters</h3>
+              <SectionRecovery
+                label="Posters"
+                availability={movieData.sections?.posters}
+                recover={(signal) =>
+                  recoverSection
+                    ? recoverSection('posters', signal)
+                    : Promise.reject(new Error('Recovery unavailable'))
+                }
+              />
+              {movieData.sections?.posters?.status === 'available' &&
+                posters.length === 0 && <p>No posters available.</p>}
+              <PhotoPreview
+                photos={posters}
+                title={title}
+                portrait
+                category="posters"
+                resetKey={movieData.id}
+              />
+            </div>
+          )}
+          {(videos.length > 0 || movieData.sections) && (
+            <div className="media-block">
+              <h3>Videos &amp; Trailers</h3>
+              <SectionRecovery
+                label="Videos"
+                availability={movieData.sections?.videos}
+                recover={(signal) =>
+                  recoverSection
+                    ? recoverSection('videos', signal)
+                    : Promise.reject(new Error('Recovery unavailable'))
+                }
+              />
+              {movieData.sections?.videos.status === 'available' &&
+                videos.length === 0 && <p>No videos available.</p>}
+              <VideoPreview
+                videos={videos}
+                title={title}
+                resetKey={movieData.id}
+              />
+            </div>
+          )}
+        </section>
+      )}
+    </DetailsLowerLayout>
   );
 }
 

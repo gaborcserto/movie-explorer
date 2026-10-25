@@ -6,7 +6,7 @@ import {
   useParams,
   useSearchParams,
 } from 'react-router-dom';
-import { FaClapperboard, FaUsers } from 'react-icons/fa6';
+import { FaClapperboard, FaTv, FaUsers } from 'react-icons/fa6';
 import Filter from '../filter';
 import { normalizeSearchFilters, readSearchView } from '../filter/filterState';
 import CardList from './list';
@@ -72,11 +72,11 @@ function ResultViews({ query }: { query: string }) {
                     }}
                     aria-current={active ? 'page' : undefined}
                   >
-                    {target !== 'people' ? (
+                    {target === 'tv' && <FaTv aria-hidden="true" />}
+                    {target !== 'people' && target !== 'tv' && (
                       <FaClapperboard aria-hidden="true" />
-                    ) : (
-                      <FaUsers aria-hidden="true" />
                     )}
+                    {target === 'people' && <FaUsers aria-hidden="true" />}
                     {viewLabels[target]}
                   </Link>
                 );

@@ -294,3 +294,28 @@
     }
   }
 }
+
+// Still images keep their native shape within the shared poster column.
+.movie-details__image--still {
+  aspect-ratio: 16 / 9;
+}
+
+.detail-page__hero {
+  isolation: isolate;
+}
+
+.detail-page__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+@include media-size(md-down) {
+  .movie-details__image--still {
+    max-width: 500px;
+  }
+}

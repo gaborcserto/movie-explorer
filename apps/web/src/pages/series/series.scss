@@ -1,83 +1,5 @@
 @use '../../assets/scss' as *;
 
-.series-page {
-  color: $white;
-
-  &__main {
-    padding-top: 24px;
-    padding-bottom: 48px;
-    overflow-wrap: anywhere;
-  }
-
-  h2 {
-    font-size: 24px;
-    margin: 20px 0 12px;
-  }
-
-  h3 {
-    font-size: 18px;
-    margin-bottom: 10px;
-  }
-
-  a {
-    color: inherit;
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
-
-  a:hover {
-    color: $red-1;
-  }
-
-  :is(a, button, select):focus-visible {
-    outline: 3px solid $red-1;
-    outline-offset: 5px;
-  }
-}
-
-.series-hero {
-  display: grid;
-  grid-template-columns: minmax(180px, 280px) minmax(0, 1fr);
-  gap: 36px;
-  position: relative;
-
-  &__image {
-    aspect-ratio: 2 / 3;
-    width: 100%;
-    border-radius: 10px;
-    overflow: hidden;
-    align-self: start;
-  }
-
-  &__content {
-    min-width: 0;
-  }
-
-  &--episode {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-
-  &--episode &__image {
-    aspect-ratio: 16 / 9;
-  }
-}
-
-.series-series-hero {
-  position: relative;
-  isolation: isolate;
-
-  &__backdrop {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0.12;
-    z-index: -1;
-    pointer-events: none;
-  }
-}
-
 .series-facts {
   display: flex;
   flex-wrap: wrap;
@@ -95,13 +17,9 @@
   }
 }
 
-.series-overview,
 .series-excerpt {
   line-height: 1.7;
   white-space: pre-line;
-}
-
-.series-excerpt {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -123,13 +41,14 @@
   }
 }
 
-.series-section {
-  margin-top: 32px;
-}
-
 .series-seasons,
 .series-episodes {
   list-style: none;
+
+  h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
 
   > li {
     display: grid;
@@ -198,21 +117,6 @@
 }
 
 @media (width < 768px) {
-  .series-hero,
-  .series-hero--episode {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 24px;
-  }
-
-  .series-hero__image {
-    max-width: 280px;
-    justify-self: center;
-  }
-
-  .series-hero--episode .series-hero__image {
-    max-width: 500px;
-  }
-
   .series-episodes > li {
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
@@ -224,31 +128,10 @@
   }
 }
 
-.series-hero--immersive {
-  isolation: isolate;
-  padding: 32px 0;
-
-  .series-hero__image {
-    @include hero-image-shadow;
-  }
-}
-
-.series-hero__backdrop {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.12;
-  z-index: -1;
-  pointer-events: none;
-  mask-image: linear-gradient(#000000 65%, transparent);
-}
-
 .episode-credits {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: 24px 36px;
+  grid-template-columns: minmax(0, 2.2fr) minmax(250px, 1fr);
+  gap: 24px 32px;
 
   > section {
     min-width: 0;
@@ -260,17 +143,238 @@
   }
 }
 
-@media (width < 768px) {
-  .series-hero--immersive {
-    padding: 16px 0;
-  }
-
+@include media-size(lg-down) {
   .episode-credits {
     grid-template-columns: minmax(0, 1fr);
 
     > section:last-child {
       grid-column: auto;
       grid-row: auto;
+    }
+  }
+}
+
+.series-seasons,
+.series-episodes,
+.series-breadcrumbs,
+.series-neighbors,
+.series-people {
+  a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+
+    &:hover {
+      color: $red-1;
+    }
+  }
+}
+
+.episode-credits > section > h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.season-tabs-navigation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+
+  > button {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+  }
+
+  &:not(.season-tabs-navigation--overflow) {
+    .season-tabs {
+      flex-basis: auto;
+    }
+  }
+}
+
+.series-credit-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.16);
+  margin-bottom: 20px;
+
+  button {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: rgb(255 255 255 / 0.7);
+    font: inherit;
+    padding: 10px 4px;
+    cursor: pointer;
+
+    &[aria-selected='true'] {
+      border-bottom-color: $red-1;
+      color: $white;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $red-1;
+      outline-offset: 2px;
+    }
+  }
+}
+
+.series-credits [role='tabpanel'] {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.series-credits [role='tabpanel'][hidden] {
+  display: none;
+}
+
+.series-credits .cast-grid {
+  display: grid;
+  gap: 16px 10px;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, max(8.75rem, calc(12.5% - 8.75px))), 1fr)
+  );
+  margin: 0;
+  overflow: visible;
+  padding: 0;
+  scroll-snap-type: none;
+  width: 100%;
+}
+
+.series-credits .cast-member {
+  flex: initial;
+}
+
+.series-credits .cast-member__image {
+  max-width: none;
+}
+
+.series-credits .cast-member h3 {
+  font-size: 14px;
+}
+
+.series-credits .cast-member p {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  color: rgb(255 255 255 / 0.62);
+  font-size: 12px;
+  line-height: 1.35;
+  margin-top: 4px;
+}
+
+.season-tabs {
+  display: flex;
+  gap: 20px;
+  min-width: 0;
+  flex: 1;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: $red-1 transparent;
+
+  button {
+    flex: 0 0 auto;
+    min-height: 60px;
+    padding: 12px 4px;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: rgb(255 255 255 / 0.6);
+    font: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &[aria-selected='true'] {
+      border-bottom-color: $red-1;
+      color: $white;
+    }
+  }
+}
+
+.season-preview {
+  display: grid;
+  grid-template-columns: minmax(60px, 100px) minmax(0, 1fr);
+  gap: 20px;
+  padding: 24px 0;
+
+  h3 {
+    font-size: 18px;
+  }
+
+  &__overview {
+    line-height: 1.7;
+    white-space: pre-line;
+    margin-bottom: 20px;
+  }
+}
+
+.season-tabs button:focus-visible,
+.season-preview:focus-visible,
+.series-metadata-disclosure summary:focus-visible {
+  outline: 2px solid $red-1;
+  outline-offset: 2px;
+}
+
+.series-hero-metadata {
+  .movie-details__metadata {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  }
+
+  .movie-details__metadata > div:first-child {
+    grid-column: auto;
+  }
+
+  .series-people {
+    list-style: none;
+    line-height: 1.5;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+
+      &:hover {
+        color: $red-1;
+      }
+
+      &:focus-visible {
+        outline: 2px solid $red-1;
+        outline-offset: 3px;
+        border-radius: 2px;
+      }
+    }
+  }
+}
+
+.series-metadata-disclosure {
+  position: relative;
+
+  summary {
+    color: $red-1;
+    cursor: pointer;
+  }
+
+  &__content {
+    position: absolute;
+    z-index: 5;
+    inset: auto 0 auto auto;
+    width: 100%;
+    min-width: 0;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 12px;
+    border: 1px solid $red-1;
+    border-radius: 4px;
+    background: $grey-3;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+
+    li + li {
+      margin-top: 8px;
     }
   }
 }

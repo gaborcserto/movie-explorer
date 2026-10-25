@@ -10,9 +10,17 @@ interface CastCredit extends MovieDirector {
   roles: string[];
 }
 
-export default function CastPreview({ members }: { members: CastCredit[] }) {
+export default function CastPreview({
+  members,
+  initialVisibleCount = 10,
+  batchSize = 10,
+}: {
+  members: CastCredit[];
+  initialVisibleCount?: number;
+  batchSize?: number;
+}) {
   const gridId = useId();
-  const [visibleCount, setVisibleCount] = useState(10);
+  const [visibleCount, setVisibleCount] = useState(initialVisibleCount);
   const countRef = useRef<HTMLSpanElement>(null);
   if (members.length === 0) {
     return null;
@@ -26,23 +34,6 @@ export default function CastPreview({ members }: { members: CastCredit[] }) {
         <span ref={countRef} role="status" tabIndex={-1} className="cast-count">
           Showing {visible.length} of {members.length} cast members
         </span>
-        {visibleCount < members.length && (
-          <button
-            type="button"
-            className="btn btn--outline btn--action media-preview__action"
-            aria-label="Show more cast"
-            aria-controls={gridId}
-            onClick={() => {
-              setVisibleCount((count) => count + 10);
-
-              if (visibleCount + 10 >= members.length) {
-                countRef.current?.focus({ preventScroll: true });
-              }
-            }}
-          >
-            Show more
-          </button>
-        )}
       </div>
       <div className="cast-grid" id={gridId}>
         {visible.map((member) => {
@@ -84,6 +75,45 @@ export default function CastPreview({ members }: { members: CastCredit[] }) {
             </article>
           );
         })}
+      </div>
+      <div className="credit-preview-controls">
+        {visibleCount < members.length && (
+          <button
+            type="button"
+            className="btn btn--outline btn--action"
+            aria-label="Show more cast"
+            aria-controls={gridId}
+            aria-expanded={visibleCount > initialVisibleCount}
+            onClick={() => {
+              const nextCount = Math.min(
+                visibleCount + batchSize,
+                members.length
+              );
+              setVisibleCount(nextCount);
+
+              if (nextCount >= members.length) {
+                countRef.current?.focus({ preventScroll: true });
+              }
+            }}
+          >
+            Show more
+          </button>
+        )}
+        {visibleCount > initialVisibleCount && (
+          <button
+            type="button"
+            className="btn btn--outline btn--action"
+            aria-label="Show less cast"
+            aria-controls={gridId}
+            aria-expanded
+            onClick={() => {
+              setVisibleCount(initialVisibleCount);
+              countRef.current?.focus({ preventScroll: true });
+            }}
+          >
+            Show less
+          </button>
+        )}
       </div>
     </>
   );

@@ -84,7 +84,6 @@ function List() {
     );
   }
 
-  const movieTotal = moviesData?.totalResults ?? 0;
   const genre = filter ? capitalizeFirstLetter(filter) : null;
   const hasActiveContext = Boolean(
     genre || searchQuery || releaseYear || minimumRating
@@ -169,10 +168,6 @@ function List() {
         </div>
       )}
       <div className="list__summary" aria-live="polite">
-        <h2 className="list__number">
-          <strong>{movieTotal}</strong>{' '}
-          {hasPageLevelSearchFilters ? 'text search results' : 'movies found'}
-        </h2>
         <p className="list__loaded">
           {visibleMovies.length} {hasPageLevelSearchFilters ? 'matching ' : ''}
           {visibleMovies.length === 1 ? 'movie' : 'movies'} loaded
