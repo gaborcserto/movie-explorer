@@ -8,6 +8,7 @@ import { SeasonName, SeriesFacts } from './seriesPresentation';
 
 function measureScroll(container: HTMLDivElement) {
   const maxScroll = container.scrollWidth - container.clientWidth;
+
   return {
     overflow: maxScroll > 1,
     atStart: container.scrollLeft <= 1,
@@ -28,6 +29,7 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
 
   useEffect(() => {
     const container = tabs.current;
+
     if (!container) {
       return undefined;
     }
@@ -63,6 +65,7 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
     if (tab && tabs.current) {
       const tabRect = tab.getBoundingClientRect();
       const listRect = tabs.current.getBoundingClientRect();
+
       if (tabRect.left < listRect.left) {
         tabs.current.scrollLeft += tabRect.left - listRect.left;
       } else if (tabRect.right > listRect.right) {
@@ -99,6 +102,7 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
           className="season-tabs"
           onScroll={() => {
             const container = tabs.current;
+
             if (container) {
               setScrollState(measureScroll(container));
             }

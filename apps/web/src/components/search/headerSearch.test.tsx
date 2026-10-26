@@ -48,6 +48,7 @@ describe.each([
     );
     render(<RouterProvider router={router} />);
     await screen.findByRole('heading', { name: title, level: 1 });
+
     return { router, user: userEvent.setup() };
   }
 

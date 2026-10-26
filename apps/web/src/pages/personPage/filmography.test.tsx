@@ -88,6 +88,7 @@ async function renderFilmography(
   });
   render(<RouterProvider router={router} />);
   await screen.findByRole('heading', { name: 'Filmography' });
+
   return router;
 }
 

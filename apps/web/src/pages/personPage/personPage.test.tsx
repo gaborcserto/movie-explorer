@@ -49,6 +49,7 @@ function deferredResponse() {
     resolve = res;
     reject = rej;
   });
+
   return { promise, resolve, reject };
 }
 
@@ -59,6 +60,7 @@ function renderPage(path = '/person/42') {
     initialEntries: [path],
   });
   render(<RouterProvider router={router} />);
+
   return router;
 }
 
@@ -491,6 +493,7 @@ test.each(['network', 'HTTP'])(
   'recovers from a %s failure through Retry and returns focus to main on success',
   async (failure) => {
     const user = userEvent.setup();
+
     if (failure === 'network') {
       fetchMock.mockRejectedValueOnce(new TypeError('Network failed'));
     } else {

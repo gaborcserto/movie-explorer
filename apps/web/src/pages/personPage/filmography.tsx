@@ -91,6 +91,7 @@ function FilmographyResults({
               </div>
             </>
           );
+
           return (
             <li key={filmographyIdentity(movie)}>
               {Number.isSafeInteger(movie.id) && movie.id > 0 ? (
@@ -162,6 +163,7 @@ export default function Filmography({
   } = getFilmographySelection(entries, searchParams, unavailable || partial);
   const query = searchParams.toString();
   let emptyMessage = 'No movie credits available.';
+
   if (groups) {
     emptyMessage = partial
       ? 'Credits for this selection are unavailable.'
@@ -176,6 +178,7 @@ export default function Filmography({
 
   const updateSelection = (name: string, value: string) => {
     const next = new URLSearchParams(searchParams);
+
     if (value) {
       next.set(name, value);
     } else {

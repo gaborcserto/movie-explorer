@@ -171,6 +171,7 @@ describe.each(['movies', 'series'] as const)(
       controller.abort();
 
       await rejected;
+
       expect(requestSignal?.aborted).toBe(true);
     });
 

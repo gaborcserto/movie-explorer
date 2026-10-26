@@ -9,6 +9,7 @@ export default function SearchResultCard({ item }: { item: SearchResult }) {
   const label = typeLabels[item.mediaType];
   let date: string | undefined;
   let metadata: string | undefined;
+
   if (item.mediaType === 'person') {
     metadata = item.knownForDepartment;
   } else {

@@ -91,6 +91,7 @@ export default function SectionRecovery({
   if (pending) {
     message = `Loading ${label.toLowerCase()}...`;
   }
+
   return (
     <div className="section-recovery" ref={containerRef} tabIndex={-1}>
       <p role="status">{message}</p>

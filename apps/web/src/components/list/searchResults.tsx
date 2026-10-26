@@ -45,6 +45,7 @@ function ResultViews({ query }: { query: string }) {
       ),
     people: people || Boolean(history?.people.has(`${location.key}:${query}`)),
   }));
+
   // Mount each view on first visit and retain its independent pagination state.
   if ((people && !visited.people) || (view === 'movies' && !visited.movies)) {
     setVisited((current) => ({
@@ -52,6 +53,7 @@ function ResultViews({ query }: { query: string }) {
       [view]: true,
     }));
   }
+
   return (
     <>
       <div className="search-toolbar list__container container">
@@ -61,12 +63,14 @@ function ResultViews({ query }: { query: string }) {
               .filter((target) => query || target !== 'all')
               .map((target) => {
                 const next = new URLSearchParams(params);
+
                 if (target === 'movies') {
                   next.delete('view');
                 } else {
                   next.set('view', target);
                 }
                 const active = view === target;
+
                 return (
                   <Link
                     key={target}
@@ -125,6 +129,7 @@ export default function SearchResults() {
   const [params] = useSearchParams();
   const location = useLocation();
   const normalized = normalizeSearchFilters(params, Boolean(searchQuery));
+
   // Canonicalize before mounting request owners to avoid an intermediate fetch.
   if (normalized.toString() !== params.toString() || rawQuery !== searchQuery) {
     return (
@@ -140,5 +145,6 @@ export default function SearchResults() {
       />
     );
   }
+
   return <ResultViews key={searchQuery} query={searchQuery} />;
 }

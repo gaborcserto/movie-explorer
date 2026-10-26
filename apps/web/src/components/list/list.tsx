@@ -57,6 +57,7 @@ function List() {
         : 'No matching movies found.';
     }
     const genre = filter ? capitalizeFirstLetter(filter) : null;
+
     if (searchQuery && genre) {
       return `No movies found for "${searchQuery}" in ${genre}.`;
     }
@@ -66,6 +67,7 @@ function List() {
     if (genre) {
       return `No movies found in ${genre}.`;
     }
+
     return 'No movies available.';
   };
 
@@ -132,6 +134,7 @@ function List() {
   ];
   const removeBadge = (key: string) => {
     const next = new URLSearchParams(searchParams);
+
     if (key === 'sorting') {
       next.set('sorting', 'popularity');
     } else {

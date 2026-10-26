@@ -39,6 +39,7 @@ const deferred = () => {
   const promise = new Promise<SearchResponse>((done) => {
     resolve = done;
   });
+
   return { promise, resolve };
 };
 
@@ -63,6 +64,7 @@ function setup(path = '/search/Story?view=tv') {
     { initialEntries: [path] }
   );
   render(<RouterProvider router={router} />);
+
   return router;
 }
 beforeEach(() => {
@@ -383,6 +385,7 @@ test('omits empty groups, reports one empty state, and retries only a failed cat
     if (type === 'person') {
       throw new ApiRequestError('network');
     }
+
     return { ...page(1, 0, 0), totalResults: 0 };
   });
   setup('/search/None?view=all');

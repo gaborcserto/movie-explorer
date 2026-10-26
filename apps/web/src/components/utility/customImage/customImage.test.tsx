@@ -38,6 +38,7 @@ describe('<MovieImage />', () => {
       );
       const final = screen.getByAltText('Poster');
       const preview = container.querySelector('.image-preview');
+
       if (!preview) {
         throw new Error('Missing preview');
       }
@@ -70,6 +71,7 @@ describe('<MovieImage />', () => {
     );
     const final = screen.getByAltText('Poster');
     const preview = container.querySelector('.image-preview');
+
     if (!preview) {
       throw new Error('Missing preview');
     }
@@ -97,12 +99,14 @@ describe('<MovieImage />', () => {
       <MovieImage {...props} previewSrc="/first.jpg" />
     );
     const first = container.querySelector('.image-preview');
+
     if (!first) {
       throw new Error('Missing preview');
     }
     fireEvent.load(first);
     rerender(<MovieImage {...props} previewSrc="/second.jpg" />);
     const second = container.querySelector('.image-preview');
+
     if (!second) {
       throw new Error('Missing preview');
     }
@@ -114,6 +118,7 @@ describe('<MovieImage />', () => {
     fireEvent.error(second);
     expect(screen.getByAltText('Poster')).toHaveStyle({ opacity: '0' });
     const third = container.querySelector('.image-preview');
+
     if (!third) {
       throw new Error('Missing preview');
     }

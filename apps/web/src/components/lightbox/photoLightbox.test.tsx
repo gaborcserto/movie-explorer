@@ -25,6 +25,7 @@ async function open() {
   await user.click(thumbnail);
   const dialog = screen.getByRole('dialog');
   const image = within(dialog).getByRole('img', { hidden: true });
+
   return { user, dialog, image, thumbnail };
 }
 
@@ -36,6 +37,7 @@ function load(image: HTMLElement) {
     clientHeight: { configurable: true, value: 400 },
   });
   const viewport = image.parentElement;
+
   if (!viewport) {
     throw new Error('Missing viewport');
   }
@@ -44,6 +46,7 @@ function load(image: HTMLElement) {
     clientWidth: { configurable: true, value: 800 },
     clientHeight: { configurable: true, value: 600 },
   });
+
   return viewport;
 }
 
@@ -124,6 +127,7 @@ describe('photo lightbox', () => {
     async (first) => {
       const { dialog, image } = await open();
       const preview = dialog.querySelector('.image-preview');
+
       if (!preview) {
         throw new Error('Missing preview');
       }
@@ -146,6 +150,7 @@ describe('photo lightbox', () => {
   it('recovers from preview failure and ignores stale events during rapid navigation', async () => {
     const { user, dialog, image } = await open();
     const preview = dialog.querySelector('.image-preview');
+
     if (!preview) {
       throw new Error('Missing preview');
     }
@@ -162,6 +167,7 @@ describe('photo lightbox', () => {
     expect(current).toHaveStyle({ opacity: '0' });
     expect(screen.getByRole('button', { name: 'Zoom in' })).toBeDisabled();
     const currentPreview = dialog.querySelector('.image-preview');
+
     if (!currentPreview) {
       throw new Error('Missing preview');
     }
@@ -178,6 +184,7 @@ describe('photo lightbox', () => {
         const image = document.querySelector('img[src="/original1.jpg"]');
         image?.dispatchEvent(new Event('load'));
       }, []);
+
       return (
         <PhotoLightbox
           photos={movie.photos ?? []}

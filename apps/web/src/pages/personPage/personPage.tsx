@@ -191,6 +191,7 @@ function PersonDetailsPage({ id }: { id: string }) {
     state.status === 'success' ? getPosterUrls(state.person) : [];
 
   let pageTitle = title;
+
   if (validId && state.status !== 'not-found') {
     pageTitle =
       state.status === 'success'
@@ -305,6 +306,7 @@ function PersonDetailsPage({ id }: { id: string }) {
                                 type,
                                 signal
                               );
+
                               if (signal.aborted) {
                                 return;
                               }
@@ -343,6 +345,7 @@ function PersonDetailsPage({ id }: { id: string }) {
                         availability={state.person.filmographyAvailability}
                         recover={async (signal) => {
                           const result = await getFilmography(personId, signal);
+
                           if (signal.aborted) {
                             return;
                           }

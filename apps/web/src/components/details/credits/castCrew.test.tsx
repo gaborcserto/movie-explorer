@@ -90,11 +90,13 @@ function mockMovieCrewLayout({
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
     function getBoundingClientRectMock(this: HTMLElement) {
       let height = 100;
+
       if (this.classList.contains('movie-crew-measurement')) {
         height = crewHeight;
       } else if (this.getAttribute('aria-labelledby') === 'cast-heading') {
         height = 300 + this.querySelectorAll('.cast-member').length * 20;
       }
+
       return {
         x: 0,
         y: 0,

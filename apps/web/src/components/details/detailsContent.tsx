@@ -60,6 +60,7 @@ function getPersonCredits(movie: MovieDetails) {
       }
 
       let credit = hasPersonId(person.id) ? byId.get(person.id) : undefined;
+
       if (!hasPersonId(person.id) && category !== 'cast') {
         credit = unlinkedByName.get(person.name.trim());
       }
@@ -108,6 +109,7 @@ function getPersonCredits(movie: MovieDetails) {
 
   structuredCast.forEach((person) => {
     const index = legacyNames.indexOf(person.name.trim());
+
     if (index >= 0) {
       legacyNames.splice(index, 1);
     }
@@ -196,6 +198,7 @@ function CrewGroups({
         const visible = measurement
           ? groupPeople
           : groupPeople.filter((person) => visiblePeople.has(person.key));
+
         return visible.length > 0 ? (
           <CrewGroup
             key={label}
@@ -332,6 +335,7 @@ export function DetailsLowerContent({
       typeof ResizeObserver === 'undefined'
         ? null
         : new ResizeObserver(measure);
+
     if (castSectionRef.current) {
       observer?.observe(castSectionRef.current);
     }

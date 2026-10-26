@@ -3,6 +3,5 @@
 *.json
 node_modules
 .idea
-vite.config.ts
 setupTests.ts
 __mocks__

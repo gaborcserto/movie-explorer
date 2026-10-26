@@ -137,11 +137,13 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   fetchMock.mockImplementation(async (input) => {
     const path = new URL(String(input)).pathname;
+
     if (path.endsWith('/credits')) {
       return Response.json(credits);
     }
     if (path.includes('/episodes/')) {
       const number = Number(path.split('/').at(-1));
+
       return Response.json({
         ...episode,
         episodeNumber: number,
@@ -153,6 +155,7 @@ beforeEach(() => {
     if (path.includes('/seasons/')) {
       return Response.json(season);
     }
+
     return Response.json(series);
   });
 });
@@ -173,10 +176,12 @@ describe('Series hierarchy', () => {
           if (failure === 'network') {
             throw new TypeError('private network details');
           }
+
           return failure === 'http'
             ? new Response('private server error', { status: 502 })
             : Response.json({ providers: [{ id: 'invalid' }] });
         }
+
         return Response.json(series);
       });
 
@@ -852,6 +857,7 @@ describe('Series hierarchy', () => {
         if (!this.classList.contains('season-tabs')) {
           return 0;
         }
+
         return (this as HTMLElement).dataset.overflow === 'yes' ? 1200 : 400;
       },
     });
@@ -897,6 +903,7 @@ describe('Series hierarchy', () => {
   it('uses actual season choices with accessible keyboard controls', async () => {
     fetchMock.mockImplementation(async (input) => {
       const path = new URL(String(input)).pathname;
+
       return Response.json(
         path.includes('/seasons/')
           ? {
@@ -1118,6 +1125,7 @@ describe('Series hierarchy', () => {
           },
         });
       }
+
       return Response.json(
         String(input).includes('/episodes/')
           ? {
@@ -1192,6 +1200,7 @@ describe('Series hierarchy', () => {
     let signal: AbortSignal | null | undefined;
     fetchMock.mockImplementationOnce((_url, init) => {
       signal = init?.signal;
+
       return new Promise((done) => {
         resolve = done;
       });
@@ -1242,6 +1251,7 @@ describe('Season and Episode shared hero images', () => {
       const srcSet = `${image} 1x, ${original} 3x`;
       fetchMock.mockImplementation(async (input) => {
         const url = String(input);
+
         if (url.includes('/episodes/')) {
           return Response.json({
             ...episode,
@@ -1256,6 +1266,7 @@ describe('Season and Episode shared hero images', () => {
             posterSrcSet: srcSet,
           });
         }
+
         return Response.json({
           ...series,
           backdropUrl: 'https://images.test/w500/backdrop.jpg',

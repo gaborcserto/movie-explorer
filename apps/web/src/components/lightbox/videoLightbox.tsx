@@ -46,9 +46,11 @@ export default function VideoLightbox({
 
     const keydown = (event: KeyboardEvent) => {
       const { key, target } = event;
+
       if (key === 'Escape') {
         event.preventDefault();
         close.current();
+
         return;
       }
 
@@ -60,6 +62,7 @@ export default function VideoLightbox({
         ];
         const first = controls[0];
         const last = controls[controls.length - 1];
+
         if (
           !dialog?.contains(document.activeElement) ||
           document.activeElement === dialog
@@ -73,6 +76,7 @@ export default function VideoLightbox({
           event.preventDefault();
           first?.focus();
         }
+
         return;
       }
 
@@ -88,6 +92,7 @@ export default function VideoLightbox({
       const activeElementIsInteractive =
         activeElement instanceof Element &&
         Boolean(activeElement.closest(interactiveSelector));
+
       if (targetIsInteractive || activeElementIsInteractive) {
         return;
       }

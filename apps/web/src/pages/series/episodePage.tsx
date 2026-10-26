@@ -70,6 +70,7 @@ function EpisodeDetails({
       episodeNumber,
       signal
     );
+
     if (!signal.aborted) {
       resource.setData(
         (current) =>

@@ -23,6 +23,7 @@ function getSortLabel(sorting: FilterValues['sorting']) {
   if (sorting === 'releaseDate') return 'Release Date';
   if (sorting === 'popularity') return 'Popularity';
   if (sorting === 'title') return 'Title';
+
   return 'Rating';
 }
 
@@ -114,6 +115,7 @@ export default function FilterPanel({
       if (!element) return;
 
       const viewport = window.visualViewport;
+
       if (mobile) {
         element.style.setProperty(
           '--filter-viewport-height',
@@ -123,10 +125,12 @@ export default function FilterPanel({
           '--filter-viewport-bottom',
           `${Math.max(0, window.innerHeight - (viewport?.height ?? window.innerHeight) - (viewport?.offsetTop ?? 0))}px`
         );
+
         return;
       }
 
       const anchor = element.parentElement?.getBoundingClientRect();
+
       if (!anchor) return;
 
       const below = window.innerHeight - anchor.bottom - 26;
@@ -159,6 +163,7 @@ export default function FilterPanel({
 
   useEffect(() => {
     const element = panel.current;
+
     if (!element) return undefined;
 
     const previousFocus = document.activeElement;
@@ -170,6 +175,7 @@ export default function FilterPanel({
         )
       : [];
     const previousInert = background.map((node) => node.inert);
+
     if (mobile) document.body.style.overflow = 'hidden';
     background.forEach((node) => {
       node.inert = true;
@@ -202,6 +208,7 @@ export default function FilterPanel({
         const items = focusables();
         const first = items[0];
         const last = items.at(-1);
+
         if (
           event.shiftKey &&
           (document.activeElement === first ||

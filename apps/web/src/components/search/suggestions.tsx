@@ -33,7 +33,9 @@ export default function Suggestions({ autocomplete }: Props) {
           const items = autocomplete.suggestions.filter(
             (item) => item.mediaType === type
           );
+
           if (!items.length) return null;
+
           return (
             <div key={type} role="group" aria-label={groupLabels[type]}>
               <div className="search-suggestions__heading" aria-hidden="true">
@@ -44,6 +46,7 @@ export default function Suggestions({ autocomplete }: Props) {
                 const name =
                   item.mediaType === 'person' ? item.name : item.title;
                 let metadata: string | number | undefined;
+
                 if (item.mediaType === 'movie') metadata = item.releaseYear;
                 else if (item.mediaType === 'tv')
                   metadata = item.firstAirDate?.slice(0, 4);

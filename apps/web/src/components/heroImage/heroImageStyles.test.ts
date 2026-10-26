@@ -29,6 +29,7 @@ function declarations(stylesheet: postcss.Root, selector: string) {
       values[declaration.prop] = declaration.value;
     });
   });
+
   return values;
 }
 

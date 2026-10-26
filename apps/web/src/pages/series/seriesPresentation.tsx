@@ -165,6 +165,7 @@ export function SeriesFacts({
   facts: [string, ReactNode][];
 }) {
   const entries = facts.filter(([, value]) => value !== null && value !== '');
+
   if (hero) {
     return (
       <div className="movie-details__information">
@@ -172,6 +173,7 @@ export function SeriesFacts({
       </div>
     );
   }
+
   return (
     <dl className="series-facts">
       {entries.map(([label, value]) => (
@@ -229,9 +231,11 @@ export function SeriesMetadataList({
       ))}
     </ul>
   );
+
   if (people.length <= 2) {
     return content;
   }
+
   return (
     <details className="series-metadata-disclosure">
       <summary aria-label={`${label}: ${people.length}, expand or collapse`}>

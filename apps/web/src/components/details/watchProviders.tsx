@@ -53,6 +53,7 @@ function ProviderLogo({
         {provider.name}
       </span>
     );
+
   return <li>{logo}</li>;
 }
 
@@ -70,6 +71,7 @@ export default function WatchProviders({
       ),
     }))
     .filter((group) => group.providers.length > 0);
+
   if (groups.length === 0) {
     return null;
   }

@@ -1,5 +1,18 @@
 const oxlint = require('eslint-plugin-oxlint');
 const oxlintConfig = require('./.oxlintrc.json');
+const paddingLineBetweenStatements = [
+  'error',
+  {
+    blankLine: 'always',
+    prev: ['const', 'let', 'var'],
+    next: ['if', 'try', 'for', 'while', 'switch'],
+  },
+  {
+    blankLine: 'always',
+    prev: '*',
+    next: 'return',
+  },
+];
 
 module.exports = {
   root: true,
@@ -27,12 +40,15 @@ module.exports = {
   },
   plugins: ['react-refresh', 'prettier'],
   rules: {
-    'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    'react-refresh/only-export-components': [
+      'warn',
+      { allowConstantExport: true },
+    ],
     'no-param-reassign': [2, { props: false }],
     'react/require-default-props': 'off',
     'react/jsx-props-no-spreading': 'off',
-    "react/jsx-uses-react": "off",
-    "react/react-in-jsx-scope": "off",
+    'react/jsx-uses-react': 'off',
+    'react/react-in-jsx-scope': 'off',
     'no-restricted-exports': 0,
     '@typescript-eslint/naming-convention': 'off',
     'jsx-a11y/label-has-associated-control': [
@@ -61,23 +77,25 @@ module.exports = {
       ])
     ),
   },
+  // setupTests.ts stays ignored: base rules reject its test-only import and
+  // the browser global self.
   overrides: [
     {
-      // Expand to components and pages after their readability batch.
-      files: ['src/util/**/*.{ts,tsx}', 'src/**/use*.{ts,tsx}'],
+      files: ['src/**/*.{ts,tsx}'],
       rules: {
-        'padding-line-between-statements': [
+        'padding-line-between-statements': paddingLineBetweenStatements,
+      },
+    },
+    {
+      files: ['vite.config.ts'],
+      parserOptions: {
+        project: './tsconfig.node.json',
+      },
+      rules: {
+        'padding-line-between-statements': paddingLineBetweenStatements,
+        'import/no-extraneous-dependencies': [
           'error',
-          {
-            blankLine: 'always',
-            prev: ['const', 'let', 'var'],
-            next: ['if', 'try', 'for', 'while', 'switch'],
-          },
-          {
-            blankLine: 'always',
-            prev: '*',
-            next: 'return',
-          },
+          { devDependencies: true },
         ],
       },
     },

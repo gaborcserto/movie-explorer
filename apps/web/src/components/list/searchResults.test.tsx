@@ -49,6 +49,7 @@ function setup(
     { initialEntries: [path] }
   );
   render(<RouterProvider router={router} />);
+
   return router;
 }
 beforeEach(() => {

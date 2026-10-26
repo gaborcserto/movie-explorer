@@ -20,6 +20,7 @@ function getYouTubeVideoId(url: string): string | undefined {
       hostname === 'youtube.com' ||
       hostname.endsWith('.youtube.com') ||
       hostname === 'youtu.be';
+
     if (!isYouTubeHost) {
       return undefined;
     }
@@ -29,6 +30,7 @@ function getYouTubeVideoId(url: string): string | undefined {
       .filter(Boolean);
 
     let candidate: string | null | undefined;
+
     if (hostname === 'youtu.be') {
       candidate = firstSegment;
     } else if (parsed.pathname === '/watch') {
@@ -161,6 +163,7 @@ export default function VideoPreview({ videos, title, resetKey }: Props) {
               </a>
             );
           }
+
           return (
             <div
               className="video-tile"

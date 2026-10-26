@@ -69,6 +69,7 @@ describe('<Details />', () => {
       useParams.mockReturnValue({ movieId: '1234' });
       getMovie.mockResolvedValueOnce(mockData);
       const fetchMock = vi.fn<typeof fetch>();
+
       if (failure === 'network') {
         fetchMock.mockRejectedValue(new TypeError('private network details'));
       } else {

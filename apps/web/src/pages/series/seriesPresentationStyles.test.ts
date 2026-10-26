@@ -27,6 +27,7 @@ function declarations(
       values[declaration.prop] = declaration.value;
     });
   });
+
   return values;
 }
 

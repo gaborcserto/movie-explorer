@@ -11,6 +11,7 @@ export const validYear = (value: string) =>
 
 export function readSearchView(params: URLSearchParams) {
   const view = params.get('view');
+
   return view === 'all' || view === 'tv' || view === 'people' ? view : 'movies';
 }
 
@@ -19,6 +20,7 @@ export function readFilters(params: URLSearchParams, isSearch: boolean) {
   const year = params.get('year') ?? '';
   const rating = params.get('rating') ?? '';
   const sorting = sortParams(params.get('sorting')) ?? 'popularity';
+
   return {
     filter: genresFilter.includes(genre) ? genre : '',
     year: validYear(year) ? year : '',
@@ -54,6 +56,7 @@ export function writeFilters(
     if (value) next.set(key, value);
     else next.delete(key);
   });
+
   return next;
 }
 
@@ -67,7 +70,9 @@ export function normalizeSearchFilters(
 ) {
   const next = normalizeFilters(params, isSearch);
   const view = readSearchView(params);
+
   if (view === 'movies' || (view === 'all' && !isSearch)) next.delete('view');
   else next.set('view', view);
+
   return next;
 }

@@ -49,6 +49,7 @@ export default function GroupedList({ query }: { query: string }) {
           1,
           controller.signal
         );
+
         if (!controller.signal.aborted) {
           setGroups((current) => ({ ...current, [type]: response }));
           setErrors((current) => ({ ...current, [type]: undefined }));
@@ -74,6 +75,7 @@ export default function GroupedList({ query }: { query: string }) {
       }
     });
     const requests = controllers.current;
+
     return () => {
       requests.forEach((controller) => controller.abort());
       requests.clear();
@@ -105,10 +107,12 @@ export default function GroupedList({ query }: { query: string }) {
       {categories.map(({ type, view, label, Icon }) => {
         const response = groups[type];
         const error = errors[type];
+
         if (!error && !response?.results.length) {
           return null;
         }
         const next = new URLSearchParams(params);
+
         if (view === 'movies') {
           next.delete('view');
         } else {

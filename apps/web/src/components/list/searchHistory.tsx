@@ -27,6 +27,7 @@ export default function SearchHistoryProvider({
   }));
   useLayoutEffect(() => {
     const from = previous.current;
+
     if (
       navigationType === 'PUSH' &&
       /^\/search(?:\/|$)/.test(from.pathname) &&
@@ -35,6 +36,7 @@ export default function SearchHistoryProvider({
       history.detailOrigins.set(location.key, from.key);
       if (history.detailOrigins.size > 30) {
         const oldest = history.detailOrigins.keys().next().value;
+
         if (oldest !== undefined) history.detailOrigins.delete(oldest);
       }
     }
@@ -43,10 +45,12 @@ export default function SearchHistoryProvider({
   useLayoutEffect(() => {
     const previousRestoration = window.history.scrollRestoration;
     window.history.scrollRestoration = 'manual';
+
     return () => {
       window.history.scrollRestoration = previousRestoration;
     };
   }, []);
+
   return (
     <SearchHistory.Provider value={history}>{children}</SearchHistory.Provider>
   );

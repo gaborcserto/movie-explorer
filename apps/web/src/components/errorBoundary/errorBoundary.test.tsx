@@ -10,6 +10,7 @@ function MockComponent({ shouldThrow, message }: MockProps) {
   if (shouldThrow) {
     throw new Error(message);
   }
+
   return <div>{message}</div>;
 }
 

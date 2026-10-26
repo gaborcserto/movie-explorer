@@ -18,6 +18,7 @@ function declarations(selector: string, media?: string) {
     const matches = media
       ? parent?.type === 'atrule' && parent.params === media
       : parent?.type === 'root';
+
     if (matches && rule.selectors.includes(selector)) {
       rule.walkDecls((decl) => {
         values[decl.prop] = decl.value;

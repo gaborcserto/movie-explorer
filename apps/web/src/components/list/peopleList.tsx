@@ -46,6 +46,7 @@ export default function PeopleList({ query }: { query: string }) {
       setMoreError(null);
       try {
         const response = await getPeople(query, page, request.signal);
+
         if (request.signal.aborted) {
           return;
         }
@@ -82,6 +83,7 @@ export default function PeopleList({ query }: { query: string }) {
     if (!restored) {
       load(1);
     }
+
     return () => {
       controller.current?.abort();
       busy.current = false;
@@ -116,11 +118,13 @@ export default function PeopleList({ query }: { query: string }) {
   let emptyMessage = query
     ? `No people found for "${query}".`
     : 'No people available.';
+
   if (data?.totalResults) {
     emptyMessage = more
       ? 'No matching persons yet. Load more to continue.'
       : 'No matching persons found.';
   }
+
   return (
     <section
       className="list__container container"

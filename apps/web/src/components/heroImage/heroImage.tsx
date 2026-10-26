@@ -29,6 +29,7 @@ function getHighestResolution(src: string, srcSet?: string) {
       const [url, descriptor] = candidate.trim().split(/\s+/);
       const amount = Number.parseFloat(descriptor ?? '1');
       const multiplier = descriptor?.endsWith('w') ? amount / 1000 : amount;
+
       return { url, multiplier };
     })
     .filter(({ url, multiplier }) => url && Number.isFinite(multiplier));

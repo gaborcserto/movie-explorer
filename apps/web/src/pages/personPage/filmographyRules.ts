@@ -40,6 +40,7 @@ function roleKey(credit: PersonCrewCredit) {
   if (credit.job?.trim()) {
     return `job:${credit.job.trim()}`;
   }
+
   return credit.department?.trim()
     ? `department:${credit.department.trim()}`
     : '';
@@ -49,6 +50,7 @@ function matchesRole(credit: PersonCrewCredit, role: string) {
   if (!role) {
     return true;
   }
+
   return role.startsWith('department:')
     ? `department:${credit.department?.trim()}` === role
     : roleKey(credit) === role;
@@ -83,6 +85,7 @@ function mergeMovies(entries: readonly FilmographyEntry[]) {
       crewCredits: [...(previous?.crewCredits ?? []), ...entry.crewCredits],
     });
   });
+
   return [...movies.values()];
 }
 
@@ -108,6 +111,7 @@ function sortMovies(movies: readonly FilmographyEntry[], sort: Sort) {
     const dates = (filmographyDate(a) ?? '').localeCompare(
       filmographyDate(b) ?? ''
     );
+
     return (sort === 'oldest' ? dates : -dates) || compareTitles(a, b);
   });
 }
@@ -218,6 +222,7 @@ export function getFilmographyRoles(
           .map((credit) => {
             const job = credit.job?.trim();
             const department = credit.department?.trim();
+
             return [
               job,
               department && department !== job ? department : '',

@@ -49,6 +49,7 @@ function setup(combined: CombinedFilmography = envelope, query = '') {
     initialEntries: [`/person/42${query}`],
   });
   render(<RouterProvider router={router} />);
+
   return router;
 }
 beforeEach(() => {

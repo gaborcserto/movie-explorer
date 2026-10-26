@@ -20,7 +20,9 @@ describe('<Form />', () => {
     );
 
     expect(screen.getByLabelText('Keywords')).toBeInTheDocument();
+
     await user.click(screen.getByRole('button', { name: 'Apply' }));
+
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
@@ -35,6 +37,7 @@ describe('<Form />', () => {
     );
 
     await user.click(screen.getByRole('button', { name: 'Reset' }));
+
     expect(onReset).toHaveBeenCalledTimes(1);
   });
 });

@@ -92,6 +92,7 @@ test('lets the expanded input opacity override its collapsed state', () => {
       const opacity = rule.nodes?.find(
         (node) => node.type === 'decl' && node.prop === 'opacity'
       );
+
       if (opacity?.type === 'decl')
         inputRules.push({
           selector: rule.selectors[0],

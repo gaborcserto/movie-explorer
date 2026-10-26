@@ -18,6 +18,7 @@ function declarations(selector: string) {
       values[declaration.prop] = declaration.value;
     });
   });
+
   return values;
 }
 
@@ -41,6 +42,7 @@ function declarationsForMedia(selector: string, query: string) {
       });
     });
   });
+
   return values;
 }
 

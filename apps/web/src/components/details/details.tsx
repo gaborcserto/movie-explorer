@@ -39,8 +39,10 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
 
   useEffect(() => {
     let current = true;
+
     if (!validId) {
       setDetailsState('not-found');
+
       return undefined;
     }
 
@@ -74,6 +76,7 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
           setPending(false);
         }
       });
+
     return () => {
       current = false;
       controller.abort();
@@ -105,6 +108,7 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
 
   const recoverSection = async (section: MovieSection, signal: AbortSignal) => {
     const result = await getMovieSection(movieId, section, signal);
+
     if (signal.aborted) {
       return;
     }

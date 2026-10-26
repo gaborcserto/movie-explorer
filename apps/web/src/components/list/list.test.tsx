@@ -60,6 +60,7 @@ function deferredResponse() {
       reject = rejectPromise;
     }
   );
+
   return { promise, resolve, reject };
 }
 
@@ -431,6 +432,7 @@ describe('<List />', () => {
             const user = userEvent.setup();
             const obsoleteRequest = deferredResponse();
             const currentRequest = deferredResponse();
+
             if (requestPath === 'initial retry') {
               getMovies.mockRejectedValueOnce(new Error('Initial load failed'));
             }
@@ -539,6 +541,7 @@ describe('<List />', () => {
         async (outcome) => {
           const obsolete = deferredResponse();
           const current = deferredResponse();
+
           if (phase === 'additional page') {
             getMovies.mockResolvedValueOnce(moviePage('Original'));
           }

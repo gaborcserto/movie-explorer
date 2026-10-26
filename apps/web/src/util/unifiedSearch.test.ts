@@ -84,6 +84,7 @@ test('opts into Series suggestions with optional metadata and validates the grou
     })
   );
   await expect(getSearchSuggestions('Story')).resolves.toEqual(body);
+
   expect(fetchMock).toHaveBeenCalledWith(
     'http://localhost:4000/api/v1/search/suggestions?query=Story&limit=6&includeSeries=true',
     expect.any(Object)

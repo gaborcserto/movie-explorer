@@ -36,6 +36,7 @@ export default function PhotoPreview({
     }
 
     seen.add(photo.fullUrl);
+
     return true;
   });
 

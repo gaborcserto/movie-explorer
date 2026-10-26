@@ -34,6 +34,7 @@ it('uses canonical independent recovery URLs and preserves successful empty coll
   await expect(getSeriesCredits(1)).resolves.toEqual(credits);
   await expect(getSeriesImages(1)).resolves.toEqual(images);
   await expect(getSeriesVideos(1)).resolves.toEqual(videos);
+
   expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
     'http://localhost:4000/api/v1/series/1/credits',
     'http://localhost:4000/api/v1/series/1/images',

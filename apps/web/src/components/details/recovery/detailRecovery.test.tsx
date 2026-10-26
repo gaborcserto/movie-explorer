@@ -37,6 +37,7 @@ function setup(path: string, prior?: string) {
     initialIndex: prior ? 1 : 0,
   });
   render(<RouterProvider router={router} />);
+
   return router;
 }
 
@@ -120,14 +121,17 @@ test.each(['movies', 'people'] as const)(
       resolve = done;
     });
     const page = { page: 1, totalPages: 0, totalResults: 0 };
+
     if (view === 'movies') {
       vi.mocked(getMovies).mockImplementationOnce(async () => {
         await ready;
+
         return { ...page, movies: [] };
       });
     } else {
       vi.mocked(getPeople).mockImplementationOnce(async () => {
         await ready;
+
         return { ...page, people: [] };
       });
     }

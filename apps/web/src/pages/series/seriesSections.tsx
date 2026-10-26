@@ -77,10 +77,12 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
       Math.min(
         ...person.departments.map((item) => {
           const index = priority(item.department);
+
           return index < 0 ? 3 : index;
         }),
         3
       );
+
     return rank(a) - rank(b);
   });
   const crewPreview = useCrewPreview(crew, series.id);
@@ -107,6 +109,7 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
           availability={creditState}
           recover={async (signal) => {
             const result = await getSeriesCredits(series.id, signal);
+
             if (!signal.aborted) {
               setCredits(result);
             }
@@ -194,8 +197,10 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
               .sort(([a], [b]) => {
                 const rank = (department: string) => {
                   const index = priority(department);
+
                   return index < 0 ? 3 : index;
                 };
+
                 return rank(a) - rank(b);
               })
               .map(([department, people]) => (
@@ -267,6 +272,7 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
           availability={imageState}
           recover={async (signal) => {
             const result = await getSeriesImages(series.id, signal);
+
             if (!signal.aborted) {
               setImages(result);
             }
@@ -312,6 +318,7 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
           availability={videos?.availability ?? unavailable}
           recover={async (signal) => {
             const result = await getSeriesVideos(series.id, signal);
+
             if (!signal.aborted) {
               setVideos(result);
             }

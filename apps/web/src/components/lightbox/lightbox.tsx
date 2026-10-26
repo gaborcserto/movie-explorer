@@ -21,8 +21,10 @@ export type LightboxProps =
 
 export default function Lightbox(props: LightboxProps) {
   const { type } = props;
+
   if (type === 'photo') {
     const { photos, initialIndex, title, onClose } = props;
+
     return (
       <PhotoLightbox
         photos={photos}
@@ -34,6 +36,7 @@ export default function Lightbox(props: LightboxProps) {
   }
 
   const { videos, initialIndex, title, onClose } = props;
+
   return (
     <VideoLightbox
       videos={videos}

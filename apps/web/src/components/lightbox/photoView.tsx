@@ -32,6 +32,7 @@ export default function PhotoView({
 
   useEffect(() => {
     const currentImage = image.current;
+
     // Restore after React's development effect replay, without restarting a
     // source that is already loading. Clearing a detached source lets the
     // browser cancel obsolete downloads on close or photo navigation.
@@ -86,6 +87,7 @@ export default function PhotoView({
             (dx > 0 && view.x >= limits.x) ||
             (dy < 0 && view.y <= -limits.y) ||
             (dy > 0 && view.y >= limits.y);
+
           return (
             <button
               key={label}

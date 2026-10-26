@@ -18,6 +18,7 @@ function declarations(selector: string) {
       values[declaration.prop] = declaration.value;
     });
   });
+
   return values;
 }
 
@@ -38,6 +39,7 @@ test('uses the shared coral outline action sizing, shape, and typography', () =>
     'border-color': '#f65261',
     color: '#f65261',
   });
+
   expect(declarations('.btn--action:focus-visible')).toMatchObject({
     outline: '2px solid #f65261',
     'outline-offset': '3px',

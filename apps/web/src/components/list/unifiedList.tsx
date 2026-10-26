@@ -78,6 +78,7 @@ export default function UnifiedList({
               { year, rating, sorting, order },
               request.signal
             );
+
         if (request.signal.aborted) {
           return;
         }
@@ -114,6 +115,7 @@ export default function UnifiedList({
     if (!restored) {
       load(1);
     }
+
     return () => {
       controller.current?.abort();
       busy.current = false;
@@ -143,11 +145,13 @@ export default function UnifiedList({
   }
   const buttonLabel = moreError ? 'Try again' : 'Load more';
   let emptyMessage = `No results found for "${query}".`;
+
   if (data?.totalResults) {
     emptyMessage = more
       ? 'No matching series yet. Load more to continue.'
       : 'No matching series found.';
   }
+
   return (
     <section
       className="list__container container"

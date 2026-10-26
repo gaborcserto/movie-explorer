@@ -48,12 +48,14 @@ function contrastRatio(foreground: string, background: string) {
     const channels = hex
       .match(/[\da-f]{2}/gi)
       ?.map((channel) => parseInt(channel, 16) / 255);
+
     if (!channels || channels.length !== 3) {
       throw new Error(`Invalid color ${hex}`);
     }
     const [r, g, b] = channels.map((channel) =>
       channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
     );
+
     return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
   };
   const values = [luminance(foreground), luminance(background)].sort(
@@ -97,6 +99,7 @@ test('selected view keeps white text through hover, active, and focus states', (
       (node) =>
         node.type === 'rule' && node.selectors.includes(`${selector}${state}`)
     );
+
     if (rule?.type === 'rule') {
       let color: string | undefined;
       rule.walkDecls('color', (declaration) => {

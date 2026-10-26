@@ -32,6 +32,7 @@ function deferred<T>() {
   const promise = new Promise<T>((done) => {
     resolve = done;
   });
+
   return { promise, resolve };
 }
 const tick = async (time = 300) =>
@@ -85,6 +86,7 @@ describe.each(['home', 'movie', 'person'])(
       input.focus();
       const type = (text: string) =>
         fireEvent.change(input, { target: { value: text } });
+
       return { router, input, type };
     }
 
@@ -186,6 +188,7 @@ describe.each(['home', 'movie', 'person'])(
           'Loading suggestions'
         );
         const signal = api.mock.calls[0][1];
+
         if (dismissal === 'Escape') fireEvent.keyDown(input, { key: 'Escape' });
         else if (dismissal === 'outside') fireEvent.mouseDown(document.body);
         else fireEvent.blur(input, { relatedTarget: document.body });

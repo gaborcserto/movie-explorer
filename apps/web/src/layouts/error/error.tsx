@@ -21,6 +21,7 @@ function Error({
 
   useLayoutEffect(() => {
     const button = retryRef.current;
+
     return () => {
       if (button && document.activeElement === button) {
         button.closest('main')?.focus({ preventScroll: true });

@@ -85,6 +85,7 @@ describe('Search Component', () => {
       target: { value: ' New & query ' },
     });
     fireEvent.submit(screen.getByRole('search'));
+
     expect(screen.getByTestId('location')).toHaveTextContent(
       '/search/New%20%26%20query?view=people&filter=drama'
     );
@@ -129,6 +130,7 @@ describe('Search Component', () => {
 
     expect(screen.getByRole('listbox')).toBeInTheDocument();
     expect(getSearchSuggestions).toHaveBeenCalledTimes(1);
+
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     expect(input).toHaveAttribute(
       'aria-activedescendant',
@@ -169,6 +171,7 @@ describe('Search Component', () => {
     await act(async () => vi.advanceTimersByTimeAsync(300));
     fireEvent.change(input, { target: { value: 'Alien' } });
     await act(async () => vi.advanceTimersByTimeAsync(300));
+
     expect(screen.getByText('Alien')).toBeInTheDocument();
 
     await act(async () => {
@@ -177,6 +180,7 @@ describe('Search Component', () => {
       });
       await Promise.resolve();
     });
+
     expect(screen.queryByText('Stale')).toBeNull();
     fireEvent.keyDown(input, { key: 'Escape' });
     expect(screen.queryByRole('listbox')).toBeNull();
