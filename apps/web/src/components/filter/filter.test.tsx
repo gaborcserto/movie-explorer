@@ -101,7 +101,9 @@ test('Reset only changes the draft; Escape discards it and restores focus', asyn
 
   await userEvent.keyboard('{Escape}');
   await closed();
-  expect(screen.getByRole('button', { name: /Filters & Sort/ })).toHaveFocus();
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: /Filters & Sort/ })).toHaveFocus()
+  );
 
   await open();
   expect(screen.getByLabelText('Release year')).toHaveValue('2000');
@@ -132,7 +134,9 @@ test('outside interaction discards edits; close control also restores focus', as
   await userEvent.click(screen.getByRole('button', { name: 'Close filters' }));
   await closed();
 
-  expect(screen.getByRole('button', { name: /Filters & Sort/ })).toHaveFocus();
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: /Filters & Sort/ })).toHaveFocus()
+  );
 });
 
 test.each(['Popularity', 'Title', 'Release Date', 'Rating'])(
@@ -286,7 +290,9 @@ test('mobile drawer contains keyboard focus, locks scrolling, dismisses via back
   await closed();
 
   expect(document.body.style.overflow).toBe('');
-  expect(screen.getByRole('button', { name: /Filters & Sort/ })).toHaveFocus();
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: /Filters & Sort/ })).toHaveFocus()
+  );
 });
 
 test('reduced motion dismisses immediately without an exit delay', async () => {

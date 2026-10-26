@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
 import App from '../../../App';
@@ -490,8 +491,10 @@ test.each(['photo', 'poster', 'video'] as const)(
     });
     const router = setup('/movie/42');
     await screen.findByRole('heading', { name: 'First movie' });
-    fireEvent.click(screen.getByRole('button', { name: 'Show more videos' }));
-    fireEvent.click(
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Show more videos' })
+    );
+    await userEvent.click(
       await screen.findByRole('button', {
         name: {
           photo: 'View First movie backdrop 1',

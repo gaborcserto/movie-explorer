@@ -861,6 +861,8 @@ describe('Series hierarchy', () => {
     );
     const view = setup('/tv/1');
     const first = await screen.findByRole('tab', { name: 'Season 1' });
+    // The tabs can commit before the passive effect registers the observer.
+    await waitFor(() => expect(resize).toBeTypeOf('function'));
     expect(screen.queryByRole('button', { name: 'Next season' })).toBeNull();
     const list = screen.getByRole('tablist', { name: 'Seasons' });
     list.setAttribute('data-overflow', 'yes');
