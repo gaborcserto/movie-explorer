@@ -75,6 +75,14 @@ test('styles Series creator links without an underline and keeps hover and focus
   ).toMatchObject({ outline: '2px solid #f65261' });
 });
 
+test('aligns Series provider categories with the narrower metadata columns', () => {
+  expect(
+    declarations(seriesStyles, '.series-hero-metadata .watch-providers__groups')
+  ).toMatchObject({
+    'grid-template-columns': expect.stringContaining('140px'),
+  });
+});
+
 test('uses available width for Series crew while preserving Movie two-column layout', () => {
   expect(
     declarations(mediaStyles, '.series-sections .crew-group__people')[

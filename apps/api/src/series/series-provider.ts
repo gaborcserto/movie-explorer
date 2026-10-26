@@ -7,6 +7,7 @@ import type {
   SeriesCredits,
   SeriesImages,
   SeriesVideos,
+  WatchProviders,
 } from '@movie-explorer/contracts';
 
 import type { SeriesListQuery } from './series-list.dto';
@@ -30,4 +31,5 @@ export interface SeriesProvider {
     season: number,
     episode: number,
   ): Promise<EpisodeCredits | undefined>;
+  findWatchProviders(id: number): Promise<WatchProviders | undefined>;
 }

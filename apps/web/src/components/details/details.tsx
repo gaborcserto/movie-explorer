@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import './details.scss';
 import { useParams } from 'react-router-dom';
-import type { MovieDetails, MovieSection } from '@movie-explorer/contracts';
+import type {
+  MovieDetails,
+  MovieSection,
+  WatchProvider,
+} from '@movie-explorer/contracts';
 import DetailsPageLayout from './detailsPageLayout';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
 import { DetailError } from './recovery';
@@ -12,6 +16,7 @@ import Loading from '../../layouts/loading';
 import {
   getMovie,
   getMovieSection,
+  getWatchProviders,
   isNotFoundError,
 } from '../../util/apiUtils';
 import parseDetailId from '../../util/detailId';
@@ -28,6 +33,7 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
   const validId = Number.isSafeInteger(movieId);
 
   const [movieData, setMovieData] = useState<MovieDetails | null>(null);
+  const [watchProviders, setWatchProviders] = useState<WatchProvider[]>([]);
 
   useEffect(() => {
     let current = true;
@@ -71,6 +77,20 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
       controller.abort();
     };
   }, [movieId, validId, attempt]);
+
+  useEffect(() => {
+    if (!validId || detailsState !== 'success') return undefined;
+    const controller = new AbortController();
+    Promise.resolve()
+      .then(() => getWatchProviders('movies', movieId, controller.signal))
+      .then(({ providers }) => {
+        if (!controller.signal.aborted) setWatchProviders(providers);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setWatchProviders([]);
+      });
+    return () => controller.abort();
+  }, [movieId, validId, detailsState]);
 
   const recoverSection = async (section: MovieSection, signal: AbortSignal) => {
     const result = await getMovieSection(movieId, section, signal);
@@ -140,7 +160,9 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
     }
 
     if (detailsState === 'success' && movieData) {
-      return <DetailsContent movieData={movieData} />;
+      return (
+        <DetailsContent movieData={movieData} watchProviders={watchProviders} />
+      );
     }
 
     return null;

@@ -21,6 +21,7 @@ import type {
   SeasonDetails,
   EpisodeDetails,
   EpisodeCredits,
+  WatchProviders,
 } from '@movie-explorer/contracts';
 
 import {
@@ -314,6 +315,41 @@ export const getMovie = async (
   }
   return body;
 };
+
+function watchProvidersResponse(value: unknown): value is WatchProviders {
+  return (
+    record(value) &&
+    Array.isArray(value.providers) &&
+    value.providers.every((item: unknown) => {
+      if (!record(item)) return false;
+      return (
+        Number.isSafeInteger(item.id) &&
+        typeof item.id === 'number' &&
+        item.id > 0 &&
+        typeof item.name === 'string' &&
+        item.name.trim().length > 0 &&
+        ['streaming', 'rent', 'buy'].includes(String(item.category)) &&
+        item.region === 'HU' &&
+        (item.logoUrl === undefined || typeof item.logoUrl === 'string') &&
+        (item.watchUrl === undefined || typeof item.watchUrl === 'string')
+      );
+    })
+  );
+}
+
+export async function getWatchProviders(
+  kind: 'movies' | 'series',
+  id: number,
+  signal: AbortSignal
+): Promise<WatchProviders> {
+  const body = await request<unknown>(
+    `${apiBaseUrl}/api/v1/${kind}/${id}/watch-providers`,
+    { signal }
+  );
+  if (!watchProvidersResponse(body))
+    throw new ApiRequestError('invalid-response');
+  return body;
+}
 
 export const getPerson = async (
   id: number,

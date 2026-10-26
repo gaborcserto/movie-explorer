@@ -33,6 +33,7 @@ const movieProvider: jest.Mocked<MovieProvider> = {
   findPeople: jest.fn(),
   findMovieSection: jest.fn(),
   findFilmography: jest.fn(),
+  findWatchProviders: jest.fn(),
 };
 
 describe('AppController (e2e)', () => {
@@ -62,6 +63,7 @@ describe('AppController (e2e)', () => {
       '/api/v1/movies',
       '/api/v1/movies/suggestions',
       '/api/v1/movies/{id}',
+      '/api/v1/movies/{id}/watch-providers',
       ...['credits', 'photos', 'posters', 'videos'].map(
         (section) => '/api/v1/movies/{id}/' + section,
       ),
@@ -76,6 +78,7 @@ describe('AppController (e2e)', () => {
       '/api/v1/series/{id}/credits',
       '/api/v1/series/{id}/images',
       '/api/v1/series/{id}/videos',
+      '/api/v1/series/{id}/watch-providers',
       '/api/v1/series/{id}/seasons/{seasonNumber}',
       '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}',
       '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}/credits',
@@ -141,6 +144,7 @@ describe('AppController (e2e)', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+    movieProvider.findWatchProviders.mockResolvedValue({ providers: [] });
     movieProvider.findPerson.mockResolvedValue({
       id: 1,
       name: 'Person',
@@ -353,6 +357,20 @@ describe('AppController (e2e)', () => {
       .get('/api/v1/persons/1')
       .expect(200)
       .expect(person);
+  });
+
+  it('serves normalized movie watch providers on the canonical route', async () => {
+    const providers = {
+      providers: [
+        { id: 8, name: 'Provider', category: 'rent' as const, region: 'HU' },
+      ],
+    };
+    movieProvider.findWatchProviders.mockResolvedValueOnce(providers);
+    await request(app.getHttpServer())
+      .get('/api/v1/movies/1/watch-providers')
+      .expect(200)
+      .expect(providers);
+    expect(movieProvider.findWatchProviders).toHaveBeenCalledWith(1);
   });
 
   it('returns a successful empty autocomplete group alongside an unavailable group', async () => {

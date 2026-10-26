@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { SeriesDetails } from '@movie-explorer/contracts';
+import type { SeriesDetails, WatchProviders } from '@movie-explorer/contracts';
 
 import type { SeriesListQuery } from './series-list.dto';
 import { SERIES_PROVIDER, SeriesProvider } from './series-provider';
@@ -16,6 +16,10 @@ export class SeriesService {
 
   findOne(id: number): Promise<SeriesDetails | undefined> {
     return this.provider.findOne(id);
+  }
+
+  findWatchProviders(id: number): Promise<WatchProviders | undefined> {
+    return this.provider.findWatchProviders(id);
   }
 
   findSeason(id: number, season: number) {

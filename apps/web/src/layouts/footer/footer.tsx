@@ -7,6 +7,12 @@ function Footer() {
       <Link to="/search" className="footer__title brand">
         <strong>Movie</strong> Explorer
       </Link>
+      <p className="footer__attribution">
+        Watch availability data by{' '}
+        <a href="https://www.justwatch.com" target="_blank" rel="noreferrer">
+          JustWatch
+        </a>
+      </p>
     </footer>
   );
 }

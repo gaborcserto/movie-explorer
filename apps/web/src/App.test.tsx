@@ -9,12 +9,14 @@ import App from './App';
 import {
   getMovie as originalGetMovie,
   getMovies as originalGetMovies,
+  getWatchProviders as originalGetWatchProviders,
 } from './util/apiUtils';
 
 vi.mock('./util/apiUtils');
 
 const getMovie = vi.mocked(originalGetMovie);
 const getMovies = vi.mocked(originalGetMovies);
+const getWatchProviders = vi.mocked(originalGetWatchProviders);
 
 const movie: MovieDetails = {
   cast: ['Actor One'],
@@ -45,6 +47,7 @@ const renderApp = (initialEntry = '/search') => {
 
 describe('<App />', () => {
   beforeEach(() => {
+    getWatchProviders.mockResolvedValue({ providers: [] });
     vi.clearAllMocks();
     getMovies.mockResolvedValue(moviesResponse);
     getMovie.mockResolvedValue(movie);

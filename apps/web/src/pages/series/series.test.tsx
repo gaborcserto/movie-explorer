@@ -15,6 +15,7 @@ import type {
   EpisodeDetails,
   EpisodeCredits,
 } from '@movie-explorer/contracts';
+import * as apiUtils from '../../util/apiUtils';
 
 import SeriesPage from './seriesPage';
 import SeasonPage from './seasonPage';
@@ -30,6 +31,8 @@ import {
 vi.mock('../../components/search/headerSearch', () => ({
   default: () => null,
 }));
+
+vi.spyOn(apiUtils, 'getWatchProviders').mockResolvedValue({ providers: [] });
 
 const credits: EpisodeCredits = {
   cast: [{ id: 11, name: 'Regular Actor', characters: ['Guide'] }],

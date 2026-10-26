@@ -13,10 +13,12 @@ import Details from './details';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
 import {
   getMovie as originalGetMovie,
+  getWatchProviders as originalGetWatchProviders,
   isNotFoundError as originalIsNotFoundError,
 } from '../../util/apiUtils';
 
 const getMovie = vi.mocked(originalGetMovie);
+const getWatchProviders = vi.mocked(originalGetWatchProviders);
 const isNotFoundError = vi.mocked(originalIsNotFoundError);
 const useParams = vi.mocked(originalUseParams);
 
@@ -46,6 +48,7 @@ vi.mock('react-router-dom', async () => ({
 describe('<Details />', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getWatchProviders.mockResolvedValue({ providers: [] });
     isNotFoundError.mockReturnValue(false);
   });
 

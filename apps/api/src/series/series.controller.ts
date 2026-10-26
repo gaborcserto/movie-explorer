@@ -17,6 +17,7 @@ import {
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 import type { SeriesDetails } from '@movie-explorer/contracts';
+import { WatchProvidersDto } from '../movies/watch-providers.dto';
 
 import { DetailIdParams } from '../validation/detail-id.dto';
 import {
@@ -148,6 +149,19 @@ export class SeriesController {
       throw new NotFoundException('TV series not found');
     }
     return videos;
+  }
+
+  @Get(':id/watch-providers')
+  @ApiOperation({ summary: 'Get Hungarian streaming, rent and buy providers' })
+  @ApiParam({
+    name: 'id',
+    schema: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  })
+  @ApiOkResponse({ type: WatchProvidersDto })
+  async getWatchProviders(@Param() params: DetailIdParams) {
+    const providers = await this.service.findWatchProviders(params.id);
+    if (!providers) throw new NotFoundException('TV series not found');
+    return providers;
   }
 
   @Get(':id/credits')

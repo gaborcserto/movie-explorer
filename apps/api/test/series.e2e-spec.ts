@@ -28,6 +28,7 @@ describe('Series details API (e2e)', () => {
     findSeason: jest.fn(),
     findEpisode: jest.fn(),
     findEpisodeCredits: jest.fn(),
+    findWatchProviders: jest.fn(),
   };
   const movieProvider = {
     findOne: jest.fn(),
@@ -196,6 +197,21 @@ describe('Series details API (e2e)', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     provider.findOne.mockResolvedValue(minimalSeriesDetails);
+    provider.findWatchProviders.mockResolvedValue({ providers: [] });
+  });
+
+  it('serves normalized series watch providers on the canonical route', async () => {
+    const providers = {
+      providers: [
+        { id: 8, name: 'Provider', category: 'buy' as const, region: 'HU' },
+      ],
+    };
+    provider.findWatchProviders.mockResolvedValueOnce(providers);
+    await request(app.getHttpServer())
+      .get('/api/v1/series/1399/watch-providers')
+      .expect(200)
+      .expect(providers);
+    expect(provider.findWatchProviders).toHaveBeenCalledWith(1399);
   });
 
   it.each(['/api/v1/series'])(

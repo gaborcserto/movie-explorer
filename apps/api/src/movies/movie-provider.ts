@@ -1,5 +1,6 @@
 import type {
   MovieDetails,
+  WatchProviders,
   MovieSection,
   MovieSectionResponse,
   MovieListResponse,
@@ -23,6 +24,7 @@ export interface MovieProvider {
     limit: number,
   ): Promise<MovieSuggestionsResponse>;
   findOne(id: number): Promise<MovieDetails | undefined>;
+  findWatchProviders(id: number): Promise<WatchProviders | undefined>;
 }
 
 export const MOVIE_PROVIDER = Symbol('MOVIE_PROVIDER');

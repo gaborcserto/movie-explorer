@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { CreditPerson } from '@movie-explorer/contracts';
@@ -10,7 +11,6 @@ import DetailsPageLayout, {
 } from '../../components/details/detailsPageLayout';
 import { DetailError } from '../../components/details/recovery';
 import Loading from '../../layouts/loading';
-import Footer from '../../layouts/footer';
 import presentApiError from '../../util/errorPresentation';
 import { isNotFoundError } from '../../util/apiUtils';
 import '../../components/details/details.scss';
@@ -30,17 +30,14 @@ export function SeriesLayout({
   children?: React.ReactNode;
 }) {
   return (
-    <>
-      <DetailsPageLayout
-        title={title}
-        hero={hero}
-        navigation={navigation}
-        backdrop={backdrop}
-      >
-        {children && <DetailsLowerLayout>{children}</DetailsLowerLayout>}
-      </DetailsPageLayout>
-      <Footer />
-    </>
+    <DetailsPageLayout
+      title={title}
+      hero={hero}
+      navigation={navigation}
+      backdrop={backdrop}
+    >
+      {children && <DetailsLowerLayout>{children}</DetailsLowerLayout>}
+    </DetailsPageLayout>
   );
 }
 
@@ -227,6 +224,34 @@ export function SeriesMetadataList({
       </summary>
       <div className="series-metadata-disclosure__content">{content}</div>
     </details>
+  );
+}
+
+export function ProductionCompanies({
+  companies,
+}: {
+  companies: { id: number; name: string }[];
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const previewCount = 3;
+  const visibleCompanies = expanded
+    ? companies
+    : companies.slice(0, previewCount);
+
+  return (
+    <>
+      <span>{visibleCompanies.map((company) => company.name).join(', ')}</span>
+      {companies.length > previewCount && (
+        <button
+          className="series-metadata-toggle"
+          type="button"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          {expanded ? 'Show less' : 'Show more'}
+        </button>
+      )}
+    </>
   );
 }
 

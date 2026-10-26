@@ -1,5 +1,77 @@
 @use '../../assets/scss' as *;
 
+.watch-providers {
+  border-top: 0;
+  margin: 0;
+  padding: 20px 0 0;
+
+  .details-section__heading {
+    margin-bottom: 12px;
+  }
+
+  &__groups {
+    display: grid;
+    gap: 10px 20px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+  }
+
+  &__group {
+    min-width: 0;
+  }
+
+  &__group h3 {
+    color: $red-1;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  &__group ul {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__group li {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+  }
+
+  &__group li > span {
+    align-items: center;
+    border-radius: 8px;
+    color: $white;
+    display: inline-flex;
+    font-size: 12px;
+    justify-content: center;
+    min-height: 42px;
+    min-width: 42px;
+    padding: 0 8px;
+  }
+
+  &__group img {
+    border-radius: 8px;
+    height: 38px;
+    object-fit: contain;
+    width: 42px;
+  }
+}
+
+@include media-size(md-down) {
+  .watch-providers__empty {
+    display: none;
+  }
+}
+
+.details-section.watch-providers {
+  border-top: 0;
+}
+
 .header--movie-details {
   &:before {
     opacity: 0.1;

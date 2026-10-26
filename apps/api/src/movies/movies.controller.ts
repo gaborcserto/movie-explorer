@@ -29,6 +29,7 @@ import type {
   MovieListResponse,
   MovieSuggestionsResponse,
 } from '@movie-explorer/contracts';
+import { WatchProvidersDto } from './watch-providers.dto';
 
 @ApiTags('Movies')
 @ApiBadRequestResponse({
@@ -94,6 +95,19 @@ export class MoviesController {
     }
 
     return movie;
+  }
+
+  @Get(':id/watch-providers')
+  @ApiOperation({ summary: 'Get Hungarian streaming, rent and buy providers' })
+  @ApiParam({
+    name: 'id',
+    schema: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  })
+  @ApiResponse({ status: 200, type: WatchProvidersDto })
+  public async getWatchProviders(@Param() params: DetailIdParams) {
+    const providers = await this.moviesService.findWatchProviders(params.id);
+    if (!providers) throw new NotFoundException('Movie not found');
+    return providers;
   }
 
   @Get(':id/credits')

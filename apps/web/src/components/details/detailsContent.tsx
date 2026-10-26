@@ -5,6 +5,7 @@ import type {
   MovieDetails,
   MovieSection,
   MovieDirector,
+  WatchProvider,
 } from '@movie-explorer/contracts';
 
 import { SectionRecovery } from './recovery';
@@ -15,9 +16,11 @@ import CastPreview from './credits';
 import useCrewPreview from './credits/useCrewPreview';
 import { DetailsHeroFrame, DetailsLowerLayout } from './detailsPageLayout';
 import './media/media.scss';
+import WatchProviders from './watchProviders';
 
 interface DetailsProps {
   movieData: MovieDetails;
+  watchProviders?: WatchProvider[];
 }
 
 interface LowerDetailsProps {
@@ -199,7 +202,7 @@ function CrewGroups({
   );
 }
 
-export function DetailsHero({ movieData }: DetailsProps) {
+export function DetailsHero({ movieData, watchProviders = [] }: DetailsProps) {
   const {
     title,
     releaseDate,
@@ -209,11 +212,9 @@ export function DetailsHero({ movieData }: DetailsProps) {
     genres,
     rating,
     runtimeMinutes,
-    description,
   } = movieData;
   const releaseYear = releaseDate ? /^\d{4}/.exec(releaseDate)?.[0] : undefined;
   const genresData = genres.map((genre) => genre.trim()).filter(Boolean);
-  const overview = description?.trim();
   const hasRuntime =
     runtimeMinutes !== undefined &&
     Number.isFinite(runtimeMinutes) &&
@@ -255,13 +256,16 @@ export function DetailsHero({ movieData }: DetailsProps) {
           {hasRuntime && <span>{runtimeMinutes} min</span>}
         </div>
       )}
-      {overview && (
+      <MovieMetadata movie={movieData} />
+      <WatchProviders providers={watchProviders} />
+      {movieData.description?.trim() && (
         <section className="movie-details__section">
           <h2 className="movie-details__section-title">Overview</h2>
-          <p className="movie-details__overview">{overview}</p>
+          <p className="movie-details__overview">
+            {movieData.description.trim()}
+          </p>
         </section>
       )}
-      <MovieMetadata movie={movieData} />
     </DetailsHeroFrame>
   );
 }

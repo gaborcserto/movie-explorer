@@ -11,6 +11,7 @@ describe('independent autocomplete groups', () => {
     findSuggestions: jest.fn(),
     findMovieSection: jest.fn(),
     findFilmography: jest.fn(),
+    findWatchProviders: jest.fn(),
   };
   const searchProvider = { find: jest.fn() };
   const service = new SearchService(provider, searchProvider);

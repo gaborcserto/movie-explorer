@@ -43,6 +43,37 @@ test('retains the Movie hero dimensions, grid gap and title typography for every
   });
 });
 
+test('aligns provider categories with Movie metadata tracks and keeps logos compact', () => {
+  expect(declarations('.watch-providers__groups')).toMatchObject({
+    display: 'grid',
+    'grid-template-columns': expect.stringContaining('180px'),
+    gap: '10px 20px',
+  });
+  expect(declarations('.watch-providers__group ul')).toMatchObject({
+    display: 'flex',
+    'flex-wrap': 'wrap',
+    gap: '8px',
+  });
+  expect(
+    declarations('.watch-providers__empty', '(max-width: 767.98px)')
+  ).toMatchObject({ display: 'none' });
+});
+
+test('removes the provider section border with specificity above the shared section rule', () => {
+  let sharedBorder: string | undefined;
+  mediaStylesheet.walkRules('.details-section', (rule) => {
+    rule.walkDecls('border-top', (declaration) => {
+      sharedBorder = declaration.value;
+    });
+  });
+
+  expect(sharedBorder).toContain('1px solid');
+  expect(declarations('.details-section.watch-providers')).toHaveProperty(
+    'border-top',
+    '0'
+  );
+});
+
 test('shares tablet and mobile behavior while retaining the episode still aspect ratio', () => {
   expect(
     declarations('.movie-details__image', '(max-width: 991.98px)')

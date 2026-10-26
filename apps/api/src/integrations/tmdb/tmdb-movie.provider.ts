@@ -42,6 +42,7 @@ import {
   TmdbMovieListItem,
   TmdbPagedResponse,
 } from './tmdb.types';
+import { mapWatchProviders } from './tmdb-watch-providers.mapper';
 
 function detailRecord(value: unknown): Record<string, unknown> | undefined {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -234,6 +235,19 @@ export class TmdbMovieProvider implements MovieProvider {
       }
     }
     return { ...details, sections };
+  }
+
+  public async findWatchProviders(id: number) {
+    const body = await this.transport.request({
+      path: `/movie/${id}/watch/providers`,
+      operation: 'movie-watch-providers',
+      allowNotFound: true,
+      validateBody: (value) => {
+        if (!value || typeof value !== 'object' || Array.isArray(value))
+          throw new Error('Invalid watch providers');
+      },
+    });
+    return mapWatchProviders(body, this.config.imageBaseUrl);
   }
 
   private mapMovieSection(

@@ -14,6 +14,7 @@ describe('SeriesService', () => {
     findSeason: jest.fn(),
     findEpisode: jest.fn(),
     findEpisodeCredits: jest.fn(),
+    findWatchProviders: jest.fn(),
   };
   let service: SeriesService;
 

@@ -41,6 +41,7 @@ describe('MoviesService', () => {
       findPeople: jest.fn(),
       findMovieSection: jest.fn(),
       findFilmography: jest.fn(),
+      findWatchProviders: jest.fn(),
     };
     service = new MoviesService(movieProvider);
   });

@@ -1,7 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import type { WatchProvider } from '@movie-explorer/contracts';
 
-import { getSeries } from '../../util/apiUtils';
+import { getSeries, getWatchProviders } from '../../util/apiUtils';
+import WatchProviders from '../../components/details/watchProviders';
 import parseDetailId from '../../util/detailId';
 import SeasonPreview from './seasonPreview';
 import SeriesSections from './seriesSections';
@@ -11,6 +13,7 @@ import {
   SeriesHero,
   SeriesFacts,
   SeriesMetadataList,
+  ProductionCompanies,
   SeriesRequestState,
 } from './seriesPresentation';
 
@@ -22,6 +25,22 @@ function SeriesDetails({ idText }: { idText: string }) {
   );
   const resource = useSeriesResource(load, Number.isSafeInteger(id));
   const series = resource.data;
+  const seriesId = series?.id;
+  const [watchProviders, setWatchProviders] = useState<WatchProvider[]>([]);
+  useEffect(() => {
+    if (seriesId === undefined) return undefined;
+    const controller = new AbortController();
+    setWatchProviders([]);
+    Promise.resolve()
+      .then(() => getWatchProviders('series', id, controller.signal))
+      .then(({ providers }) => {
+        if (!controller.signal.aborted) setWatchProviders(providers);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setWatchProviders([]);
+      });
+    return () => controller.abort();
+  }, [id, seriesId]);
 
   return (
     <SeriesLayout
@@ -63,6 +82,7 @@ function SeriesDetails({ idText }: { idText: string }) {
                   ['Origin countries', series.originCountries.join(', ')],
                 ]}
               />
+              <WatchProviders providers={watchProviders} />
               <section className="movie-details__section">
                 <h2 className="movie-details__section-title">Overview</h2>
                 <p className="movie-details__overview">
@@ -96,10 +116,8 @@ function SeriesDetails({ idText }: { idText: string }) {
                   [
                     'Production companies',
                     series.productionCompanies.length ? (
-                      <SeriesMetadataList
-                        key="companies"
-                        label="Production companies"
-                        people={series.productionCompanies}
+                      <ProductionCompanies
+                        companies={series.productionCompanies}
                       />
                     ) : null,
                   ],

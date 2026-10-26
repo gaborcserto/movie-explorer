@@ -14,6 +14,7 @@ describe('SeriesController', () => {
     findSeason: jest.fn(),
     findEpisode: jest.fn(),
     findEpisodeCredits: jest.fn(),
+    findWatchProviders: jest.fn(),
   };
   const controller = new SeriesController(new SeriesService(provider));
 
@@ -25,6 +26,24 @@ describe('SeriesController', () => {
       minimalSeriesDetails,
     );
     expect(provider.findOne).toHaveBeenCalledWith(1399);
+  });
+
+  it('returns normalized watch providers', async () => {
+    const response = {
+      providers: [
+        {
+          id: 1,
+          name: 'Netflix',
+          category: 'streaming' as const,
+          region: 'HU',
+        },
+      ],
+    };
+    provider.findWatchProviders.mockResolvedValue(response);
+    await expect(controller.getWatchProviders({ id: 1399 })).resolves.toEqual(
+      response,
+    );
+    expect(provider.findWatchProviders).toHaveBeenCalledWith(1399);
   });
 
   it('translates missing series to resource-specific 404', async () => {

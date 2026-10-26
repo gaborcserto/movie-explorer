@@ -40,6 +40,7 @@ export type {
   FilmographyMediaType,
 } from './persons';
 export type { SectionAvailability, MovieSection } from './availability';
+export type { WatchProvider, WatchProviderCategory, WatchProviders } from './watch-providers';
 export type { MovieSectionResponse } from './movies';
 export type {
   SeriesSummary,

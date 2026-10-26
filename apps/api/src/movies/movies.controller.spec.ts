@@ -22,7 +22,10 @@ const movie: MovieDetails = {
 describe('MoviesController', () => {
   let controller: MoviesController;
   let service: jest.Mocked<
-    Pick<MoviesService, 'findAll' | 'findOne' | 'findSuggestions'>
+    Pick<
+      MoviesService,
+      'findAll' | 'findOne' | 'findSuggestions' | 'findWatchProviders'
+    >
   >;
 
   beforeEach(async () => {
@@ -30,6 +33,7 @@ describe('MoviesController', () => {
       findAll: jest.fn(),
       findOne: jest.fn(),
       findSuggestions: jest.fn(),
+      findWatchProviders: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -71,6 +75,24 @@ describe('MoviesController', () => {
     ).resolves.toEqual({ suggestions: [] });
 
     expect(service.findSuggestions).toHaveBeenCalledWith('Alien', 5);
+  });
+
+  it('returns normalized watch providers from the service', async () => {
+    const response = {
+      providers: [
+        {
+          id: 1,
+          name: 'Netflix',
+          category: 'streaming' as const,
+          region: 'HU',
+        },
+      ],
+    };
+    service.findWatchProviders.mockResolvedValue(response);
+    await expect(controller.getWatchProviders({ id: 1 })).resolves.toBe(
+      response,
+    );
+    expect(service.findWatchProviders).toHaveBeenCalledWith(1);
   });
 
   it('throws not found when a movie does not exist', async () => {

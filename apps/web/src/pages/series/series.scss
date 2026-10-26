@@ -326,6 +326,10 @@
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
   }
 
+  .watch-providers__groups {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
+  }
+
   .movie-details__metadata > div:first-child {
     grid-column: auto;
   }
@@ -376,5 +380,22 @@
     li + li {
       margin-top: 8px;
     }
+  }
+}
+
+.series-metadata-toggle {
+  background: none;
+  border: 0;
+  color: $red-1;
+  cursor: pointer;
+  font: inherit;
+  margin-left: 6px;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:focus-visible {
+    outline: 2px solid $red-1;
+    outline-offset: 2px;
   }
 }
