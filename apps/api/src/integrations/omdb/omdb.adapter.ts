@@ -1,4 +1,5 @@
 import type { ImdbRating } from '@movie-explorer/contracts';
+
 import { loadLocalEnv } from '../../configuration/local-env';
 
 const DEFAULT_API_URL = 'https://www.omdbapi.com/';
@@ -43,16 +44,22 @@ function normalize(
     !('imdbRating' in body) ||
     typeof body.imdbRating !== 'string' ||
     !/^(?:\d|10)(?:\.\d+)?$/.test(body.imdbRating)
-  )
+  ) {
     return null;
+  }
+
   const score = Number(body.imdbRating);
-  if (!Number.isFinite(score) || score < 0 || score > 10) return null;
+  if (!Number.isFinite(score) || score < 0 || score > 10) {
+    return null;
+  }
+
   const rawVotes = 'imdbVotes' in body ? body.imdbVotes : null;
   const votes =
     typeof rawVotes === 'string' &&
     /^(?:\d+|\d{1,3}(?:,\d{3})+)$/.test(rawVotes)
       ? Number(rawVotes.replaceAll(',', ''))
       : NaN;
+
   return {
     score,
     voteCount: Number.isSafeInteger(votes) && votes >= 0 ? votes : null,
@@ -65,18 +72,18 @@ export class OmdbAdapter {
     { rating: ImdbRating | null; expires: number }
   >();
   private readonly requests = new Map<string, Promise<ImdbRating | null>>();
+  private readonly apiKey: string | undefined;
   private readonly apiUrl: string;
 
-  constructor(
-    private readonly apiKey = {
-      ...loadLocalEnv(),
-      ...process.env,
-    }.OMDB_API_KEY?.trim(),
-    apiUrl = (() => {
+  constructor(apiKey?: string, apiUrl?: string) {
+    if (apiKey === undefined || apiUrl === undefined) {
       const env = { ...loadLocalEnv(), ...process.env };
-      return env.OMDB_API_URL?.trim() || DEFAULT_API_URL;
-    })(),
-  ) {
+
+      apiKey = apiKey ?? env.OMDB_API_KEY?.trim();
+      apiUrl = apiUrl ?? (env.OMDB_API_URL?.trim() || DEFAULT_API_URL);
+    }
+
+    this.apiKey = apiKey;
     this.apiUrl = validateApiUrl(apiUrl);
   }
 
@@ -88,17 +95,27 @@ export class OmdbAdapter {
     id: string,
     kind: 'movie' | 'series',
   ): Promise<ImdbRating | null> {
-    if (!this.enabled || !/^tt\d{7,}$/.test(id)) return null;
+    if (!this.enabled || !/^tt\d{7,}$/.test(id)) {
+      return null;
+    }
+
     const key = `${kind}:${id}`;
     const cached = this.cache.get(key);
-    if (cached && cached.expires > Date.now()) return cached.rating;
+    if (cached && cached.expires > Date.now()) {
+      return cached.rating;
+    }
+
     const pending = this.requests.get(key);
-    if (pending) return pending;
+    if (pending) {
+      return pending;
+    }
+
     const request = this.fetchRating(id, kind)
       .then((rating) => {
         this.cache.delete(key);
-        if (this.cache.size >= 500)
+        if (this.cache.size >= 500) {
           this.cache.delete(this.cache.keys().next().value ?? '');
+        }
         this.cache.set(key, {
           rating,
           expires: Date.now() + (rating ? 3_600_000 : 60_000),
@@ -115,15 +132,20 @@ export class OmdbAdapter {
     url.searchParams.set('apikey', this.apiKey ?? '');
     url.searchParams.set('i', id);
     url.searchParams.set('type', kind);
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3000);
+
     try {
       const response = await fetch(url, {
         signal: controller.signal,
         headers: { accept: 'application/json' },
         redirect: 'error',
       });
-      if (!response.ok) return null;
+      if (!response.ok) {
+        return null;
+      }
+
       const body: unknown = await response.json();
       controller.signal.throwIfAborted();
       return normalize(body, id, kind);

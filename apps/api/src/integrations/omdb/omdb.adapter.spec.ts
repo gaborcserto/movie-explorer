@@ -1,7 +1,8 @@
+import { loadLocalEnv } from '../../configuration/local-env';
 import { OmdbAdapter } from './omdb.adapter';
 
 jest.mock('../../configuration/local-env', () => ({
-  loadLocalEnv: () => ({}),
+  loadLocalEnv: jest.fn(),
 }));
 
 const id = 'tt0133093';
@@ -15,17 +16,128 @@ const valid = {
 
 describe('OmdbAdapter', () => {
   let fetchMock: jest.SpyInstance;
-  const originalApiUrl = process.env.OMDB_API_URL;
 
   beforeEach(() => {
-    delete process.env.OMDB_API_URL;
-    fetchMock = jest.spyOn(global, 'fetch');
+    const env = { ...process.env };
+    delete env.OMDB_API_KEY;
+    delete env.OMDB_API_URL;
+    jest.replaceProperty(process, 'env', env);
+    jest.mocked(loadLocalEnv).mockReset().mockReturnValue({});
+    fetchMock = jest
+      .spyOn(global, 'fetch')
+      .mockRejectedValue(new Error('Unexpected fetch'));
   });
+
   afterEach(() => {
     jest.restoreAllMocks();
     jest.useRealTimers();
-    if (originalApiUrl === undefined) delete process.env.OMDB_API_URL;
-    else process.env.OMDB_API_URL = originalApiUrl;
+  });
+
+  it('loads defaults from one local environment snapshot and trims them', async () => {
+    jest.mocked(loadLocalEnv).mockReturnValueOnce({
+      OMDB_API_KEY: ' local-key ',
+      OMDB_API_URL: ' https://local.example/api/ ',
+    });
+    fetchMock.mockResolvedValue(Response.json(valid));
+
+    const adapter = new OmdbAdapter();
+    await adapter.findRating(id, 'movie');
+
+    expect(adapter.enabled).toBe(true);
+    expect(loadLocalEnv).toHaveBeenCalledTimes(1);
+    const url = fetchMock.mock.calls[0][0] as URL;
+    expect(url.origin).toBe('https://local.example');
+    expect(url.pathname).toBe('/api/');
+    expect(url.searchParams.get('apikey')).toBe('local-key');
+  });
+
+  it('prefers runtime key and URL over local configuration', async () => {
+    jest.mocked(loadLocalEnv).mockReturnValue({
+      OMDB_API_KEY: 'local-key',
+      OMDB_API_URL: 'https://local.example/',
+    });
+    process.env.OMDB_API_KEY = ' runtime-key ';
+    process.env.OMDB_API_URL = ' https://runtime.example/ ';
+    fetchMock.mockResolvedValue(Response.json(valid));
+
+    await new OmdbAdapter().findRating(id, 'movie');
+
+    const url = fetchMock.mock.calls[0][0] as URL;
+    expect(url.origin).toBe('https://runtime.example');
+    expect(url.searchParams.get('apikey')).toBe('runtime-key');
+    expect(loadLocalEnv).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses explicit overrides without loading environment configuration', async () => {
+    process.env.OMDB_API_KEY = 'runtime-key';
+    process.env.OMDB_API_URL = 'invalid';
+    fetchMock.mockResolvedValue(Response.json(valid));
+
+    await new OmdbAdapter(
+      'override-key',
+      'https://override.example/',
+    ).findRating(id, 'movie');
+
+    const url = fetchMock.mock.calls[0][0] as URL;
+    expect(url.origin).toBe('https://override.example');
+    expect(url.searchParams.get('apikey')).toBe('override-key');
+    expect(loadLocalEnv).not.toHaveBeenCalled();
+  });
+
+  it('defaults only the key when an explicit URL is supplied', async () => {
+    jest.mocked(loadLocalEnv).mockReturnValue({ OMDB_API_KEY: ' local-key ' });
+    fetchMock.mockResolvedValue(Response.json(valid));
+
+    await new OmdbAdapter(undefined, 'https://override.example/').findRating(
+      id,
+      'movie',
+    );
+
+    const url = fetchMock.mock.calls[0][0] as URL;
+    expect(url.origin).toBe('https://override.example');
+    expect(url.searchParams.get('apikey')).toBe('local-key');
+    expect(loadLocalEnv).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([undefined, '', '   '])(
+    'disables fetching for a missing or blank key %p',
+    async (apiKey) => {
+      if (apiKey !== undefined) {
+        process.env.OMDB_API_KEY = apiKey;
+        jest
+          .mocked(loadLocalEnv)
+          .mockReturnValue({ OMDB_API_KEY: 'local-key' });
+      }
+
+      const adapter = new OmdbAdapter();
+
+      expect(adapter.enabled).toBe(false);
+      await expect(adapter.findRating(id, 'movie')).resolves.toBeNull();
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it('keeps an explicit empty key disabled despite an environment key', async () => {
+    process.env.OMDB_API_KEY = 'runtime-key';
+    const adapter = new OmdbAdapter('');
+
+    expect(adapter.enabled).toBe(false);
+    await expect(adapter.findRating(id, 'movie')).resolves.toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('uses the default URL when a blank runtime URL overrides a local URL', async () => {
+    jest.mocked(loadLocalEnv).mockReturnValue({
+      OMDB_API_URL: 'https://local.example/',
+    });
+    process.env.OMDB_API_URL = '   ';
+    fetchMock.mockResolvedValue(Response.json(valid));
+
+    await new OmdbAdapter('test-key').findRating(id, 'movie');
+
+    expect((fetchMock.mock.calls[0][0] as URL).origin).toBe(
+      'https://www.omdbapi.com',
+    );
   });
 
   it.each(['movie', 'series'] as const)(
@@ -57,7 +169,9 @@ describe('OmdbAdapter', () => {
   });
 
   it.each([undefined, ''])('defaults the API URL for %p', async (apiUrl) => {
-    if (apiUrl === '') process.env.OMDB_API_URL = '';
+    if (apiUrl === '') {
+      process.env.OMDB_API_URL = '';
+    }
     fetchMock.mockResolvedValue(Response.json(valid));
 
     await new OmdbAdapter('test-key').findRating(id, 'movie');
