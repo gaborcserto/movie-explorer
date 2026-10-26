@@ -6,6 +6,7 @@ import type {
   MovieSection,
   MovieDirector,
   WatchProvider,
+  Ratings,
 } from '@movie-explorer/contracts';
 
 import DetailsRatings from './ratings';
@@ -22,6 +23,10 @@ import WatchProviders from './watchProviders';
 interface DetailsProps {
   movieData: MovieDetails;
   watchProviders?: WatchProvider[];
+  ratings?: Ratings;
+  ratingsError?: boolean;
+  ratingsLoading?: boolean;
+  retryRatings?: () => void;
 }
 
 interface LowerDetailsProps {
@@ -204,7 +209,14 @@ function CrewGroups({
   );
 }
 
-export function DetailsHero({ movieData, watchProviders = [] }: DetailsProps) {
+export function DetailsHero({
+  movieData,
+  watchProviders = [],
+  ratings,
+  ratingsError,
+  ratingsLoading,
+  retryRatings,
+}: DetailsProps) {
   const {
     title,
     releaseDate,
@@ -238,9 +250,11 @@ export function DetailsHero({ movieData, watchProviders = [] }: DetailsProps) {
       }
       rating={
         <DetailsRatings
-          kind="movie"
-          id={movieData.id}
           tmdb={rating !== undefined && rating > 0 ? rating : null}
+          value={ratings}
+          error={ratingsError}
+          loading={ratingsLoading}
+          retry={retryRatings}
         />
       }
     >

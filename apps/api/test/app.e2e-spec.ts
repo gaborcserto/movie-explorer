@@ -15,6 +15,7 @@ import { MOVIE_PROVIDER } from './../src/movies/movie-provider';
 import { SERIES_PROVIDER } from '../src/series/series-provider';
 import { createApiDocument } from '../src/api-document';
 import { SEARCH_PROVIDER } from '../src/search/search-provider';
+import { RatingsService } from '../src/ratings/ratings.service';
 
 const movies = [
   {
@@ -35,6 +36,7 @@ const movieProvider: jest.Mocked<MovieProvider> = {
   findMovieSection: jest.fn(),
   findFilmography: jest.fn(),
   findWatchProviders: jest.fn(),
+  findRatings: jest.fn(),
 };
 
 describe('AppController (e2e)', () => {
@@ -58,6 +60,24 @@ describe('AppController (e2e)', () => {
     expect(movieProvider.findMovieSection).not.toHaveBeenCalled();
   });
 
+  it('serves movie ratings through the unified contract and documents outcome variants', async () => {
+    const tmdb = { status: 'available', score: 7.8, voteCount: 12500 } as const;
+    const ratings = { tmdb, imdb: { status: 'missing' } };
+    movieProvider.findRatings.mockResolvedValue(tmdb);
+    await request(app.getHttpServer())
+      .get('/api/v1/movies/269149/ratings')
+      .expect(200, ratings);
+    const document = createApiDocument(app);
+    const successResponse =
+      document.paths['/api/v1/movies/{id}/ratings'].get.responses['200'];
+    expect(JSON.stringify(successResponse)).toContain(
+      '#/components/schemas/RatingsDto',
+    );
+    expect(document.components.schemas.AvailableRatingDto).toBeDefined();
+    expect(document.components.schemas.MissingRatingDto).toBeDefined();
+    expect(document.components.schemas.UnavailableRatingDto).toBeDefined();
+  });
+
   it('documents only canonical operations with unique IDs and current schemas', () => {
     const document = createApiDocument(app);
     const expectedPaths = [
@@ -66,6 +86,7 @@ describe('AppController (e2e)', () => {
       '/api/v1/movies/suggestions',
       '/api/v1/movies/{id}',
       '/api/v1/movies/{id}/watch-providers',
+      '/api/v1/movies/{id}/ratings',
       ...['credits', 'photos', 'posters', 'videos'].map(
         (section) => '/api/v1/movies/{id}/' + section,
       ),
@@ -81,6 +102,7 @@ describe('AppController (e2e)', () => {
       '/api/v1/series/{id}/images',
       '/api/v1/series/{id}/videos',
       '/api/v1/series/{id}/watch-providers',
+      '/api/v1/series/{id}/ratings',
       '/api/v1/series/{id}/seasons/{seasonNumber}',
       '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}',
       '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}/credits',
@@ -133,6 +155,13 @@ describe('AppController (e2e)', () => {
       .useValue({})
       .overrideProvider(SERIES_PROVIDER)
       .useValue({ findOne: jest.fn() })
+      .overrideProvider(RatingsService)
+      .useValue({
+        findRatings: (_kind: string, _id: number, tmdb: unknown) => ({
+          tmdb,
+          imdb: { status: 'missing' },
+        }),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();

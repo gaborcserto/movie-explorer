@@ -8,6 +8,7 @@ import {
   ApiBadGatewayResponse,
   ApiGatewayTimeoutResponse,
   ApiTooManyRequestsResponse,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import {
   Get,
@@ -31,6 +32,7 @@ import {
   MoviesResponse,
 } from './movies.dto';
 import { WatchProvidersDto } from './watch-providers.dto';
+import { RatingsDto } from '../ratings/ratings.dto';
 
 @ApiTags('Movies')
 @ApiBadRequestResponse({
@@ -111,6 +113,23 @@ export class MoviesController {
       throw new NotFoundException('Movie not found');
     }
     return providers;
+  }
+
+  @Get(':id/ratings')
+  @ApiOperation({
+    summary: 'Get TMDB and IMDb ratings independently of movie details',
+    description:
+      'Returns each source as available, missing, or unavailable. Provider failures are represented with a source-specific unavailable reason; a confirmed missing movie returns 404.',
+  })
+  @ApiOkResponse({ type: RatingsDto })
+  @ApiNotFoundResponse({ description: 'Movie not found' })
+  public async getRatings(@Param() params: DetailIdParams) {
+    const ratings = await this.moviesService.findRatings(params.id);
+    if (!ratings) {
+      throw new NotFoundException('Movie not found');
+    }
+
+    return ratings;
   }
 
   @Get(':id/credits')

@@ -70,6 +70,10 @@ configured. The API also exposes `npm run format --workspace
 - Inspect the existing implementation, tests, configuration, and neighboring
   patterns before changing architecture. Preserve existing behavior unless a
   change is explicitly required.
+- Consider code readability during implementation, not only during final review.
+  Read `.agents/skills/code-readability/SKILL.md` for TypeScript, React, NestJS,
+  or readability work; use it alongside the focused implementation skill and
+  check readability again before completing the change.
 - Keep changes small, focused, readable, and reviewable. Prefer descriptive
   names and focused functions/components over clever code.
 - Prefer existing local patterns when they are still appropriate. Introduce
@@ -192,6 +196,7 @@ verification selection.
 
 | Work | Skill |
 | --- | --- |
+| Review or improve code readability | `.agents/skills/code-readability/SKILL.md` |
 | Select checks and verify a change | `.agents/skills/verify-change/SKILL.md` |
 | Change shared contracts or public API shapes | `.agents/skills/api-contract-change/SKILL.md` |
 | Change TMDB requests, mapping, configuration, or failures | `.agents/skills/tmdb-integration/SKILL.md` |

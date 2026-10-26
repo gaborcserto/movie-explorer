@@ -33,7 +33,10 @@ vi.mock('../../components/search/headerSearch', () => ({
 }));
 
 vi.spyOn(apiUtils, 'getWatchProviders').mockResolvedValue({ providers: [] });
-vi.spyOn(apiUtils, 'getImdbRating').mockResolvedValue({ imdb: null });
+vi.spyOn(apiUtils, 'getRatings').mockResolvedValue({
+  tmdb: { status: 'available', score: 8.5, voteCount: 200 },
+  imdb: { status: 'missing' },
+});
 
 const credits: EpisodeCredits = {
   cast: [{ id: 11, name: 'Regular Actor', characters: ['Guide'] }],

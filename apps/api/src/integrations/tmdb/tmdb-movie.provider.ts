@@ -15,6 +15,7 @@ import type {
   MovieSortOrder,
   MovieSuggestionsResponse,
   PersonDetails,
+  RatingResult,
 } from '@movie-explorer/contracts';
 
 import { TmdbExternalIds } from './tmdb-external-ids';
@@ -242,6 +243,56 @@ export class TmdbMovieProvider implements MovieProvider {
       }
     }
     return { ...details, sections };
+  }
+
+  public async findRatings(id: number): Promise<RatingResult | undefined> {
+    const movie = await this.transport.request({
+      path: `/movie/${id}`,
+      operation: 'movie-ratings',
+      allowNotFound: true,
+      validateBody: (value) => {
+        const row = detailRecord(value);
+        if (
+          !row ||
+          row.id !== id ||
+          typeof row.title !== 'string' ||
+          !row.title.trim()
+        ) {
+          throw new Error('Invalid movie identity');
+        }
+      },
+    });
+
+    if (!movie || typeof movie !== 'object') {
+      return undefined;
+    }
+
+    const row = movie as Record<string, unknown>;
+    if ('imdb_id' in row) {
+      this.externalIds?.remember('movie', id, row.imdb_id);
+    }
+
+    const score = row.vote_average;
+    const rawVotes = row.vote_count;
+    if (
+      typeof score !== 'number' ||
+      !Number.isFinite(score) ||
+      score < 0 ||
+      score > 10 ||
+      !(
+        rawVotes === undefined ||
+        (typeof rawVotes === 'number' &&
+          Number.isSafeInteger(rawVotes) &&
+          rawVotes >= 0)
+      )
+    ) {
+      return { status: 'unavailable', reason: 'invalid-response' };
+    }
+    return {
+      status: 'available',
+      score,
+      voteCount: typeof rawVotes === 'number' ? rawVotes : null,
+    };
   }
 
   public async findWatchProviders(id: number) {

@@ -8,6 +8,7 @@ import type {
   MovieSuggestionsResponse,
   PersonDetails,
   PersonListResponse,
+  RatingResult,
 } from '@movie-explorer/contracts';
 
 export interface MovieProvider {
@@ -24,6 +25,7 @@ export interface MovieProvider {
     limit: number,
   ): Promise<MovieSuggestionsResponse>;
   findOne(id: number): Promise<MovieDetails | undefined>;
+  findRatings?(id: number): Promise<RatingResult | undefined>;
   findWatchProviders(id: number): Promise<WatchProviders | undefined>;
 }
 

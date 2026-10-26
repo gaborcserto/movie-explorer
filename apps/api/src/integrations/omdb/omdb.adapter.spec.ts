@@ -113,7 +113,10 @@ describe('OmdbAdapter', () => {
       const adapter = new OmdbAdapter();
 
       expect(adapter.enabled).toBe(false);
-      await expect(adapter.findRating(id, 'movie')).resolves.toBeNull();
+      await expect(adapter.findRating(id, 'movie')).resolves.toEqual({
+        status: 'unavailable',
+        reason: 'not-configured',
+      });
       expect(fetchMock).not.toHaveBeenCalled();
     },
   );
@@ -123,7 +126,10 @@ describe('OmdbAdapter', () => {
     const adapter = new OmdbAdapter('');
 
     expect(adapter.enabled).toBe(false);
-    await expect(adapter.findRating(id, 'movie')).resolves.toBeNull();
+    await expect(adapter.findRating(id, 'movie')).resolves.toEqual({
+      status: 'unavailable',
+      reason: 'not-configured',
+    });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -147,7 +153,11 @@ describe('OmdbAdapter', () => {
       fetchMock.mockResolvedValue(Response.json({ ...valid, Type: kind }));
       await expect(
         new OmdbAdapter('test-key').findRating(id, kind),
-      ).resolves.toEqual({ score: 8.7, voteCount: 2100123 });
+      ).resolves.toEqual({
+        status: 'available',
+        score: 8.7,
+        voteCount: 2100123,
+      });
       const url = fetchMock.mock.calls[0][0] as URL;
       expect(url.origin).toBe('https://www.omdbapi.com');
       expect(url.searchParams.get('i')).toBe(id);
@@ -200,7 +210,7 @@ describe('OmdbAdapter', () => {
       fetchMock.mockResolvedValue(Response.json({ ...valid, imdbRating }));
       await expect(
         new OmdbAdapter('key').findRating(id, 'movie'),
-      ).resolves.toBeNull();
+      ).resolves.toEqual({ status: 'unavailable', reason: 'invalid-response' });
     },
   );
 
@@ -210,31 +220,46 @@ describe('OmdbAdapter', () => {
       fetchMock.mockResolvedValue(Response.json({ ...valid, imdbVotes }));
       await expect(
         new OmdbAdapter('key').findRating(id, 'movie'),
-      ).resolves.toEqual({ score: 8.7, voteCount: null });
+      ).resolves.toEqual({ status: 'available', score: 8.7, voteCount: null });
     },
   );
 
   it.each([
-    { ...valid, imdbRating: undefined },
-    { ...valid, imdbID: 'tt0000001' },
-    { ...valid, Type: 'series' },
-    { Response: 'False', Error: 'Invalid API key!' },
-    { Response: 'False', Error: 'Movie not found!' },
-    { Response: 'False', Error: 'Request limit reached!' },
-    null,
-    [],
-  ])('ignores unavailable or mismatched responses %p', async (body) => {
+    [
+      { ...valid, imdbRating: undefined },
+      { status: 'unavailable', reason: 'invalid-response' },
+    ],
+    [
+      { ...valid, imdbID: 'tt0000001' },
+      { status: 'unavailable', reason: 'invalid-response' },
+    ],
+    [
+      { ...valid, Type: 'series' },
+      { status: 'unavailable', reason: 'invalid-response' },
+    ],
+    [
+      { Response: 'False', Error: 'Invalid API key!' },
+      { status: 'unavailable', reason: 'upstream-error' },
+    ],
+    [{ Response: 'False', Error: 'Movie not found!' }, { status: 'missing' }],
+    [
+      { Response: 'False', Error: 'Request limit reached!' },
+      { status: 'unavailable', reason: 'upstream-error' },
+    ],
+    [null, { status: 'unavailable', reason: 'invalid-response' }],
+    [[], { status: 'unavailable', reason: 'invalid-response' }],
+  ] as const)('classifies provider response %p', async (body, outcome) => {
     fetchMock.mockResolvedValue(Response.json(body));
     await expect(
       new OmdbAdapter('key').findRating(id, 'movie'),
-    ).resolves.toBeNull();
+    ).resolves.toEqual(outcome);
   });
 
   it.each([401, 429, 503])('degrades HTTP %s to null', async (status) => {
     fetchMock.mockResolvedValue(new Response('', { status }));
     await expect(
       new OmdbAdapter('key').findRating(id, 'movie'),
-    ).resolves.toBeNull();
+    ).resolves.toEqual({ status: 'unavailable', reason: 'upstream-error' });
   });
 
   it('handles network and malformed JSON failures', async () => {
@@ -243,10 +268,10 @@ describe('OmdbAdapter', () => {
       .mockResolvedValueOnce(new Response('invalid'));
     await expect(
       new OmdbAdapter('key').findRating(id, 'movie'),
-    ).resolves.toBeNull();
+    ).resolves.toEqual({ status: 'unavailable', reason: 'upstream-error' });
     await expect(
       new OmdbAdapter('key').findRating(id, 'movie'),
-    ).resolves.toBeNull();
+    ).resolves.toEqual({ status: 'unavailable', reason: 'invalid-response' });
   });
 
   it('aborts timed out requests', async () => {
@@ -263,7 +288,11 @@ describe('OmdbAdapter', () => {
     const result = new OmdbAdapter('key').findRating(id, 'movie');
     await jest.advanceTimersByTimeAsync(3000);
 
-    await expect(result).resolves.toBeNull();
+    await expect(result).resolves.toEqual({
+      status: 'unavailable',
+      reason: 'timeout',
+      retryAfterSeconds: 3,
+    });
   });
 
   it('deduplicates concurrent requests, caches for an hour, then refreshes', async () => {
@@ -290,20 +319,21 @@ describe('OmdbAdapter', () => {
 
     await adapter.findRating(id, 'movie');
     await adapter.findRating(id, 'movie');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     await jest.advanceTimersByTimeAsync(60_001);
     await adapter.findRating(id, 'movie');
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('makes no request without a key or valid IMDb ID', async () => {
-    await expect(
-      new OmdbAdapter('').findRating(id, 'movie'),
-    ).resolves.toBeNull();
+    await expect(new OmdbAdapter('').findRating(id, 'movie')).resolves.toEqual({
+      status: 'unavailable',
+      reason: 'not-configured',
+    });
     await expect(
       new OmdbAdapter('key').findRating('603', 'movie'),
-    ).resolves.toBeNull();
+    ).resolves.toEqual({ status: 'unavailable', reason: 'not-configured' });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

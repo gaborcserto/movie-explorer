@@ -11,6 +11,7 @@ import {
   getMovie as originalGetMovie,
   getMovies as originalGetMovies,
   getWatchProviders as originalGetWatchProviders,
+  getRatings as originalGetRatings,
 } from './util/apiUtils';
 
 vi.mock('./util/apiUtils');
@@ -18,6 +19,7 @@ vi.mock('./util/apiUtils');
 const getMovie = vi.mocked(originalGetMovie);
 const getMovies = vi.mocked(originalGetMovies);
 const getWatchProviders = vi.mocked(originalGetWatchProviders);
+const getRatings = vi.mocked(originalGetRatings);
 
 const movie: MovieDetails = {
   cast: ['Actor One'],
@@ -52,6 +54,10 @@ describe('<App />', () => {
     vi.clearAllMocks();
     getMovies.mockResolvedValue(moviesResponse);
     getMovie.mockResolvedValue(movie);
+    getRatings.mockResolvedValue({
+      tmdb: { status: 'available', score: 8.5, voteCount: null },
+      imdb: { status: 'missing' },
+    });
   });
 
   test('renders the search route and loaded movie results', async () => {

@@ -33,6 +33,25 @@ describe('TmdbSeriesProvider', () => {
     jest.useRealTimers();
   });
 
+  it('retrieves series rating metadata without appended resources', async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({
+        id: 1399,
+        name: 'Game of Thrones',
+        vote_average: 8.4,
+        vote_count: 1200,
+      }),
+    );
+    await expect(provider.findRatings(1399)).resolves.toEqual({
+      status: 'available',
+      score: 8.4,
+      voteCount: 1200,
+    });
+    const url = new URL(fetchMock.mock.calls[0][0] as string);
+    expect(url.pathname).toBe('/3/tv/1399');
+    expect(url.searchParams.get('append_to_response')).toBe('external_ids');
+  });
+
   it('discovers one Series page, maps application fields, and forwards only applicable filters', async () => {
     fetchMock.mockResolvedValue(
       Response.json({

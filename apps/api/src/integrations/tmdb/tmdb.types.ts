@@ -42,6 +42,7 @@ export interface TmdbMovieDetails {
   runtime: number | null;
   title: string;
   vote_average: number;
+  vote_count?: unknown;
   backdrop_path?: string | null;
 }
 

@@ -32,7 +32,11 @@ describe('Optional IMDb rating API', () => {
     'serves the normalized %s contract',
     async (kind) => {
       resolve.mockResolvedValue('tt0133093');
-      findRating.mockResolvedValue({ score: 8.7, voteCount: 100 });
+      findRating.mockResolvedValue({
+        status: 'available',
+        score: 8.7,
+        voteCount: 100,
+      });
       await request(app.getHttpServer())
         .get(`/api/v1/ratings/${kind}/603/imdb`)
         .expect(200, { imdb: { score: 8.7, voteCount: 100 } });

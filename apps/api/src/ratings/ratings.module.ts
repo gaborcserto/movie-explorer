@@ -12,6 +12,6 @@ import { RatingsService } from './ratings.service';
     { provide: OmdbAdapter, useFactory: () => new OmdbAdapter() },
     RatingsService,
   ],
-  exports: [TmdbExternalIds],
+  exports: [TmdbExternalIds, RatingsService],
 })
 export class RatingsModule {}

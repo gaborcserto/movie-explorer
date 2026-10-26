@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { SeriesDetails } from '@movie-explorer/contracts';
+import type { RatingResult, SeriesDetails } from '@movie-explorer/contracts';
 
 import { TmdbExternalIds } from './tmdb-external-ids';
 import { mapWatchProviders } from './tmdb-watch-providers.mapper';
@@ -106,6 +106,56 @@ export class TmdbSeriesProvider implements SeriesProvider {
       videos: new TmdbSeriesMediaMapper(this.imageBaseUrl).videos(
         this.appended(body.videos, id),
       ),
+    };
+  }
+
+  async findRatings(id: number): Promise<RatingResult | undefined> {
+    const body = await this.transport.request({
+      path: `/tv/${id}`,
+      query: { append_to_response: 'external_ids' },
+      operation: 'series-ratings',
+      allowNotFound: true,
+      validateBody: (value) => {
+        const row = seriesRecord(value);
+        if (!row || row.id !== id || typeof row.name !== 'string') {
+          throw new Error('Invalid series identity');
+        }
+      },
+    });
+
+    if (!body || typeof body !== 'object') {
+      return undefined;
+    }
+
+    const row = body as Record<string, unknown>;
+    const external = seriesRecord(row.external_ids);
+    if (
+      external &&
+      external.success !== false &&
+      (external.id === undefined || external.id === id)
+    ) {
+      this.externalIds?.remember('series', id, external.imdb_id);
+    }
+    const score = row.vote_average;
+    const rawVotes = row.vote_count;
+    if (
+      typeof score !== 'number' ||
+      !Number.isFinite(score) ||
+      score < 0 ||
+      score > 10 ||
+      !(
+        rawVotes === undefined ||
+        (typeof rawVotes === 'number' &&
+          Number.isSafeInteger(rawVotes) &&
+          rawVotes >= 0)
+      )
+    ) {
+      return { status: 'unavailable', reason: 'invalid-response' };
+    }
+    return {
+      status: 'available',
+      score,
+      voteCount: typeof rawVotes === 'number' ? rawVotes : null,
     };
   }
 

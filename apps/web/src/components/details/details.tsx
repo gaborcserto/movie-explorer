@@ -20,6 +20,7 @@ import {
   isNotFoundError,
 } from '../../util/apiUtils';
 import parseDetailId from '../../util/detailId';
+import useRatingsResource from './useRatingsResource';
 
 type DetailsState = 'loading' | 'success' | 'not-found' | 'error';
 
@@ -31,6 +32,7 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
 
   const movieId = parseDetailId(movieIdStr);
   const validId = Number.isSafeInteger(movieId);
+  const ratingResource = useRatingsResource('movie', movieId, validId);
 
   const [movieData, setMovieData] = useState<MovieDetails | null>(null);
   const [watchProviders, setWatchProviders] = useState<WatchProvider[]>([]);
@@ -170,7 +172,14 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
 
     if (detailsState === 'success' && movieData) {
       return (
-        <DetailsContent movieData={movieData} watchProviders={watchProviders} />
+        <DetailsContent
+          movieData={movieData}
+          watchProviders={watchProviders}
+          ratings={ratingResource.ratings}
+          ratingsError={ratingResource.error}
+          ratingsLoading={ratingResource.loading}
+          retryRatings={ratingResource.retry}
+        />
       );
     }
 

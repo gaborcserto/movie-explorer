@@ -16,6 +16,7 @@ import { MOVIE_PROVIDER } from '../src/movies/movie-provider';
 import { SERIES_PROVIDER, SeriesProvider } from '../src/series/series-provider';
 import { minimalSeriesDetails } from './fixtures/series';
 import { createApiDocument } from '../src/api-document';
+import { RatingsService } from '../src/ratings/ratings.service';
 
 describe('Series details API (e2e)', () => {
   let app: INestApplication;
@@ -29,6 +30,7 @@ describe('Series details API (e2e)', () => {
     findEpisode: jest.fn(),
     findEpisodeCredits: jest.fn(),
     findWatchProviders: jest.fn(),
+    findRatings: jest.fn(),
   };
   const movieProvider = {
     findOne: jest.fn(),
@@ -72,6 +74,24 @@ describe('Series details API (e2e)', () => {
     expect(document.components.schemas.EpisodeSummaryDto).toMatchObject({
       properties: { stillSrcSet: { type: 'string' } },
     });
+  });
+
+  it('returns unified series ratings and 404 for a confirmed missing series', async () => {
+    provider.findRatings!.mockResolvedValue({
+      status: 'available',
+      score: 8,
+      voteCount: 45,
+    });
+    await request(app.getHttpServer())
+      .get('/api/v1/series/1399/ratings')
+      .expect(200, {
+        tmdb: { status: 'available', score: 8, voteCount: 45 },
+        imdb: { status: 'unavailable', reason: 'not-configured' },
+      });
+    provider.findRatings!.mockResolvedValueOnce(undefined);
+    await request(app.getHttpServer())
+      .get('/api/v1/series/404/ratings')
+      .expect(404);
   });
 
   it.each([
@@ -188,6 +208,13 @@ describe('Series details API (e2e)', () => {
       .useValue({})
       .overrideProvider(MOVIE_PROVIDER)
       .useValue(movieProvider)
+      .overrideProvider(RatingsService)
+      .useValue({
+        findRatings: (_kind: string, _id: number, tmdb: unknown) => ({
+          tmdb,
+          imdb: { status: 'unavailable', reason: 'not-configured' },
+        }),
+      })
       .compile();
     app = module.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));

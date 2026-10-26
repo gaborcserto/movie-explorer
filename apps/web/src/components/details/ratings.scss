@@ -30,4 +30,19 @@
     font-weight: 700;
     line-height: 1.25;
   }
+
+  &__error {
+    color: $white;
+    font-size: 0.875rem;
+    margin-top: 0.35rem;
+
+    button {
+      background: transparent;
+      border: 0;
+      color: $white;
+      cursor: pointer;
+      font: inherit;
+      text-decoration: underline;
+    }
+  }
 }

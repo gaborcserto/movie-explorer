@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import type { CreditPerson } from '@movie-explorer/contracts';
+import type { CreditPerson, Ratings } from '@movie-explorer/contracts';
 
 import DetailsRatings, {
   RatingsDisplay,
@@ -97,6 +97,10 @@ export function SeriesHero({
   seriesId,
   rating,
   votes,
+  ratingsValue,
+  ratingsError,
+  ratingsLoading,
+  retryRatings,
   children,
 }: {
   title: string;
@@ -106,6 +110,10 @@ export function SeriesHero({
   seriesId?: number;
   rating?: number | null;
   votes?: number | null;
+  ratingsValue?: Ratings;
+  ratingsError?: boolean;
+  ratingsLoading?: boolean;
+  retryRatings?: () => void;
   children: React.ReactNode;
 }) {
   return (
@@ -116,10 +124,12 @@ export function SeriesHero({
           <RatingsDisplay tmdb={rating} votes={votes} />
         ) : (
           <DetailsRatings
-            kind="series"
-            id={seriesId}
             tmdb={rating}
             votes={votes}
+            value={ratingsValue}
+            error={ratingsError}
+            loading={ratingsLoading}
+            retry={retryRatings}
           />
         )
       }

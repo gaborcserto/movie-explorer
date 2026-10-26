@@ -8,7 +8,8 @@ description: Use for NestJS API changes in apps/api, including controllers, prov
 Use for general API implementation work in `apps/api`. Route public contract
 changes to `api-contract-change` and provider request or mapping changes to
 `tmdb-integration`. Follow the backend boundaries and commands in the root
-`AGENTS.md`.
+`AGENTS.md`. Read `code-readability` when implementing or reviewing
+TypeScript/NestJS readability.
 
 - Inspect the existing module, controller, service/provider flow, DTOs,
   configuration, and neighboring tests before editing.

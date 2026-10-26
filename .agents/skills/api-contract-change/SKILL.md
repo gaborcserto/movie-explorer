@@ -7,6 +7,7 @@ description: Use when changing packages/contracts or a public Movie Explorer API
 
 Use this skill when changing `packages/contracts` or a public movie API shape.
 The repository boundaries and commands are defined in the root `AGENTS.md`.
+Read `code-readability` when implementing or reviewing TypeScript readability.
 
 - Inspect the contract, API DTO/controller/provider flow, frontend API client,
   and existing tests before editing.

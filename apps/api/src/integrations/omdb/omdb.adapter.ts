@@ -1,4 +1,4 @@
-import type { ImdbRating } from '@movie-explorer/contracts';
+import type { RatingResult } from '@movie-explorer/contracts';
 
 import { loadLocalEnv } from '../../configuration/local-env';
 
@@ -31,7 +31,17 @@ function normalize(
   body: unknown,
   id: string,
   kind: 'movie' | 'series',
-): ImdbRating | null {
+): RatingResult {
+  if (
+    body &&
+    typeof body === 'object' &&
+    'Response' in body &&
+    body.Response === 'False' &&
+    'Error' in body &&
+    (body.Error === 'Movie not found!' || body.Error === 'Series not found!')
+  ) {
+    return { status: 'missing' };
+  }
   if (
     !body ||
     typeof body !== 'object' ||
@@ -45,12 +55,12 @@ function normalize(
     typeof body.imdbRating !== 'string' ||
     !/^(?:\d|10)(?:\.\d+)?$/.test(body.imdbRating)
   ) {
-    return null;
+    return { status: 'unavailable', reason: 'invalid-response' };
   }
 
   const score = Number(body.imdbRating);
   if (!Number.isFinite(score) || score < 0 || score > 10) {
-    return null;
+    return { status: 'unavailable', reason: 'invalid-response' };
   }
 
   const rawVotes = 'imdbVotes' in body ? body.imdbVotes : null;
@@ -61,17 +71,30 @@ function normalize(
       : NaN;
 
   return {
+    status: 'available',
     score,
     voteCount: Number.isSafeInteger(votes) && votes >= 0 ? votes : null,
   };
 }
 
+function isProviderErrorResponse(body: unknown): boolean {
+  return (
+    body !== null &&
+    typeof body === 'object' &&
+    'Response' in body &&
+    body.Response === 'False' &&
+    'Error' in body &&
+    (body.Error === 'Request limit reached!' ||
+      body.Error === 'Invalid API key!')
+  );
+}
+
 export class OmdbAdapter {
   private readonly cache = new Map<
     string,
-    { rating: ImdbRating | null; expires: number }
+    { rating: RatingResult; expires: number }
   >();
-  private readonly requests = new Map<string, Promise<ImdbRating | null>>();
+  private readonly requests = new Map<string, Promise<RatingResult>>();
   private readonly apiKey: string | undefined;
   private readonly apiUrl: string;
 
@@ -94,9 +117,9 @@ export class OmdbAdapter {
   async findRating(
     id: string,
     kind: 'movie' | 'series',
-  ): Promise<ImdbRating | null> {
+  ): Promise<RatingResult> {
     if (!this.enabled || !/^tt\d{7,}$/.test(id)) {
-      return null;
+      return { status: 'unavailable', reason: 'not-configured' };
     }
 
     const key = `${kind}:${id}`;
@@ -116,10 +139,13 @@ export class OmdbAdapter {
         if (this.cache.size >= 500) {
           this.cache.delete(this.cache.keys().next().value ?? '');
         }
-        this.cache.set(key, {
-          rating,
-          expires: Date.now() + (rating ? 3_600_000 : 60_000),
-        });
+        if (rating.status === 'available' || rating.status === 'missing') {
+          this.cache.set(key, {
+            rating,
+            expires:
+              Date.now() + (rating.status === 'available' ? 3_600_000 : 60_000),
+          });
+        }
         return rating;
       })
       .finally(() => this.requests.delete(key));
@@ -127,7 +153,10 @@ export class OmdbAdapter {
     return request;
   }
 
-  private async fetchRating(id: string, kind: 'movie' | 'series') {
+  private async fetchRating(
+    id: string,
+    kind: 'movie' | 'series',
+  ): Promise<RatingResult> {
     const url = new URL(this.apiUrl);
     url.searchParams.set('apikey', this.apiKey ?? '');
     url.searchParams.set('i', id);
@@ -143,15 +172,38 @@ export class OmdbAdapter {
         redirect: 'error',
       });
       if (!response.ok) {
-        return null;
+        return { status: 'unavailable', reason: 'upstream-error' };
       }
 
-      const body: unknown = await response.json();
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch {
+        return controller.signal.aborted
+          ? {
+              status: 'unavailable',
+              reason: 'timeout',
+              retryAfterSeconds: 3,
+            }
+          : { status: 'unavailable', reason: 'invalid-response' };
+      }
+
       controller.signal.throwIfAborted();
-      return normalize(body, id, kind);
+      const result = normalize(body, id, kind);
+      if (
+        result.status === 'unavailable' &&
+        result.reason === 'invalid-response' &&
+        isProviderErrorResponse(body)
+      ) {
+        return { status: 'unavailable', reason: 'upstream-error' };
+      }
+
+      return result;
     } catch {
       // Do not log upstream errors: their URLs may contain the API key.
-      return null;
+      return controller.signal.aborted
+        ? { status: 'unavailable', reason: 'timeout', retryAfterSeconds: 3 }
+        : { status: 'unavailable', reason: 'upstream-error' };
     } finally {
       clearTimeout(timer);
       controller.abort();

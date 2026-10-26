@@ -1,26 +1,60 @@
-import { useEffect, useState } from 'react';
-import type { ImdbRating } from '@movie-explorer/contracts';
+import type { RatingResult, Ratings } from '@movie-explorer/contracts';
 import { SiImdb, SiThemoviedatabase } from 'react-icons/si';
 
-import { getImdbRating } from '../../util/apiUtils';
 import './ratings.scss';
+
+function normalizedRating(
+  rating:
+    | RatingResult
+    | number
+    | { score: number; voteCount: number | null }
+    | null
+    | undefined,
+  votes?: number | null
+): RatingResult | undefined {
+  if (typeof rating === 'number') {
+    return { status: 'available', score: rating, voteCount: votes ?? null };
+  }
+  if (!rating) {
+    return undefined;
+  }
+
+  if ('status' in rating) {
+    return rating;
+  }
+
+  return { status: 'available', ...rating };
+}
 
 export function RatingsDisplay({
   tmdb,
   votes,
   imdb,
 }: {
-  tmdb?: number | null;
+  tmdb?: RatingResult | number | null;
   votes?: number | null;
-  imdb?: ImdbRating | null;
+  imdb?: RatingResult | { score: number; voteCount: number | null } | null;
 }) {
+  const tmdbResult = normalizedRating(tmdb, votes);
+  const imdbResult = normalizedRating(imdb);
+  const tmdbScore =
+    tmdbResult?.status === 'available' ? tmdbResult.score : undefined;
+  const imdbScore =
+    imdbResult?.status === 'available' ? imdbResult.score : undefined;
   const ratings = [
-    { label: 'TMDB', Icon: SiThemoviedatabase, score: tmdb, voteCount: votes },
+    {
+      label: 'TMDB',
+      Icon: SiThemoviedatabase,
+      score: tmdbScore,
+      voteCount:
+        tmdbResult?.status === 'available' ? tmdbResult.voteCount : null,
+    },
     {
       label: 'IMDb',
       Icon: SiImdb,
-      score: imdb?.score,
-      voteCount: imdb?.voteCount,
+      score: imdbScore,
+      voteCount:
+        imdbResult?.status === 'available' ? imdbResult.voteCount : null,
     },
   ].filter(
     (rating) =>
@@ -50,46 +84,49 @@ export function RatingsDisplay({
 }
 
 export default function DetailsRatings({
-  kind,
-  id,
   tmdb,
   votes,
+  value,
+  error = false,
+  loading = false,
+  retry,
 }: {
-  kind: 'movie' | 'series';
-  id: number;
   tmdb?: number | null;
   votes?: number | null;
+  value?: Ratings;
+  error?: boolean;
+  loading?: boolean;
+  retry?: () => void;
 }) {
-  const key = `${kind}:${id}`;
-  const [result, setResult] = useState<{
-    key: string;
-    rating: ImdbRating | null;
-  }>();
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    Promise.resolve()
-      .then(() => getImdbRating(kind, id, controller.signal))
-      .then((response) => {
-        if (!controller.signal.aborted) {
-          setResult({ key, rating: response.imdb });
-        }
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setResult({ key, rating: null });
-        }
-      });
-
-    return () => controller.abort();
-  }, [kind, id, key]);
+  const fallback: RatingResult =
+    typeof tmdb === 'number' && Number.isFinite(tmdb) && tmdb >= 0 && tmdb <= 10
+      ? { status: 'available', score: tmdb, voteCount: votes ?? null }
+      : { status: 'missing' };
 
   return (
-    <RatingsDisplay
-      tmdb={tmdb}
-      votes={votes}
-      imdb={result?.key === key ? result.rating : null}
-    />
+    <>
+      <RatingsDisplay tmdb={value?.tmdb ?? fallback} imdb={value?.imdb} />
+      {loading && (
+        <span className="visually-hidden" role="status">
+          Loading ratings
+        </span>
+      )}
+      {(error ||
+        value?.tmdb.status === 'unavailable' ||
+        value?.imdb.status === 'unavailable') && (
+        <div className="details-ratings__error" role="status">
+          <span>
+            {error
+              ? 'Ratings could not be loaded.'
+              : 'One or more ratings are unavailable.'}
+          </span>{' '}
+          {retry && (
+            <button type="button" onClick={retry}>
+              Retry ratings
+            </button>
+          )}
+        </div>
+      )}
+    </>
   );
 }

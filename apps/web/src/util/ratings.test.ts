@@ -1,4 +1,4 @@
-import { getImdbRating } from './apiUtils';
+import { getRatings } from './apiUtils';
 
 const fetchMock = vi.fn();
 beforeEach(() => {
@@ -7,42 +7,43 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
+const body = {
+  tmdb: { status: 'available', score: 7.8, voteCount: 120 },
+  imdb: { status: 'missing' },
+};
+
 test.each(['movie', 'series'] as const)(
-  'requests %s ratings through the application API with cancellation',
+  'requests unified %s ratings',
   async (kind) => {
-    fetchMock.mockResolvedValue(
-      Response.json({ imdb: { score: 8.7, voteCount: 100 } })
-    );
+    fetchMock.mockResolvedValue(Response.json(body));
     const controller = new AbortController();
-    await expect(getImdbRating(kind, 603, controller.signal)).resolves.toEqual({
-      imdb: { score: 8.7, voteCount: 100 },
-    });
-    expect(fetchMock.mock.calls[0][0]).toMatch(
-      `/api/v1/ratings/${kind}/603/imdb`
+    await expect(getRatings(kind, 603, controller.signal)).resolves.toEqual(
+      body
+    );
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      `/api/v1/${kind === 'movie' ? 'movies' : 'series'}/603/ratings`
     );
     expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
   }
 );
 
-test('accepts explicitly unavailable IMDb data', async () => {
-  fetchMock.mockResolvedValue(Response.json({ imdb: null }));
-  await expect(
-    getImdbRating('movie', 603, new AbortController().signal)
-  ).resolves.toEqual({ imdb: null });
-});
-
 test.each([
   {},
-  { imdb: 0 },
-  { imdb: { score: '8', voteCount: 10 } },
-  { imdb: { score: -1, voteCount: 10 } },
-  { imdb: { score: 11, voteCount: 10 } },
-  { imdb: { score: 8, voteCount: -1 } },
-  { imdb: { score: 8, voteCount: 1.5 } },
-  { imdb: { score: 8, voteCount: '100' } },
-])('rejects malformed API rating data %p', async (body) => {
-  fetchMock.mockResolvedValue(Response.json(body));
+  {
+    tmdb: { status: 'available', score: 11, voteCount: 0 },
+    imdb: { status: 'missing' },
+  },
+  {
+    tmdb: { status: 'available', score: 8, voteCount: 1.5 },
+    imdb: { status: 'missing' },
+  },
+  {
+    tmdb: { status: 'unavailable', reason: 'unknown' },
+    imdb: { status: 'missing' },
+  },
+])('rejects malformed unified ratings %p', async (value) => {
+  fetchMock.mockResolvedValue(Response.json(value));
   await expect(
-    getImdbRating('movie', 603, new AbortController().signal)
+    getRatings('movie', 603, new AbortController().signal)
   ).rejects.toMatchObject({ category: 'invalid-response' });
 });

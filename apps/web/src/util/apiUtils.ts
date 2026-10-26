@@ -22,7 +22,7 @@ import type {
   EpisodeDetails,
   EpisodeCredits,
   WatchProviders,
-  ImdbRatingResponse,
+  Ratings,
 } from '@movie-explorer/contracts';
 
 import {
@@ -716,36 +716,54 @@ export async function getCombinedFilmography(
   return body;
 }
 
-export async function getImdbRating(
+function ratingResult(value: unknown): value is Ratings['tmdb'] {
+  if (!record(value)) {
+    return false;
+  }
+
+  if (value.status === 'missing') {
+    return true;
+  }
+
+  if (value.status === 'available') {
+    return (
+      typeof value.score === 'number' &&
+      Number.isFinite(value.score) &&
+      value.score >= 0 &&
+      value.score <= 10 &&
+      (value.voteCount === null ||
+        (typeof value.voteCount === 'number' &&
+          Number.isSafeInteger(value.voteCount) &&
+          value.voteCount >= 0))
+    );
+  }
+
+  return (
+    value.status === 'unavailable' &&
+    [
+      'timeout',
+      'upstream-error',
+      'invalid-response',
+      'not-configured',
+    ].includes(String(value.reason)) &&
+    (value.retryAfterSeconds === undefined ||
+      (Number.isSafeInteger(value.retryAfterSeconds) &&
+        Number(value.retryAfterSeconds) > 0))
+  );
+}
+
+export async function getRatings(
   kind: 'movie' | 'series',
   id: number,
   signal: AbortSignal
-): Promise<ImdbRatingResponse> {
+): Promise<Ratings> {
   const body = await request<unknown>(
-    `${apiBaseUrl}/api/v1/ratings/${kind}/${id}/imdb`,
+    `${apiBaseUrl}/api/v1/${kind === 'movie' ? 'movies' : 'series'}/${id}/ratings`,
     { signal }
   );
-  if (!record(body)) {
+
+  if (!record(body) || !ratingResult(body.tmdb) || !ratingResult(body.imdb)) {
     throw new ApiRequestError('invalid-response');
   }
-  if (body.imdb === null) {
-    return { imdb: null };
-  }
-  const rating = body.imdb;
-  if (
-    !record(rating) ||
-    typeof rating.score !== 'number' ||
-    !Number.isFinite(rating.score) ||
-    rating.score < 0 ||
-    rating.score > 10 ||
-    !(
-      rating.voteCount === null ||
-      (typeof rating.voteCount === 'number' &&
-        Number.isSafeInteger(rating.voteCount) &&
-        rating.voteCount >= 0)
-    )
-  ) {
-    throw new ApiRequestError('invalid-response');
-  }
-  return { imdb: { score: rating.score, voteCount: rating.voteCount } };
+  return { tmdb: body.tmdb, imdb: body.imdb };
 }

@@ -44,6 +44,23 @@ describe('TmdbMovieProvider', () => {
     jest.useRealTimers();
   });
 
+  it('retrieves only core rating metadata and normalizes vote count', async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({
+        id: 603,
+        title: 'The Matrix',
+        vote_average: 8.1,
+        vote_count: 24800,
+      }),
+    );
+    await expect(
+      new TmdbMovieProvider(config).findRatings(603),
+    ).resolves.toEqual({ status: 'available', score: 8.1, voteCount: 24800 });
+    const url = new URL(fetchMock.mock.calls[0][0] as string);
+    expect(url.pathname).toBe('/3/movie/603');
+    expect(url.searchParams.has('append_to_response')).toBe(false);
+  });
+
   it('shares concurrent genre lookups and reuses successful results for one hour', async () => {
     jest.useFakeTimers();
     const started: string[] = [];

@@ -1,10 +1,27 @@
+export type RatingResult =
+  | { status: 'available'; score: number; voteCount: number | null }
+  | { status: 'missing' }
+  | {
+      status: 'unavailable';
+      reason:
+        | 'timeout'
+        | 'upstream-error'
+        | 'invalid-response'
+        | 'not-configured';
+      retryAfterSeconds?: number;
+    };
+
+export interface Ratings {
+  tmdb: RatingResult;
+  imdb: RatingResult;
+}
+
+/** Legacy IMDb-only representation retained for existing API consumers. */
 export interface ImdbRating {
-  /** Original IMDb score on the 0–10 scale, supplied by OMDb. */
   score: number;
   voteCount: number | null;
 }
 
 export interface ImdbRatingResponse {
-  /** null includes missing configuration, missing IDs, and upstream failures. */
   imdb: ImdbRating | null;
 }

@@ -18,6 +18,8 @@ export class RatingsController {
   @ApiOperation({
     summary:
       'Optional IMDb rating via OMDb; unavailable data returns imdb: null',
+    description:
+      'Legacy IMDb-only response retained unchanged for existing consumers. New clients should use the unified movie or series ratings resource.',
   })
   @ApiOkResponse({ type: ImdbRatingResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid media type or TMDB ID' })

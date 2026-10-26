@@ -8,6 +8,7 @@ import parseDetailId from '../../util/detailId';
 import SeasonPreview from './seasonPreview';
 import SeriesSections from './seriesSections';
 import useSeriesResource from './useSeriesResource';
+import useRatingsResource from '../../components/details/useRatingsResource';
 import {
   SeriesLayout,
   SeriesHero,
@@ -24,6 +25,11 @@ function SeriesDetails({ idText }: { idText: string }) {
     [id]
   );
   const resource = useSeriesResource(load, Number.isSafeInteger(id));
+  const ratingResource = useRatingsResource(
+    'series',
+    id,
+    Number.isSafeInteger(id)
+  );
   const series = resource.data;
   const seriesId = series?.id;
   const [watchProviders, setWatchProviders] = useState<WatchProvider[]>([]);
@@ -64,6 +70,10 @@ function SeriesDetails({ idText }: { idText: string }) {
             title={series.title}
             rating={series.rating}
             votes={series.voteCount}
+            ratingsValue={ratingResource.ratings}
+            ratingsError={ratingResource.error}
+            ratingsLoading={ratingResource.loading}
+            retryRatings={ratingResource.retry}
             image={series.posterUrl}
             srcSet={series.posterSrcSet}
           >

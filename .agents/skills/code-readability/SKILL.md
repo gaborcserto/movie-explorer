@@ -44,6 +44,102 @@ preserve side-effect imports, including stylesheet imports, in their existing
 order. Let the project's ESLint, Prettier, Oxfmt or equivalent rules determine
 syntax and wrapping, and do not add an import sorter for this convention.
 
+## Vertical Spacing / Logical Grouping
+
+Use blank lines to show distinct logical steps in TypeScript and TSX:
+
+- Separate setup or declarations from a following control-flow operation when
+  they serve different purposes. Prefer a blank line before a new `if`, `try`,
+  `for`, `while`, or `switch` operation.
+- Separate validation, fetching, transformation, error handling, and return
+  phases when that makes the flow easier to scan.
+- Put a blank line after a completed `try/catch/finally` or `if/else` before
+  another independent operation, and before a final `return` when earlier
+  statements form a distinct phase.
+- In React code, visually group state declarations, effects, callbacks, and the
+  final return. Keep tightly related statements together.
+- Avoid excessive blank lines or mechanical spacing inside one logical
+  operation. Keep `if` attached to its `else`, and `try` attached to its
+  `catch`/`finally`.
+
+These examples show grouping, not mandatory abstractions or universal blank-line
+insertion.
+
+Before:
+
+```ts
+let imdb: RatingResult;
+if (!this.omdb.enabled) {
+  imdb = { status: 'unavailable', reason: 'not-configured' };
+}
+return { tmdb, imdb };
+```
+
+After:
+
+```ts
+let imdb: RatingResult;
+
+if (!this.omdb.enabled) {
+  imdb = { status: 'unavailable', reason: 'not-configured' };
+}
+
+return { tmdb, imdb };
+```
+
+Separate a completed async step from the next conditional within a `try`:
+
+```ts
+try {
+  const imdbId = await this.ids.resolve(kind, id);
+
+  if (imdbId) {
+    imdb = await this.omdb.findRating(imdbId, kind);
+  }
+} catch (error) {
+  handleError(error);
+}
+```
+
+Keep setup distinct from error-handled work, while keeping cleanup attached:
+
+```ts
+const controller = new AbortController();
+const timer = setTimeout(() => controller.abort(), 3000);
+
+try {
+  return await fetch(url, { signal: controller.signal });
+} finally {
+  clearTimeout(timer);
+}
+```
+
+For hooks, group related state, the effect, callback, and return:
+
+```tsx
+function useExample(enabled: boolean) {
+  const [data, setData] = useState<Data>();
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
+    // Effect logic.
+  }, [enabled]);
+
+  const retry = useCallback(() => {
+    // Retry logic.
+  }, []);
+
+  return { data, error, retry };
+}
+```
+
+See [TypeScript and React](references/typescript-react.md) for detailed
+language-specific guidance.
+
 ## Recommended visual structure
 
 Keep related statements together. Use exactly one blank line between distinct

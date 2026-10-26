@@ -15,11 +15,13 @@ import DetailsContent, { DetailsLowerContent } from './detailsContent';
 import {
   getMovie as originalGetMovie,
   getWatchProviders as originalGetWatchProviders,
+  getRatings as originalGetRatings,
   isNotFoundError as originalIsNotFoundError,
 } from '../../util/apiUtils';
 
 const getMovie = vi.mocked(originalGetMovie);
 const getWatchProviders = vi.mocked(originalGetWatchProviders);
+const getRatings = vi.mocked(originalGetRatings);
 const isNotFoundError = vi.mocked(originalIsNotFoundError);
 const useParams = vi.mocked(originalUseParams);
 
@@ -50,6 +52,10 @@ describe('<Details />', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getWatchProviders.mockResolvedValue({ providers: [] });
+    getRatings.mockResolvedValue({
+      tmdb: { status: 'available', score: 8.5, voteCount: null },
+      imdb: { status: 'missing' },
+    });
     isNotFoundError.mockReturnValue(false);
   });
 
@@ -156,6 +162,93 @@ describe('<Details />', () => {
     await waitFor(() =>
       expect(document.title).toBe('Sample Movie | Movie Explorer')
     );
+  });
+
+  it('loads unified ratings independently and retries ratings without reloading movie details', async () => {
+    useParams.mockReturnValue({ movieId: '1234' });
+    getMovie.mockResolvedValue(mockData);
+    getRatings
+      .mockRejectedValueOnce(new Error('ratings unavailable'))
+      .mockResolvedValueOnce({
+        tmdb: { status: 'available', score: 8.5, voteCount: null },
+        imdb: { status: 'available', score: 7.9, voteCount: null },
+      });
+
+    render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
+    await screen.findByRole('heading', { name: 'Sample Movie' });
+    await screen.findByText('Ratings could not be loaded.');
+    expect(getMovie).toHaveBeenCalledTimes(1);
+    expect(getRatings).toHaveBeenCalledTimes(1);
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Retry ratings' })
+    );
+    await screen.findByLabelText('IMDb rating: 7.9 out of 10');
+    expect(getMovie).toHaveBeenCalledTimes(1);
+    expect(getRatings).toHaveBeenCalledTimes(2);
+  });
+
+  it('hides ratings from the previous movie while the next rating request is pending', async () => {
+    useParams.mockReturnValue({ movieId: '1234' });
+    getMovie.mockResolvedValue(mockData);
+    let finishObsolete:
+      | ((value: {
+          tmdb: { status: 'missing' };
+          imdb: { status: 'available'; score: number; voteCount: null };
+        }) => void)
+      | undefined;
+    getRatings
+      .mockResolvedValueOnce({
+        tmdb: { status: 'available', score: 8.5, voteCount: null },
+        imdb: { status: 'available', score: 7.9, voteCount: null },
+      })
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          finishObsolete = resolve;
+        })
+      )
+      .mockReturnValueOnce(new Promise(() => {}));
+
+    const { rerender } = render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
+
+    expect(
+      await screen.findByLabelText('IMDb rating: 7.9 out of 10')
+    ).toBeInTheDocument();
+
+    useParams.mockReturnValue({ movieId: '5678' });
+    rerender(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(getRatings).toHaveBeenCalledTimes(2));
+    const obsoleteSignal = getRatings.mock.calls[1][2];
+
+    useParams.mockReturnValue({ movieId: '7890' });
+    rerender(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(getRatings).toHaveBeenCalledTimes(3));
+    expect(obsoleteSignal.aborted).toBe(true);
+    await act(async () => {
+      finishObsolete?.({
+        tmdb: { status: 'missing' },
+        imdb: { status: 'available', score: 5, voteCount: null },
+      });
+    });
+    expect(screen.queryByLabelText(/^IMDb rating:/)).not.toBeInTheDocument();
   });
 
   it('omits unavailable and invalid metadata', () => {

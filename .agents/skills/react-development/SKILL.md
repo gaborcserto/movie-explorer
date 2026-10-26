@@ -9,7 +9,8 @@ Use this skill for user-facing React behavior in `apps/web`. Follow the
 frontend boundaries and conventions in the root `AGENTS.md`; use
 `api-contract-change` for public API or shared contract changes and
 `react-performance` when the task is specifically about measured rendering or
-runtime performance.
+runtime performance. Read `code-readability` as well when implementing or
+reviewing TypeScript/React readability changes.
 
 - Inspect nearby components, hooks, route state, API utilities, and tests
   before changing structure. Preserve URL-backed search, filters, sorting,

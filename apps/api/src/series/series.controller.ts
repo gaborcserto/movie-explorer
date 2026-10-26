@@ -33,6 +33,7 @@ import { SeasonParams, EpisodeParams } from './series-params.dto';
 import { SeriesListQuery } from './series-list.dto';
 import { SearchResponseDto } from '../search/search.dto';
 import { SeriesService } from './series.service';
+import { RatingsDto } from '../ratings/ratings.dto';
 
 @ApiTags('Series')
 @ApiBadRequestResponse({
@@ -164,6 +165,22 @@ export class SeriesController {
       throw new NotFoundException('TV series not found');
     }
     return providers;
+  }
+
+  @Get(':id/ratings')
+  @ApiOperation({
+    summary: 'Get TMDB and IMDb ratings independently of series details',
+    description:
+      'Returns each source as available, missing, or unavailable. Provider failures are represented with a source-specific unavailable reason; a confirmed missing series returns 404.',
+  })
+  @ApiOkResponse({ type: RatingsDto })
+  async getRatings(@Param() params: DetailIdParams) {
+    const ratings = await this.service.findRatings(params.id);
+    if (!ratings) {
+      throw new NotFoundException('TV series not found');
+    }
+
+    return ratings;
   }
 
   @Get(':id/credits')

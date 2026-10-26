@@ -8,6 +8,7 @@ import type {
   SeriesImages,
   SeriesVideos,
   WatchProviders,
+  RatingResult,
 } from '@movie-explorer/contracts';
 
 import type { SeriesListQuery } from './series-list.dto';
@@ -20,6 +21,7 @@ export interface SeriesProvider {
   findVideos(id: number): Promise<SeriesVideos | undefined>;
   findCredits(id: number): Promise<SeriesCredits | undefined>;
   findOne(id: number): Promise<SeriesDetails | undefined>;
+  findRatings?(id: number): Promise<RatingResult | undefined>;
   findSeason(id: number, season: number): Promise<SeasonDetails | undefined>;
   findEpisode(
     id: number,
