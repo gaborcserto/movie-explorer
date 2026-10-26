@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import type { SearchSuggestion } from '@movie-explorer/contracts';
 import { isCancelledError } from '../../util/errorPresentation';
 import { getSearchSuggestions } from '../../util/apiUtils';
+import { mediaPath } from '../../util/seriesRoutes';
 
 export default function useAutocomplete(committedQuery = '', enabled = true) {
   const [query, setQuery] = useState(committedQuery);
@@ -135,7 +136,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
 
   const choose = (item: SearchSuggestion) => {
     dismiss();
-    navigate(`/${item.mediaType}/${item.id}`);
+    navigate(mediaPath(item.mediaType, item.id));
   };
 
   const submit = () => {

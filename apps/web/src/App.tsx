@@ -1,6 +1,6 @@
 import './App.scss';
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import HomePage from './pages/homePage';
 import ErrorPage from './pages/errorPage/errorPage';
 import SearchHistoryProvider from './components/list/searchHistory';
@@ -10,6 +10,21 @@ const PersonPage = lazy(() => import('./pages/personPage/personPage'));
 const SeriesPage = lazy(() => import('./pages/series/seriesPage'));
 const SeasonPage = lazy(() => import('./pages/series/seasonPage'));
 const EpisodePage = lazy(() => import('./pages/series/episodePage'));
+
+function LegacySeriesRedirect() {
+  const location = useLocation();
+
+  return (
+    <Navigate
+      to={{
+        pathname: location.pathname.replace(/^\/tv(?=\/)/, '/series'),
+        search: location.search,
+        hash: location.hash,
+      }}
+      replace
+    />
+  );
+}
 
 function App() {
   return (
@@ -21,7 +36,7 @@ function App() {
           <Route path="/search" element={<HomePage />} />
           <Route path="/movie/:movieId" element={<HomePage />} />
           <Route
-            path="/tv/:id"
+            path="/series/:id"
             element={
               <Suspense
                 fallback={
@@ -36,7 +51,7 @@ function App() {
             }
           />
           <Route
-            path="/tv/:id/seasons/:seasonNumber"
+            path="/series/:id/seasons/:seasonNumber"
             element={
               <Suspense
                 fallback={
@@ -51,7 +66,7 @@ function App() {
             }
           />
           <Route
-            path="/tv/:id/seasons/:seasonNumber/episodes/:episodeNumber"
+            path="/series/:id/seasons/:seasonNumber/episodes/:episodeNumber"
             element={
               <Suspense
                 fallback={
@@ -64,6 +79,15 @@ function App() {
                 <EpisodePage />
               </Suspense>
             }
+          />
+          <Route path="/tv/:id" element={<LegacySeriesRedirect />} />
+          <Route
+            path="/tv/:id/seasons/:seasonNumber"
+            element={<LegacySeriesRedirect />}
+          />
+          <Route
+            path="/tv/:id/seasons/:seasonNumber/episodes/:episodeNumber"
+            element={<LegacySeriesRedirect />}
           />
           <Route
             path="/person/:id"

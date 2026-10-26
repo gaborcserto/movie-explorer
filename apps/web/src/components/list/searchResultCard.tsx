@@ -1,6 +1,7 @@
 import type { SearchResult } from '@movie-explorer/contracts';
 
 import Card from '../card/card';
+import { mediaPath } from '../../util/seriesRoutes';
 
 const typeLabels = { movie: 'Movie', tv: 'Series', person: 'Person' };
 
@@ -26,7 +27,7 @@ export default function SearchResultCard({ item }: { item: SearchResult }) {
         posterUrl: person ? (item.profileUrl ?? '') : (item.posterUrl ?? ''),
         genres: [],
       }}
-      destination={`/${item.mediaType}/${item.id}`}
+      destination={mediaPath(item.mediaType, item.id)}
       displayDate={date}
       subtitle={[label, metadata].filter(Boolean).join(' / ')}
       genreNavigation={false}

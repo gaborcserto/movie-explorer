@@ -4,6 +4,7 @@ import type { SeriesDetails } from '@movie-explorer/contracts';
 
 import MovieImage from '../../components/utility/customImage';
 import { getPosterDisplaySrcSet } from '../../util/imageSizing';
+import { seriesPath } from '../../util/seriesRoutes';
 import { SeasonName, SeriesFacts } from './seriesPresentation';
 
 function measureScroll(container: HTMLDivElement) {
@@ -194,7 +195,7 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
           )}
           <Link
             className="btn btn--outline btn--action"
-            to={`/tv/${series.id}/seasons/${season.seasonNumber}`}
+            to={seriesPath(series.id, season.seasonNumber)}
             state={{ series }}
           >
             View episodes

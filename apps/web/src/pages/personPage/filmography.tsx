@@ -5,6 +5,7 @@ import type { CombinedFilmography } from '@movie-explorer/contracts';
 
 import MovieImage from '../../components/utility/customImage';
 import { getPosterDisplaySrcSet } from '../../util/imageSizing';
+import { mediaPath } from '../../util/seriesRoutes';
 import './filmography.scss';
 import {
   filmographyIdentity,
@@ -96,7 +97,7 @@ function FilmographyResults({
             <li key={filmographyIdentity(movie)}>
               {Number.isSafeInteger(movie.id) && movie.id > 0 ? (
                 <Link
-                  to={`/${isSeries ? 'tv' : 'movie'}/${movie.id}`}
+                  to={mediaPath(isSeries ? 'tv' : 'movie', movie.id)}
                   className="filmography__row"
                   aria-label={movie.title}
                   aria-describedby={metadataId}

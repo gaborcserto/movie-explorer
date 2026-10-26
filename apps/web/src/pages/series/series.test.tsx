@@ -117,13 +117,16 @@ const fetchMock = vi.fn<typeof fetch>();
 function setup(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <Link to="/tv/2">Other series</Link>
-      <Link to="/tv/1/seasons/0/episodes/8">Other episode</Link>
+      <Link to="/series/2">Other series</Link>
+      <Link to="/series/1/seasons/0/episodes/8">Other episode</Link>
       <Routes>
-        <Route path="/tv/:id" element={<SeriesPage />} />
-        <Route path="/tv/:id/seasons/:seasonNumber" element={<SeasonPage />} />
+        <Route path="/series/:id" element={<SeriesPage />} />
         <Route
-          path="/tv/:id/seasons/:seasonNumber/episodes/:episodeNumber"
+          path="/series/:id/seasons/:seasonNumber"
+          element={<SeasonPage />}
+        />
+        <Route
+          path="/series/:id/seasons/:seasonNumber/episodes/:episodeNumber"
           element={<EpisodePage />}
         />
         <Route path="/person/:id" element={<h1>Person profile</h1>} />
@@ -187,7 +190,7 @@ describe('Series hierarchy', () => {
 
       try {
         await act(async () => {
-          setup('/tv/1');
+          setup('/series/1');
         });
 
         expect(fetchMock).toHaveBeenCalledWith(
@@ -275,7 +278,7 @@ describe('Series hierarchy', () => {
       })
     );
 
-    setup('/tv/1');
+    setup('/series/1');
     const castTab = await screen.findByRole('tab', { name: 'Cast' });
     const crewTab = screen.getByRole('tab', { name: 'Crew' });
     expect(castTab).toHaveAttribute('aria-selected', 'true');
@@ -374,7 +377,7 @@ describe('Series hierarchy', () => {
         },
       })
     );
-    setup('/tv/1');
+    setup('/series/1');
     expect(
       await screen.findByText('Showing 2 of 2 cast members')
     ).toBeVisible();
@@ -408,7 +411,7 @@ describe('Series hierarchy', () => {
         },
       })
     );
-    setup('/tv/1');
+    setup('/series/1');
     await screen.findByText('Showing 16 of 19 cast members');
     await user.click(screen.getByRole('button', { name: 'Show more cast' }));
     expect(
@@ -422,9 +425,9 @@ describe('Series hierarchy', () => {
   });
 
   it.each([
-    ['/tv/1', 'The Journey'],
-    ['/tv/1/seasons/0', 'Special stories'],
-    ['/tv/1/seasons/0/episodes/3', 'Arrival'],
+    ['/series/1', 'The Journey'],
+    ['/series/1/seasons/0', 'Special stories'],
+    ['/series/1/seasons/0/episodes/3', 'Arrival'],
   ])(
     'uses the Movie page, hero and content framework at %s',
     async (path, title) => {
@@ -482,7 +485,7 @@ describe('Series hierarchy', () => {
         },
       })
     );
-    setup('/tv/1');
+    setup('/series/1');
     await userEvent.click(await screen.findByRole('tab', { name: 'Crew' }));
     const reveal = await screen.findByRole('button', {
       name: 'Show more crew',
@@ -586,7 +589,7 @@ describe('Series hierarchy', () => {
         videos: { videos: [], availability: { status: 'available' } },
       })
     );
-    setup('/tv/1');
+    setup('/series/1');
     expect(
       await screen.findByRole('link', { name: 'Series Actor' })
     ).toHaveAttribute('href', '/person/11');
@@ -628,7 +631,7 @@ describe('Series hierarchy', () => {
   });
 
   it('keeps metadata visible and recovers only a failed optional section', async () => {
-    setup('/tv/1');
+    setup('/series/1');
     expect(
       await screen.findByRole('heading', { name: 'The Journey' })
     ).toBeInTheDocument();
@@ -651,7 +654,7 @@ describe('Series hierarchy', () => {
   });
 
   it('aborts section recovery on navigation and ignores an obsolete result', async () => {
-    setup('/tv/1');
+    setup('/series/1');
     await screen.findByRole('heading', { name: 'The Journey' });
     let complete: ((response: Response) => void) | undefined;
     fetchMock.mockImplementationOnce(
@@ -765,7 +768,7 @@ describe('Series hierarchy', () => {
         return this.classList.contains('season-tabs') ? 1800 : 0;
       },
     });
-    setup('/tv/1');
+    setup('/series/1');
     const first = await screen.findByRole('tab', { name: 'Season 1' });
     const seasonTabs = within(screen.getByRole('tablist', { name: 'Seasons' }));
     expect(first).toHaveTextContent('1');
@@ -784,13 +787,13 @@ describe('Series hierarchy', () => {
     ).toBeVisible();
     expect(screen.getByRole('link', { name: 'View episodes' })).toHaveAttribute(
       'href',
-      '/tv/1/seasons/0'
+      '/series/1/seasons/0'
     );
     await user.keyboard('{ArrowRight}');
     expect(first).toHaveFocus();
     expect(screen.getByRole('link', { name: 'View episodes' })).toHaveAttribute(
       'href',
-      '/tv/1/seasons/1'
+      '/series/1/seasons/1'
     );
     await user.click(screen.getByRole('button', { name: 'Next season' }));
     expect(first).toHaveAttribute('aria-selected', 'true');
@@ -868,7 +871,7 @@ describe('Series hierarchy', () => {
       HTMLElement.prototype,
       'addEventListener'
     );
-    const view = setup('/tv/1');
+    const view = setup('/series/1');
     const first = await screen.findByRole('tab', { name: 'Season 1' });
     // The tabs can commit before the passive effect registers the observer.
     await waitFor(() => expect(resize).toBeTypeOf('function'));
@@ -915,7 +918,7 @@ describe('Series hierarchy', () => {
           : series
       );
     });
-    setup('/tv/1/seasons/0');
+    setup('/series/1/seasons/0');
     const selector = await screen.findByRole('combobox', { name: 'Season' });
     expect(screen.getAllByRole('option')).toHaveLength(2);
     await userEvent.selectOptions(selector, '5');
@@ -929,14 +932,14 @@ describe('Series hierarchy', () => {
     fetchMock.mockResolvedValue(
       new Response('', { status: 429, headers: { 'Retry-After': '12' } })
     );
-    setup('/tv/1');
+    setup('/series/1');
     expect(
       await screen.findByRole('heading', { name: 'Please try again shortly' })
     ).toBeInTheDocument();
     expect(screen.getByText(/wait about 12 seconds/)).toBeInTheDocument();
   });
   it('renders series metadata, named seasons and separate Specials without per-season calls', async () => {
-    setup('/tv/1');
+    setup('/series/1');
     expect(
       await screen.findByRole('heading', { level: 1, name: 'The Journey' })
     ).toBeInTheDocument();
@@ -954,7 +957,7 @@ describe('Series hierarchy', () => {
     );
     expect(screen.getByRole('link', { name: 'View episodes' })).toHaveAttribute(
       'href',
-      '/tv/1/seasons/0'
+      '/series/1/seasons/0'
     );
     await userEvent.click(screen.getByRole('tab', { name: 'Season 5' }));
     expect(
@@ -962,7 +965,7 @@ describe('Series hierarchy', () => {
     ).toBeVisible();
     expect(screen.getByRole('link', { name: 'View episodes' })).toHaveAttribute(
       'href',
-      '/tv/1/seasons/5'
+      '/series/1/seasons/5'
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(document.title).toBe('The Journey | Movie Explorer');
@@ -970,7 +973,7 @@ describe('Series hierarchy', () => {
 
   it('navigates series → Specials → episode and uses actual sparse neighbors with no redundant season fetch', async () => {
     const user = userEvent.setup();
-    setup('/tv/1');
+    setup('/series/1');
     await user.click(
       await screen.findByRole('link', { name: 'View episodes' })
     );
@@ -987,14 +990,14 @@ describe('Series hierarchy', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'The Journey' })).toHaveAttribute(
       'href',
-      '/tv/1'
+      '/series/1'
     );
     expect(
       screen.getByRole('link', { name: 'Previous: 1. Beginning' })
-    ).toHaveAttribute('href', '/tv/1/seasons/0/episodes/1');
+    ).toHaveAttribute('href', '/series/1/seasons/0/episodes/1');
     expect(
       screen.getByRole('link', { name: 'Next: 8. Departure' })
-    ).toHaveAttribute('href', '/tv/1/seasons/0/episodes/8');
+    ).toHaveAttribute('href', '/series/1/seasons/0/episodes/8');
     expect(screen.getByRole('link', { name: 'Guest Actor' })).toHaveAttribute(
       'href',
       '/person/12'
@@ -1016,7 +1019,7 @@ describe('Series hierarchy', () => {
   });
 
   it('loads episode URLs directly with one concurrent season request', async () => {
-    setup('/tv/1/seasons/0/episodes/3');
+    setup('/series/1/seasons/0/episodes/3');
     expect(
       await screen.findByRole('heading', { name: 'Arrival', level: 1 })
     ).toBeInTheDocument();
@@ -1030,7 +1033,7 @@ describe('Series hierarchy', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(screen.getByRole('link', { name: 'Series 1' })).toHaveAttribute(
       'href',
-      '/tv/1'
+      '/series/1'
     );
   });
 
@@ -1040,7 +1043,7 @@ describe('Series hierarchy', () => {
         ? Response.json(episode)
         : new Response('', { status: 502 })
     );
-    setup('/tv/1/seasons/0/episodes/3');
+    setup('/series/1/seasons/0/episodes/3');
     expect(
       await screen.findByRole('heading', { name: 'Arrival', level: 1 })
     ).toBeInTheDocument();
@@ -1060,7 +1063,7 @@ describe('Series hierarchy', () => {
         ? Response.json(season)
         : new Response('', { status: 404 })
     );
-    setup('/tv/1/seasons/0');
+    setup('/series/1/seasons/0');
     expect(
       await screen.findByRole('link', { name: '3. Arrival' })
     ).toBeInTheDocument();
@@ -1085,7 +1088,7 @@ describe('Series hierarchy', () => {
           : season
       )
     );
-    setup('/tv/1/seasons/0/episodes/3');
+    setup('/series/1/seasons/0/episodes/3');
     expect(
       await screen.findByText('No episode overview available.')
     ).toBeInTheDocument();
@@ -1105,7 +1108,7 @@ describe('Series hierarchy', () => {
           : series
       )
     );
-    setup('/tv/1/seasons/0');
+    setup('/series/1/seasons/0');
     expect(
       await screen.findByText('No episodes available for this season yet.')
     ).toBeInTheDocument();
@@ -1142,7 +1145,7 @@ describe('Series hierarchy', () => {
           : season
       );
     });
-    setup('/tv/1/seasons/0/episodes/3');
+    setup('/series/1/seasons/0/episodes/3');
     fireEvent.click(
       await screen.findByRole('button', { name: 'Retry episode credits' })
     );
@@ -1158,10 +1161,10 @@ describe('Series hierarchy', () => {
   });
 
   it.each([
-    '/tv/0',
-    '/tv/1/seasons/-1',
-    '/tv/1/seasons/0/episodes/0',
-    '/tv/1/seasons/-1/episodes/1',
+    '/series/0',
+    '/series/1/seasons/-1',
+    '/series/1/seasons/0/episodes/0',
+    '/series/1/seasons/-1/episodes/1',
   ])('rejects invalid coordinates at %s without requests', async (path) => {
     setup(path);
     expect(
@@ -1179,7 +1182,7 @@ describe('Series hierarchy', () => {
           resolve = done;
         })
     );
-    setup('/tv/1');
+    setup('/series/1');
     expect(screen.getByRole('status')).toBeInTheDocument();
     await act(async () => resolve(new Response('', { status: 404 })));
     expect(await screen.findByText('Series not found')).toBeInTheDocument();
@@ -1187,7 +1190,7 @@ describe('Series hierarchy', () => {
 
   it('supports provider error recovery', async () => {
     fetchMock.mockResolvedValueOnce(new Response('', { status: 502 }));
-    setup('/tv/1');
+    setup('/series/1');
     const retry = await screen.findByRole('button', { name: /try again/i });
     fireEvent.click(retry);
     expect(
@@ -1205,7 +1208,7 @@ describe('Series hierarchy', () => {
         resolve = done;
       });
     });
-    setup('/tv/1');
+    setup('/series/1');
     fetchMock.mockResolvedValue(
       Response.json({ ...series, id: 2, title: 'Second series' })
     );
@@ -1230,7 +1233,7 @@ describe('Series hierarchy', () => {
           resolve = done;
         })
     );
-    setup('/tv/1/seasons/0/episodes/3');
+    setup('/series/1/seasons/0/episodes/3');
     fireEvent.click(screen.getByRole('link', { name: 'Other episode' }));
     expect(
       await screen.findByRole('heading', { name: 'Departure', level: 1 })
@@ -1273,7 +1276,9 @@ describe('Season and Episode shared hero images', () => {
         });
       });
       setup(
-        kind === 'season' ? '/tv/1/seasons/0' : '/tv/1/seasons/0/episodes/3'
+        kind === 'season'
+          ? '/series/1/seasons/0'
+          : '/series/1/seasons/0/episodes/3'
       );
       const title = kind === 'season' ? season.title : episode.title;
       const action = await screen.findByRole('button', {
@@ -1301,7 +1306,7 @@ describe('Season and Episode shared hero images', () => {
   );
 
   it('keeps missing Episode stills as noninteractive fallbacks while rendering cast cards and crew', async () => {
-    setup('/tv/1/seasons/0/episodes/3');
+    setup('/series/1/seasons/0/episodes/3');
     await screen.findByRole('heading', { name: 'Arrival', level: 1 });
     expect(
       screen.queryByRole('button', { name: 'Still from Arrival' })
@@ -1315,11 +1320,11 @@ describe('Season and Episode shared hero images', () => {
     expect(screen.getByRole('link', { name: 'Episode Writer' })).toBeVisible();
     expect(screen.getByRole('link', { name: /Next: 8/ })).toHaveAttribute(
       'href',
-      '/tv/1/seasons/0/episodes/8'
+      '/series/1/seasons/0/episodes/8'
     );
     expect(screen.getByRole('link', { name: /Previous: 1/ })).toHaveAttribute(
       'href',
-      '/tv/1/seasons/0/episodes/1'
+      '/series/1/seasons/0/episodes/1'
     );
   });
 });
@@ -1333,7 +1338,7 @@ describe('Series details polish edge cases', () => {
     'handles empty, Specials-only and single sparse seasons %#',
     async ({ seasons }) => {
       fetchMock.mockResolvedValue(Response.json({ ...series, seasons }));
-      setup('/tv/1');
+      setup('/series/1');
       await screen.findByRole('heading', { level: 1, name: series.title });
       if (!seasons.length) {
         expect(
@@ -1354,7 +1359,10 @@ describe('Series details polish edge cases', () => {
         ).toBeNull();
         expect(
           screen.getByRole('link', { name: 'View episodes' })
-        ).toHaveAttribute('href', `/tv/1/seasons/${seasons[0].seasonNumber}`);
+        ).toHaveAttribute(
+          'href',
+          `/series/1/seasons/${seasons[0].seasonNumber}`
+        );
         const panel = screen.getByRole('tabpanel', {
           name:
             seasons[0].seasonNumber === 0
@@ -1384,7 +1392,7 @@ describe('Series details polish edge cases', () => {
     fetchMock.mockResolvedValue(
       Response.json({ ...series, creators, networks })
     );
-    setup('/tv/1');
+    setup('/series/1');
     await screen.findByRole('heading', { level: 1, name: series.title });
     const creatorSummary = screen.getByLabelText(
       'Creators: 15, expand or collapse'

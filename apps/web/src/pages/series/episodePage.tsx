@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 
 import { getEpisode, getSeason, getEpisodeCredits } from '../../util/apiUtils';
+import { seriesPath } from '../../util/seriesRoutes';
 import { record } from '../../util/partialValidation';
 import { seasonDetails, seriesDetails } from '../../util/seriesValidation';
 import parseDetailId from '../../util/detailId';
@@ -116,8 +117,10 @@ function EpisodeDetails({
       navigation={
         valid && (
           <SeriesBreadcrumbs>
-            <Link to={`/tv/${idText}`}>{series?.title ?? `Series ${id}`}</Link>
-            <Link to={`/tv/${idText}/seasons/${seasonText}`} state={{ series }}>
+            <Link to={seriesPath(idText)}>
+              {series?.title ?? `Series ${id}`}
+            </Link>
+            <Link to={seriesPath(idText, seasonText)} state={{ series }}>
               <SeasonName number={seasonNumber} title={season?.title} />
             </Link>
           </SeriesBreadcrumbs>
@@ -165,7 +168,7 @@ function EpisodeDetails({
           <nav aria-label="Episode navigation" className="series-neighbors">
             {previous && (
               <Link
-                to={`/tv/${id}/seasons/${seasonNumber}/episodes/${previous.episodeNumber}`}
+                to={seriesPath(id, seasonNumber, previous.episodeNumber)}
                 state={{ season, series }}
               >
                 Previous: {previous.episodeNumber}. {previous.title}
@@ -173,7 +176,7 @@ function EpisodeDetails({
             )}
             {next && (
               <Link
-                to={`/tv/${id}/seasons/${seasonNumber}/episodes/${next.episodeNumber}`}
+                to={seriesPath(id, seasonNumber, next.episodeNumber)}
                 state={{ season, series }}
               >
                 Next: {next.episodeNumber}. {next.title}

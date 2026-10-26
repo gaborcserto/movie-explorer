@@ -55,7 +55,7 @@ function setup(path = '/search/Story?view=tv') {
         children: [
           { path: '/search/:searchQuery?', element: <SearchResults /> },
           ...['movie', 'tv', 'person'].map((type) => ({
-            path: `/${type}/:id`,
+            path: type === 'tv' ? '/series/:id' : `/${type}/:id`,
             element: <h1>{type} details</h1>,
           })),
         ],
@@ -125,7 +125,7 @@ test('groups category previews with independent available counts, stable identit
       within(section).getByRole('link', {
         name: `${type} 1`.replace('person', 'Person'),
       })
-    ).toHaveAttribute('href', `/${type}/1`);
+    ).toHaveAttribute('href', type === 'tv' ? '/series/1' : `/${type}/1`);
     expect(api).toHaveBeenCalledWith('Story', type, 1, expect.any(AbortSignal));
   });
   expect(api).toHaveBeenCalledTimes(3);
@@ -254,7 +254,9 @@ test.each(['movie', 'tv', 'person'] as const)(
     });
     fireEvent.scroll(window);
     fireEvent.click(screen.getByRole('link', { name: 'Target' }));
-    expect(router.state.location.pathname).toBe(`/${type}/99`);
+    expect(router.state.location.pathname).toBe(
+      type === 'tv' ? '/series/99' : `/${type}/99`
+    );
     await act(async () => {
       await router.navigate(-1);
     });

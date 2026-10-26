@@ -66,7 +66,7 @@ it('displays distinct Movie/Series identities, dates, role counts and correct li
   );
   expect(screen.getByRole('link', { name: 'A Series' })).toHaveAttribute(
     'href',
-    '/tv/7'
+    '/series/7'
   );
   expect(screen.getByText('Showing 2 of 2 titles')).toBeInTheDocument();
   expect(screen.getByText('Guide · 3 episodes')).toBeInTheDocument();
@@ -340,7 +340,7 @@ it('retains unavailable-group URL selections, recovers only that group and prese
 it('restores Series selection after navigating to Series Details and Back', async () => {
   const router = setup(envelope, '?personType=tv&personSort=title');
   await userEvent.click(await screen.findByRole('link', { name: 'A Series' }));
-  expect(router.state.location.pathname).toBe('/tv/7');
+  expect(router.state.location.pathname).toBe('/series/7');
   await act(async () => {
     await router.navigate(-1);
   });

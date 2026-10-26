@@ -297,7 +297,7 @@ test.each(['home', 'header', 'mobile'])(
     });
     const router = createMemoryRouter([
       { path: '/', element: kind === 'home' ? <Search /> : <HeaderSearch /> },
-      { path: '/tv/:id', element: <h1>Series details</h1> },
+      { path: '/series/:id', element: <h1>Series details</h1> },
     ]);
     render(<RouterProvider router={router} />);
     if (kind !== 'home')
@@ -321,7 +321,7 @@ test.each(['home', 'header', 'mobile'])(
       screen.getByRole('option', { name: 'Series title, 2005' })
     ).toHaveAttribute('aria-selected', 'true');
     fireEvent.keyDown(input, { key: 'Enter' });
-    expect(router.state.location.pathname).toBe('/tv/1');
+    expect(router.state.location.pathname).toBe('/series/1');
   }
 );
 

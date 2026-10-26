@@ -6,7 +6,7 @@ React 19, TypeScript, and Vite frontend for Movie Explorer.
 
 - `/search` and `/search/:searchQuery` (browse and search)
 - `/movie/:movieId` (movie details)
-- `/tv/:id`, `/tv/:id/seasons/:seasonNumber`, and `/tv/:id/seasons/:seasonNumber/episodes/:episodeNumber` (series, season, and episode details)
+- `/series/:id`, `/series/:id/seasons/:seasonNumber`, and `/series/:id/seasons/:seasonNumber/episodes/:episodeNumber` (series, season, and episode details)
 - `/person/:id` (person details and filmography)
 
 ## Development

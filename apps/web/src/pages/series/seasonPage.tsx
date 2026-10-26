@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { getSeason, getSeries } from '../../util/apiUtils';
+import { seriesPath } from '../../util/seriesRoutes';
 import { record } from '../../util/partialValidation';
 import { seriesDetails } from '../../util/seriesValidation';
 import parseDetailId from '../../util/detailId';
@@ -55,7 +56,9 @@ function SeasonDetails({
       backdrop={series?.backdropUrl}
       navigation={
         <SeriesBreadcrumbs>
-          <Link to={`/tv/${idText}`}>{series?.title ?? 'Series details'}</Link>
+          <Link to={seriesPath(idText)}>
+            {series?.title ?? 'Series details'}
+          </Link>
         </SeriesBreadcrumbs>
       }
       hero={
@@ -96,7 +99,7 @@ function SeasonDetails({
                 id="season-select"
                 value={number}
                 onChange={(event) =>
-                  navigate(`/tv/${id}/seasons/${event.target.value}`, {
+                  navigate(seriesPath(id, event.target.value), {
                     state: { series },
                   })
                 }
@@ -149,7 +152,7 @@ function SeasonDetails({
                   <div>
                     <h3>
                       <Link
-                        to={`/tv/${id}/seasons/${number}/episodes/${episode.episodeNumber}`}
+                        to={seriesPath(id, number, episode.episodeNumber)}
                         state={{ season, series }}
                       >
                         {episode.episodeNumber}. {episode.title}

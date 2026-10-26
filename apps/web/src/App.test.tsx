@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import type {
   MovieDetails,
   MovieListResponse,
@@ -15,6 +15,15 @@ import {
 } from './util/apiUtils';
 
 vi.mock('./util/apiUtils');
+vi.mock('./pages/series/seriesPage', () => ({
+  default: () => <h1>Series page</h1>,
+}));
+vi.mock('./pages/series/seasonPage', () => ({
+  default: () => <h1>Season page</h1>,
+}));
+vi.mock('./pages/series/episodePage', () => ({
+  default: () => <h1>Episode page</h1>,
+}));
 
 const getMovie = vi.mocked(originalGetMovie);
 const getMovies = vi.mocked(originalGetMovies);
@@ -40,9 +49,29 @@ const moviesResponse: MovieListResponse = {
   totalResults: 1,
 };
 
+function RouteLocation() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <output aria-label="Current route">
+        {location.pathname + location.search + location.hash}
+      </output>
+      <button type="button" onClick={() => navigate(-1)}>
+        Back
+      </button>
+      <button type="button" onClick={() => navigate(1)}>
+        Forward
+      </button>
+    </>
+  );
+}
+
 const renderApp = (initialEntry = '/search') => {
   render(
     <MemoryRouter initialEntries={[initialEntry]}>
+      <RouteLocation />
       <App />
     </MemoryRouter>
   );
@@ -112,6 +141,42 @@ describe('<App />', () => {
     expect(screen.getByRole('banner').closest('main')).toBeNull();
     expect(screen.getAllByRole('contentinfo')).toHaveLength(1);
     expect(screen.getByRole('contentinfo').closest('main')).toBeNull();
+  });
+
+  test.each([
+    ['/tv/42', '/series/42'],
+    ['/tv/42/seasons/3', '/series/42/seasons/3'],
+    ['/tv/42/seasons/3/episodes/7', '/series/42/seasons/3/episodes/7'],
+  ])('replaces legacy route %s with %s', async (legacyPath, seriesPath) => {
+    renderApp(`${legacyPath}?view=details#episode`);
+
+    expect(await screen.findByLabelText('Current route')).toHaveTextContent(
+      `${seriesPath}?view=details#episode`
+    );
+  });
+
+  test('legacy redirects preserve browser back and forward navigation', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter
+        initialEntries={['/search', '/tv/42?view=details#episode']}
+        initialIndex={1}
+      >
+        <RouteLocation />
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByLabelText('Current route')).toHaveTextContent(
+      '/series/42?view=details#episode'
+    );
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/search');
+    await user.click(screen.getByRole('button', { name: 'Forward' }));
+    expect(screen.getByLabelText('Current route')).toHaveTextContent(
+      '/series/42?view=details#episode'
+    );
   });
 
   test('displays the 404 error page for non-existent routes', async () => {
