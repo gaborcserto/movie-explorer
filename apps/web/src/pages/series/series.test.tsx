@@ -160,6 +160,47 @@ afterEach(() => {
 });
 
 describe('Series hierarchy', () => {
+  it.each(['network', 'http', 'invalid-response'] as const)(
+    'keeps series details available when the Watch Providers client fails: %s',
+    async (failure) => {
+      vi.mocked(apiUtils.getWatchProviders).mockRestore();
+      fetchMock.mockImplementation(async (input) => {
+        if (String(input).endsWith('/watch-providers')) {
+          if (failure === 'network') {
+            throw new TypeError('private network details');
+          }
+          return failure === 'http'
+            ? new Response('private server error', { status: 502 })
+            : Response.json({ providers: [{ id: 'invalid' }] });
+        }
+        return Response.json(series);
+      });
+
+      try {
+        await act(async () => {
+          setup('/tv/1');
+        });
+
+        expect(fetchMock).toHaveBeenCalledWith(
+          'http://localhost:4000/api/v1/series/1/watch-providers',
+          { signal: expect.any(AbortSignal) }
+        );
+        expect(
+          screen.getByRole('heading', { name: series.title })
+        ).toBeVisible();
+        expect(
+          screen.queryByRole('heading', { name: 'Where to watch' })
+        ).toBeNull();
+        expect(screen.queryByRole('alert')).toBeNull();
+        expect(screen.queryByText(/private/)).toBeNull();
+      } finally {
+        vi.spyOn(apiUtils, 'getWatchProviders').mockResolvedValue({
+          providers: [],
+        });
+      }
+    }
+  );
+
   it('renders accessible Cast and Crew tabs and keeps each preview mounted', async () => {
     const user = userEvent.setup();
     fetchMock.mockResolvedValue(

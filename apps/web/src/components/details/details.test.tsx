@@ -52,6 +52,55 @@ describe('<Details />', () => {
     isNotFoundError.mockReturnValue(false);
   });
 
+  it.each(['network', 'http', 'invalid-response'] as const)(
+    'keeps movie details available when the Watch Providers client fails: %s',
+    async (failure) => {
+      const actual = await vi.importActual<
+        typeof import('../../util/apiUtils')
+      >('../../util/apiUtils');
+      getWatchProviders.mockImplementationOnce(actual.getWatchProviders);
+      useParams.mockReturnValue({ movieId: '1234' });
+      getMovie.mockResolvedValueOnce(mockData);
+      const fetchMock = vi.fn<typeof fetch>();
+      if (failure === 'network') {
+        fetchMock.mockRejectedValue(new TypeError('private network details'));
+      } else {
+        fetchMock.mockResolvedValue(
+          failure === 'http'
+            ? new Response('private server error', { status: 502 })
+            : Response.json({ providers: [{ id: 'invalid' }] })
+        );
+      }
+      vi.stubGlobal('fetch', fetchMock);
+
+      try {
+        await act(async () => {
+          render(
+            <MemoryRouter>
+              <Details />
+            </MemoryRouter>
+          );
+        });
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock).toHaveBeenCalledWith(
+          'http://localhost:4000/api/v1/movies/1234/watch-providers',
+          { signal: expect.any(AbortSignal) }
+        );
+        expect(
+          screen.getByRole('heading', { name: mockData.title })
+        ).toBeVisible();
+        expect(
+          screen.queryByRole('heading', { name: 'Where to watch' })
+        ).toBeNull();
+        expect(screen.queryByRole('alert')).toBeNull();
+        expect(screen.queryByText(/private/)).toBeNull();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    }
+  );
+
   it('displays the loading component while fetching data', async () => {
     useParams.mockReturnValue({ movieId: '1234' });
     getMovie.mockReturnValueOnce(new Promise(() => {}));
