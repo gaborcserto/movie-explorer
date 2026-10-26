@@ -19,6 +19,7 @@ import type {
 } from '@movie-explorer/contracts';
 
 import { TmdbExternalIds } from './tmdb-external-ids';
+import { normalizeTmdbRating } from './tmdb-ratings';
 import type { MovieProvider } from '../../movies/movie-provider';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbMovieMapper } from './tmdb-movie.mapper';
@@ -285,29 +286,7 @@ export class TmdbMovieProvider implements MovieProvider {
       this.externalIds?.remember('movie', id, row.imdb_id);
     }
 
-    const score = row.vote_average;
-    const rawVotes = row.vote_count;
-
-    if (
-      typeof score !== 'number' ||
-      !Number.isFinite(score) ||
-      score < 0 ||
-      score > 10 ||
-      !(
-        rawVotes === undefined ||
-        (typeof rawVotes === 'number' &&
-          Number.isSafeInteger(rawVotes) &&
-          rawVotes >= 0)
-      )
-    ) {
-      return { status: 'unavailable', reason: 'invalid-response' };
-    }
-
-    return {
-      status: 'available',
-      score,
-      voteCount: typeof rawVotes === 'number' ? rawVotes : null,
-    };
+    return normalizeTmdbRating(row.vote_average, row.vote_count);
   }
 
   public async findWatchProviders(id: number) {

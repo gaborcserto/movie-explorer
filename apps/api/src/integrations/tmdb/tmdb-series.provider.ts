@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { RatingResult, SeriesDetails } from '@movie-explorer/contracts';
 
 import { TmdbExternalIds } from './tmdb-external-ids';
+import { normalizeTmdbRating } from './tmdb-ratings';
 import { mapWatchProviders } from './tmdb-watch-providers.mapper';
 import type { SeriesListQuery } from '../../series/series-list.dto';
 import { mapSearch, searchPage } from './tmdb-search.mapper';
@@ -144,29 +145,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
       this.externalIds?.remember('series', id, external.imdb_id);
     }
 
-    const score = row.vote_average;
-    const rawVotes = row.vote_count;
-
-    if (
-      typeof score !== 'number' ||
-      !Number.isFinite(score) ||
-      score < 0 ||
-      score > 10 ||
-      !(
-        rawVotes === undefined ||
-        (typeof rawVotes === 'number' &&
-          Number.isSafeInteger(rawVotes) &&
-          rawVotes >= 0)
-      )
-    ) {
-      return { status: 'unavailable', reason: 'invalid-response' };
-    }
-
-    return {
-      status: 'available',
-      score,
-      voteCount: typeof rawVotes === 'number' ? rawVotes : null,
-    };
+    return normalizeTmdbRating(row.vote_average, row.vote_count);
   }
 
   async findWatchProviders(id: number) {

@@ -61,6 +61,28 @@ describe('TmdbMovieProvider', () => {
     expect(url.searchParams.has('append_to_response')).toBe(false);
   });
 
+  it('returns unavailable ratings for invalid data and undefined for a missing movie', async () => {
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        id: 603,
+        title: 'The Matrix',
+        vote_average: 8.1,
+        vote_count: null,
+      }),
+    );
+    await expect(
+      new TmdbMovieProvider(config).findRatings(603),
+    ).resolves.toEqual({
+      status: 'unavailable',
+      reason: 'invalid-response',
+    });
+
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 404 }));
+    await expect(
+      new TmdbMovieProvider(config).findRatings(603),
+    ).resolves.toBeUndefined();
+  });
+
   it('shares concurrent genre lookups and reuses successful results for one hour', async () => {
     jest.useFakeTimers();
     const started: string[] = [];

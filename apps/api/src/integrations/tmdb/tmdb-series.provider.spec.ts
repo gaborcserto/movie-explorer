@@ -52,6 +52,24 @@ describe('TmdbSeriesProvider', () => {
     expect(url.searchParams.get('append_to_response')).toBe('external_ids');
   });
 
+  it('returns unavailable ratings for invalid data and undefined for a missing series', async () => {
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        id: 1399,
+        name: 'Game of Thrones',
+        vote_average: 8.4,
+        vote_count: null,
+      }),
+    );
+    await expect(provider.findRatings(1399)).resolves.toEqual({
+      status: 'unavailable',
+      reason: 'invalid-response',
+    });
+
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 404 }));
+    await expect(provider.findRatings(1399)).resolves.toBeUndefined();
+  });
+
   it('discovers one Series page, maps application fields, and forwards only applicable filters', async () => {
     fetchMock.mockResolvedValue(
       Response.json({
