@@ -761,6 +761,7 @@ describe('Series hierarchy', () => {
       title: `Season ${index + 1}`,
     }));
     let resize: ResizeObserverCallback | undefined;
+    const disconnect = vi.fn();
     class ResizeObserverMock {
       private readonly observed = new Set<Element>();
 
@@ -773,6 +774,7 @@ describe('Series hierarchy', () => {
       }
 
       disconnect() {
+        disconnect();
         this.observed.clear();
       }
 
@@ -797,7 +799,11 @@ describe('Series hierarchy', () => {
     fetchMock.mockResolvedValue(
       Response.json({ ...series, seasons: manySeasons })
     );
-    setup('/tv/1');
+    const addEventListener = vi.spyOn(
+      HTMLElement.prototype,
+      'addEventListener'
+    );
+    const view = setup('/tv/1');
     const first = await screen.findByRole('tab', { name: 'Season 1' });
     expect(screen.queryByRole('button', { name: 'Next season' })).toBeNull();
     const list = screen.getByRole('tablist', { name: 'Seasons' });
@@ -807,6 +813,12 @@ describe('Series hierarchy', () => {
     const previous = screen.getByRole('button', { name: 'Previous season' });
     expect(previous).toBeDisabled();
     expect(next).toBeEnabled();
+    expect(
+      addEventListener.mock.calls.filter(
+        ([type], index) =>
+          type === 'scroll' && addEventListener.mock.contexts[index] === list
+      )
+    ).toHaveLength(1);
     await userEvent.click(next);
     expect(first).toHaveAttribute('aria-selected', 'true');
     (list as HTMLDivElement).scrollLeft = 400;
@@ -816,6 +828,9 @@ describe('Series hierarchy', () => {
     (list as HTMLDivElement).scrollLeft = 800;
     fireEvent.scroll(list);
     expect(next).toBeDisabled();
+    view.unmount();
+    expect(disconnect).toHaveBeenCalledOnce();
+    addEventListener.mockRestore();
   });
 
   it('uses actual season choices with accessible keyboard controls', async () => {
@@ -942,9 +957,8 @@ describe('Series hierarchy', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('2026-01-02')).toBeInTheDocument();
     expect(screen.getByText('24 min')).toBeInTheDocument();
-    expect(
-      screen.getByLabelText('TMDB rating 0 out of 10 from 0 votes')
-    ).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^TMDB rating:/)).not.toBeInTheDocument();
+    expect(screen.queryByText('0.0')).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(screen.getByRole('link', { name: 'Series 1' })).toHaveAttribute(
       'href',

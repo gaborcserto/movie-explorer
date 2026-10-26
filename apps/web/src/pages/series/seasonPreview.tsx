@@ -6,6 +6,15 @@ import MovieImage from '../../components/utility/customImage';
 import { getPosterDisplaySrcSet } from '../../util/imageSizing';
 import { SeasonName, SeriesFacts } from './seriesPresentation';
 
+function measureScroll(container: HTMLDivElement) {
+  const maxScroll = container.scrollWidth - container.clientWidth;
+  return {
+    overflow: maxScroll > 1,
+    atStart: container.scrollLeft <= 1,
+    atEnd: container.scrollLeft >= maxScroll - 1,
+  };
+}
+
 export default function SeasonPreview({ series }: { series: SeriesDetails }) {
   const id = useId();
   const [selected, setSelected] = useState(0);
@@ -20,16 +29,8 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
   useEffect(() => {
     const container = tabs.current;
     if (!container) return undefined;
-    const measure = () => {
-      const maxScroll = container.scrollWidth - container.clientWidth;
-      setScrollState({
-        overflow: maxScroll > 1,
-        atStart: container.scrollLeft <= 1,
-        atEnd: container.scrollLeft >= maxScroll - 1,
-      });
-    };
+    const measure = () => setScrollState(measureScroll(container));
     measure();
-    container.addEventListener('scroll', measure, { passive: true });
     const observer =
       typeof ResizeObserver === 'undefined'
         ? null
@@ -40,7 +41,6 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
       .forEach((tab) => observer?.observe(tab));
     if (container.parentElement) observer?.observe(container.parentElement);
     return () => {
-      container.removeEventListener('scroll', measure);
       observer?.disconnect();
     };
   }, [series.seasons.length]);
@@ -88,13 +88,7 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
           className="season-tabs"
           onScroll={() => {
             const container = tabs.current;
-            if (!container) return;
-            const maxScroll = container.scrollWidth - container.clientWidth;
-            setScrollState({
-              overflow: maxScroll > 1,
-              atStart: container.scrollLeft <= 1,
-              atEnd: container.scrollLeft >= maxScroll - 1,
-            });
+            if (container) setScrollState(measureScroll(container));
           }}
           onKeyDown={(event) => {
             let next: number;
