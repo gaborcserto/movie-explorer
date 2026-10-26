@@ -54,9 +54,6 @@ test('aligns provider categories with Movie metadata tracks and keeps logos comp
     'flex-wrap': 'wrap',
     gap: '8px',
   });
-  expect(
-    declarations('.watch-providers__empty', '(max-width: 767.98px)')
-  ).toMatchObject({ display: 'none' });
 });
 
 test('removes the provider section border with specificity above the shared section rule', () => {

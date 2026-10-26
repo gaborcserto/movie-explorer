@@ -62,12 +62,6 @@
   }
 }
 
-@include media-size(md-down) {
-  .watch-providers__empty {
-    display: none;
-  }
-}
-
 .details-section.watch-providers {
   border-top: 0;
 }

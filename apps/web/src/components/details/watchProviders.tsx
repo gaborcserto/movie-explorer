@@ -60,14 +60,16 @@ export default function WatchProviders({
 }: {
   providers: WatchProvider[];
 }) {
-  const groups = categories.map(([key, label]) => ({
-    key,
-    label,
-    providers: providers.filter(
-      (provider) => provider.category === key && provider.name.trim()
-    ),
-  }));
-  if (groups.every((group) => group.providers.length === 0)) return null;
+  const groups = categories
+    .map(([key, label]) => ({
+      key,
+      label,
+      providers: providers.filter(
+        (provider) => provider.category === key && provider.name.trim()
+      ),
+    }))
+    .filter((group) => group.providers.length > 0);
+  if (groups.length === 0) return null;
 
   return (
     <section
@@ -78,28 +80,20 @@ export default function WatchProviders({
         <h2 id="watch-providers-heading">Where to watch</h2>
       </div>
       <div className="watch-providers__groups">
-        {groups.map((group) =>
-          group.providers.length > 0 ? (
-            <div className="watch-providers__group" key={group.key}>
-              <h3>{group.label}</h3>
-              <ul>
-                {group.providers.map((provider) => (
-                  <ProviderLogo
-                    key={`${group.key}-${provider.id}`}
-                    provider={provider}
-                    categoryLabel={group.label}
-                  />
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <div
-              aria-hidden="true"
-              className="watch-providers__empty"
-              key={group.key}
-            />
-          )
-        )}
+        {groups.map((group) => (
+          <div className="watch-providers__group" key={group.key}>
+            <h3>{group.label}</h3>
+            <ul>
+              {group.providers.map((provider) => (
+                <ProviderLogo
+                  key={`${group.key}-${provider.id}`}
+                  provider={provider}
+                  categoryLabel={group.label}
+                />
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </section>
   );

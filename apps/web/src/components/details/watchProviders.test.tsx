@@ -47,20 +47,49 @@ test.each([
   expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(1);
 });
 
-test('keeps category columns in place when an earlier category is empty', () => {
-  const { container } = render(
-    <WatchProviders providers={[{ ...provider, category: 'rent' }]} />
-  );
-  const categories = container.querySelector('.watch-providers__groups');
+test.each([
+  [['streaming'], ['Streaming']],
+  [['rent'], ['Rent']],
+  [['buy'], ['Buy']],
+  [
+    ['streaming', 'rent'],
+    ['Streaming', 'Rent'],
+  ],
+  [
+    ['streaming', 'buy'],
+    ['Streaming', 'Buy'],
+  ],
+  [
+    ['rent', 'buy'],
+    ['Rent', 'Buy'],
+  ],
+  [
+    ['streaming', 'rent', 'buy'],
+    ['Streaming', 'Rent', 'Buy'],
+  ],
+] as const)(
+  'renders only available categories in order: %j',
+  (availableCategories, expectedLabels) => {
+    const { container } = render(
+      <WatchProviders
+        providers={availableCategories.map((category, id) => ({
+          ...provider,
+          id: id + 1,
+          category,
+        }))}
+      />
+    );
+    const groups = container.querySelector('.watch-providers__groups');
 
-  expect(categories?.children).toHaveLength(3);
-  expect(categories?.children[0]).toHaveClass('watch-providers__empty');
-  expect(categories?.children[1]).toHaveClass('watch-providers__group');
-  expect(categories?.children[2]).toHaveClass('watch-providers__empty');
-  expect(screen.queryByRole('heading', { name: 'Streaming' })).toBeNull();
-  expect(screen.getByRole('heading', { name: 'Rent' })).toBeVisible();
-  expect(screen.queryByRole('heading', { name: 'Buy' })).toBeNull();
-});
+    expect(
+      screen
+        .getAllByRole('heading', { level: 3 })
+        .map((heading) => heading.textContent)
+    ).toEqual(expectedLabels);
+    expect(groups?.children).toHaveLength(expectedLabels.length);
+    expect(groups?.querySelector('.watch-providers__empty')).toBeNull();
+  }
+);
 
 test('renders nothing when supported categories have no providers', () => {
   const { container } = render(<WatchProviders providers={[]} />);
