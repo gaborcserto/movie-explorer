@@ -103,6 +103,7 @@ describe('<App />', () => {
       screen.getByRole('heading', { name: movie.title })
     );
     expect(screen.getByRole('banner').closest('main')).toBeNull();
+    expect(screen.getAllByRole('contentinfo')).toHaveLength(1);
     expect(screen.getByRole('contentinfo').closest('main')).toBeNull();
   });
 

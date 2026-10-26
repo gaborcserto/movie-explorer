@@ -9,6 +9,7 @@ test('shows JustWatch attribution in the site footer', () => {
     </MemoryRouter>
   );
 
+  expect(screen.getAllByRole('contentinfo')).toHaveLength(1);
   expect(screen.getByRole('link', { name: 'JustWatch' })).toHaveAttribute(
     'href',
     'https://www.justwatch.com'

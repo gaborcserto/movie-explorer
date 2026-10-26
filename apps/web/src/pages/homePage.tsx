@@ -13,7 +13,7 @@ function HomePage() {
           <SearchResults />
         </main>
       )}
-      <Footer />
+      {!movieId && <Footer />}
     </>
   );
 }
