@@ -1,34 +1,43 @@
 # Movie Explorer API
 
-NestJS backend for Movie Explorer. It exposes movies, series, seasons,
-episodes, people and search backed by TMDB, with application-owned contracts and
-generated Swagger/OpenAPI documentation.
+NestJS 11 API for movies, series, people, and search. TMDB provides catalog data; OMDb can provide optional IMDb ratings.
 
-Install dependencies from the repository root, copy `.env.example` to `.env`,
-and provide a `TMDB_ACCESS_TOKEN` before starting the API:
+## Development
 
-```bash
+Install dependencies from the repository root with `npm ci`. Copy the environment example and set the required `TMDB_ACCESS_TOKEN`:
+
+```sh
+cp apps/api/.env.example apps/api/.env
 npm run start:dev --workspace @movie-explorer/api
 ```
 
-The API listens on `http://localhost:4000`. OpenAPI documentation generated
-from the NestJS controllers and DTOs is available at `/api-docs`.
+The API listens on port `4000` by default. `PORT` and `HOST` can override the listener. Swagger UI and the generated OpenAPI document are available at `http://localhost:4000/api-docs`.
 
-`GET /api/v1/movies` accepts page-based search, genre, release-year, minimum-rating,
-and sort parameters and returns TMDB pagination metadata in the public
-contract. `GET /api/v1/movies/suggestions` provides compact title suggestions for the
-frontend autocomplete without exposing the TMDB access token.
+## Configuration
 
-Public resource roots are `/api/v1/movies`, `/api/v1/series`,
-`/api/v1/persons` and `/api/v1/search`. The former `/movies` and `/api/v1/tv`
-route trees return 404. See the root README for the season, episode and
-episode-credit recovery routes. Swagger contains only canonical operations.
+The example file lists the optional TMDB base URL, image URL, language, region, and request timeout settings. `TMDB_REQUEST_TIMEOUT_MS` defaults to `8000` and accepts values from `1` to `60000` milliseconds. `OMDB_API_KEY` enables optional IMDb ratings; `OMDB_API_URL` defaults to `https://www.omdbapi.com/`.
 
-Application-owned code uses Series, Season and Episode naming. TMDB still
-uses `/3/tv`, `season`, `episode` and `media_type: 'tv'`; these external
-contracts are unchanged. The public `mediaType: 'tv'` discriminator remains
-stable for existing identities. Browser navigation continues to use `/tv/...`.
+## API resources
 
-The workspace provides `build`, `lint`, `typecheck`, `test`, and `test:e2e`
-scripts. Its unit and e2e tests use Jest; the e2e suite uses a mocked provider
-and does not call TMDB.
+All routes use the `/api/v1` prefix:
+
+- Movies: `/movies`
+- Series, seasons, and episodes: `/series`
+- Persons and filmographies: `/persons`
+- Unified search and suggestions: `/search`
+- IMDb-only ratings: `/ratings`
+
+Swagger documents individual endpoints, parameters, and response schemas. Legacy `/movies` and `/api/v1/tv` route trees are not supported.
+
+## Checks
+
+Run these from the repository root:
+
+```sh
+npm test --workspace @movie-explorer/api
+npm run test:e2e --workspace @movie-explorer/api
+npm run lint --workspace @movie-explorer/api
+npm run build --workspace @movie-explorer/api
+```
+
+The e2e suite uses a mocked provider and does not call TMDB. Keep `.env` files and credentials out of version control.
