@@ -20,10 +20,10 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
-    "eslint-plugin-oxlint": "1.88.0",
+    "eslint-plugin-oxlint": "1.89.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
-    "vite-plus": "1.2.0",
+    "vite-plus": "1.4.0",
     "yaml": "^2.9.1"
   },
   "overrides": {
