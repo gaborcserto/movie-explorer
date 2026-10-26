@@ -47,7 +47,9 @@ test('preserves Movie navigation, hero, title, rating, overview and lower-conten
     'movie-details__title'
   );
   expect(
-    screen.getByLabelText('Rating 8.5 out of 10').parentElement
+    screen
+      .getByLabelText('TMDB rating: 8.5 out of 10')
+      .closest('.movie-details__title__wrapper')
   ).toHaveClass('movie-details__title__wrapper');
   expect(screen.getByText('2020').parentElement).toHaveClass(
     'movie-details__data'

@@ -8,6 +8,9 @@ const stylesheets = [
     compile(fileURLToPath(new URL('./details.scss', import.meta.url))).css
   ),
   postcss.parse(
+    compile(fileURLToPath(new URL('./ratings.scss', import.meta.url))).css
+  ),
+  postcss.parse(
     compile(
       fileURLToPath(
         new URL('../../pages/personPage/filmography.scss', import.meta.url)
@@ -60,45 +63,18 @@ function contrastRatio(foreground: string, background: string) {
   return (values[0]! + 0.05) / (values[1]! + 0.05);
 }
 
-test('movie rating uses the requested white-on-coral styling', () => {
-  const style = declarations('.movie-details__rating');
-
-  expect(style.background).toBe('#f65261');
-  expect(style.color).toBe('#ffffff');
-  expect(style['font-weight']).toBe('700');
-  // White on coral is an intentional design choice with below-AA contrast.
-  expect(contrastRatio(style.color!, style.background!)).toBeCloseTo(3.33, 2);
-  expect(style).toMatchObject({
-    width: '60px',
-    height: '60px',
-    'border-radius': '30px',
-    'font-size': '20px',
-  });
-  let mobileStyle: Record<string, string> | undefined;
-  stylesheets[0]!.walkAtRules('media', (media) => {
-    if (media.params !== '(max-width: 767.98px)') {
-      return;
-    }
-    media.walkRules('.movie-details__rating', (rule) => {
-      mobileStyle = {};
-      rule.walkDecls((declaration) => {
-        mobileStyle![declaration.prop] = declaration.value;
-      });
-    });
-  });
-  expect(mobileStyle).toMatchObject({
-    width: '52px',
-    height: '52px',
-    'font-size': '18px',
-  });
-  expect(mobileStyle?.color).toBeUndefined();
-  expect(mobileStyle?.background).toBeUndefined();
-  expect(mobileStyle?.['font-weight']).toBeUndefined();
+test('details ratings use coral icons and bold white scores without badges', () => {
+  const score = declarations('.details-ratings__score');
+  expect(score.color).toBe('#ffffff');
+  expect(score['font-weight']).toBe('700');
+  expect(declarations('.details-ratings__icon').color).toBe('#f65261');
+  expect(score['border-radius']).toBeUndefined();
+  expect(score.background).toBeUndefined();
   expect(
     stylesheets[0]!.nodes?.some(
       (node) =>
         node.type === 'rule' &&
-        node.selectors.includes('.movie-details__rating:hover')
+        node.selectors.includes('.movie-details__rating')
     )
   ).toBe(false);
 });

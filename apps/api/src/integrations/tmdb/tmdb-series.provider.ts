@@ -1,3 +1,4 @@
+import { TmdbExternalIds } from './tmdb-external-ids';
 import { Injectable, Logger } from '@nestjs/common';
 import type { SeriesDetails } from '@movie-explorer/contracts';
 import { mapWatchProviders } from './tmdb-watch-providers.mapper';
@@ -26,7 +27,10 @@ export class TmdbSeriesProvider implements SeriesProvider {
   private readonly imageBaseUrl: string;
   private readonly language: string;
 
-  constructor(config: TmdbConfig = getTmdbConfig()) {
+  constructor(
+    config: TmdbConfig = getTmdbConfig(),
+    private readonly externalIds?: TmdbExternalIds,
+  ) {
     this.imageBaseUrl = config.imageBaseUrl;
     this.language = config.language;
     this.transport = new TmdbTransport(
@@ -71,7 +75,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
     const body = await this.transport.request({
       path: `/tv/${id}`,
       query: {
-        append_to_response: 'aggregate_credits,images,videos',
+        append_to_response: 'aggregate_credits,images,videos,external_ids',
         ...this.mediaLanguages(),
       },
       operation: 'series-details',
@@ -83,6 +87,14 @@ export class TmdbSeriesProvider implements SeriesProvider {
     }
 
     validateTmdbSeriesDetails(body, id);
+    const external = seriesRecord(body.external_ids);
+    if (
+      external &&
+      external.success !== false &&
+      (external.id === undefined || external.id === id)
+    ) {
+      this.externalIds?.remember('series', id, external.imdb_id);
+    }
     return {
       ...this.mapper.toSeriesDetails(body),
       credits: new TmdbSeriesCreditsMapper(this.imageBaseUrl).map(

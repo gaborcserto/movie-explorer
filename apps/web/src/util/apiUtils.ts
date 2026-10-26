@@ -22,6 +22,7 @@ import type {
   EpisodeDetails,
   EpisodeCredits,
   WatchProviders,
+  ImdbRatingResponse,
 } from '@movie-explorer/contracts';
 
 import {
@@ -696,4 +697,34 @@ export async function getCombinedFilmography(
     throw new ApiRequestError('invalid-response');
   }
   return body;
+}
+
+export async function getImdbRating(
+  kind: 'movie' | 'series',
+  id: number,
+  signal: AbortSignal
+): Promise<ImdbRatingResponse> {
+  const body = await request<unknown>(
+    `${apiBaseUrl}/api/v1/ratings/${kind}/${id}/imdb`,
+    { signal }
+  );
+  if (!record(body)) throw new ApiRequestError('invalid-response');
+  if (body.imdb === null) return { imdb: null };
+  const rating = body.imdb;
+  if (
+    !record(rating) ||
+    typeof rating.score !== 'number' ||
+    !Number.isFinite(rating.score) ||
+    rating.score < 0 ||
+    rating.score > 10 ||
+    !(
+      rating.voteCount === null ||
+      (typeof rating.voteCount === 'number' &&
+        Number.isSafeInteger(rating.voteCount) &&
+        rating.voteCount >= 0)
+    )
+  ) {
+    throw new ApiRequestError('invalid-response');
+  }
+  return { imdb: { score: rating.score, voteCount: rating.voteCount } };
 }

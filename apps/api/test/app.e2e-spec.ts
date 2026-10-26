@@ -60,6 +60,7 @@ describe('AppController (e2e)', () => {
   it('documents only canonical operations with unique IDs and current schemas', () => {
     const document = createApiDocument(app);
     const expectedPaths = [
+      '/api/v1/ratings/{mediaType}/{id}/imdb',
       '/api/v1/movies',
       '/api/v1/movies/suggestions',
       '/api/v1/movies/{id}',
@@ -94,7 +95,7 @@ describe('AppController (e2e)', () => {
     const ids = operations.map((operation) => operation.operationId);
     expect(new Set(ids).size).toBe(ids.length);
     expect(new Set(operations.flatMap((operation) => operation.tags))).toEqual(
-      new Set(['Movies', 'Series', 'Persons', 'Search']),
+      new Set(['Movies', 'Series', 'Persons', 'Search', 'Ratings']),
     );
     expect(
       Object.keys(document.components.schemas).filter((name) =>

@@ -1,3 +1,4 @@
+import { TmdbExternalIds } from './tmdb-external-ids';
 import {
   BadGatewayException,
   HttpException,
@@ -64,7 +65,10 @@ export class TmdbMovieProvider implements MovieProvider {
   >();
   private readonly genreRequests = new Map<string, Promise<TmdbGenre[]>>();
 
-  constructor(config: TmdbConfig = getTmdbConfig()) {
+  constructor(
+    config: TmdbConfig = getTmdbConfig(),
+    private readonly externalIds?: TmdbExternalIds,
+  ) {
     this.config = config;
     this.mapper = new TmdbMovieMapper(config.imageBaseUrl);
     this.transport = new TmdbTransport(config, this.logger);
@@ -199,6 +203,8 @@ export class TmdbMovieProvider implements MovieProvider {
       this.logFailure('movie-detail', 'invalid-response', 502, 200);
       throw new BadGatewayException('Movie provider response was invalid');
     }
+    if ('imdb_id' in movie)
+      this.externalIds?.remember('movie', id, movie.imdb_id);
     let details: MovieDetails;
     try {
       details = this.mapper.toMovieDetails({

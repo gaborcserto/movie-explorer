@@ -2,6 +2,9 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { CreditPerson } from '@movie-explorer/contracts';
+import DetailsRatings, {
+  RatingsDisplay,
+} from '../../components/details/ratings';
 
 import HeroImage from '../../components/heroImage';
 import DetailsMetadata from '../../components/details/metadata/detailsMetadata';
@@ -91,6 +94,7 @@ export function SeriesHero({
   image,
   srcSet,
   still = false,
+  seriesId,
   rating,
   votes,
   children,
@@ -99,6 +103,7 @@ export function SeriesHero({
   image: string | null;
   srcSet?: string;
   still?: boolean;
+  seriesId?: number;
   rating?: number | null;
   votes?: number | null;
   children: React.ReactNode;
@@ -107,14 +112,16 @@ export function SeriesHero({
     <DetailsHeroFrame
       title={title}
       rating={
-        rating !== null && rating !== undefined ? (
-          <div
-            className="movie-details__rating"
-            aria-label={`TMDB rating ${rating} out of 10${votes !== null && votes !== undefined ? ` from ${votes} votes` : ''}`}
-          >
-            {rating.toFixed(1)}
-          </div>
-        ) : undefined
+        seriesId === undefined ? (
+          <RatingsDisplay tmdb={rating} votes={votes} />
+        ) : (
+          <DetailsRatings
+            kind="series"
+            id={seriesId}
+            tmdb={rating}
+            votes={votes}
+          />
+        )
       }
       image={
         <HeroImage

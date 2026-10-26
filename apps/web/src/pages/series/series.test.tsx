@@ -33,6 +33,7 @@ vi.mock('../../components/search/headerSearch', () => ({
 }));
 
 vi.spyOn(apiUtils, 'getWatchProviders').mockResolvedValue({ providers: [] });
+vi.spyOn(apiUtils, 'getImdbRating').mockResolvedValue({ imdb: null });
 
 const credits: EpisodeCredits = {
   cast: [{ id: 11, name: 'Regular Actor', characters: ['Guide'] }],
@@ -862,7 +863,7 @@ describe('Series hierarchy', () => {
     expect(screen.getByText('Network')).toBeInTheDocument();
     expect(screen.getByText('US')).toBeInTheDocument();
     expect(
-      screen.getByLabelText('TMDB rating 8.5 out of 10 from 200 votes')
+      screen.getByLabelText('TMDB rating: 8.5 out of 10 from 200 votes')
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Creator' })).toHaveAttribute(
       'href',

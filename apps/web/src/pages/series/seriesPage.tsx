@@ -50,6 +50,7 @@ function SeriesDetails({ idText }: { idText: string }) {
       hero={
         series ? (
           <SeriesHero
+            seriesId={series.id}
             title={series.title}
             rating={series.rating}
             votes={series.voteCount}

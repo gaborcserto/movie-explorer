@@ -63,3 +63,5 @@ export type {
   EpisodeCastMember,
   EpisodeCrewMember,
 } from './series';
+
+export type { ImdbRating, ImdbRatingResponse } from './ratings';

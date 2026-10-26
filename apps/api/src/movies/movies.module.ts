@@ -1,3 +1,5 @@
+import { RatingsModule } from '../ratings/ratings.module';
+import { TmdbExternalIds } from '../integrations/tmdb/tmdb-external-ids';
 import { Module } from '@nestjs/common';
 
 import { PERSON_FILMOGRAPHY_PROVIDER } from '../persons/person-filmography-provider';
@@ -14,6 +16,7 @@ import { SEARCH_PROVIDER } from '../search/search-provider';
 import { TmdbSearchProvider } from '../integrations/tmdb/tmdb-search.provider';
 
 @Module({
+  imports: [RatingsModule],
   controllers: [MoviesController, PersonsController, SearchController],
   providers: [
     { provide: SEARCH_PROVIDER, useFactory: () => new TmdbSearchProvider() },
@@ -26,7 +29,9 @@ import { TmdbSearchProvider } from '../integrations/tmdb/tmdb-search.provider';
     SearchService,
     {
       provide: MOVIE_PROVIDER,
-      useFactory: () => new TmdbMovieProvider(),
+      useFactory: (ids: TmdbExternalIds) =>
+        new TmdbMovieProvider(undefined, ids),
+      inject: [TmdbExternalIds],
     },
   ],
 })

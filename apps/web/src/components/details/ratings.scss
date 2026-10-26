@@ -1,0 +1,33 @@
+@use '../../assets/scss' as *;
+
+.details-ratings {
+  flex: 0 0 auto;
+  min-width: 0;
+
+  &__scores {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+
+  &__item {
+    align-items: center;
+    display: inline-flex;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  &__icon {
+    color: $red-1;
+    flex: 0 0 auto;
+    font-size: 40px;
+  }
+
+  &__score {
+    color: $white;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+}

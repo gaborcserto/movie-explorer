@@ -115,7 +115,7 @@ describe('TmdbSeriesProvider', () => {
     const [url, init]: [URL, RequestInit] = fetchMock.mock.calls[0];
     expect(url.pathname).toBe('/3/tv/1399');
     expect(url.searchParams.get('append_to_response')).toBe(
-      'aggregate_credits,images,videos',
+      'aggregate_credits,images,videos,external_ids',
     );
     expect(url.searchParams.get('include_image_language')).toBe('hu,en,null');
     expect(init.headers).toEqual({

@@ -7,6 +7,7 @@ import type {
   MovieDirector,
   WatchProvider,
 } from '@movie-explorer/contracts';
+import DetailsRatings from './ratings';
 
 import { SectionRecovery } from './recovery';
 import PhotoPreview, { VideoPreview } from './media';
@@ -219,8 +220,6 @@ export function DetailsHero({ movieData, watchProviders = [] }: DetailsProps) {
     runtimeMinutes !== undefined &&
     Number.isFinite(runtimeMinutes) &&
     runtimeMinutes > 0;
-  const hasRating =
-    rating !== undefined && Number.isFinite(rating) && rating > 0;
 
   return (
     <DetailsHeroFrame
@@ -237,14 +236,11 @@ export function DetailsHero({ movieData, watchProviders = [] }: DetailsProps) {
         />
       }
       rating={
-        hasRating && (
-          <div
-            className="movie-details__rating"
-            aria-label={`Rating ${rating.toFixed(1)} out of 10`}
-          >
-            {rating.toFixed(1)}
-          </div>
-        )
+        <DetailsRatings
+          kind="movie"
+          id={movieData.id}
+          tmdb={rating !== undefined && rating > 0 ? rating : null}
+        />
       }
     >
       {genresData.length > 0 && (

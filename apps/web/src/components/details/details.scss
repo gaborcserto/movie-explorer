@@ -149,22 +149,6 @@
     }
   }
 
-  &__rating {
-    background: $red-1;
-    color: #ffffff;
-    flex: 0 0 auto;
-    font-style: normal;
-    font-weight: 700;
-    font-size: 20px;
-    line-height: 60px;
-    text-align: center;
-    text-transform: uppercase;
-    width: 60px;
-    height: 60px;
-    border: 0;
-    border-radius: 30px;
-  }
-
   &__genre {
     font-style: normal;
     font-weight: 500;
@@ -306,13 +290,6 @@
 
     &__title {
       font-size: 24px;
-    }
-
-    &__rating {
-      font-size: 18px;
-      height: 52px;
-      line-height: 50px;
-      width: 52px;
     }
   }
 

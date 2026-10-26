@@ -35,7 +35,7 @@ npm ci
 cp apps/api/.env.example apps/api/.env
 ```
 
-Set `TMDB_ACCESS_TOKEN` in `apps/api/.env` to a TMDB read access token. The other `TMDB_*` settings have defaults; their available names are listed in the example. The frontend's `VITE_API_BASE_URL` defaults to `http://localhost:4000` and only needs to be set when the API runs at another address. See the [API](apps/api/.env.example) and [web](apps/web/.env.example) environment examples for variable names and safe defaults. Do not commit `.env` files or credentials.
+Set the required `TMDB_ACCESS_TOKEN` in `apps/api/.env` to a TMDB API read access token. The optional `OMDB_API_KEY` enables IMDb ratings and may be left empty; OMDb use is for personal, noncommercial use only. The other `TMDB_*` settings have defaults; their available names are listed in the example. The frontend's `VITE_API_BASE_URL` defaults to `http://localhost:4000` and only needs to be set when the API runs at another address. See the [API](apps/api/.env.example) and [web](apps/web/.env.example) environment examples for variable names and safe defaults. Do not commit `.env` files or credentials.
 
 Start the frontend and API together:
 
@@ -212,3 +212,17 @@ apps/
 packages/
   contracts/           Shared TypeScript API contracts
 ```
+
+## Optional IMDb ratings (personal use)
+
+Set `OMDB_API_KEY` in `apps/api/.env` to enable IMDb ratings beside TMDB on Movie and Series Details. `OMDB_API_URL` defaults to `https://www.omdbapi.com/` and can point to a custom HTTPS OMDb-compatible endpoint without credentials, query parameters or fragments. Obtain a key at [OMDb](https://www.omdbapi.com/apikey.aspx); free keys allow 1,000 requests daily. Keep the key server-side. Without it, Details continue with TMDB only.
+
+`GET /api/v1/ratings/:mediaType/:id/imdb` accepts `movie` or `series` and a positive integer TMDB ID. It returns `{ "imdb": { "score": 8.7, "voteCount": 2100123 } }` or `{ "imdb": null }`. The example is illustrative. Scores retain the original 0?10 scale; unknown vote counts are null. Invalid parameters return 400. Missing titles, IDs, ratings, configuration, malformed responses, authentication/quota errors and upstream failures return 200 with null. This optional request never blocks the main Details resource.
+
+The backend retains movie details' IMDb IDs and appends `external_ids` to TMDB TV details. If needed, it resolves `/movie/:id/external_ids` or `/tv/:id/external_ids`; no title matching occurs. OMDb is queried over HTTPS by IMDb ID, with a three-second timeout and response identity/type validation. Only `imdbRating` and `imdbVotes` supply the rating; TMDB votes never determine it.
+
+The existing cache pattern is local in-memory maps. External IDs and successful ratings expire after one hour; unavailable ratings retry after one minute. Each cache holds at most 500 entries and merges concurrent requests for the same key. Caches reset on restart and are not shared across API instances. These limits reduce repeated calls but do not guarantee staying within the daily quota. No persistent rating archive is created.
+
+OMDb publishes [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) content licensing and [terms](https://www.omdbapi.com/legal.htm) limiting use to personal, noncommercial purposes and restricting redistribution and indexing. This integration targets personal, noncommercial use. Public or commercial deployment requires provider permission covering display and caching; a paid API key alone does not establish that permission. The UI credits OMDb / Brian Fritz, links the source and license, and identifies normalization in the source link's title. The reviewed API documentation specifies no cache TTL; the one-hour TTL is an implementation choice, not a provider guarantee. Confirm any separate agreement before deployment.
+
+OMDb is independent of IMDb, and its terms give no availability or accuracy guarantee. Its public changelog is sparse; monitor authentication, quota and data quality if using it. [Jellyfin's OMDb adapter](https://github.com/jellyfin/jellyfin/blob/master/MediaBrowser.Providers/Plugins/Omdb/OmdbProvider.cs) provides an API integration reference, not licensing permission. The [PHP IMDb Grabber](https://github.com/FabianBeiner/PHP-IMDB-Grabber) warns that its scraping approach is disallowed and breaks with HTML changes; it is not used here.
