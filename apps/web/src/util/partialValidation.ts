@@ -11,6 +11,7 @@ export function availability(value: unknown): value is SectionAvailability {
   if (value.status === 'available') {
     return value.retryAfterSeconds === undefined;
   }
+
   return (
     value.status === 'unavailable' &&
     (value.retryAfterSeconds === undefined ||
@@ -69,6 +70,7 @@ export function movieSection(value: unknown, section: string): boolean {
 
   const items =
     section === 'photos' ? (value.backdrops ?? value.photos) : value[section];
+
   return (
     Array.isArray(items) &&
     items.every(

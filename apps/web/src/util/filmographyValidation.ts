@@ -29,6 +29,7 @@ export default function combinedFilmography(
   }
   const { groups } = value;
   const requested = mediaType === 'all' ? ['movie', 'tv'] : [mediaType];
+
   if (
     !requested.every((type) => availability(groups[type])) ||
     Object.keys(value.groups).some((type) => !requested.includes(type))
@@ -36,6 +37,7 @@ export default function combinedFilmography(
     return false;
   }
   const seen = new Set<string>();
+
   return value.entries.every((entry: unknown) => {
     if (
       !record(entry) ||
@@ -45,6 +47,7 @@ export default function combinedFilmography(
       return false;
     }
     const key = `${entry.mediaType}:${entry.id}`;
+
     if (seen.has(key)) {
       return false;
     }
@@ -60,6 +63,7 @@ export default function combinedFilmography(
       return false;
     }
     const date = entry.firstAirDate;
+
     if (
       date !== null &&
       (typeof date !== 'string' ||
@@ -69,6 +73,7 @@ export default function combinedFilmography(
     ) {
       return false;
     }
+
     return (
       (entry.actingRoles === undefined ||
         (Array.isArray(entry.actingRoles) &&

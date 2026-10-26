@@ -4,10 +4,7 @@ export type RatingResult =
   | {
       status: 'unavailable';
       reason:
-        | 'timeout'
-        | 'upstream-error'
-        | 'invalid-response'
-        | 'not-configured';
+        'timeout' | 'upstream-error' | 'invalid-response' | 'not-configured';
       retryAfterSeconds?: number;
     };
 

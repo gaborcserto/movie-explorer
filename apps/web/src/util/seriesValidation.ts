@@ -179,6 +179,7 @@ export function seasonDetails(
     return false;
   }
   const { episodes } = value;
+
   return (
     new Set(episodes.map((item) => item.id)).size === episodes.length &&
     episodes.every(
@@ -248,6 +249,7 @@ export function seriesCredits(value: unknown): value is SeriesCredits {
             return false;
           }
           const roles = item[kind === 'cast' ? 'characters' : 'jobs'];
+
           return (
             Array.isArray(roles) &&
             roles.every(

@@ -29,6 +29,7 @@ export function searchResult(value: unknown): value is SearchResult {
     return false;
   if (value.mediaType === 'person')
     return typeof value.name === 'string' && Boolean(value.name.trim());
+
   return (
     (value.mediaType === 'movie' || value.mediaType === 'tv') &&
     typeof value.title === 'string' &&

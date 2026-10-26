@@ -25,6 +25,7 @@ import type {
   Ratings,
 } from '@movie-explorer/contracts';
 
+import type { URLParams } from '../types';
 import {
   record,
   availability,
@@ -33,7 +34,6 @@ import {
   filmography,
   optionalText,
 } from './partialValidation';
-import type { URLParams } from '../types';
 import {
   seriesDetails,
   seriesCredits,
@@ -106,6 +106,7 @@ async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
       controller.abort('cancelled');
     }
   };
+
   if (callerSignal?.aborted) {
     cancel();
   } else {
@@ -121,9 +122,11 @@ async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
 
   try {
     controller.signal.throwIfAborted();
+
     const response = await fetch(url, { ...init, signal: controller.signal });
     status = response.status;
     controller.signal.throwIfAborted();
+
     if (!response.ok) {
       const delay = response.headers?.get('Retry-After');
       const seconds = delay && /^\d+$/.test(delay) ? Number(delay) : undefined;
@@ -141,9 +144,11 @@ async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
         retryAfterSeconds
       );
     }
+
     try {
       const body: unknown = await response.json();
       controller.signal.throwIfAborted();
+
       return body as T;
     } catch {
       if (controller.signal.aborted) {
@@ -158,6 +163,7 @@ async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
         status
       );
     }
+
     if (error instanceof ApiRequestError) {
       throw error;
     }
@@ -181,9 +187,11 @@ export async function getSeries(
   const body = await request<unknown>(`${apiBaseUrl}/api/v1/series/${id}`, {
     signal,
   });
+
   if (!seriesDetails(body, id)) {
     throw new ApiRequestError('invalid-response');
   }
+
   return {
     ...body,
     credits: seriesCredits(body.credits) ? body.credits : undefined,
@@ -201,9 +209,11 @@ export async function getSeason(
     `${apiBaseUrl}/api/v1/series/${id}/seasons/${season}`,
     { signal }
   );
+
   if (!seasonDetails(body, id, season)) {
     throw new ApiRequestError('invalid-response');
   }
+
   return body;
 }
 
@@ -217,9 +227,11 @@ export async function getEpisode(
     `${apiBaseUrl}/api/v1/series/${id}/seasons/${season}/episodes/${episode}`,
     { signal }
   );
+
   if (!episodeDetails(body, id, season, episode)) {
     throw new ApiRequestError('invalid-response');
   }
+
   return body;
 }
 
@@ -233,9 +245,11 @@ export async function getEpisodeCredits(
     `${apiBaseUrl}/api/v1/series/${id}/seasons/${season}/episodes/${episode}/credits`,
     { signal }
   );
+
   if (!episodeCredits(body)) {
     throw new ApiRequestError('invalid-response');
   }
+
   return body;
 }
 
@@ -247,6 +261,7 @@ export const getMovie = async (
     `${moviesUrl}/${id}`,
     signal ? { signal } : {}
   );
+
   if (!record(body)) {
     throw new ApiRequestError('invalid-response');
   }
@@ -258,6 +273,7 @@ export const getMovie = async (
   });
   (['budget', 'revenue'] as const).forEach((key) => {
     const value = body[key];
+
     if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
       delete body[key];
     }
@@ -316,6 +332,7 @@ export const getMovie = async (
       }
     });
   }
+
   return body;
 };
 
@@ -327,6 +344,7 @@ function watchProvidersResponse(value: unknown): value is WatchProviders {
       if (!record(item)) {
         return false;
       }
+
       return (
         Number.isSafeInteger(item.id) &&
         typeof item.id === 'number' &&
@@ -351,9 +369,11 @@ export async function getWatchProviders(
     `${apiBaseUrl}/api/v1/${kind}/${id}/watch-providers`,
     { signal }
   );
+
   if (!watchProvidersResponse(body)) {
     throw new ApiRequestError('invalid-response');
   }
+
   return body;
 }
 
@@ -366,6 +386,7 @@ export const getPerson = async (
     `${apiBaseUrl}/api/v1/persons/${id}${includeCombined ? '?include=combinedFilmography' : ''}`,
     signal ? { signal } : {}
   );
+
   if (!record(body)) {
     throw new ApiRequestError('invalid-response');
   }
@@ -410,6 +431,7 @@ export const getPerson = async (
       },
     };
   }
+
   return body;
 };
 
@@ -422,12 +444,14 @@ export const getMovieSection = async (
     `${moviesUrl}/${id}/${section}`,
     { signal }
   );
+
   if (!movieSection(body, section)) {
     throw new ApiRequestError('invalid-response');
   }
   if (section === 'photos' && body.backdrops === undefined && body.photos) {
     body.backdrops = body.photos;
   }
+
   return body;
 };
 
@@ -439,9 +463,11 @@ export const getFilmography = async (
     `${apiBaseUrl}/api/v1/persons/${id}/filmography`,
     { signal }
   );
+
   if (!record(body) || !filmography(body.filmography)) {
     throw new ApiRequestError('invalid-response');
   }
+
   return body;
 };
 
@@ -485,6 +511,7 @@ export const sortOrderParams = (
   if (data === 'asc' || data === 'desc') {
     return data;
   }
+
   return defaultSortOrder(sort);
 };
 
@@ -509,11 +536,13 @@ export const getMovies = async (
   }
 
   const releaseYear = Number(urlParams.releaseYear);
+
   if (Number.isInteger(releaseYear) && releaseYear >= 1874) {
     params.releaseYear = releaseYear;
   }
 
   const minimumRating = Number(urlParams.minimumRating);
+
   if (
     urlParams.minimumRating &&
     Number.isFinite(minimumRating) &&
@@ -533,6 +562,7 @@ export const getMovies = async (
         if (value !== undefined) {
           entries[key] = value;
         }
+
         return entries;
       },
       {}
@@ -540,6 +570,7 @@ export const getMovies = async (
   );
 
   const queryString = query.toString();
+
   return request<MovieListResponse>(
     queryString ? `${moviesUrl}?${queryString}` : moviesUrl,
     signal ? { signal } : {}
@@ -551,6 +582,7 @@ export const getMovieSuggestions = async (
   signal?: AbortSignal
 ): Promise<MovieSuggestionsResponse> => {
   const params = new URLSearchParams({ query, limit: '6' });
+
   return request<MovieSuggestionsResponse>(
     `${moviesUrl}/suggestions?${params.toString()}`,
     signal ? { signal } : {}
@@ -570,6 +602,7 @@ export const getSearchSuggestions = async (
     `${apiBaseUrl}/api/v1/search/suggestions?${params}`,
     signal ? { signal } : {}
   );
+
   if (!record(body)) {
     throw new ApiRequestError('invalid-response');
   }
@@ -582,6 +615,7 @@ export const getSearchSuggestions = async (
   ) {
     throw new ApiRequestError('invalid-response');
   }
+
   return body;
 };
 
@@ -593,12 +627,14 @@ export async function getSearchResults(
   year?: string
 ): Promise<SearchResponse> {
   const params = new URLSearchParams({ query, type, page: String(page) });
+
   if (year) {
     params.set('year', year);
   }
   const body = await request<unknown>(`${apiBaseUrl}/api/v1/search?${params}`, {
     signal,
   });
+
   if (
     !searchResponse(body) ||
     body.page !== page ||
@@ -606,6 +642,7 @@ export async function getSearchResults(
   ) {
     throw new ApiRequestError('invalid-response');
   }
+
   return body;
 }
 
@@ -615,6 +652,7 @@ export async function getPopularSeries(
   signal?: AbortSignal
 ): Promise<SearchResponse> {
   const params = new URLSearchParams({ page: String(page) });
+
   if (filters.year) {
     params.set('year', filters.year);
   }
@@ -633,6 +671,7 @@ export async function getPopularSeries(
   const body = await request<unknown>(`${apiBaseUrl}/api/v1/series?${params}`, {
     signal,
   });
+
   if (
     !searchResponse(body) ||
     body.page !== page ||
@@ -640,6 +679,7 @@ export async function getPopularSeries(
   ) {
     throw new ApiRequestError('invalid-response');
   }
+
   return body;
 }
 
@@ -649,10 +689,12 @@ export const getPeople = (
   signal?: AbortSignal
 ): Promise<PersonListResponse> => {
   const params = new URLSearchParams();
+
   if (query) {
     params.set('query', query);
   }
   params.set('page', String(page));
+
   return request<PersonListResponse>(
     `${apiBaseUrl}/api/v1/persons?${params}`,
     signal ? { signal } : {}
@@ -667,9 +709,11 @@ export async function getSeriesCredits(
     `${apiBaseUrl}/api/v1/series/${id}/credits`,
     signal ? { signal } : {}
   );
+
   if (!seriesCredits(body)) {
     throw new ApiRequestError('invalid-response');
   }
+
   return body;
 }
 
@@ -681,9 +725,11 @@ export async function getSeriesImages(
     `${apiBaseUrl}/api/v1/series/${id}/images`,
     signal ? { signal } : {}
   );
+
   if (!seriesImages(body)) {
     throw new ApiRequestError('invalid-response');
   }
+
   return body;
 }
 
@@ -695,9 +741,11 @@ export async function getSeriesVideos(
     `${apiBaseUrl}/api/v1/series/${id}/videos`,
     signal ? { signal } : {}
   );
+
   if (!seriesVideos(body)) {
     throw new ApiRequestError('invalid-response');
   }
+
   return body;
 }
 
@@ -710,9 +758,11 @@ export async function getCombinedFilmography(
     `${apiBaseUrl}/api/v1/persons/${id}/combined-filmography?mediaType=${mediaType}`,
     { signal }
   );
+
   if (!combinedFilmography(body, mediaType)) {
     throw new ApiRequestError('invalid-response');
   }
+
   return body;
 }
 
@@ -765,5 +815,6 @@ export async function getRatings(
   if (!record(body) || !ratingResult(body.tmdb) || !ratingResult(body.imdb)) {
     throw new ApiRequestError('invalid-response');
   }
+
   return { tmdb: body.tmdb, imdb: body.imdb };
 }
