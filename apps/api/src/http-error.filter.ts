@@ -15,6 +15,7 @@ export class HttpErrorFilter implements ExceptionFilter {
 
     if (status === 429 && typeof body === 'object' && 'retryAfter' in body) {
       const delay = body.retryAfter;
+
       if (
         typeof delay === 'number' &&
         Number.isSafeInteger(delay) &&

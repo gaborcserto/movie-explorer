@@ -68,8 +68,10 @@ describe('TmdbMovieProvider', () => {
       started.push(url.pathname);
       if (url.pathname.endsWith('/genre/movie/list')) {
         await Promise.resolve();
+
         return jsonResponse(genreResponse);
       }
+
       return moviePage(1, 1, [movieListItem(1, [18])]);
     });
     const provider = new TmdbMovieProvider(config);
@@ -100,10 +102,12 @@ describe('TmdbMovieProvider', () => {
     fetchMock.mockImplementation((url: URL) => {
       if (url.pathname.endsWith('/genre/movie/list')) {
         genreCalls += 1;
+
         return genreCalls === 1
           ? Promise.reject(new Error('temporary failure'))
           : Promise.resolve(jsonResponse(genreResponse));
       }
+
       return Promise.resolve(moviePage(1, 1, [movieListItem(1, [18])]));
     });
     const provider = new TmdbMovieProvider(config);
@@ -120,10 +124,12 @@ describe('TmdbMovieProvider', () => {
     fetchMock.mockImplementation((url: URL) => {
       if (url.pathname.endsWith('/genre/movie/list')) {
         genreCalls += 1;
+
         return Promise.resolve(
           jsonResponse(genreCalls === 1 ? { genres: [null] } : genreResponse),
         );
       }
+
       return Promise.resolve(moviePage(1, 1, [movieListItem(1, [18])]));
     });
     const provider = new TmdbMovieProvider(config);

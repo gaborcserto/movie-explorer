@@ -2,6 +2,19 @@
 
 ## TypeScript, NestJS and Node.js
 
+- Always put exactly one blank line between a completed variable declaration
+  or contiguous declaration group and a following `if`, `try`, `for`, `while`
+  or `switch` that starts the next logical operation. Keep consecutive
+  declarations adjacent. ESLint can require at least one line for these
+  statement selectors, but cannot distinguish independent work from tight
+  coupling or cap the gap at one line; formatting and review enforce those
+  details.
+- Put exactly one blank line before a return when it follows a separate
+  operation or a completed control-flow block. A return that is first in its
+  block needs no padding; keep closely coupled short guards together. ESLint can
+  enforce padding before returns that are not first in their block, but it
+  cannot determine logical intent or cap the whitespace at one blank line.
+
 - Keep class fields, dependency injection construction and methods visually
   distinct. Use one blank line between methods, with decorators and explanatory
   comments attached to the method they describe. Do not reorder members, change

@@ -357,6 +357,7 @@ describe('TmdbSeriesProvider', () => {
             { once: true },
           );
         });
+
         return bodyRead
           ? Promise.resolve({ ok: true, status: 200, json: () => pending })
           : pending;

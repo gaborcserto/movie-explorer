@@ -24,14 +24,17 @@ export class TmdbPersonFilmographyMapper {
     if (!isTmdbPersonMovieCredits(value)) {
       throw new Error('Invalid person series credits');
     }
+
     const titles = new Map<number, PersonSeriesCredit>();
     const add = (value: unknown, acting: boolean) => {
       const row = seriesRecord(value);
       const id = seriesPositiveId(row?.id);
       const title = seriesText(row?.name);
+
       if (!row || row.adult === true || !id || !title) {
         return;
       }
+
       const path = seriesText(row.poster_path);
       const entry: PersonSeriesCredit = titles.get(id) ?? {
         mediaType: 'tv',
@@ -44,10 +47,12 @@ export class TmdbPersonFilmographyMapper {
         genres: [],
         crewCredits: [],
       };
+
       if (acting) {
         entry.actingCredits ??= [];
         entry.actingRoles ??= [];
         const character = seriesText(row.character);
+
         if (character && !entry.actingCredits.includes(character)) {
           entry.actingCredits.push(character);
         }
@@ -56,6 +61,7 @@ export class TmdbPersonFilmographyMapper {
           character,
           episodeCount: seriesCount(row.episode_count),
         };
+
         if (
           !entry.actingRoles.some(
             (previous) => JSON.stringify(previous) === JSON.stringify(role),
@@ -74,6 +80,7 @@ export class TmdbPersonFilmographyMapper {
           }),
           episodeCount: seriesCount(row.episode_count),
         };
+
         if (
           !entry.crewCredits.some(
             (previous) => JSON.stringify(previous) === JSON.stringify(credit),
@@ -86,6 +93,7 @@ export class TmdbPersonFilmographyMapper {
     };
     value.cast.forEach((row) => add(row, true));
     value.crew.forEach((row) => add(row, false));
+
     return [...titles.values()];
   }
 }

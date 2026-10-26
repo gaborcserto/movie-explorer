@@ -42,6 +42,7 @@ function parseEnvFile(filePath: string): NodeJS.ProcessEnv {
     }
 
     env[key] = rawValue.replace(/^['"]|['"]$/g, '');
+
     return env;
   }, {});
 }

@@ -36,6 +36,7 @@ async function bootstrap() {
     const localhostAddresses = await lookup('localhost', { all: true }).catch(
       () => [],
     );
+
     if (localhostAddresses.some(({ address }) => address === boundHostname)) {
       serverUrl.hostname = 'localhost';
     }

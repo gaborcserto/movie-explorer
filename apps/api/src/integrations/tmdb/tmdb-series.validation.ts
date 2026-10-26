@@ -19,6 +19,7 @@ export function validateTmdbEpisode(
   episode?: number,
 ): asserts body is TmdbEpisode {
   const row = seriesRecord(body);
+
   if (
     !row ||
     row.success === false ||
@@ -39,6 +40,7 @@ export function validateTmdbSeason(
   season: number,
 ): asserts body is TmdbSeason {
   const row = seriesRecord(body);
+
   if (
     !row ||
     row.success === false ||
@@ -49,10 +51,13 @@ export function validateTmdbSeason(
   ) {
     throw new Error('Invalid season identity or episodes');
   }
+
   const coordinates = new Map<number, number>();
   const identities = new Map<number, number>();
+
   for (const value of row.episodes) {
     validateTmdbEpisode(value, seriesId, season);
+
     if (
       (coordinates.has(value.episode_number) &&
         coordinates.get(value.episode_number) !== value.id) ||
@@ -78,16 +83,19 @@ export function seriesCount(value: unknown): number | null {
 
 export function seriesPositiveId(value: unknown): number | undefined {
   const count = seriesCount(value);
+
   return count !== null && count > 0 ? count : undefined;
 }
 
 export function seriesDate(value: unknown): string | null {
   const date = seriesText(value);
+
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return null;
   }
 
   const parsed = new Date(date);
+
   return Number.isFinite(parsed.getTime()) &&
     parsed.toISOString().slice(0, 10) === date
     ? date
@@ -99,6 +107,7 @@ export function validateTmdbSeriesDetails(
   requestedId: number,
 ): asserts body is TmdbSeriesDetails {
   const record = seriesRecord(body);
+
   if (
     !record ||
     record.success === false ||
@@ -109,15 +118,18 @@ export function validateTmdbSeriesDetails(
   }
 
   const coordinates = new Map<number, number>();
+
   if (Array.isArray(record.seasons)) {
     for (const value of record.seasons) {
       const season = seriesRecord(value);
       const number = seriesCount(season?.season_number);
       const id = seriesPositiveId(season?.id);
+
       if (number === null || id === undefined) {
         continue;
       }
       const previous = coordinates.get(number);
+
       if (previous !== undefined && previous !== id) {
         throw new Error('Conflicting series season identities');
       }

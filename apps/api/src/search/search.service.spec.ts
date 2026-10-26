@@ -126,8 +126,10 @@ describe('independent autocomplete groups', () => {
       }
 
       const request = service.suggestions('Query', 1, true);
+
       if (failures === 7) {
         await expect(request).rejects.toMatchObject({ status: 429 });
+
         return;
       }
       const response = await request;

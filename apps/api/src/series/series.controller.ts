@@ -79,9 +79,11 @@ export class SeriesController {
       params.id,
       params.seasonNumber,
     );
+
     if (!season) {
       throw new NotFoundException('TV season not found');
     }
+
     return season;
   }
 
@@ -96,9 +98,11 @@ export class SeriesController {
       params.seasonNumber,
       params.episodeNumber,
     );
+
     if (!credits) {
       throw new NotFoundException('TV episode not found');
     }
+
     return credits;
   }
 
@@ -113,9 +117,11 @@ export class SeriesController {
       params.seasonNumber,
       params.episodeNumber,
     );
+
     if (!episode) {
       throw new NotFoundException('TV episode not found');
     }
+
     return episode;
   }
 
@@ -131,9 +137,11 @@ export class SeriesController {
   @ApiOkResponse({ type: SeriesImagesDto })
   async getImages(@Param() params: DetailIdParams) {
     const images = await this.service.findImages(params.id);
+
     if (!images) {
       throw new NotFoundException('TV series not found');
     }
+
     return images;
   }
 
@@ -146,9 +154,11 @@ export class SeriesController {
   @ApiOkResponse({ type: SeriesVideosDto })
   async getVideos(@Param() params: DetailIdParams) {
     const videos = await this.service.findVideos(params.id);
+
     if (!videos) {
       throw new NotFoundException('TV series not found');
     }
+
     return videos;
   }
 
@@ -161,9 +171,11 @@ export class SeriesController {
   @ApiOkResponse({ type: WatchProvidersDto })
   async getWatchProviders(@Param() params: DetailIdParams) {
     const providers = await this.service.findWatchProviders(params.id);
+
     if (!providers) {
       throw new NotFoundException('TV series not found');
     }
+
     return providers;
   }
 
@@ -176,6 +188,7 @@ export class SeriesController {
   @ApiOkResponse({ type: RatingsDto })
   async getRatings(@Param() params: DetailIdParams) {
     const ratings = await this.service.findRatings(params.id);
+
     if (!ratings) {
       throw new NotFoundException('TV series not found');
     }
@@ -195,9 +208,11 @@ export class SeriesController {
   @ApiOkResponse({ type: SeriesCreditsDto })
   async getCredits(@Param() params: DetailIdParams) {
     const credits = await this.service.findCredits(params.id);
+
     if (!credits) {
       throw new NotFoundException('TV series not found');
     }
+
     return credits;
   }
 
@@ -234,9 +249,11 @@ export class SeriesController {
   })
   async getSeries(@Param() params: DetailIdParams): Promise<SeriesDetails> {
     const series = await this.service.findOne(params.id);
+
     if (!series) {
       throw new NotFoundException('TV series not found');
     }
+
     return series;
   }
 }

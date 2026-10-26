@@ -9,5 +9,6 @@ export function createApiDocument(app: INestApplication) {
     )
     .setVersion('1')
     .build();
+
   return SwaggerModule.createDocument(app, config);
 }

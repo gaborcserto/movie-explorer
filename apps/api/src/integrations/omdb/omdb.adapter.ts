@@ -6,6 +6,7 @@ const DEFAULT_API_URL = 'https://www.omdbapi.com/';
 
 function validateApiUrl(value: string): string {
   let url: URL;
+
   try {
     url = new URL(value);
   } catch {
@@ -42,6 +43,7 @@ function normalize(
   ) {
     return { status: 'missing' };
   }
+
   if (
     !body ||
     typeof body !== 'object' ||
@@ -59,6 +61,7 @@ function normalize(
   }
 
   const score = Number(body.imdbRating);
+
   if (!Number.isFinite(score) || score < 0 || score > 10) {
     return { status: 'unavailable', reason: 'invalid-response' };
   }
@@ -124,11 +127,13 @@ export class OmdbAdapter {
 
     const key = `${kind}:${id}`;
     const cached = this.cache.get(key);
+
     if (cached && cached.expires > Date.now()) {
       return cached.rating;
     }
 
     const pending = this.requests.get(key);
+
     if (pending) {
       return pending;
     }
@@ -139,6 +144,7 @@ export class OmdbAdapter {
         if (this.cache.size >= 500) {
           this.cache.delete(this.cache.keys().next().value ?? '');
         }
+
         if (rating.status === 'available' || rating.status === 'missing') {
           this.cache.set(key, {
             rating,
@@ -146,10 +152,12 @@ export class OmdbAdapter {
               Date.now() + (rating.status === 'available' ? 3_600_000 : 60_000),
           });
         }
+
         return rating;
       })
       .finally(() => this.requests.delete(key));
     this.requests.set(key, request);
+
     return request;
   }
 
@@ -171,11 +179,13 @@ export class OmdbAdapter {
         headers: { accept: 'application/json' },
         redirect: 'error',
       });
+
       if (!response.ok) {
         return { status: 'unavailable', reason: 'upstream-error' };
       }
 
       let body: unknown;
+
       try {
         body = await response.json();
       } catch {
@@ -189,7 +199,9 @@ export class OmdbAdapter {
       }
 
       controller.signal.throwIfAborted();
+
       const result = normalize(body, id, kind);
+
       if (
         result.status === 'unavailable' &&
         result.reason === 'invalid-response' &&

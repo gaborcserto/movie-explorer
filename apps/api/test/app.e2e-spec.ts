@@ -109,6 +109,7 @@ describe('AppController (e2e)', () => {
     ];
     expect(Object.keys(document.paths).sort()).toEqual(expectedPaths.sort());
     const operations = Object.values(document.paths).map((item) => item.get);
+
     for (const operation of operations) {
       expect(operation).toBeDefined();
       expect(operation.deprecated).not.toBe(true);

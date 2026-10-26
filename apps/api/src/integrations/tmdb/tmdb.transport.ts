@@ -49,6 +49,7 @@ export class TmdbTransport {
       this.config.requestTimeoutMs ?? 8000,
     );
     let upstreamStatus: number | undefined;
+
     try {
       const response = await fetch(url, {
         signal: controller.signal,
@@ -61,6 +62,7 @@ export class TmdbTransport {
       controller.signal.throwIfAborted();
       if (response.status === 404 && allowNotFound) {
         this.logFailure(operation, 'not-found', 404, upstreamStatus);
+
         return undefined;
       }
       if (!response.ok) {
@@ -85,6 +87,7 @@ export class TmdbTransport {
         controller.signal.throwIfAborted();
 
         validateBody(body);
+
         return body;
       } catch {
         if (controller.signal.aborted) {

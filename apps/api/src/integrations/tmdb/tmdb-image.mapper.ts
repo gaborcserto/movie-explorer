@@ -15,6 +15,7 @@ export class TmdbImageMapper {
 
   toSrcSet(path: string, candidates: [string, string][]): string {
     const baseUrl = this.originalImageBaseUrl.replace(/\/original$/, '');
+
     return candidates
       .map(([size, descriptor]) => `${baseUrl}/${size}${path} ${descriptor}`)
       .join(', ');

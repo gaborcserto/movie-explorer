@@ -23,11 +23,13 @@ export function mapWatchProviders(
   }
 
   const results = (body as Record<string, unknown>).results;
+
   if (!results || typeof results !== 'object' || Array.isArray(results)) {
     return { providers: [] };
   }
 
   const hu = (results as Record<string, unknown>).HU;
+
   if (!hu || typeof hu !== 'object' || Array.isArray(hu)) {
     return { providers: [] };
   }
@@ -41,17 +43,20 @@ export function mapWatchProviders(
 
   for (const key of categories) {
     const rows = region[key];
+
     if (!Array.isArray(rows)) {
       continue;
     }
 
     const seen = new Set<number>();
+
     for (const item of rows) {
       if (!item || typeof item !== 'object' || Array.isArray(item)) {
         continue;
       }
 
       const row = item as Record<string, unknown>;
+
       if (
         !Number.isSafeInteger(row.provider_id) ||
         (row.provider_id as number) <= 0 ||
@@ -62,9 +67,11 @@ export function mapWatchProviders(
       }
 
       const id = row.provider_id as number;
+
       if (seen.has(id)) {
         continue;
       }
+
       seen.add(id);
 
       const logoUrl =

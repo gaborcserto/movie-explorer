@@ -84,6 +84,7 @@ export class TmdbMovieProvider implements MovieProvider {
       genres.map((genre) => [genre.id, genre.name.toLowerCase()]),
     );
     let movies: MovieListResponse['movies'];
+
     try {
       movies = response.results
         .filter((movie) =>
@@ -119,6 +120,7 @@ export class TmdbMovieProvider implements MovieProvider {
         page: String(page),
       },
     );
+
     return mapPeople(response, this.config.imageBaseUrl);
   }
 
@@ -135,6 +137,7 @@ export class TmdbMovieProvider implements MovieProvider {
     const suggestions = searchPage(response).results.flatMap((value) => {
       const movie = searchRecord(value);
       const title = searchText(movie?.title);
+
       if (
         !movie ||
         !title ||
@@ -154,6 +157,7 @@ export class TmdbMovieProvider implements MovieProvider {
         }),
       ];
     });
+
     return {
       suggestions: [
         ...new Map(suggestions.map((movie) => [movie.id, movie])).values(),
@@ -184,6 +188,7 @@ export class TmdbMovieProvider implements MovieProvider {
       append_to_response: 'credits,images,videos',
       ...this.mediaLanguages(),
     });
+
     if (!movie) {
       return undefined;
     }
@@ -204,10 +209,13 @@ export class TmdbMovieProvider implements MovieProvider {
       this.logFailure('movie-detail', 'invalid-response', 502, 200);
       throw new BadGatewayException('Movie provider response was invalid');
     }
+
     if ('imdb_id' in movie) {
       this.externalIds?.remember('movie', id, movie.imdb_id);
     }
+
     let details: MovieDetails;
+
     try {
       details = this.mapper.toMovieDetails({
         ...movie,
@@ -219,12 +227,14 @@ export class TmdbMovieProvider implements MovieProvider {
       this.logFailure('movie-detail', 'invalid-response', 502, 200);
       throw new BadGatewayException('Movie provider response was invalid');
     }
+
     const sections: Record<MovieSection, SectionAvailability> = {
       credits: { status: 'unavailable' },
       photos: { status: 'unavailable' },
       posters: { status: 'unavailable' },
       videos: { status: 'unavailable' },
     };
+
     for (const section of ['credits', 'videos', 'photos', 'posters'] as const) {
       try {
         Object.assign(
@@ -242,6 +252,7 @@ export class TmdbMovieProvider implements MovieProvider {
         sections[section] = { status: 'unavailable' };
       }
     }
+
     return { ...details, sections };
   }
 
@@ -252,6 +263,7 @@ export class TmdbMovieProvider implements MovieProvider {
       allowNotFound: true,
       validateBody: (value) => {
         const row = detailRecord(value);
+
         if (
           !row ||
           row.id !== id ||
@@ -268,12 +280,14 @@ export class TmdbMovieProvider implements MovieProvider {
     }
 
     const row = movie as Record<string, unknown>;
+
     if ('imdb_id' in row) {
       this.externalIds?.remember('movie', id, row.imdb_id);
     }
 
     const score = row.vote_average;
     const rawVotes = row.vote_count;
+
     if (
       typeof score !== 'number' ||
       !Number.isFinite(score) ||
@@ -288,6 +302,7 @@ export class TmdbMovieProvider implements MovieProvider {
     ) {
       return { status: 'unavailable', reason: 'invalid-response' };
     }
+
     return {
       status: 'available',
       score,
@@ -306,6 +321,7 @@ export class TmdbMovieProvider implements MovieProvider {
         }
       },
     });
+
     return mapWatchProviders(body, this.config.imageBaseUrl);
   }
 
@@ -316,6 +332,7 @@ export class TmdbMovieProvider implements MovieProvider {
     const resource = detailRecord(value);
     const imageKey = section === 'posters' ? 'posters' : 'backdrops';
     const isImages = section === 'photos' || section === 'posters';
+
     if (
       !resource ||
       resource.success === false ||
@@ -334,51 +351,61 @@ export class TmdbMovieProvider implements MovieProvider {
       Array.isArray(resource[key]) &&
       resource[key].every((entry: unknown) => {
         const item = detailRecord(entry);
+
         return (
           item &&
           fields.every((field) => typeof item[field] === 'string') &&
           metadata(item)
         );
       });
-    if (
-      section === 'credits'
-        ? !validEntries('cast', ['name']) ||
-          !validEntries('crew', ['name', 'job'])
-        : isImages
-          ? !validEntries(imageKey, ['file_path'], (image) => {
-              return (
-                typeof image.file_path === 'string' &&
-                image.file_path.startsWith('/') &&
-                ['width', 'height', 'aspect_ratio'].every(
-                  (key) =>
-                    image[key] === undefined ||
-                    (typeof image[key] === 'number' &&
-                      Number.isFinite(image[key]) &&
-                      image[key] > 0),
-                ) &&
-                (image.iso_639_1 === undefined ||
-                  image.iso_639_1 === null ||
-                  typeof image.iso_639_1 === 'string')
-              );
-            })
-          : !validEntries('results', ['name', 'key', 'site'], (video) => {
-              return (
-                ['id', 'type'].every(
-                  (key) =>
-                    video[key] === undefined || typeof video[key] === 'string',
-                ) &&
-                (video.iso_639_1 === undefined ||
-                  video.iso_639_1 === null ||
-                  typeof video.iso_639_1 === 'string')
-              );
-            })
-    ) {
+    let entriesAreValid: boolean;
+
+    if (section === 'credits') {
+      entriesAreValid =
+        validEntries('cast', ['name']) && validEntries('crew', ['name', 'job']);
+    } else if (isImages) {
+      entriesAreValid = validEntries(imageKey, ['file_path'], (image) => {
+        return (
+          typeof image.file_path === 'string' &&
+          image.file_path.startsWith('/') &&
+          ['width', 'height', 'aspect_ratio'].every(
+            (key) =>
+              image[key] === undefined ||
+              (typeof image[key] === 'number' &&
+                Number.isFinite(image[key]) &&
+                image[key] > 0),
+          ) &&
+          (image.iso_639_1 === undefined ||
+            image.iso_639_1 === null ||
+            typeof image.iso_639_1 === 'string')
+        );
+      });
+    } else {
+      entriesAreValid = validEntries(
+        'results',
+        ['name', 'key', 'site'],
+        (video) => {
+          return (
+            ['id', 'type'].every(
+              (key) =>
+                video[key] === undefined || typeof video[key] === 'string',
+            ) &&
+            (video.iso_639_1 === undefined ||
+              video.iso_639_1 === null ||
+              typeof video.iso_639_1 === 'string')
+          );
+        },
+      );
+    }
+
+    if (!entriesAreValid) {
       throw new BadGatewayException('Movie section response was invalid');
     }
 
     // Mapping errors are isolated to their section, including malformed entries.
     if (isImages) {
       const images = this.mapper.toImages(resource[imageKey] as TmdbImage[]);
+
       return section === 'photos' ? { backdrops: images } : { posters: images };
     }
     if (section === 'videos') {
@@ -399,6 +426,7 @@ export class TmdbMovieProvider implements MovieProvider {
       source === 'images' || section === 'videos' ? this.mediaLanguages() : {},
       true,
     );
+
     try {
       return this.mapMovieSection(section, value);
     } catch {
@@ -412,6 +440,7 @@ export class TmdbMovieProvider implements MovieProvider {
     const languages = [
       ...new Set([this.config.language.split('-')[0], 'en', 'null']),
     ].join(',');
+
     return {
       include_image_language: languages,
       include_video_language: languages,
@@ -422,19 +451,23 @@ export class TmdbMovieProvider implements MovieProvider {
     const person = await this.detailRequest<unknown>(`/person/${id}`, {
       append_to_response: 'movie_credits,images',
     });
+
     if (person === undefined) {
       return undefined;
     }
 
     const record = detailRecord(person);
+
     if (!isTmdbPersonProfile(record) || record.id !== id) {
       this.logFailure('person-detail', 'invalid-response', 502, 200);
       throw new BadGatewayException('Person provider response was invalid');
     }
+
     const mapped: PersonDetails = {
       ...new TmdbPersonMapper(this.config.imageBaseUrl).toPersonProfile(record),
       filmography: [],
     };
+
     try {
       mapped.filmography = this.mapFilmography(id, record.movie_credits);
       mapped.filmographyAvailability = { status: 'available' };
@@ -442,6 +475,7 @@ export class TmdbMovieProvider implements MovieProvider {
       this.logFailure('person-filmography', 'invalid-response', 502, 200);
       mapped.filmographyAvailability = { status: 'unavailable' };
     }
+
     return mapped;
   }
 
@@ -463,6 +497,7 @@ export class TmdbMovieProvider implements MovieProvider {
       {},
       true,
     );
+
     try {
       return { filmography: this.mapFilmography(id, value) };
     } catch {
@@ -536,11 +571,13 @@ export class TmdbMovieProvider implements MovieProvider {
   private async getGenres(): Promise<TmdbGenre[]> {
     const key = this.config.language;
     const cached = this.genreCache.get(key);
+
     if (cached && cached.expiresAt > Date.now()) {
       return cached.genres;
     }
 
     const inFlight = this.genreRequests.get(key);
+
     if (inFlight) {
       return inFlight;
     }
@@ -552,6 +589,7 @@ export class TmdbMovieProvider implements MovieProvider {
         genres: response.genres,
         expiresAt: Date.now() + GENRE_CACHE_TTL_MS,
       });
+
       return response.genres;
     });
     this.genreRequests.set(key, request);
@@ -566,11 +604,13 @@ export class TmdbMovieProvider implements MovieProvider {
 
   private async getGenreIds(genre?: string | string[]): Promise<number[]> {
     const requestedGenres = this.normalizeGenreFilter(genre);
+
     if (requestedGenres.length === 0) {
       return [];
     }
 
     const genres = await this.getGenres();
+
     return genres
       .filter((genre) => requestedGenres.includes(genre.name.toLowerCase()))
       .map((genre) => genre.id);
@@ -582,6 +622,7 @@ export class TmdbMovieProvider implements MovieProvider {
     }
 
     const genres = typeof genre === 'string' ? [genre] : genre;
+
     return genres.map((genre) => genre.toLowerCase());
   }
 
@@ -598,6 +639,7 @@ export class TmdbMovieProvider implements MovieProvider {
       movie.genre_ids !== undefined &&
       movie.genre_ids.some((genreId) => {
         const genreName = genreNamesById.get(genreId);
+
         return genreName ? requestedGenres.has(genreName) : false;
       })
     );
@@ -654,6 +696,7 @@ export class TmdbMovieProvider implements MovieProvider {
         ? 'person-detail'
         : 'movie-detail'
       : path;
+
     return (await this.transport.request({
       path,
       query,

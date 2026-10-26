@@ -32,6 +32,7 @@ export function searchPage(value: unknown): {
   ) {
     throw new BadGatewayException('Search provider response was invalid');
   }
+
   return {
     results: value.results,
     page: Number(value.page),
@@ -48,6 +49,7 @@ export function searchRecord(
   }
 
   const record = value as Record<string, unknown>;
+
   return typeof record.id === 'number' &&
     Number.isSafeInteger(record.id) &&
     record.id > 0 &&
@@ -66,9 +68,11 @@ export function mapPeople(
 ): PersonListResponse {
   const response = searchPage(value);
   const people = new Map<number, PersonSummary>();
+
   for (const item of response.results) {
     const record = searchRecord(item);
     const name = searchText(record?.name);
+
     if (
       !record ||
       !name ||
@@ -87,6 +91,7 @@ export function mapPeople(
       }),
     });
   }
+
   return {
     people: [...people.values()],
     page: response.page,
@@ -102,13 +107,26 @@ export function mapSearch(
 ): SearchResponse {
   const response = searchPage(value);
   const results = new Map<string, SearchResult>();
+
   for (const entry of response.results) {
     const item = searchRecord(entry);
-    if (!item) continue;
+
+    if (!item) {
+      continue;
+    }
+
     const mediaType = type === 'all' ? item.media_type : type;
-    if (item.media_type && item.media_type !== mediaType) continue;
+
+    if (item.media_type && item.media_type !== mediaType) {
+      continue;
+    }
+
     const title = searchText(mediaType === 'movie' ? item.title : item.name);
-    if (!title) continue;
+
+    if (!title) {
+      continue;
+    }
+
     const id = Number(item.id);
     const path = searchText(
       mediaType === 'person' ? item.profile_path : item.poster_path,
@@ -121,6 +139,7 @@ export function mapSearch(
         ? item.popularity
         : undefined;
     let result: SearchResult;
+
     if (mediaType === 'person') {
       result = {
         id,
@@ -158,10 +177,17 @@ export function mapSearch(
               releaseYear: date ? Number(date.slice(0, 4)) : undefined,
             }
           : { ...metadata, mediaType, firstAirDate: date };
-    } else continue;
+    } else {
+      continue;
+    }
+
     const key = `${mediaType}:${id}`;
-    if (!results.has(key)) results.set(key, result);
+
+    if (!results.has(key)) {
+      results.set(key, result);
+    }
   }
+
   return {
     results: [...results.values()],
     page: response.page,

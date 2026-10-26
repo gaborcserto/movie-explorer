@@ -40,6 +40,7 @@ export class TmdbSearchProvider implements SearchProvider {
         }
       },
     });
+
     return mapSearch(body, type, this.config.imageBaseUrl);
   }
 }

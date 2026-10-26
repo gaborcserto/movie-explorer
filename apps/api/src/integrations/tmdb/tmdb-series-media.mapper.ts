@@ -14,6 +14,7 @@ export class TmdbSeriesMediaMapper {
     const source = seriesRecord(value);
     const posters = this.photos(source?.posters);
     const backdrops = this.photos(source?.backdrops);
+
     return {
       posters: posters.photos,
       backdrops: backdrops.photos,
@@ -35,16 +36,20 @@ export class TmdbSeriesMediaMapper {
       const key = seriesText(row?.key);
       const name = seriesText(row?.name);
       const site = seriesText(row?.site);
+
       if (!row || !key || !name || !site) {
         valid = false;
+
         return [];
       }
+
       const language: string | null | undefined =
         typeof row.iso_639_1 === 'string'
           ? row.iso_639_1
           : row.iso_639_1 === null
             ? null
             : undefined;
+
       return [
         {
           key,
@@ -63,6 +68,7 @@ export class TmdbSeriesMediaMapper {
         },
       ];
     });
+
     return {
       videos: this.media.toMovieVideos({ results: videos }),
       availability: { status: valid ? 'available' : 'unavailable' },
@@ -75,10 +81,13 @@ export class TmdbSeriesMediaMapper {
     const images = rows.flatMap((value) => {
       const row = seriesRecord(value);
       const path = seriesText(row?.file_path);
+
       if (!row || !path?.startsWith('/')) {
         valid = false;
+
         return [];
       }
+
       const positive = (value: unknown) =>
         typeof value === 'number' && Number.isFinite(value) && value > 0
           ? value
@@ -89,6 +98,7 @@ export class TmdbSeriesMediaMapper {
           : row.iso_639_1 === null
             ? null
             : undefined;
+
       return [
         {
           file_path: path,
@@ -101,6 +111,7 @@ export class TmdbSeriesMediaMapper {
         },
       ];
     });
+
     return { photos: this.media.toImages(images), valid };
   }
 }

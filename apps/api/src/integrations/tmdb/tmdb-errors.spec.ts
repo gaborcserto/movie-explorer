@@ -372,6 +372,7 @@ describe('TMDB request failures', () => {
               { once: true },
             ),
           );
+
         return stage === 'fetch'
           ? pending()
           : Promise.resolve({ ok: true, status: 200, json: pending });

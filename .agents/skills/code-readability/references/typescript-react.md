@@ -2,6 +2,42 @@
 
 ## Modules and expressions
 
+### Declaration-to-control-flow spacing
+
+Always place exactly one blank line between a completed `const`, `let` or
+`var` declaration, or a contiguous group of declarations, and a following
+`if`, `try`, `for`, `while` or `switch` that begins the next logical operation.
+Keep consecutive declarations adjacent. ESLint's `padding-line-between-statements`
+can require at least one blank line for these statement types, but does not cap
+the number of blank lines or distinguish independent work from tight coupling;
+keep the exact-one convention through formatting and review.
+
+```ts
+let entriesAreValid: boolean;
+
+if (section === 'credits') {
+  entriesAreValid = validEntries('cast', ['name']);
+}
+```
+
+### Return statement spacing
+
+Put exactly one blank line before a `return` when it follows a separate logical
+operation, including a completed control-flow block or an ordinary statement.
+Do not add a blank line when the return is the first statement in its block.
+Keep closely coupled short guard clauses together, and avoid mechanical spacing
+inside conditional branches. ESLint's `padding-line-between-statements` can
+require padding before returns that are not first in their block, but it cannot
+judge logical intent or enforce exactly one blank line.
+
+```ts
+if (tmdb === undefined) {
+  return undefined;
+}
+
+return { tmdb, imdb };
+```
+
 - Keep external packages and workspace packages in one continuous import block;
   do not make a separate group just because an import is type-only or comes from
   a workspace package. Separate relative imports (`./` and `../`) from the

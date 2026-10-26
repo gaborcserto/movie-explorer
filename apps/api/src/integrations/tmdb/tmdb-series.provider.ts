@@ -68,6 +68,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
         }
       },
     });
+
     return mapSearch(body, 'tv', this.imageBaseUrl);
   }
 
@@ -82,12 +83,15 @@ export class TmdbSeriesProvider implements SeriesProvider {
       allowNotFound: true,
       validateBody: (value) => validateTmdbSeriesDetails(value, id),
     });
+
     if (body === undefined) {
       return undefined;
     }
 
     validateTmdbSeriesDetails(body, id);
+
     const external = seriesRecord(body.external_ids);
+
     if (
       external &&
       external.success !== false &&
@@ -95,6 +99,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
     ) {
       this.externalIds?.remember('series', id, external.imdb_id);
     }
+
     return {
       ...this.mapper.toSeriesDetails(body),
       credits: new TmdbSeriesCreditsMapper(this.imageBaseUrl).map(
@@ -117,6 +122,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
       allowNotFound: true,
       validateBody: (value) => {
         const row = seriesRecord(value);
+
         if (!row || row.id !== id || typeof row.name !== 'string') {
           throw new Error('Invalid series identity');
         }
@@ -129,6 +135,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
 
     const row = body as Record<string, unknown>;
     const external = seriesRecord(row.external_ids);
+
     if (
       external &&
       external.success !== false &&
@@ -136,8 +143,10 @@ export class TmdbSeriesProvider implements SeriesProvider {
     ) {
       this.externalIds?.remember('series', id, external.imdb_id);
     }
+
     const score = row.vote_average;
     const rawVotes = row.vote_count;
+
     if (
       typeof score !== 'number' ||
       !Number.isFinite(score) ||
@@ -152,6 +161,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
     ) {
       return { status: 'unavailable', reason: 'invalid-response' };
     }
+
     return {
       status: 'available',
       score,
@@ -170,11 +180,13 @@ export class TmdbSeriesProvider implements SeriesProvider {
         }
       },
     });
+
     return mapWatchProviders(body, this.imageBaseUrl);
   }
 
   private appended(value: unknown, parentId: number) {
     const row = seriesRecord(value);
+
     // TMDB omits IDs inside appended namespaces; the validated parent owns identity.
     return row &&
       row.success !== false &&
@@ -187,6 +199,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
     const languages = [
       ...new Set([this.language.split('-')[0], 'en', 'null']),
     ].join(',');
+
     return {
       include_image_language: languages,
       include_video_language: languages,
@@ -201,6 +214,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
       allowNotFound: true,
       validateBody: (value) => {
         const row = seriesRecord(value);
+
         if (!row || row.success === false || row.id !== id) {
           throw new Error('Invalid series media identity');
         }
@@ -210,6 +224,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
 
   async findImages(id: number) {
     const body = await this.mediaSection(id, 'images');
+
     return body === undefined
       ? undefined
       : new TmdbSeriesMediaMapper(this.imageBaseUrl).images(body);
@@ -217,6 +232,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
 
   async findVideos(id: number) {
     const body = await this.mediaSection(id, 'videos');
+
     return body === undefined
       ? undefined
       : new TmdbSeriesMediaMapper(this.imageBaseUrl).videos(body);
@@ -229,11 +245,13 @@ export class TmdbSeriesProvider implements SeriesProvider {
       allowNotFound: true,
       validateBody: (value) => {
         const row = seriesRecord(value);
+
         if (!row || row.success === false || row.id !== id) {
           throw new Error('Invalid series credits identity');
         }
       },
     });
+
     return body === undefined
       ? undefined
       : new TmdbSeriesCreditsMapper(this.imageBaseUrl).map(body);
@@ -246,10 +264,13 @@ export class TmdbSeriesProvider implements SeriesProvider {
       allowNotFound: true,
       validateBody: (value) => validateTmdbSeason(value, id, season),
     });
+
     if (body === undefined) {
       return undefined;
     }
+
     validateTmdbSeason(body, id, season);
+
     return this.mapper.toSeasonDetails(body, id);
   }
 
@@ -262,10 +283,13 @@ export class TmdbSeriesProvider implements SeriesProvider {
       allowNotFound: true,
       validateBody: (value) => validateTmdbEpisode(value, id, season, episode),
     });
+
     if (body === undefined) {
       return undefined;
     }
+
     validateTmdbEpisode(body, id, season, episode);
+
     return {
       ...this.mapper.toEpisodeSummary(body, id),
       credits: this.mapper.toEpisodeCredits(body.credits, body),
@@ -279,6 +303,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
       allowNotFound: true,
       validateBody: (value) => {
         const record = seriesRecord(value);
+
         if (
           !record ||
           record.success === false ||
@@ -288,9 +313,11 @@ export class TmdbSeriesProvider implements SeriesProvider {
         }
       },
     });
+
     if (body === undefined) {
       return undefined;
     }
+
     return this.mapper.toEpisodeCredits(body);
   }
 }

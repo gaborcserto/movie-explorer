@@ -51,6 +51,7 @@ describe('getTmdbConfig', () => {
     beforeEach(() => {
       files = new Map();
       const env = { ...process.env };
+
       for (const key of Object.keys(env)) {
         if (key.startsWith('TMDB_')) {
           delete env[key];
@@ -62,11 +63,13 @@ describe('getTmdbConfig', () => {
         .spyOn(fs, 'readFileSync')
         .mockImplementation((filePath) => {
           const contents = files.get(String(filePath));
+
           if (contents === undefined) {
             throw Object.assign(new Error('File not found'), {
               code: 'ENOENT',
             });
           }
+
           return contents;
         });
     });

@@ -46,6 +46,57 @@ syntax and wrapping, and do not add an import sorter for this convention.
 
 ## Vertical Spacing / Logical Grouping
 
+### Declaration-to-Control-Flow Spacing
+
+Always insert exactly one blank line between a completed variable declaration
+or contiguous declaration group and a following control-flow statement when
+that statement begins the next logical operation. This applies to `const`,
+`let` and `var` declarations followed by `if`, `try`, `for`, `while` or
+`switch`.
+
+```ts
+let entriesAreValid: boolean;
+
+if (section === 'credits') {
+  entriesAreValid = validEntries('cast', ['name']);
+}
+```
+
+Keep consecutive declarations together. Do not add spacing mechanically within
+tightly coupled operations. ESLint's `padding-line-between-statements` rule
+enforces the required boundary when configured, but only guarantees at least
+one blank line and matches syntactic adjacency rather than logical intent; use
+the formatter and review to keep it to exactly one and assess tight coupling.
+
+### Return Statement Spacing
+
+When a `return` follows a separate logical operation, put exactly one blank
+line before it. This includes returns after completed `if`, `try/catch/finally`,
+loop or switch blocks, and returns after ordinary setup, validation, mapping or
+side-effect statements. A return that is the first statement in its block does
+not need preceding whitespace. Keep closely coupled short guard clauses
+together, and do not insert whitespace mechanically inside every branch when it
+would make the flow harder to read.
+
+```ts
+const result = normalize(response);
+
+return result;
+```
+
+```ts
+if (tmdb === undefined) {
+  return undefined;
+}
+
+return { tmdb, imdb };
+```
+
+ESLint can require padding before a `return` that is not the first statement in
+its block. This safely covers completed control-flow blocks and ordinary
+statements; it does not distinguish logical phases. The exact-one limit and
+exceptions for closely coupled operations remain a review convention.
+
 Use blank lines to show distinct logical steps in TypeScript and TSX:
 
 - Separate setup or declarations from a following control-flow operation when

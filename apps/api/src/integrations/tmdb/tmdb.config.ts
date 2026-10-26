@@ -20,6 +20,7 @@ export function getTmdbConfig(
 
   const timeout = env.TMDB_REQUEST_TIMEOUT_MS ?? '8000';
   const requestTimeoutMs = Number(timeout);
+
   if (
     !/^\d+$/.test(timeout) ||
     !Number.isSafeInteger(requestTimeoutMs) ||

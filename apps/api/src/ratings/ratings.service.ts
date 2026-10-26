@@ -28,6 +28,7 @@ export class RatingsService {
       const result = imdbId
         ? await this.omdb.findRating(imdbId, kind)
         : { status: 'missing' as const };
+
       return {
         imdb:
           result.status === 'available'
@@ -52,6 +53,7 @@ export class RatingsService {
     } else {
       try {
         const imdbId = await this.ids.resolve(kind, id);
+
         if (imdbId) {
           imdb = await this.omdb.findRating(imdbId, kind);
         } else {
@@ -64,6 +66,7 @@ export class RatingsService {
         };
       }
     }
+
     return { tmdb, imdb };
   }
 

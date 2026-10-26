@@ -28,6 +28,7 @@ function records(value: unknown): Record<string, unknown>[] {
   return Array.isArray(value)
     ? value.flatMap((item) => {
         const record = seriesRecord(item);
+
         return record ? [record] : [];
       })
     : [];
@@ -42,6 +43,7 @@ export class TmdbSeriesMapper {
 
   toSeriesDetails(series: TmdbSeriesDetails): SeriesDetails {
     const rating = series.vote_average;
+
     return {
       mediaType: 'tv',
       id: series.id,
@@ -51,6 +53,7 @@ export class TmdbSeriesMapper {
       ...this.poster(series.poster_path),
       genres: records(series.genres).flatMap((genre) => {
         const name = seriesText(genre.name);
+
         return name ? [name] : [];
       }),
       description: seriesText(series.overview),
@@ -80,6 +83,7 @@ export class TmdbSeriesMapper {
           Array.isArray(series.origin_country)
             ? series.origin_country.flatMap((value) => {
                 const country = seriesText(value)?.toUpperCase();
+
                 return country && /^[A-Z]{2}$/.test(country) ? [country] : [];
               })
             : [],
@@ -103,6 +107,7 @@ export class TmdbSeriesMapper {
         ]),
       ).values(),
     ].sort((a, b) => a.episodeNumber - b.episodeNumber || a.id - b.id);
+
     return {
       id: season.id,
       seriesId,
@@ -120,6 +125,7 @@ export class TmdbSeriesMapper {
     const rating = episode.vote_average;
     const runtime = seriesCount(episode.runtime);
     const stillPath = seriesText(episode.still_path);
+
     return {
       id: episode.id,
       seriesId,
@@ -165,6 +171,7 @@ export class TmdbSeriesMapper {
       usable && this.creditAvailability(source.crew).status === 'available'
         ? source.crew
         : base?.crew;
+
     return {
       cast: this.episodeCast(cast),
       guestStars: this.episodeCast(guests),
@@ -190,6 +197,7 @@ export class TmdbSeriesMapper {
     const people = new Map<string, EpisodeCastMember>();
     records(value).forEach((row, index) => {
       const name = seriesText(row.name);
+
       if (!name) {
         return;
       }
@@ -204,11 +212,13 @@ export class TmdbSeriesMapper {
         characters: [],
       };
       const character = seriesText(row.character);
+
       if (character && !person.characters.includes(character)) {
         person.characters.push(character);
       }
       people.set(key, person);
     });
+
     return [...people.values()];
   }
 
@@ -216,6 +226,7 @@ export class TmdbSeriesMapper {
     const people = new Map<string, EpisodeCrewMember>();
     records(value).forEach((row, index) => {
       const name = seriesText(row.name);
+
       if (!name) {
         return;
       }
@@ -232,16 +243,19 @@ export class TmdbSeriesMapper {
         jobs: [],
       };
       const job = seriesText(row.job);
+
       if (job && !person.jobs.includes(job)) {
         person.jobs.push(job);
       }
       people.set(key, person);
     });
+
     return [...people.values()];
   }
 
   private poster(value: unknown) {
     const path = seriesText(value);
+
     return {
       posterUrl: this.images.toImageUrl(path) || null,
       ...(path && { posterSrcSet: this.images.toPosterSrcSet(path) }),
@@ -251,9 +265,11 @@ export class TmdbSeriesMapper {
   private creators(value: unknown): CreditPerson[] {
     return records(value).flatMap((person) => {
       const name = seriesText(person.name);
+
       if (!name) {
         return [];
       }
+
       return [
         this.images.toPersonReference({
           id: seriesPositiveId(person.id),
@@ -268,9 +284,11 @@ export class TmdbSeriesMapper {
     return records(value).flatMap((org) => {
       const id = seriesPositiveId(org.id);
       const name = seriesText(org.name);
+
       if (id === undefined || !name) {
         return [];
       }
+
       return [
         {
           id,
@@ -287,9 +305,11 @@ export class TmdbSeriesMapper {
       const id = seriesPositiveId(season.id);
       const seasonNumber = seriesCount(season.season_number);
       const title = seriesText(season.name);
+
       if (id === undefined || seasonNumber === null || !title) {
         return [];
       }
+
       return [
         {
           id,
@@ -303,11 +323,13 @@ export class TmdbSeriesMapper {
       ];
     });
     const unique = new Map<number, SeasonSummary>();
+
     for (const season of seasons) {
       if (!unique.has(season.id)) {
         unique.set(season.id, season);
       }
     }
+
     return [...unique.values()].sort(
       (a, b) => a.seasonNumber - b.seasonNumber || a.id - b.id,
     );

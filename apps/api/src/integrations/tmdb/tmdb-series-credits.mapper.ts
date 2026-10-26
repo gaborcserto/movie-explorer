@@ -31,6 +31,7 @@ export class TmdbSeriesCreditsMapper {
       source?.success === false ? undefined : source?.crew,
       'crew',
     );
+
     return {
       cast: cast.cast,
       crew: crew.crew,
@@ -46,6 +47,7 @@ export class TmdbSeriesCreditsMapper {
     const crew = new Map<number, SeriesCrewMember>();
     let valid = Array.isArray(value);
     const rows: unknown[] = Array.isArray(value) ? [...value] : [];
+
     if (kind === 'cast') {
       rows.sort(
         (a, b) =>
@@ -53,41 +55,52 @@ export class TmdbSeriesCreditsMapper {
           (seriesCount(seriesRecord(b)?.order) ?? Number.MAX_SAFE_INTEGER),
       );
     }
+
     for (const item of rows) {
       const row = seriesRecord(item);
       const id = seriesPositiveId(row?.id);
       const name = seriesText(row?.name);
+
       if (!row || !id || !name) {
         valid = false;
         continue;
       }
+
       const roles = row[kind === 'cast' ? 'roles' : 'jobs'];
+
       if (!Array.isArray(roles)) {
         valid = false;
         continue;
       }
+
       const person = this.images.toPersonReference({
         id,
         name,
         profile_path: seriesText(row.profile_path),
       });
       const previous = kind === 'cast' ? cast.get(id) : crew.get(id);
+
       // Preserve the first identity and flag conflicting upstream records for recovery.
       if (previous && previous.name !== name) {
         valid = false;
       }
+
       const characters: SeriesCharacter[] = [];
       const jobs: SeriesJob[] = [];
+
       for (const value of roles) {
         const role = seriesRecord(value);
+
         if (!role) {
           valid = false;
           continue;
         }
+
         const common = {
           creditId: seriesText(role.credit_id),
           episodeCount: seriesCount(role.episode_count),
         };
+
         if (kind === 'cast') {
           characters.push({ ...common, character: seriesText(role.character) });
         } else {
@@ -98,11 +111,13 @@ export class TmdbSeriesCreditsMapper {
           });
         }
       }
+
       if (kind === 'cast') {
         const previousCast = cast.get(id);
         const total =
           previousCast?.totalEpisodeCount ??
           seriesCount(row.total_episode_count);
+
         if (
           previousCast?.totalEpisodeCount != null &&
           seriesCount(row.total_episode_count) != null &&
@@ -136,6 +151,7 @@ export class TmdbSeriesCreditsMapper {
         });
       }
     }
+
     return { cast: [...cast.values()], crew: [...crew.values()], valid };
   }
 

@@ -32,11 +32,13 @@ export class TmdbExternalIds {
   async resolve(kind: 'movie' | 'series', id: number): Promise<string | null> {
     const key = `${kind}:${id}`;
     const cached = this.cache.get(key);
+
     if (cached && cached.expires > Date.now()) {
       return cached.value;
     }
 
     const pending = this.requests.get(key);
+
     if (pending) {
       return pending;
     }
@@ -45,6 +47,7 @@ export class TmdbExternalIds {
       this.requests.delete(key),
     );
     this.requests.set(key, request);
+
     return request;
   }
 
@@ -78,6 +81,7 @@ export class TmdbExternalIds {
         ? body.imdb_id
         : null;
     this.remember(kind, id, value);
+
     return imdbId(value);
   }
 }

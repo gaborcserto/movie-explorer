@@ -147,6 +147,7 @@ export class TmdbMovieMapper {
 
     const description = movie.overview.trim();
     const backdropUrl = this.toImageUrl(movie.backdrop_path);
+
     if (description) {
       details.description = description;
     }
@@ -202,6 +203,7 @@ export class TmdbMovieMapper {
         }
 
         directorIds.add(credit.id);
+
         return true;
       })
       .map((credit) => this.toPersonReference(credit));
@@ -216,6 +218,7 @@ export class TmdbMovieMapper {
     const charactersByPerson = new Map<number, Set<string>>();
     orderedCast.forEach((credit) => {
       const character = credit.character?.trim();
+
       if (!Number.isSafeInteger(credit.id) || credit.id <= 0 || !character) {
         return;
       }
@@ -234,6 +237,7 @@ export class TmdbMovieMapper {
         }
 
         castIds.add(credit.id);
+
         return true;
       })
       .map((credit) => ({
@@ -269,6 +273,7 @@ export class TmdbMovieMapper {
 
       const person = this.toPersonReference(credit);
       const existing = person.id ? byId.get(person.id) : undefined;
+
       if (existing) {
         if (!existing.roles.includes(credit.job)) {
           existing.roles.push(credit.job);
@@ -281,6 +286,7 @@ export class TmdbMovieMapper {
         if (person.id) byId.set(person.id, member);
       }
     });
+
     return people;
   }
 

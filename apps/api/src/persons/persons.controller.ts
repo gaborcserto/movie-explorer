@@ -121,9 +121,11 @@ export class PersonsController {
       params.id,
       query.mediaType,
     );
+
     if (!result) {
       throw new NotFoundException('Person not found');
     }
+
     return result;
   }
 

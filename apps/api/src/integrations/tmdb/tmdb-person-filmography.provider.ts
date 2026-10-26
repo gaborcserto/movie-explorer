@@ -50,19 +50,24 @@ export class TmdbPersonFilmographyProvider implements PersonFilmographyProvider 
         }
       },
     });
+
     if (body === undefined) {
       return undefined;
     }
+
     if (!isTmdbPersonProfile(body)) {
       throw new BadGatewayException('Invalid person response');
     }
+
     const source = seriesRecord(body);
     const combinedFilmography: CombinedFilmography = {
       entries: [],
       groups: {},
     };
+
     for (const type of ['movie', 'tv'] as const) {
       const credits = source[`${type}_credits`];
+
       if (isTmdbPersonMovieCredits(credits)) {
         combinedFilmography.entries.push(...this.map(credits, type));
         combinedFilmography.groups[type] = { status: 'available' };
@@ -70,6 +75,7 @@ export class TmdbPersonFilmographyProvider implements PersonFilmographyProvider 
         combinedFilmography.groups[type] = { status: 'unavailable' };
       }
     }
+
     return {
       ...this.people.toPersonProfile(body),
       filmography: isTmdbPersonMovieCredits(source.movie_credits)
@@ -94,17 +100,20 @@ export class TmdbPersonFilmographyProvider implements PersonFilmographyProvider 
           allowNotFound: true,
           validateBody: (value) => {
             const row = seriesRecord(value);
+
             if (!row || row.id !== id || !isTmdbPersonMovieCredits(row)) {
               throw new Error('Invalid person credits');
             }
           },
         });
+
         return body === undefined ? undefined : this.map(body, type);
       }),
     );
     const response: CombinedFilmography = { entries: [], groups: {} };
     results.forEach((result, index) => {
       const type = types[index];
+
       if (result.status === 'fulfilled' && result.value !== undefined) {
         response.entries.push(...result.value);
         response.groups[type] = { status: 'available' };
@@ -127,6 +136,7 @@ export class TmdbPersonFilmographyProvider implements PersonFilmographyProvider 
       const failures = results.flatMap((result) =>
         result.status === 'rejected' ? [result.reason as unknown] : [],
       );
+
       if (!failures.length) {
         return undefined;
       }
@@ -138,6 +148,7 @@ export class TmdbPersonFilmographyProvider implements PersonFilmographyProvider 
         ) ?? failures[0]
       );
     }
+
     return response;
   }
 
@@ -148,6 +159,7 @@ export class TmdbPersonFilmographyProvider implements PersonFilmographyProvider 
     if (!isTmdbPersonMovieCredits(value)) {
       throw new BadGatewayException('Invalid filmography response');
     }
+
     return type === 'movie'
       ? this.people
           .toFilmography(value)
@@ -160,6 +172,7 @@ export class TmdbPersonFilmographyProvider implements PersonFilmographyProvider 
       error instanceof HttpException
         ? seriesRecord(error.getResponse())
         : undefined;
+
     return typeof response?.retryAfter === 'number'
       ? response.retryAfter
       : undefined;

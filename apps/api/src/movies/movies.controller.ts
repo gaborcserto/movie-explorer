@@ -109,9 +109,11 @@ export class MoviesController {
   @ApiResponse({ status: 200, type: WatchProvidersDto })
   public async getWatchProviders(@Param() params: DetailIdParams) {
     const providers = await this.moviesService.findWatchProviders(params.id);
+
     if (!providers) {
       throw new NotFoundException('Movie not found');
     }
+
     return providers;
   }
 
@@ -125,6 +127,7 @@ export class MoviesController {
   @ApiNotFoundResponse({ description: 'Movie not found' })
   public async getRatings(@Param() params: DetailIdParams) {
     const ratings = await this.moviesService.findRatings(params.id);
+
     if (!ratings) {
       throw new NotFoundException('Movie not found');
     }

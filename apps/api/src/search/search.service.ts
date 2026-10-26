@@ -20,8 +20,10 @@ function groupAvailability(
   }
 
   const error: unknown = result.reason;
+
   if (error instanceof HttpException && error.getStatus() === 429) {
     const body = error.getResponse();
+
     if (
       typeof body === 'object' &&
       'retryAfter' in body &&
@@ -50,6 +52,7 @@ export class SearchService {
         'Year is only supported for Movies and Series',
       );
     }
+
     return this.searchProvider.find(query, type, page, year);
   }
 
@@ -73,9 +76,12 @@ export class SearchService {
         series?.status === 'rejected' &&
         series.reason instanceof HttpException &&
         series.reason.getStatus() === 429
-      )
+      ) {
         throw series.reason;
+      }
+
       const personError: unknown = people.reason;
+
       if (
         personError instanceof HttpException &&
         personError.getStatus() === 429

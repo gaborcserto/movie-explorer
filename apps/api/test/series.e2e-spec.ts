@@ -352,6 +352,7 @@ describe('Series details API (e2e)', () => {
         const response = await request(app.getHttpServer())
           .get('/api/v1/series/1/seasons/0' + suffix)
           .expect(status);
+
         if (status === 429) {
           expect(response.headers['retry-after']).toBe('12');
         }

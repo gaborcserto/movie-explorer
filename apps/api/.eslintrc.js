@@ -29,5 +29,18 @@ module.exports = {
         oxlint.configs.all.rules[rule],
       ]),
     ),
+    'padding-line-between-statements': [
+      'error',
+      {
+        blankLine: 'always',
+        prev: ['const', 'let', 'var'],
+        next: ['if', 'try', 'for', 'while', 'switch'],
+      },
+      {
+        blankLine: 'always',
+        prev: '*',
+        next: 'return',
+      },
+    ],
   },
 };

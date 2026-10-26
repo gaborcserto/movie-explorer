@@ -8,6 +8,7 @@ export class TmdbMediaMapper extends TmdbImageMapper {
     const seenVideos = new Set<string>();
     const videos: MovieVideo[] = (payload?.results ?? []).flatMap((video) => {
       const identity = `${video.site}:${video.key}`;
+
       // TMDB currently supports YouTube and Vimeo. Vimeo remains an external
       // link; only YouTube is embedded by the application player.
       if (!video.key || seenVideos.has(identity)) {
@@ -21,6 +22,7 @@ export class TmdbMediaMapper extends TmdbImageMapper {
             ? `https://vimeo.com/${video.key}`
             : '';
       seenVideos.add(identity);
+
       return [
         {
           ...(video.id && { id: video.id }),
@@ -43,12 +45,14 @@ export class TmdbMediaMapper extends TmdbImageMapper {
 
   public toImages(images: TmdbImage[]): MoviePhoto[] {
     const seen = new Set<string>();
+
     return images.flatMap((image) => {
       if (!image.file_path?.startsWith('/') || seen.has(image.file_path)) {
         return [];
       }
 
       seen.add(image.file_path);
+
       return [
         {
           filePath: image.file_path,

@@ -32,6 +32,7 @@ export class SeriesService {
     } catch (error) {
       const status = error instanceof HttpException ? error.getStatus() : 502;
       let reason: 'timeout' | 'invalid-response' | 'upstream-error';
+
       if (status === 504) {
         reason = 'timeout';
       } else if (

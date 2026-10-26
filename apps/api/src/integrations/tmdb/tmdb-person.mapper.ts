@@ -50,6 +50,7 @@ export class TmdbPersonMapper {
 
   public toPersonDetails(person: TmdbPersonDetails): PersonDetails {
     const filmography = this.toFilmography(person.movie_credits);
+
     return { ...this.toPersonProfile(person), filmography };
   }
 
@@ -70,6 +71,7 @@ export class TmdbPersonMapper {
       }
 
       let entry = movies.get(value.id);
+
       if (!entry) {
         entry = {
           ...this.movieMapper.toMovieSummary(
@@ -89,12 +91,14 @@ export class TmdbPersonMapper {
       if (acting) {
         entry.actingCredits ??= [];
         const character = text(value.character);
+
         if (character && !entry.actingCredits.includes(character)) {
           entry.actingCredits.push(character);
         }
       } else {
         const department = text(value.department);
         const job = text(value.job);
+
         if (
           !entry.crewCredits.some(
             (credit) => credit.department === department && credit.job === job,
