@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import type {
@@ -68,8 +68,25 @@ it('displays distinct Movie/Series identities, dates, role counts and correct li
     '/tv/7'
   );
   expect(screen.getByText('Showing 2 of 2 titles')).toBeInTheDocument();
-  expect(screen.getByText('Guide - 3 episodes')).toBeInTheDocument();
-  expect(screen.getByText('Series premiere')).toBeInTheDocument();
+  expect(screen.getByText('Guide · 3 episodes')).toBeInTheDocument();
+  expect(screen.queryByText('Series premiere')).not.toBeInTheDocument();
+  [
+    ['A Movie', 'Movie'],
+    ['A Series', 'Series'],
+  ].forEach(([title, label]) => {
+    const row = screen.getByRole('link', { name: title });
+    const mediaLabel = within(row).getByText(label);
+
+    expect(mediaLabel.parentElement).toBe(
+      within(row).getByText(title).parentElement
+    );
+    expect(row.querySelector('.filmography__poster')).not.toContainElement(
+      mediaLabel
+    );
+    expect(row.querySelector('.filmography__metadata')).not.toContainElement(
+      mediaLabel
+    );
+  });
   const movieMetadata = screen
     .getByRole('link', { name: 'A Movie' })
     .getAttribute('aria-describedby');
@@ -83,10 +100,47 @@ it('displays distinct Movie/Series identities, dates, role counts and correct li
   );
 });
 
+it.each([
+  [1, '1 episode'],
+  [2, '2 episodes'],
+  [null, ''],
+  [0, ''],
+] as const)(
+  'shows only positive credit episode counts (%s) in Acting and Crew',
+  async (episodeCount, suffix) => {
+    const credit: PersonSeriesCredit = {
+      ...series,
+      actingRoles: [{ creditId: 'a', character: 'Guide', episodeCount }],
+      crewCredits: [{ job: 'Writer', episodeCount }],
+    };
+    setup({ ...envelope, entries: [credit] });
+    const row = await screen.findByRole('link', { name: 'A Series' });
+
+    expect(
+      within(row).getByText(suffix ? `Guide · ${suffix}` : 'Guide')
+    ).toBeVisible();
+    expect(row).toHaveAccessibleName('A Series');
+    expect(screen.queryByText('Series premiere')).not.toBeInTheDocument();
+    if (!episodeCount) {
+      expect(within(row).queryByText(/episodes?/)).not.toBeInTheDocument();
+    }
+
+    await userEvent.click(screen.getByRole('button', { name: 'Crew' }));
+
+    const crewRow = screen.getByRole('link', { name: 'A Series' });
+    expect(
+      within(crewRow).getByText(suffix ? `Writer — ${suffix}` : 'Writer')
+    ).toBeVisible();
+    if (!episodeCount) {
+      expect(within(crewRow).queryByText(/episodes?/)).not.toBeInTheDocument();
+    }
+  }
+);
+
 it('combines type, crew, job and sorting controls with history and repeated URL parameters', async () => {
   const router = setup(envelope, '?tag=a&tag=b');
   await screen.findByRole('link', { name: 'A Series' });
-  await userEvent.click(screen.getByRole('tab', { name: 'Series' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Series' }));
   expect(
     screen.queryByRole('link', { name: 'A Movie' })
   ).not.toBeInTheDocument();
@@ -116,28 +170,86 @@ it('combines type, crew, job and sorting controls with history and repeated URL 
   expect(
     screen.getByRole('combobox', { name: 'Sort filmography' })
   ).toHaveValue('oldest');
-  await userEvent.click(screen.getByRole('tab', { name: 'Movies' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Movies' }));
   expect(
     new URLSearchParams(router.state.location.search).has('personRole')
   ).toBe(false);
   expect(screen.getByRole('link', { name: 'A Movie' })).toBeInTheDocument();
-  await userEvent.click(screen.getByRole('tab', { name: 'All' }));
-  await userEvent.click(screen.getByRole('tab', { name: 'Series' }));
-  expect(screen.getByRole('tab', { name: 'Series' })).toHaveAttribute(
-    'aria-selected',
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Series' }));
+  expect(screen.getByRole('button', { name: 'Series' })).toHaveAttribute(
+    'aria-pressed',
     'true'
   );
 });
 
-it('switches media tabs with keyboard controls while keeping Acting and Crew independent', async () => {
+it('defaults to All and exposes mutually exclusive pressed category filters', async () => {
+  setup();
+  const group = await screen.findByRole('group', {
+    name: 'Filmography media type',
+  });
+  const filters = within(group);
+
+  expect(
+    filters.getByRole('button', { name: 'All', pressed: true })
+  ).toHaveAttribute('type', 'button');
+  expect(
+    filters.getByRole('button', { name: 'Movies', pressed: false })
+  ).toBeVisible();
+  expect(
+    filters.getByRole('button', { name: 'Series', pressed: false })
+  ).toBeVisible();
+  expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+  expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+
+  await userEvent.click(filters.getByRole('button', { name: 'Movies' }));
+
+  expect(
+    filters.getByRole('button', { name: 'Movies', pressed: true })
+  ).toBeVisible();
+  expect(
+    filters.getByRole('button', { name: 'All', pressed: false })
+  ).toBeVisible();
+  expect(screen.getByRole('link', { name: 'A Movie' })).toBeVisible();
+  expect(
+    screen.queryByRole('link', { name: 'A Series' })
+  ).not.toBeInTheDocument();
+
+  await userEvent.click(filters.getByRole('button', { name: 'Series' }));
+
+  expect(
+    filters.getByRole('button', { name: 'Series', pressed: true })
+  ).toBeVisible();
+  expect(
+    filters.getByRole('button', { name: 'Movies', pressed: false })
+  ).toBeVisible();
+  expect(screen.getByRole('link', { name: 'A Series' })).toBeVisible();
+  expect(
+    screen.queryByRole('link', { name: 'A Movie' })
+  ).not.toBeInTheDocument();
+
+  await userEvent.click(filters.getByRole('button', { name: 'All' }));
+
+  expect(
+    filters.getByRole('button', { name: 'All', pressed: true })
+  ).toBeVisible();
+  expect(filters.getAllByRole('button', { pressed: false })).toHaveLength(2);
+  expect(screen.getByText('Showing 2 of 2 titles')).toBeVisible();
+});
+
+it('activates category filters with Tab, Enter and Space while keeping Acting and Crew independent', async () => {
   const user = userEvent.setup();
   const router = setup();
-  const all = await screen.findByRole('tab', { name: 'All' });
+  const all = await screen.findByRole('button', { name: 'All' });
   all.focus();
-  await user.keyboard('{ArrowRight}');
-  const movies = screen.getByRole('tab', { name: 'Movies' });
+  await user.tab();
+  const movies = screen.getByRole('button', { name: 'Movies' });
   expect(movies).toHaveFocus();
-  expect(movies).toHaveAttribute('aria-selected', 'true');
+  expect(all).toHaveAttribute('aria-pressed', 'true');
+
+  await user.keyboard('{Enter}');
+
+  expect(movies).toHaveAttribute('aria-pressed', 'true');
   expect(router.state.location.search).toContain('personType=movie');
   expect(screen.getByRole('button', { name: 'Acting' })).toHaveAttribute(
     'aria-pressed',
@@ -145,10 +257,50 @@ it('switches media tabs with keyboard controls while keeping Acting and Crew ind
   );
   await user.click(screen.getByRole('button', { name: 'Crew' }));
   expect(router.state.location.search).toContain('personView=crew');
-  expect(screen.getByRole('tab', { name: 'Movies' })).toHaveAttribute(
-    'aria-selected',
+  expect(screen.getByRole('button', { name: 'Movies' })).toHaveAttribute(
+    'aria-pressed',
     'true'
   );
+
+  movies.focus();
+  await user.tab();
+  const seriesFilter = screen.getByRole('button', { name: 'Series' });
+  expect(seriesFilter).toHaveFocus();
+  await user.keyboard(' ');
+
+  expect(seriesFilter).toHaveFocus();
+  expect(seriesFilter).toHaveAttribute('aria-pressed', 'true');
+  expect(movies).toHaveAttribute('aria-pressed', 'false');
+  expect(screen.getByRole('button', { name: 'Crew' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  expect(screen.getByRole('link', { name: 'A Series' })).toBeVisible();
+  expect(
+    screen.queryByRole('link', { name: 'A Movie' })
+  ).not.toBeInTheDocument();
+});
+
+it('keeps category filters available when the selected category has no credits', async () => {
+  setup({ ...envelope, entries: [movie] });
+  await userEvent.click(await screen.findByRole('button', { name: 'Series' }));
+
+  expect(
+    screen.getByRole('button', { name: 'Series', pressed: true })
+  ).toBeVisible();
+  expect(
+    screen.getByText('No credits available for this selection.')
+  ).toBeVisible();
+  expect(
+    screen.queryByRole('link', { name: 'A Movie' })
+  ).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+
+  expect(
+    screen.getByRole('button', { name: 'All', pressed: true })
+  ).toBeVisible();
+  expect(screen.getByRole('link', { name: 'A Movie' })).toBeVisible();
 });
 
 it('retains unavailable-group URL selections, recovers only that group and preserves other credits', async () => {
@@ -179,7 +331,7 @@ it('retains unavailable-group URL selections, recovers only that group and prese
   expect(String(fetchMock.mock.calls[1][0])).toContain(
     '/combined-filmography?mediaType=tv'
   );
-  await userEvent.click(screen.getByRole('tab', { name: 'Movies' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Movies' }));
   expect(screen.getByRole('link', { name: 'A Movie' })).toBeInTheDocument();
   expect(fetchMock).toHaveBeenCalledTimes(2);
 });
@@ -192,8 +344,8 @@ it('restores Series selection after navigating to Series Details and Back', asyn
     await router.navigate(-1);
   });
   await screen.findByRole('heading', { name: 'Filmography' });
-  expect(screen.getByRole('tab', { name: 'Series' })).toHaveAttribute(
-    'aria-selected',
+  expect(screen.getByRole('button', { name: 'Series' })).toHaveAttribute(
+    'aria-pressed',
     'true'
   );
   expect(

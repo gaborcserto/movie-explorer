@@ -27,6 +27,67 @@ function declarations(selector: string, within?: postcss.AtRule) {
   return values;
 }
 
+test('preserves active category underlines and visible keyboard focus', () => {
+  expect(
+    declarations('.filmography__media-tabs button[aria-pressed=true]')
+  ).toMatchObject({ color: '#ffffff' });
+  expect(
+    declarations('.filmography__media-tabs button[aria-pressed=true]:after')
+  ).toMatchObject({ transform: 'scaleX(1)' });
+  expect(
+    declarations('.filmography__media-tabs button:focus-visible')
+  ).toMatchObject({
+    outline: '2px solid #f65261',
+    'outline-offset': '3px',
+  });
+});
+
+test('keeps media labels inline with wrapping titles and the poster in the left column on mobile', () => {
+  expect(declarations('.filmography__heading')).toMatchObject({
+    'grid-column': '2',
+    'grid-row': '1',
+    'min-width': '0',
+    'overflow-wrap': 'anywhere',
+  });
+  expect(declarations('.filmography__media-type')).toMatchObject({
+    'font-size': '12px',
+    opacity: '0.5',
+    'margin-left': '8px',
+    'white-space': 'nowrap',
+  });
+  expect(declarations('.filmography__metadata')).toMatchObject({
+    display: 'contents',
+  });
+  expect(declarations('.filmography__poster')).toMatchObject({
+    'grid-column': '1',
+    'grid-row': '1/-1',
+  });
+
+  const mobile = stylesheet.nodes
+    .filter(
+      (node): node is postcss.AtRule =>
+        node.type === 'atrule' &&
+        node.name === 'media' &&
+        node.params === '(width <= 480px)'
+    )
+    .find(
+      (rule) => declarations('.filmography__row', rule)['grid-template-columns']
+    );
+
+  expect(mobile).toBeDefined();
+  expect(declarations('.filmography__row', mobile)).toMatchObject({
+    'grid-template-columns': '48px minmax(0, 1fr)',
+    'grid-template-rows': 'auto auto auto',
+  });
+  expect(declarations('.filmography__year', mobile)).toMatchObject({
+    'grid-column': '2',
+    'grid-row': '2',
+  });
+  expect(declarations('.filmography__role', mobile)).toMatchObject({
+    'grid-row': '3',
+  });
+});
+
 test('matches Movie Card hover scale, transition, elevation, and focus stacking', () => {
   const hover = stylesheet.nodes.find(
     (node): node is postcss.AtRule =>

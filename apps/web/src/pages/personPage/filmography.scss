@@ -49,7 +49,7 @@
         transition: transform 200ms ease;
       }
 
-      &[aria-selected='true'] {
+      &[aria-pressed='true'] {
         color: $white;
 
         &:after {
@@ -230,12 +230,25 @@
     }
   }
 
-  &__title {
+  &__heading {
     align-self: end;
-    color: $white;
-    font-size: 18px;
     grid-column: 2;
     grid-row: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &__media-type {
+    color: $white;
+    font-size: 12px;
+    margin-left: 8px;
+    opacity: 0.5;
+    white-space: nowrap;
+  }
+
+  &__title {
+    color: $white;
+    font-size: 18px;
     line-height: 1.35;
     opacity: 1;
     overflow-wrap: anywhere;

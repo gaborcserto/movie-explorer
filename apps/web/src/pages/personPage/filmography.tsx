@@ -71,11 +71,15 @@ function FilmographyResults({
                   className="filmography__image"
                 />
               </div>
-              <span className="filmography__title">{movie.title}</span>
-              <div id={metadataId} className="filmography__metadata">
+              <div className="filmography__heading">
+                <span className="filmography__title">{movie.title}</span>
                 {combined && (
-                  <span>{isSeries ? 'Series premiere' : 'Movie'}</span>
+                  <span className="filmography__media-type">
+                    {isSeries ? 'Series' : 'Movie'}
+                  </span>
                 )}
+              </div>
+              <div id={metadataId} className="filmography__metadata">
                 {date && (
                   <time className="filmography__year" dateTime={date}>
                     {date.substring(0, 4)}
@@ -190,39 +194,14 @@ export default function Filmography({
       {groups && (
         <div
           className="filmography__media-tabs"
-          role="tablist"
-          tabIndex={-1}
+          role="group"
           aria-label="Filmography media type"
-          onKeyDown={(event) => {
-            const tabs = Array.from(
-              event.currentTarget.querySelectorAll<HTMLButtonElement>(
-                '[role="tab"]'
-              )
-            );
-            const current = tabs.indexOf(
-              event.target instanceof HTMLButtonElement
-                ? event.target
-                : (document.activeElement as HTMLButtonElement)
-            );
-            let next: number;
-            if (event.key === 'ArrowRight') next = (current + 1) % tabs.length;
-            else if (event.key === 'ArrowLeft')
-              next = (current - 1 + tabs.length) % tabs.length;
-            else if (event.key === 'Home') next = 0;
-            else if (event.key === 'End') next = tabs.length - 1;
-            else return;
-            event.preventDefault();
-            tabs[next]?.focus();
-            tabs[next]?.click();
-          }}
         >
           {(['all', 'movie', 'tv'] as const).map((type) => (
             <button
               key={type}
               type="button"
-              role="tab"
-              aria-selected={mediaType === type}
-              tabIndex={mediaType === type ? 0 : -1}
+              aria-pressed={mediaType === type}
               onClick={() =>
                 updateSelection('personType', type === 'all' ? '' : type)
               }

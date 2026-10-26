@@ -192,17 +192,24 @@ export function getFilmographyRoles(
   role: string
 ): string[] {
   const isSeries = 'mediaType' in movie && movie.mediaType === 'tv';
-  const episodes = (count: number | null | undefined) =>
-    count == null ? '' : `${count} ${count === 1 ? 'episode' : 'episodes'}`;
+  const episodes = (count: number | null | undefined) => {
+    if (count == null || !Number.isSafeInteger(count) || count <= 0) {
+      return '';
+    }
+
+    return `${count} ${count === 1 ? 'episode' : 'episodes'}`;
+  };
+
   if (view === 'acting' && isSeries && movie.actingRoles?.length) {
     return uniqueText(
       movie.actingRoles.map((credit) =>
         [credit.character, episodes(credit.episodeCount)]
           .filter(Boolean)
-          .join(' - ')
+          .join(' · ')
       )
     );
   }
+
   return view === 'acting'
     ? uniqueText(movie.actingCredits ?? [])
     : uniqueText(

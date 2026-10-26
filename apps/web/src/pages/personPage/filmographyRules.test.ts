@@ -45,6 +45,32 @@ const seriesCredit: PersonSeriesCredit = {
 };
 
 describe('Combined filmography rules', () => {
+  it.each([null, 0, -1, 1.5, NaN, Infinity])(
+    'omits unreliable episode count %s while preserving roles',
+    (episodeCount) => {
+      const credit: PersonSeriesCredit = {
+        ...seriesCredit,
+        actingRoles: [{ creditId: 'a', character: 'Guide', episodeCount }],
+        crewCredits: [{ job: 'Writer', episodeCount }],
+      };
+
+      expect(getFilmographyRoles(credit, 'acting', '')).toEqual(['Guide']);
+      expect(getFilmographyRoles(credit, 'crew', '')).toEqual(['Writer']);
+    }
+  );
+
+  it('preserves characters and jobs without episode data', () => {
+    const credit: PersonSeriesCredit = {
+      ...seriesCredit,
+      actingRoles: undefined,
+      actingCredits: ['Cathy Ames'],
+      crewCredits: [{ job: 'Writer' }],
+    };
+
+    expect(getFilmographyRoles(credit, 'acting', '')).toEqual(['Cathy Ames']);
+    expect(getFilmographyRoles(credit, 'crew', '')).toEqual(['Writer']);
+  });
+
   it('keeps numeric ID collisions separate and counts distinct titles across overlapping credits', () => {
     const entries = [
       movie(1),
@@ -107,8 +133,8 @@ describe('Combined filmography rules', () => {
     expect(selection.view).toBe('crew');
     expect(selection.role).toBe('job:Writer');
     expect(getFilmographyRoles(seriesCredit, 'acting', '')).toEqual([
-      'One - 4 episodes',
-      'Two - 3 episodes',
+      'One · 4 episodes',
+      'Two · 3 episodes',
     ]);
     expect(
       getFilmographyRoles(seriesCredit, 'crew', 'job:Writer')[0]
