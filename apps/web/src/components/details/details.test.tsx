@@ -103,7 +103,9 @@ describe('<Details />', () => {
         name: 'Search movies, series and people',
       })
     ).toBeNull();
-    expect(document.title).toBe('Sample Movie | Movie Explorer');
+    await waitFor(() =>
+      expect(document.title).toBe('Sample Movie | Movie Explorer')
+    );
   });
 
   it('omits unavailable and invalid metadata', () => {

@@ -491,7 +491,7 @@ test.each(['photo', 'poster', 'video'] as const)(
     await screen.findByRole('heading', { name: 'First movie' });
     fireEvent.click(screen.getByRole('button', { name: 'Show more videos' }));
     fireEvent.click(
-      screen.getByRole('button', {
+      await screen.findByRole('button', {
         name: {
           photo: 'View First movie backdrop 1',
           poster: 'View First movie poster 1',

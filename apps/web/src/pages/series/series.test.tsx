@@ -235,13 +235,13 @@ describe('Series hierarchy', () => {
     expect(screen.getByRole('link', { name: 'Actor 16' })).toBeVisible();
     expect(screen.queryByRole('link', { name: 'Actor 17' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Writer Producer' })).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Show more cast' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show more cast' }));
     expect(
       within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
     ).toHaveTextContent('Showing 24 of 40 cast members');
     expect(screen.getByRole('link', { name: 'Actor 24' })).toBeVisible();
     expect(screen.queryByRole('link', { name: 'Actor 25' })).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Show more cast' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show more cast' }));
     expect(
       within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
     ).toHaveTextContent('Showing 32 of 40 cast members');
@@ -254,7 +254,7 @@ describe('Series hierarchy', () => {
     expect(screen.getByRole('tabpanel', { name: 'Crew' })).toBeVisible();
     expect(screen.queryByRole('link', { name: 'Writer Producer' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Crew 15' })).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Show more crew' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show more crew' }));
     expect(screen.getByRole('link', { name: 'Crew 15' })).toBeVisible();
     expect(
       within(screen.getByRole('tabpanel', { name: 'Crew' })).getAllByRole(
@@ -271,7 +271,7 @@ describe('Series hierarchy', () => {
     expect(
       screen.getByRole('button', { name: 'Show less cast' })
     ).toBeVisible();
-    await user.click(screen.getByRole('button', { name: 'Show less cast' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show less cast' }));
     expect(
       within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
     ).toHaveTextContent('Showing 16 of 40 cast members');
