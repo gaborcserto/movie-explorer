@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+
 import Footer from './footer';
 
 test('shows JustWatch and OMDb attribution in the site footer', () => {

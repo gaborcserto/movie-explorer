@@ -79,16 +79,25 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
   }, [movieId, validId, attempt]);
 
   useEffect(() => {
-    if (!validId || detailsState !== 'success') return undefined;
+    if (!validId || detailsState !== 'success') {
+      return undefined;
+    }
+
     const controller = new AbortController();
+
     Promise.resolve()
       .then(() => getWatchProviders('movies', movieId, controller.signal))
       .then(({ providers }) => {
-        if (!controller.signal.aborted) setWatchProviders(providers);
+        if (!controller.signal.aborted) {
+          setWatchProviders(providers);
+        }
       })
       .catch(() => {
-        if (!controller.signal.aborted) setWatchProviders([]);
+        if (!controller.signal.aborted) {
+          setWatchProviders([]);
+        }
       });
+
     return () => controller.abort();
   }, [movieId, validId, detailsState]);
 
@@ -184,5 +193,6 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
 
 export default function Details() {
   const { movieId = '' } = useParams();
+
   return <MovieDetailsPage key={movieId} movieIdStr={movieId} />;
 }

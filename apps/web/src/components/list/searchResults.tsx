@@ -7,6 +7,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 import { FaClapperboard, FaTv, FaUsers } from 'react-icons/fa6';
+
 import Filter from '../filter';
 import { normalizeSearchFilters, readSearchView } from '../filter/filterState';
 import CardList from './list';
@@ -60,8 +61,11 @@ function ResultViews({ query }: { query: string }) {
               .filter((target) => query || target !== 'all')
               .map((target) => {
                 const next = new URLSearchParams(params);
-                if (target === 'movies') next.delete('view');
-                else next.set('view', target);
+                if (target === 'movies') {
+                  next.delete('view');
+                } else {
+                  next.set('view', target);
+                }
                 const active = view === target;
                 return (
                   <Link
@@ -122,7 +126,7 @@ export default function SearchResults() {
   const location = useLocation();
   const normalized = normalizeSearchFilters(params, Boolean(searchQuery));
   // Canonicalize before mounting request owners to avoid an intermediate fetch.
-  if (normalized.toString() !== params.toString() || rawQuery !== searchQuery)
+  if (normalized.toString() !== params.toString() || rawQuery !== searchQuery) {
     return (
       <Navigate
         replace
@@ -135,5 +139,6 @@ export default function SearchResults() {
         }}
       />
     );
+  }
   return <ResultViews key={searchQuery} query={searchQuery} />;
 }

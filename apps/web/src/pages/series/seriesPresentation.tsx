@@ -2,10 +2,10 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { CreditPerson } from '@movie-explorer/contracts';
+
 import DetailsRatings, {
   RatingsDisplay,
 } from '../../components/details/ratings';
-
 import HeroImage from '../../components/heroImage';
 import DetailsMetadata from '../../components/details/metadata/detailsMetadata';
 import DetailsPageLayout, {
@@ -219,7 +219,9 @@ export function SeriesMetadataList({
       ))}
     </ul>
   );
-  if (people.length <= 2) return content;
+  if (people.length <= 2) {
+    return content;
+  }
   return (
     <details className="series-metadata-disclosure">
       <summary aria-label={`${label}: ${people.length}, expand or collapse`}>

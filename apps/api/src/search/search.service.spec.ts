@@ -1,4 +1,5 @@
 import { BadGatewayException, HttpException } from '@nestjs/common';
+
 import type { MovieProvider } from '../movies/movie-provider';
 import { SearchService } from './search.service';
 
@@ -112,14 +113,17 @@ describe('independent autocomplete groups', () => {
         totalPages: 1,
         totalResults: 1,
       });
-      if (failures & 1)
+      if (failures & 1) {
         provider.findSuggestions.mockRejectedValue(new BadGatewayException());
-      if (failures & 2)
+      }
+      if (failures & 2) {
         searchProvider.find.mockRejectedValue(
           new HttpException({ retryAfter: 12 }, 429),
         );
-      if (failures & 4)
+      }
+      if (failures & 4) {
         provider.findPeople.mockRejectedValue(new BadGatewayException());
+      }
 
       const request = service.suggestions('Query', 1, true);
       if (failures === 7) {

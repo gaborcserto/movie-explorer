@@ -15,8 +15,8 @@ import type {
   EpisodeDetails,
   EpisodeCredits,
 } from '@movie-explorer/contracts';
-import * as apiUtils from '../../util/apiUtils';
 
+import * as apiUtils from '../../util/apiUtils';
 import SeriesPage from './seriesPage';
 import SeasonPage from './seasonPage';
 import EpisodePage from './episodePage';
@@ -153,6 +153,7 @@ beforeEach(() => {
     return Response.json(series);
   });
 });
+
 afterEach(() => {
   vi.unstubAllGlobals();
   delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth;
@@ -265,6 +266,7 @@ describe('Series hierarchy', () => {
         },
       })
     );
+
     setup('/tv/1');
     const castTab = await screen.findByRole('tab', { name: 'Cast' });
     const crewTab = screen.getByRole('tab', { name: 'Crew' });
@@ -277,18 +279,21 @@ describe('Series hierarchy', () => {
     expect(screen.getByRole('link', { name: 'Actor 16' })).toBeVisible();
     expect(screen.queryByRole('link', { name: 'Actor 17' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Writer Producer' })).toBeNull();
+
     fireEvent.click(screen.getByRole('button', { name: 'Show more cast' }));
     expect(
       within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
     ).toHaveTextContent('Showing 24 of 40 cast members');
     expect(screen.getByRole('link', { name: 'Actor 24' })).toBeVisible();
     expect(screen.queryByRole('link', { name: 'Actor 25' })).toBeNull();
+
     fireEvent.click(screen.getByRole('button', { name: 'Show more cast' }));
     expect(
       within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
     ).toHaveTextContent('Showing 32 of 40 cast members');
     expect(screen.getByRole('link', { name: 'Actor 32' })).toBeVisible();
     expect(screen.queryByRole('link', { name: 'Actor 33' })).toBeNull();
+
     castTab.focus();
     await user.keyboard('{ArrowRight}');
     expect(crewTab).toHaveFocus();
@@ -296,6 +301,7 @@ describe('Series hierarchy', () => {
     expect(screen.getByRole('tabpanel', { name: 'Crew' })).toBeVisible();
     expect(screen.queryByRole('link', { name: 'Writer Producer' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Crew 15' })).toBeNull();
+
     fireEvent.click(screen.getByRole('button', { name: 'Show more crew' }));
     expect(screen.getByRole('link', { name: 'Crew 15' })).toBeVisible();
     expect(
@@ -306,6 +312,7 @@ describe('Series hierarchy', () => {
     ).toHaveLength(2);
     expect(screen.getByText('Writer — 8 episodes')).toBeVisible();
     expect(screen.getByText('Producer — 8 episodes')).toBeVisible();
+
     crewTab.focus();
     await user.keyboard('{Home}');
     expect(castTab).toHaveFocus();
@@ -313,6 +320,7 @@ describe('Series hierarchy', () => {
     expect(
       screen.getByRole('button', { name: 'Show less cast' })
     ).toBeVisible();
+
     fireEvent.click(screen.getByRole('button', { name: 'Show less cast' }));
     expect(
       within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
@@ -320,6 +328,7 @@ describe('Series hierarchy', () => {
     expect(screen.getByRole('link', { name: 'Actor 16' })).toBeVisible();
     expect(screen.queryByRole('link', { name: 'Actor 17' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show less cast' })).toBeNull();
+
     castTab.focus();
     await user.keyboard('{ArrowRight}');
     expect(screen.getByRole('link', { name: 'Crew 15' })).toBeVisible();
@@ -778,20 +787,24 @@ describe('Series hierarchy', () => {
     await user.click(screen.getByRole('button', { name: 'Next season' }));
     expect(first).toHaveAttribute('aria-selected', 'true');
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    if (originalClientWidth)
+    if (originalClientWidth) {
       Object.defineProperty(
         HTMLElement.prototype,
         'clientWidth',
         originalClientWidth
       );
-    else delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth;
-    if (originalScrollWidth)
+    } else {
+      delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth;
+    }
+    if (originalScrollWidth) {
       Object.defineProperty(
         HTMLElement.prototype,
         'scrollWidth',
         originalScrollWidth
       );
-    else delete (HTMLElement.prototype as { scrollWidth?: number }).scrollWidth;
+    } else {
+      delete (HTMLElement.prototype as { scrollWidth?: number }).scrollWidth;
+    }
   });
 
   it('shows season arrows from measured overflow and updates them after resize and scrolling', async () => {
@@ -833,7 +846,9 @@ describe('Series hierarchy', () => {
     Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
       configurable: true,
       get() {
-        if (!this.classList.contains('season-tabs')) return 0;
+        if (!this.classList.contains('season-tabs')) {
+          return 0;
+        }
         return (this as HTMLElement).dataset.overflow === 'yes' ? 1200 : 400;
       },
     });
@@ -1222,18 +1237,20 @@ describe('Season and Episode shared hero images', () => {
       const srcSet = `${image} 1x, ${original} 3x`;
       fetchMock.mockImplementation(async (input) => {
         const url = String(input);
-        if (url.includes('/episodes/'))
+        if (url.includes('/episodes/')) {
           return Response.json({
             ...episode,
             stillUrl: image,
             stillSrcSet: srcSet,
           });
-        if (url.includes('/seasons/'))
+        }
+        if (url.includes('/seasons/')) {
           return Response.json({
             ...season,
             posterUrl: image,
             posterSrcSet: srcSet,
           });
+        }
         return Response.json({
           ...series,
           backdropUrl: 'https://images.test/w500/backdrop.jpg',
@@ -1252,7 +1269,9 @@ describe('Season and Episode shared hero images', () => {
       expect(thumbnail).not.toHaveAttribute('src', original);
       expect(thumbnail?.getAttribute('srcset')).not.toContain('/original/');
       expect(screen.queryByRole('dialog')).toBeNull();
-      if (thumbnail) fireEvent.load(thumbnail);
+      if (thumbnail) {
+        fireEvent.load(thumbnail);
+      }
       await userEvent.click(action);
       const dialog = screen.getByRole('dialog', {
         name: `${title} photo viewer`,

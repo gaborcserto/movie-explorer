@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+
 import { ProductionCompanies } from './seriesPresentation';
 
 test('shows production companies as text with an accessible expansion control', () => {

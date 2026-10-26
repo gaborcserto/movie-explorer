@@ -86,8 +86,10 @@ function setup(kind: 'movie' | 'series') {
       )}
     </MemoryRouter>
   );
-  if (kind === 'series')
+  if (kind === 'series') {
     fireEvent.click(screen.getByRole('tab', { name: 'Crew' }));
+  }
+
   return kind === 'series'
     ? within(screen.getByRole('tabpanel', { name: 'Crew' }))
     : within(screen.getByRole('region', { name: 'Crew' }));
@@ -104,6 +106,7 @@ test.each(['movie', 'series'] as const)(
       new Set(
         crew.getAllByRole('link').map((link) => link.getAttribute('href'))
       );
+
     expect(crew.getByRole('status')).toHaveTextContent(
       `Showing 12 of ${total} crew members`
     );
@@ -117,6 +120,7 @@ test.each(['movie', 'series'] as const)(
     expect(
       more.closest('.credit-preview-controls')?.previousElementSibling
     ).toHaveClass('crew-groups');
+
     more.focus();
     await user.keyboard('{Enter}');
     expect(links().size).toBe(24);
@@ -124,6 +128,7 @@ test.each(['movie', 'series'] as const)(
     expect(more).toHaveAttribute('aria-expanded', 'true');
     expect(crew.getAllByRole('link', { name: 'Crew 1' })[0]).toBe(first);
     expect(first).toHaveAttribute('href', '/person/1');
+
     if (kind === 'series') {
       await user.keyboard('{Enter}');
       expect(links().size).toBe(36);
@@ -131,10 +136,12 @@ test.each(['movie', 'series'] as const)(
       expect(links().size).toBe(48);
       expect(more).toHaveFocus();
     }
+
     await user.keyboard('{Enter}');
     expect(links().size).toBe(total);
     expect(crew.getByRole('status')).toHaveFocus();
     expect(crew.queryByRole('button', { name: 'Show more crew' })).toBeNull();
+
     const less = crew.getByRole('button', { name: 'Show less crew' });
     less.focus();
     await user.keyboard(' ');
@@ -177,7 +184,9 @@ test('preserves aggregate jobs and department episode totals without summing ove
 test.each([0, 2])(
   'handles %i crew members without reveal controls',
   (count) => {
-    if (!series.credits) throw new Error('Fixture credits missing');
+    if (!series.credits) {
+      throw new Error('Fixture credits missing');
+    }
     render(
       <MemoryRouter>
         <SeriesSections
@@ -197,8 +206,9 @@ test.each([0, 2])(
       `Showing ${count} of ${count} crew members`
     );
     expect(crew.queryByRole('button')).toBeNull();
-    if (count === 0)
+    if (count === 0) {
       expect(crew.getByText('No crew information available.')).toBeVisible();
+    }
   }
 );
 

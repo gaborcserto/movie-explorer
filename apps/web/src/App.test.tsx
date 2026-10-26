@@ -5,6 +5,7 @@ import type {
   MovieDetails,
   MovieListResponse,
 } from '@movie-explorer/contracts';
+
 import App from './App';
 import {
   getMovie as originalGetMovie,

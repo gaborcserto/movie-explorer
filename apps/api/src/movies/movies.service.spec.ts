@@ -2,6 +2,7 @@ import type {
   MovieDetails,
   MovieListResponse,
 } from '@movie-explorer/contracts';
+
 import { MovieProvider } from './movie-provider';
 import { MoviesService } from './movies.service';
 

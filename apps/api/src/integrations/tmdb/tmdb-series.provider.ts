@@ -1,8 +1,8 @@
-import { TmdbExternalIds } from './tmdb-external-ids';
 import { Injectable, Logger } from '@nestjs/common';
 import type { SeriesDetails } from '@movie-explorer/contracts';
-import { mapWatchProviders } from './tmdb-watch-providers.mapper';
 
+import { TmdbExternalIds } from './tmdb-external-ids';
+import { mapWatchProviders } from './tmdb-watch-providers.mapper';
 import type { SeriesListQuery } from '../../series/series-list.dto';
 import { mapSearch, searchPage } from './tmdb-search.mapper';
 import type { SeriesProvider } from '../../series/series-provider';
@@ -115,8 +115,9 @@ export class TmdbSeriesProvider implements SeriesProvider {
       operation: 'series-watch-providers',
       allowNotFound: true,
       validateBody: (value) => {
-        if (!value || typeof value !== 'object' || Array.isArray(value))
+        if (!value || typeof value !== 'object' || Array.isArray(value)) {
           throw new Error('Invalid watch providers');
+        }
       },
     });
     return mapWatchProviders(body, this.imageBaseUrl);

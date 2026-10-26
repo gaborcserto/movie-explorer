@@ -1,7 +1,7 @@
-import { RatingsModule } from '../ratings/ratings.module';
-import { TmdbExternalIds } from '../integrations/tmdb/tmdb-external-ids';
 import { Module } from '@nestjs/common';
 
+import { RatingsModule } from '../ratings/ratings.module';
+import { TmdbExternalIds } from '../integrations/tmdb/tmdb-external-ids';
 import { TmdbSeriesProvider } from '../integrations/tmdb/tmdb-series.provider';
 import { SERIES_PROVIDER } from './series-provider';
 import { SeriesController } from './series.controller';

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ImdbRating } from '@movie-explorer/contracts';
 import { SiImdb, SiThemoviedatabase } from 'react-icons/si';
+
 import { getImdbRating } from '../../util/apiUtils';
 import './ratings.scss';
 
@@ -64,17 +65,23 @@ export default function DetailsRatings({
     key: string;
     rating: ImdbRating | null;
   }>();
+
   useEffect(() => {
     const controller = new AbortController();
+
     Promise.resolve()
       .then(() => getImdbRating(kind, id, controller.signal))
       .then((response) => {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
           setResult({ key, rating: response.imdb });
+        }
       })
       .catch(() => {
-        if (!controller.signal.aborted) setResult({ key, rating: null });
+        if (!controller.signal.aborted) {
+          setResult({ key, rating: null });
+        }
       });
+
     return () => controller.abort();
   }, [kind, id, key]);
 

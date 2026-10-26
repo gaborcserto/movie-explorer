@@ -1,6 +1,7 @@
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
+
 import { RatingsModule } from '../src/ratings/ratings.module';
 import { TmdbExternalIds } from '../src/integrations/tmdb/tmdb-external-ids';
 import { OmdbAdapter } from '../src/integrations/omdb/omdb.adapter';

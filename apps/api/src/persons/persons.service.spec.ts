@@ -1,4 +1,5 @@
 import { BadGatewayException } from '@nestjs/common';
+
 import type { MovieProvider } from '../movies/movie-provider';
 import { PersonsService } from './persons.service';
 

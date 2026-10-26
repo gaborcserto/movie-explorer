@@ -9,6 +9,7 @@ import type {
   PersonListResponse,
   PersonSummary,
 } from '@movie-explorer/contracts';
+
 import presentApiError, {
   isCancelledError,
 } from '../../util/errorPresentation';
@@ -34,7 +35,9 @@ export default function PeopleList({ query }: { query: string }) {
 
   const load = useCallback(
     async (page: number, revealed = 0) => {
-      if (busy.current) return;
+      if (busy.current) {
+        return;
+      }
       busy.current = true;
       controller.current?.abort();
       const request = new AbortController();
@@ -43,7 +46,9 @@ export default function PeopleList({ query }: { query: string }) {
       setMoreError(null);
       try {
         const response = await getPeople(query, page, request.signal);
-        if (request.signal.aborted) return;
+        if (request.signal.aborted) {
+          return;
+        }
         setError(null);
         setData(response);
         setPeople((current) => [
@@ -55,9 +60,14 @@ export default function PeopleList({ query }: { query: string }) {
         ]);
         setVisible(page === 1 ? 10 : revealed + 10);
       } catch (failure: unknown) {
-        if (request.signal.aborted || isCancelledError(failure)) return;
-        if (page === 1) setError(failure);
-        else setMoreError(failure);
+        if (request.signal.aborted || isCancelledError(failure)) {
+          return;
+        }
+        if (page === 1) {
+          setError(failure);
+        } else {
+          setMoreError(failure);
+        }
       } finally {
         if (!request.signal.aborted) {
           busy.current = false;
@@ -69,7 +79,9 @@ export default function PeopleList({ query }: { query: string }) {
   );
 
   useEffect(() => {
-    if (!restored) load(1);
+    if (!restored) {
+      load(1);
+    }
     return () => {
       controller.current?.abort();
       busy.current = false;
@@ -77,12 +89,15 @@ export default function PeopleList({ query }: { query: string }) {
   }, [query, load, restored]);
 
   useLayoutEffect(() => {
-    if (data) save({ data, items: people, visible });
+    if (data) {
+      save({ data, items: people, visible });
+    }
   }, [save, data, people, visible]);
 
-  if (loading && !data && !error)
+  if (loading && !data && !error) {
     return <Loading className="list__container container" />;
-  if (error)
+  }
+  if (error) {
     return (
       <Error
         className="list__container container"
@@ -93,6 +108,7 @@ export default function PeopleList({ query }: { query: string }) {
         onAction={() => load(1)}
       />
     );
+  }
   const more =
     data &&
     (visible < people.length || data.page < Math.min(data.totalPages, 500));
@@ -100,10 +116,11 @@ export default function PeopleList({ query }: { query: string }) {
   let emptyMessage = query
     ? `No people found for "${query}".`
     : 'No people available.';
-  if (data?.totalResults)
+  if (data?.totalResults) {
     emptyMessage = more
       ? 'No matching persons yet. Load more to continue.'
       : 'No matching persons found.';
+  }
   return (
     <section
       className="list__container container"
@@ -142,9 +159,11 @@ export default function PeopleList({ query }: { query: string }) {
             className="btn btn--outline btn--action"
             disabled={loading}
             onClick={() => {
-              if (visible < people.length)
+              if (visible < people.length) {
                 setVisible((current) => current + 10);
-              else load(data.page + 1, Math.min(visible, people.length));
+              } else {
+                load(data.page + 1, Math.min(visible, people.length));
+              }
             }}
           >
             {loading ? 'Loading more...' : buttonLabel}

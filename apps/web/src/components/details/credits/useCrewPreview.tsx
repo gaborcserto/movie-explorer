@@ -11,9 +11,12 @@ export default function useCrewPreview<T>(
   const [limit, setLimit] = useState(CREW_BATCH_SIZE);
   const groupId = useId();
   const countRef = useRef<HTMLParagraphElement>(null);
+
   const visibleLimit = showAll ? people.length : limit;
   const visible = people.slice(0, visibleLimit);
+
   useEffect(() => setLimit(CREW_BATCH_SIZE), [resetKey]);
+
   const hasMore = visible.length < people.length;
 
   return {

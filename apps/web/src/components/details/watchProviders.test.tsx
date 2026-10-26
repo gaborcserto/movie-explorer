@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+
 import WatchProviders from './watchProviders';
 
 const provider = {
@@ -100,7 +101,9 @@ test('falls back to the provider name when its logo fails', () => {
   render(<WatchProviders providers={[provider]} />);
   const image = screen.getByRole('img', { name: 'Netflix — Streaming' });
   expect(image).not.toBeNull();
-  if (image) fireEvent.error(image);
+  if (image) {
+    fireEvent.error(image);
+  }
   expect(
     screen.getByRole('img', { name: 'Netflix — Streaming' })
   ).toHaveTextContent('Netflix');

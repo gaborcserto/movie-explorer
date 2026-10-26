@@ -6,6 +6,7 @@ import {
   useState,
 } from 'react';
 import type { SearchResponse, SearchResult } from '@movie-explorer/contracts';
+
 import presentApiError, {
   isCancelledError,
 } from '../../util/errorPresentation';
@@ -60,7 +61,9 @@ export default function UnifiedList({
 
   const load = useCallback(
     async (page: number, revealed = 0) => {
-      if (busy.current) return;
+      if (busy.current) {
+        return;
+      }
       busy.current = true;
       controller.current?.abort();
       const request = new AbortController();
@@ -75,7 +78,9 @@ export default function UnifiedList({
               { year, rating, sorting, order },
               request.signal
             );
-        if (request.signal.aborted) return;
+        if (request.signal.aborted) {
+          return;
+        }
         setError(null);
         setData(response);
         setItems((current) => [
@@ -87,9 +92,14 @@ export default function UnifiedList({
         ]);
         setVisible(page === 1 ? 10 : revealed + 10);
       } catch (failure: unknown) {
-        if (request.signal.aborted || isCancelledError(failure)) return;
-        if (page === 1) setError(failure);
-        else setMoreError(failure);
+        if (request.signal.aborted || isCancelledError(failure)) {
+          return;
+        }
+        if (page === 1) {
+          setError(failure);
+        } else {
+          setMoreError(failure);
+        }
       } finally {
         if (!request.signal.aborted) {
           busy.current = false;
@@ -101,7 +111,9 @@ export default function UnifiedList({
   );
 
   useEffect(() => {
-    if (!restored) load(1);
+    if (!restored) {
+      load(1);
+    }
     return () => {
       controller.current?.abort();
       busy.current = false;
@@ -109,12 +121,15 @@ export default function UnifiedList({
   }, [query, load, restored]);
 
   useLayoutEffect(() => {
-    if (data) save({ data, items, visible });
+    if (data) {
+      save({ data, items, visible });
+    }
   }, [save, data, items, visible]);
 
-  if (loading && !data && !error)
+  if (loading && !data && !error) {
     return <Loading className="list__container container" />;
-  if (error)
+  }
+  if (error) {
     return (
       <Error
         className="list__container container"
@@ -125,12 +140,14 @@ export default function UnifiedList({
         onAction={() => load(1)}
       />
     );
+  }
   const buttonLabel = moreError ? 'Try again' : 'Load more';
   let emptyMessage = `No results found for "${query}".`;
-  if (data?.totalResults)
+  if (data?.totalResults) {
     emptyMessage = more
       ? 'No matching series yet. Load more to continue.'
       : 'No matching series found.';
+  }
   return (
     <section
       className="list__container container"
@@ -168,9 +185,11 @@ export default function UnifiedList({
             onClick={() => {
               restoreCountFocus.current =
                 document.activeElement === moreRef.current;
-              if (visible < items.length) setVisible((current) => current + 10);
-              else if (data)
+              if (visible < items.length) {
+                setVisible((current) => current + 10);
+              } else if (data) {
                 load(data.page + 1, Math.min(visible, items.length));
+              }
             }}
           >
             {loading ? 'Loading more...' : buttonLabel}

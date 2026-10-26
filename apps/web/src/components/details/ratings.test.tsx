@@ -1,4 +1,5 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
+
 import DetailsRatings, { RatingsDisplay } from './ratings';
 import { getImdbRating } from '../../util/apiUtils';
 
@@ -65,10 +66,15 @@ test.each(['movie', 'series'] as const)(
 test.each(['missing', 'error'])(
   'keeps only TMDB for %s IMDb data',
   async (mode) => {
-    if (mode === 'missing') getRating.mockResolvedValue({ imdb: null });
-    else getRating.mockRejectedValue(new Error('offline'));
+    if (mode === 'missing') {
+      getRating.mockResolvedValue({ imdb: null });
+    } else {
+      getRating.mockRejectedValue(new Error('offline'));
+    }
+
     render(<DetailsRatings kind="movie" id={1} tmdb={8.6} />);
     await waitFor(() => expect(getRating).toHaveBeenCalledTimes(1));
+
     expect(
       screen.getByLabelText('TMDB rating: 8.6 out of 10')
     ).toBeInTheDocument();

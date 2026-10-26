@@ -1,4 +1,3 @@
-import { TmdbExternalIds } from './tmdb-external-ids';
 import {
   BadGatewayException,
   HttpException,
@@ -18,6 +17,7 @@ import type {
   PersonDetails,
 } from '@movie-explorer/contracts';
 
+import { TmdbExternalIds } from './tmdb-external-ids';
 import type { MovieProvider } from '../../movies/movie-provider';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbMovieMapper } from './tmdb-movie.mapper';
@@ -203,8 +203,9 @@ export class TmdbMovieProvider implements MovieProvider {
       this.logFailure('movie-detail', 'invalid-response', 502, 200);
       throw new BadGatewayException('Movie provider response was invalid');
     }
-    if ('imdb_id' in movie)
+    if ('imdb_id' in movie) {
       this.externalIds?.remember('movie', id, movie.imdb_id);
+    }
     let details: MovieDetails;
     try {
       details = this.mapper.toMovieDetails({
@@ -249,8 +250,9 @@ export class TmdbMovieProvider implements MovieProvider {
       operation: 'movie-watch-providers',
       allowNotFound: true,
       validateBody: (value) => {
-        if (!value || typeof value !== 'object' || Array.isArray(value))
+        if (!value || typeof value !== 'object' || Array.isArray(value)) {
           throw new Error('Invalid watch providers');
+        }
       },
     });
     return mapWatchProviders(body, this.config.imageBaseUrl);

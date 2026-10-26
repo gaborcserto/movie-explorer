@@ -9,18 +9,22 @@ const stylesheet = postcss.parse(
 const mediaStylesheet = postcss.parse(
   compile(fileURLToPath(new URL('./media/media.scss', import.meta.url))).css
 );
+
 function declarations(selector: string, media?: string) {
   const values: Record<string, string> = {};
+
   stylesheet.walkRules((rule) => {
     const { parent } = rule;
     const matches = media
       ? parent?.type === 'atrule' && parent.params === media
       : parent?.type === 'root';
-    if (matches && rule.selectors.includes(selector))
+    if (matches && rule.selectors.includes(selector)) {
       rule.walkDecls((decl) => {
         values[decl.prop] = decl.value;
       });
+    }
   });
+
   return values;
 }
 
@@ -58,6 +62,7 @@ test('aligns provider categories with Movie metadata tracks and keeps logos comp
 
 test('removes the provider section border with specificity above the shared section rule', () => {
   let sharedBorder: string | undefined;
+
   mediaStylesheet.walkRules('.details-section', (rule) => {
     rule.walkDecls('border-top', (declaration) => {
       sharedBorder = declaration.value;
@@ -92,19 +97,25 @@ test('shares tablet and mobile behavior while retaining the episode still aspect
 test('uses two-column department groups with a container-based narrow-width fallback', () => {
   let groupColumns: string | undefined;
   let containerColumns: string | undefined;
+
   mediaStylesheet.walkRules('.crew-group__people', (rule) => {
     const ruleDeclarations: Record<string, string> = {};
+
     rule.walkDecls('grid-template-columns', (declaration) => {
       ruleDeclarations[declaration.prop] = declaration.value;
     });
-    if (rule.parent?.type === 'root')
+
+    if (rule.parent?.type === 'root') {
       groupColumns = ruleDeclarations['grid-template-columns'];
+    }
     if (
       rule.parent?.type === 'atrule' &&
       rule.parent.params === '(max-width: 359px)'
-    )
+    ) {
       containerColumns = ruleDeclarations['grid-template-columns'];
+    }
   });
+
   expect(groupColumns).toBe('repeat(2, minmax(0, 1fr))');
   expect(containerColumns).toBe('minmax(0, 1fr)');
 });

@@ -4,6 +4,7 @@ import type {
   MovieDetails,
   MovieListResponse,
 } from '@movie-explorer/contracts';
+
 import { MoviesController } from './movies.controller';
 import { MoviesService } from './movies.service';
 

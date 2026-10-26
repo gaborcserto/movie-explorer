@@ -7,8 +7,8 @@ import type {
   MovieDirector,
   WatchProvider,
 } from '@movie-explorer/contracts';
-import DetailsRatings from './ratings';
 
+import DetailsRatings from './ratings';
 import { SectionRecovery } from './recovery';
 import PhotoPreview, { VideoPreview } from './media';
 import HeroImage from '../heroImage';
@@ -154,6 +154,7 @@ function CrewGroup({
 }) {
   const headingId = `crew-${label.toLowerCase()}-heading`;
   const groupClass = `crew-group crew-group--${label.toLowerCase()}`;
+
   return (
     <section
       className={groupClass}
@@ -317,9 +318,13 @@ export function DetailsLowerContent({
       typeof ResizeObserver === 'undefined'
         ? null
         : new ResizeObserver(measure);
-    if (castSectionRef.current) observer?.observe(castSectionRef.current);
-    if (crewMeasurementRef.current)
+    if (castSectionRef.current) {
+      observer?.observe(castSectionRef.current);
+    }
+    if (crewMeasurementRef.current) {
       observer?.observe(crewMeasurementRef.current);
+    }
+
     breakpoint?.addEventListener('change', measure);
 
     return () => {

@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsIn } from 'class-validator';
 import type { ImdbRating, ImdbRatingResponse } from '@movie-explorer/contracts';
+
 import { DetailIdParams } from '../validation/detail-id.dto';
 
 export class RatingParams extends DetailIdParams {

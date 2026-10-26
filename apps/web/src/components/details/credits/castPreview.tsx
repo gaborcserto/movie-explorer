@@ -22,6 +22,7 @@ export default function CastPreview({
   const gridId = useId();
   const [visibleCount, setVisibleCount] = useState(initialVisibleCount);
   const countRef = useRef<HTMLSpanElement>(null);
+
   if (members.length === 0) {
     return null;
   }
@@ -54,6 +55,7 @@ export default function CastPreview({
               </div>
             </>
           );
+
           return (
             <article className="cast-member" key={member.key}>
               {member.id !== undefined &&

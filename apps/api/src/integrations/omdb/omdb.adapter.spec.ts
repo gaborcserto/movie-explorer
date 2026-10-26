@@ -22,6 +22,7 @@ describe('OmdbAdapter', () => {
     delete env.OMDB_API_KEY;
     delete env.OMDB_API_URL;
     jest.replaceProperty(process, 'env', env);
+
     jest.mocked(loadLocalEnv).mockReset().mockReturnValue({});
     fetchMock = jest
       .spyOn(global, 'fetch')
@@ -258,8 +259,10 @@ describe('OmdbAdapter', () => {
           );
         }),
     );
+
     const result = new OmdbAdapter('key').findRating(id, 'movie');
     await jest.advanceTimersByTimeAsync(3000);
+
     await expect(result).resolves.toBeNull();
   });
 
@@ -267,12 +270,14 @@ describe('OmdbAdapter', () => {
     jest.useFakeTimers();
     fetchMock.mockImplementation(() => Promise.resolve(Response.json(valid)));
     const adapter = new OmdbAdapter('key');
+
     await Promise.all([
       adapter.findRating(id, 'movie'),
       adapter.findRating(id, 'movie'),
     ]);
     await adapter.findRating(id, 'movie');
     expect(fetchMock).toHaveBeenCalledTimes(1);
+
     await jest.advanceTimersByTimeAsync(3_600_001);
     await adapter.findRating(id, 'movie');
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -282,9 +287,11 @@ describe('OmdbAdapter', () => {
     jest.useFakeTimers();
     fetchMock.mockRejectedValue(new Error('offline'));
     const adapter = new OmdbAdapter('key');
+
     await adapter.findRating(id, 'movie');
     await adapter.findRating(id, 'movie');
     expect(fetchMock).toHaveBeenCalledTimes(1);
+
     await jest.advanceTimersByTimeAsync(60_001);
     await adapter.findRating(id, 'movie');
     expect(fetchMock).toHaveBeenCalledTimes(2);

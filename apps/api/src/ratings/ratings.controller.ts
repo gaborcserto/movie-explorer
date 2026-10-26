@@ -5,6 +5,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+
 import { RatingsService } from './ratings.service';
 import { ImdbRatingResponseDto, RatingParams } from './ratings.dto';
 

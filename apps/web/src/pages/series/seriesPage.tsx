@@ -27,18 +27,28 @@ function SeriesDetails({ idText }: { idText: string }) {
   const series = resource.data;
   const seriesId = series?.id;
   const [watchProviders, setWatchProviders] = useState<WatchProvider[]>([]);
+
   useEffect(() => {
-    if (seriesId === undefined) return undefined;
+    if (seriesId === undefined) {
+      return undefined;
+    }
+
     const controller = new AbortController();
     setWatchProviders([]);
+
     Promise.resolve()
       .then(() => getWatchProviders('series', id, controller.signal))
       .then(({ providers }) => {
-        if (!controller.signal.aborted) setWatchProviders(providers);
+        if (!controller.signal.aborted) {
+          setWatchProviders(providers);
+        }
       })
       .catch(() => {
-        if (!controller.signal.aborted) setWatchProviders([]);
+        if (!controller.signal.aborted) {
+          setWatchProviders([]);
+        }
       });
+
     return () => controller.abort();
   }, [id, seriesId]);
 

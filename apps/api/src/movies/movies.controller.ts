@@ -16,6 +16,12 @@ import {
   Query,
   NotFoundException,
 } from '@nestjs/common';
+import type {
+  MovieDetails,
+  MovieListResponse,
+  MovieSuggestionsResponse,
+} from '@movie-explorer/contracts';
+
 import { MoviesService } from './movies.service';
 import { DetailIdParams } from '../validation/detail-id.dto';
 import {
@@ -24,11 +30,6 @@ import {
   MovieDetails as MovieDetailsDto,
   MoviesResponse,
 } from './movies.dto';
-import type {
-  MovieDetails,
-  MovieListResponse,
-  MovieSuggestionsResponse,
-} from '@movie-explorer/contracts';
 import { WatchProvidersDto } from './watch-providers.dto';
 
 @ApiTags('Movies')
@@ -106,7 +107,9 @@ export class MoviesController {
   @ApiResponse({ status: 200, type: WatchProvidersDto })
   public async getWatchProviders(@Param() params: DetailIdParams) {
     const providers = await this.moviesService.findWatchProviders(params.id);
-    if (!providers) throw new NotFoundException('Movie not found');
+    if (!providers) {
+      throw new NotFoundException('Movie not found');
+    }
     return providers;
   }
 

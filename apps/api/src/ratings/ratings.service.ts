@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { ImdbRatingResponse } from '@movie-explorer/contracts';
+
 import { TmdbExternalIds } from '../integrations/tmdb/tmdb-external-ids';
 import { OmdbAdapter } from '../integrations/omdb/omdb.adapter';
 
@@ -14,7 +15,9 @@ export class RatingsService {
     kind: 'movie' | 'series',
     id: number,
   ): Promise<ImdbRatingResponse> {
-    if (!this.omdb.enabled) return { imdb: null };
+    if (!this.omdb.enabled) {
+      return { imdb: null };
+    }
     try {
       const imdbId = await this.ids.resolve(kind, id);
       return { imdb: imdbId ? await this.omdb.findRating(imdbId, kind) : null };

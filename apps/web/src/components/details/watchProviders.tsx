@@ -3,6 +3,7 @@ import type {
   WatchProvider,
   WatchProviderCategory,
 } from '@movie-explorer/contracts';
+
 import appleLogo from '../../assets/img/providers/apple.webp';
 import disneyLogo from '../../assets/img/providers/disney.webp';
 import netflixLogo from '../../assets/img/providers/netflix.webp';
@@ -69,7 +70,9 @@ export default function WatchProviders({
       ),
     }))
     .filter((group) => group.providers.length > 0);
-  if (groups.length === 0) return null;
+  if (groups.length === 0) {
+    return null;
+  }
 
   return (
     <section

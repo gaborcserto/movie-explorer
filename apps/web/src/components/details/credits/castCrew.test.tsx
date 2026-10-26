@@ -7,6 +7,7 @@ import {
   RouterProvider,
 } from 'react-router-dom';
 import type { MovieDetails } from '@movie-explorer/contracts';
+
 import DetailsContent, { DetailsLowerContent } from '../detailsContent';
 
 const base: MovieDetails = {

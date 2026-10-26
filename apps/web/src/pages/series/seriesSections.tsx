@@ -126,9 +126,15 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
             ) {
               event.preventDefault();
               let next: 'cast' | 'crew';
-              if (event.key === 'Home') next = 'cast';
-              else if (event.key === 'End') next = 'crew';
-              else next = activeCreditTab === 'cast' ? 'crew' : 'cast';
+
+              if (event.key === 'Home') {
+                next = 'cast';
+              } else if (event.key === 'End') {
+                next = 'crew';
+              } else {
+                next = activeCreditTab === 'cast' ? 'crew' : 'cast';
+              }
+
               setActiveCreditTab(next);
               document.getElementById(`${creditTabId}-${next}-tab`)?.focus();
             }

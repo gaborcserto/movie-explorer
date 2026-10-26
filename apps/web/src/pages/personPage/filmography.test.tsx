@@ -12,6 +12,7 @@ import type {
   PersonDetails,
   PersonFilmographyEntry,
 } from '@movie-explorer/contracts';
+
 import App from '../../App';
 
 function movie(

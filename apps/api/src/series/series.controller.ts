@@ -17,8 +17,8 @@ import {
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 import type { SeriesDetails } from '@movie-explorer/contracts';
-import { WatchProvidersDto } from '../movies/watch-providers.dto';
 
+import { WatchProvidersDto } from '../movies/watch-providers.dto';
 import { DetailIdParams } from '../validation/detail-id.dto';
 import {
   SeriesDetailsDto,
@@ -160,7 +160,9 @@ export class SeriesController {
   @ApiOkResponse({ type: WatchProvidersDto })
   async getWatchProviders(@Param() params: DetailIdParams) {
     const providers = await this.service.findWatchProviders(params.id);
-    if (!providers) throw new NotFoundException('TV series not found');
+    if (!providers) {
+      throw new NotFoundException('TV series not found');
+    }
     return providers;
   }
 

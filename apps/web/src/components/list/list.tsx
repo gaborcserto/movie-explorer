@@ -60,8 +60,12 @@ function List() {
     if (searchQuery && genre) {
       return `No movies found for "${searchQuery}" in ${genre}.`;
     }
-    if (searchQuery) return `No movies found for "${searchQuery}".`;
-    if (genre) return `No movies found in ${genre}.`;
+    if (searchQuery) {
+      return `No movies found for "${searchQuery}".`;
+    }
+    if (genre) {
+      return `No movies found in ${genre}.`;
+    }
     return 'No movies available.';
   };
 
@@ -128,8 +132,11 @@ function List() {
   ];
   const removeBadge = (key: string) => {
     const next = new URLSearchParams(searchParams);
-    if (key === 'sorting') next.set('sorting', 'popularity');
-    else next.delete(key);
+    if (key === 'sorting') {
+      next.set('sorting', 'popularity');
+    } else {
+      next.delete(key);
+    }
     setSearchParams(next);
   };
   const clearFilters = () => {

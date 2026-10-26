@@ -329,8 +329,9 @@ test.each(['all', 'tv', 'people'] as const)(
         expect.any(AbortSignal)
       );
       expect(getMovies).not.toHaveBeenCalled();
-    } else
+    } else {
       expect(getPeople).toHaveBeenCalledWith('', 1, expect.any(AbortSignal));
+    }
   }
 );
 
@@ -379,7 +380,9 @@ test.each(['movie', 'tv', 'person'] as const)(
 
 test('omits empty groups, reports one empty state, and retries only a failed category', async () => {
   api.mockImplementation(async (_query, type) => {
-    if (type === 'person') throw new ApiRequestError('network');
+    if (type === 'person') {
+      throw new ApiRequestError('network');
+    }
     return { ...page(1, 0, 0), totalResults: 0 };
   });
   setup('/search/None?view=all');

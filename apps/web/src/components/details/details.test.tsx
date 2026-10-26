@@ -9,6 +9,7 @@ import {
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useParams as originalUseParams } from 'react-router-dom';
 import type { MovieDetails } from '@movie-explorer/contracts';
+
 import Details from './details';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
 import {

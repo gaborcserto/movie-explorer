@@ -310,7 +310,9 @@ export const getMovie = async (
         } else if (section === 'photos') {
           body.backdrops = [];
           body.photos = [];
-        } else body[section] = [];
+        } else {
+          body[section] = [];
+        }
       }
     });
   }
@@ -322,7 +324,9 @@ function watchProvidersResponse(value: unknown): value is WatchProviders {
     record(value) &&
     Array.isArray(value.providers) &&
     value.providers.every((item: unknown) => {
-      if (!record(item)) return false;
+      if (!record(item)) {
+        return false;
+      }
       return (
         Number.isSafeInteger(item.id) &&
         typeof item.id === 'number' &&
@@ -347,8 +351,9 @@ export async function getWatchProviders(
     `${apiBaseUrl}/api/v1/${kind}/${id}/watch-providers`,
     { signal }
   );
-  if (!watchProvidersResponse(body))
+  if (!watchProvidersResponse(body)) {
     throw new ApiRequestError('invalid-response');
+  }
   return body;
 }
 
@@ -588,7 +593,9 @@ export async function getSearchResults(
   year?: string
 ): Promise<SearchResponse> {
   const params = new URLSearchParams({ query, type, page: String(page) });
-  if (year) params.set('year', year);
+  if (year) {
+    params.set('year', year);
+  }
   const body = await request<unknown>(`${apiBaseUrl}/api/v1/search?${params}`, {
     signal,
   });
@@ -596,8 +603,9 @@ export async function getSearchResults(
     !searchResponse(body) ||
     body.page !== page ||
     body.results.some((item) => type !== 'all' && item.mediaType !== type)
-  )
+  ) {
     throw new ApiRequestError('invalid-response');
+  }
   return body;
 }
 
@@ -607,14 +615,21 @@ export async function getPopularSeries(
   signal?: AbortSignal
 ): Promise<SearchResponse> {
   const params = new URLSearchParams({ page: String(page) });
-  if (filters.year) params.set('year', filters.year);
-  if (filters.rating) params.set('minimumRating', filters.rating);
-  if (filters.sorting)
+  if (filters.year) {
+    params.set('year', filters.year);
+  }
+  if (filters.rating) {
+    params.set('minimumRating', filters.rating);
+  }
+  if (filters.sorting) {
     params.set(
       'sort',
       filters.sorting === 'releaseDate' ? 'firstAirDate' : filters.sorting
     );
-  if (filters.order) params.set('order', filters.order);
+  }
+  if (filters.order) {
+    params.set('order', filters.order);
+  }
   const body = await request<unknown>(`${apiBaseUrl}/api/v1/series?${params}`, {
     signal,
   });
@@ -634,7 +649,9 @@ export const getPeople = (
   signal?: AbortSignal
 ): Promise<PersonListResponse> => {
   const params = new URLSearchParams();
-  if (query) params.set('query', query);
+  if (query) {
+    params.set('query', query);
+  }
   params.set('page', String(page));
   return request<PersonListResponse>(
     `${apiBaseUrl}/api/v1/persons?${params}`,
@@ -708,8 +725,12 @@ export async function getImdbRating(
     `${apiBaseUrl}/api/v1/ratings/${kind}/${id}/imdb`,
     { signal }
   );
-  if (!record(body)) throw new ApiRequestError('invalid-response');
-  if (body.imdb === null) return { imdb: null };
+  if (!record(body)) {
+    throw new ApiRequestError('invalid-response');
+  }
+  if (body.imdb === null) {
+    return { imdb: null };
+  }
   const rating = body.imdb;
   if (
     !record(rating) ||

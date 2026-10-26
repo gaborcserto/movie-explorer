@@ -6,8 +6,9 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import type { MovieProvider } from '../src/movies/movie-provider';
 import * as request from 'supertest';
+
+import type { MovieProvider } from '../src/movies/movie-provider';
 import { PERSON_FILMOGRAPHY_PROVIDER } from '../src/persons/person-filmography-provider';
 import { AppModule } from './../src/app.module';
 import { MOVIE_PROVIDER } from './../src/movies/movie-provider';

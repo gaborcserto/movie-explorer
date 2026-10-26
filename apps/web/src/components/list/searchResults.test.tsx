@@ -6,6 +6,7 @@ import type {
   MovieListResponse,
   PersonListResponse,
 } from '@movie-explorer/contracts';
+
 import SearchResults from './searchResults';
 import { ApiRequestError, getMovies, getPeople } from '../../util/apiUtils';
 import SearchHistoryProvider from './searchHistory';

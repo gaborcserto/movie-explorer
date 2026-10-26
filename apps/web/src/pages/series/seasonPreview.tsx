@@ -28,8 +28,12 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
 
   useEffect(() => {
     const container = tabs.current;
-    if (!container) return undefined;
+    if (!container) {
+      return undefined;
+    }
+
     const measure = () => setScrollState(measureScroll(container));
+
     measure();
     const observer =
       typeof ResizeObserver === 'undefined'
@@ -39,13 +43,18 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
     container
       .querySelectorAll('[role="tab"]')
       .forEach((tab) => observer?.observe(tab));
-    if (container.parentElement) observer?.observe(container.parentElement);
+    if (container.parentElement) {
+      observer?.observe(container.parentElement);
+    }
+
     return () => {
       observer?.disconnect();
     };
   }, [series.seasons.length]);
 
-  if (!season) return <p>No season information available.</p>;
+  if (!season) {
+    return <p>No season information available.</p>;
+  }
 
   function select(index: number) {
     setSelected(index);
@@ -54,10 +63,11 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
     if (tab && tabs.current) {
       const tabRect = tab.getBoundingClientRect();
       const listRect = tabs.current.getBoundingClientRect();
-      if (tabRect.left < listRect.left)
+      if (tabRect.left < listRect.left) {
         tabs.current.scrollLeft += tabRect.left - listRect.left;
-      else if (tabRect.right > listRect.right)
+      } else if (tabRect.right > listRect.right) {
         tabs.current.scrollLeft += tabRect.right - listRect.right;
+      }
     }
   }
 
@@ -73,8 +83,9 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
             aria-label="Previous season"
             disabled={scrollState.atStart}
             onClick={() => {
-              if (tabs.current)
+              if (tabs.current) {
                 tabs.current.scrollLeft -= tabs.current.clientWidth * 0.75;
+              }
             }}
           >
             ‹
@@ -88,18 +99,26 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
           className="season-tabs"
           onScroll={() => {
             const container = tabs.current;
-            if (container) setScrollState(measureScroll(container));
+            if (container) {
+              setScrollState(measureScroll(container));
+            }
           }}
           onKeyDown={(event) => {
             let next: number;
-            if (event.key === 'ArrowRight')
+
+            if (event.key === 'ArrowRight') {
               next = (selected + 1) % series.seasons.length;
-            else if (event.key === 'ArrowLeft')
+            } else if (event.key === 'ArrowLeft') {
               next =
                 (selected - 1 + series.seasons.length) % series.seasons.length;
-            else if (event.key === 'Home') next = 0;
-            else if (event.key === 'End') next = series.seasons.length - 1;
-            else return;
+            } else if (event.key === 'Home') {
+              next = 0;
+            } else if (event.key === 'End') {
+              next = series.seasons.length - 1;
+            } else {
+              return;
+            }
+
             event.preventDefault();
             select(next);
           }}
@@ -131,8 +150,9 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
             aria-label="Next season"
             disabled={scrollState.atEnd}
             onClick={() => {
-              if (tabs.current)
+              if (tabs.current) {
                 tabs.current.scrollLeft += tabs.current.clientWidth * 0.75;
+              }
             }}
           >
             ›

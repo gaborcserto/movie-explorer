@@ -1,7 +1,7 @@
-import { RatingsModule } from '../ratings/ratings.module';
-import { TmdbExternalIds } from '../integrations/tmdb/tmdb-external-ids';
 import { Module } from '@nestjs/common';
 
+import { RatingsModule } from '../ratings/ratings.module';
+import { TmdbExternalIds } from '../integrations/tmdb/tmdb-external-ids';
 import { PERSON_FILMOGRAPHY_PROVIDER } from '../persons/person-filmography-provider';
 import { TmdbPersonFilmographyProvider } from '../integrations/tmdb/tmdb-person-filmography.provider';
 import { MoviesController } from './movies.controller';
