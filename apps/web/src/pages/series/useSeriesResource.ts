@@ -14,8 +14,10 @@ export default function useSeriesResource<T>(
     if (!enabled || (initial && attempt === 0)) {
       return undefined;
     }
+
     const controller = new AbortController();
     setPending(true);
+
     load(controller.signal)
       .then((result) => {
         if (!controller.signal.aborted) {

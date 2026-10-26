@@ -18,6 +18,7 @@ function pointer(
     button,
     currentTarget: { setPointerCapture },
   } as unknown as ReactPointerEvent<HTMLDivElement>;
+
   return { event, setPointerCapture };
 }
 

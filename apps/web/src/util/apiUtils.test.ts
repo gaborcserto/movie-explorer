@@ -488,6 +488,7 @@ describe('API functions', () => {
     fetchMock.mockResolvedValue(response(undefined, 404));
 
     let error: unknown;
+
     try {
       await getMovie(1234);
     } catch (caughtError) {
@@ -501,6 +502,7 @@ describe('API functions', () => {
     fetchMock.mockResolvedValue(response(undefined, 500));
 
     let error: unknown;
+
     try {
       await getMovie(1234);
     } catch (caughtError) {

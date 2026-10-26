@@ -51,7 +51,10 @@ function remember<T>(cache: Map<string, T>, key: string, value: T) {
   cache.set(key, value);
   if (cache.size > 30) {
     const oldest = cache.keys().next().value;
-    if (oldest !== undefined) cache.delete(oldest);
+
+    if (oldest !== undefined) {
+      cache.delete(oldest);
+    }
   }
 }
 
@@ -81,6 +84,7 @@ export function useResultHistory<T>(
     },
     [cache, key]
   );
+
   return { restored, save };
 }
 
@@ -89,18 +93,26 @@ export function useSearchScroll() {
   const location = useLocation();
   useLayoutEffect(() => {
     const saved = history?.scroll.get(location.key);
-    if (saved !== undefined)
+
+    if (saved !== undefined) {
       window.scrollTo({ top: saved, behavior: 'instant' });
+    }
     const save = () => {
-      if (history) remember(history.scroll, location.key, window.scrollY);
+      if (history) {
+        remember(history.scroll, location.key, window.scrollY);
+      }
     };
-    if (saved === undefined) save();
+
+    if (saved === undefined) {
+      save();
+    }
     window.addEventListener('scroll', save, { passive: true });
     // Capture departure before routing changes the document's height, including
     // a position change whose scroll event has not been delivered yet.
     document.addEventListener('click', save, true);
     document.addEventListener('submit', save, true);
     window.addEventListener('popstate', save, true);
+
     return () => {
       // The destination layout may already have clamped scrollY during unmount.
       // Preserve the last scroll event recorded while this Search entry was active.

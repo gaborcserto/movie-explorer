@@ -4,6 +4,7 @@ export function getDisplaySrcSet(srcSet?: string) {
     ?.split(',')
     .filter((candidate) => {
       const density = candidate.match(/\s(\d+(?:\.\d+)?)x\s*$/)?.[1];
+
       return !density || Number(density) <= 2;
     })
     .join(',');
@@ -12,6 +13,7 @@ export function getDisplaySrcSet(srcSet?: string) {
 /** Use only supplied URLs; width variants let the browser account for card size. */
 export function getPosterDisplaySrcSet(src?: string, srcSet?: string) {
   const display = getDisplaySrcSet(srcSet);
+
   if (!display) {
     return undefined;
   }

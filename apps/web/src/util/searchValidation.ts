@@ -3,8 +3,14 @@ import type { SearchResponse, SearchResult } from '@movie-explorer/contracts';
 import { optionalText, record } from './partialValidation';
 
 export function searchResult(value: unknown): value is SearchResult {
-  if (!record(value) || !Number.isSafeInteger(value.id) || Number(value.id) < 1)
+  if (
+    !record(value) ||
+    !Number.isSafeInteger(value.id) ||
+    Number(value.id) < 1
+  ) {
     return false;
+  }
+
   if (
     !optionalText(value, [
       'posterUrl',
@@ -14,8 +20,10 @@ export function searchResult(value: unknown): value is SearchResult {
       'releaseDate',
       'firstAirDate',
     ])
-  )
+  ) {
     return false;
+  }
+
   if (
     !['popularity', 'rating'].every(
       (key) =>
@@ -25,10 +33,13 @@ export function searchResult(value: unknown): value is SearchResult {
           value[key] >= 0 &&
           (key !== 'rating' || value[key] <= 10))
     )
-  )
+  ) {
     return false;
-  if (value.mediaType === 'person')
+  }
+
+  if (value.mediaType === 'person') {
     return typeof value.name === 'string' && Boolean(value.name.trim());
+  }
 
   return (
     (value.mediaType === 'movie' || value.mediaType === 'tv') &&

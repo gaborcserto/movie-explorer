@@ -105,6 +105,7 @@ export default function usePhotoGestures({
     if (points.current.size || current.multiple || cancelled) {
       current.multiple = true;
       lastTap.current = 0;
+
       return;
     }
 

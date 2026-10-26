@@ -18,6 +18,7 @@ export default function useRatingsResource(
     }
 
     const controller = new AbortController();
+
     getRatings(kind, id, controller.signal)
       .then((value) => {
         if (!controller.signal.aborted) {

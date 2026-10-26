@@ -58,6 +58,7 @@ export default function usePhotoZoom(
       typeof ResizeObserver === 'undefined'
         ? undefined
         : new ResizeObserver(reset);
+
     if (viewport.current) {
       observer?.observe(viewport.current);
     }

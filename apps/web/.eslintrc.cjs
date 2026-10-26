@@ -61,6 +61,27 @@ module.exports = {
       ])
     ),
   },
+  overrides: [
+    {
+      // Expand to components and pages after their readability batch.
+      files: ['src/util/**/*.{ts,tsx}', 'src/**/use*.{ts,tsx}'],
+      rules: {
+        'padding-line-between-statements': [
+          'error',
+          {
+            blankLine: 'always',
+            prev: ['const', 'let', 'var'],
+            next: ['if', 'try', 'for', 'while', 'switch'],
+          },
+          {
+            blankLine: 'always',
+            prev: '*',
+            next: 'return',
+          },
+        ],
+      },
+    },
+  ],
   settings: {
     'import/resolver': {
       node: {

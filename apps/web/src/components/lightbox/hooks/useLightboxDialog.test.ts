@@ -11,6 +11,7 @@ function createDialog() {
   lastButton.setAttribute('aria-label', 'Next');
   root.append(closeButton, lastButton);
   document.body.append(root);
+
   return { root, closeButton, lastButton };
 }
 
@@ -109,6 +110,7 @@ describe('useLightboxDialog', () => {
         onFullscreenChange: vi.fn(),
         onFullscreenError: vi.fn(),
       });
+
       return index;
     });
 

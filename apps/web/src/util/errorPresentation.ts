@@ -41,6 +41,7 @@ export default function presentApiError(error: unknown) {
         delay && Number.isSafeInteger(delay) && delay > 0 && delay <= 86400
           ? ` Please wait about ${delay < 60 ? `${delay} seconds` : `${Math.ceil(delay / 60)} minutes`} before trying again.`
           : ' Please wait a moment before trying again.';
+
       return {
         heading: 'Please try again shortly',
         description: `Too many requests were made.${guidance}`,

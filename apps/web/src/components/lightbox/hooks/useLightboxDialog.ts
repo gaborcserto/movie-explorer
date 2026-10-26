@@ -87,6 +87,7 @@ export default function useLightboxDialog({
         ];
         const first = controls[0];
         const last = controls[controls.length - 1];
+
         if (!dialog?.contains(document.activeElement)) {
           event.preventDefault();
           first?.focus();

@@ -45,14 +45,21 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
     const controller = new AbortController();
     controllerRef.current = controller;
     const text = query.trim();
-    if (!enabled || text.length < 2 || text === committedQuery)
+
+    if (!enabled || text.length < 2 || text === committedQuery) {
       return () => controller.abort();
+    }
     const timer = window.setTimeout(async () => {
-      if (current !== generation.current) return;
+      if (current !== generation.current) {
+        return;
+      }
       setMessage('Loading suggestions…');
       try {
         const response = await getSearchSuggestions(text, controller.signal);
-        if (controller.signal.aborted || current !== generation.current) return;
+
+        if (controller.signal.aborted || current !== generation.current) {
+          return;
+        }
         // Keep grouping and keyboard order identical even if API order changes.
         const items = ['movie', 'tv', 'person'].flatMap((type) =>
           response.suggestions
@@ -81,8 +88,9 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
           controller.signal.aborted ||
           current !== generation.current ||
           isCancelledError(error)
-        )
+        ) {
           return;
+        }
         setFailed(true);
         setActive(-1);
         setSuggestions([]);
@@ -90,6 +98,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
         setMessage('Suggestions unavailable. Press Enter to search.');
       }
     }, 300);
+
     return () => {
       window.clearTimeout(timer);
       controller.abort();
@@ -101,18 +110,21 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
       if (
         event.target instanceof Node &&
         !containerRef.current?.contains(event.target)
-      )
+      ) {
         dismiss();
+      }
     };
     document.addEventListener('mousedown', outside);
+
     return () => document.removeEventListener('mousedown', outside);
   }, []);
 
   useEffect(() => {
-    if (open && active >= 0)
+    if (open && active >= 0) {
       document
         .getElementById(`${listId}-${active}`)
         ?.scrollIntoView?.({ block: 'nearest' });
+    }
   }, [active, open, listId]);
 
   const edit = (value: string) => {
@@ -120,21 +132,27 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
     setSuggestions([]);
     setQuery(value);
   };
+
   const choose = (item: SearchSuggestion) => {
     dismiss();
     navigate(`/${item.mediaType}/${item.id}`);
   };
+
   const submit = () => {
     dismiss();
     const text = query.trim();
     // Carry only search-page controls; detail-only query parameters never escape.
     const params = new URLSearchParams();
+
     if (location.pathname.startsWith('/search')) {
       const current = new URLSearchParams(location.search);
       ['view', 'filter', 'year', 'rating', 'sorting', 'order'].forEach(
         (key) => {
           const value = current.get(key);
-          if (value) params.set(key, value);
+
+          if (value) {
+            params.set(key, value);
+          }
         }
       );
     }
@@ -142,6 +160,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
       `/search${text ? `/${encodeURIComponent(text)}` : ''}${params.size ? `?${params}` : ''}`
     );
   };
+
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -150,7 +169,10 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
       event.preventDefault();
       const direction = event.key === 'ArrowDown' ? 1 : -1;
       setActive((current) => {
-        if (current < 0) return direction > 0 ? 0 : suggestions.length - 1;
+        if (current < 0) {
+          return direction > 0 ? 0 : suggestions.length - 1;
+        }
+
         return (current + direction + suggestions.length) % suggestions.length;
       });
     } else if (
@@ -163,6 +185,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
       choose(suggestions[active]);
     }
   };
+
   return {
     query,
     edit,
@@ -191,7 +214,9 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
       onKeyDown,
     },
     onBlur: (event: React.FocusEvent<HTMLElement>) => {
-      if (!event.currentTarget.contains(event.relatedTarget)) dismiss();
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        dismiss();
+      }
     },
   };
 }

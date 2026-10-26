@@ -24,6 +24,7 @@ function appendUniqueMovies(
 ): MovieSummary[] {
   const moviesById = new Map(current.map((movie) => [movie.id, movie]));
   incoming.forEach((movie) => moviesById.set(movie.id, movie));
+
   return [...moviesById.values()];
 }
 
@@ -133,6 +134,7 @@ export default function useMovieResults(
     }
 
     const signal = requestControllerRef.current?.signal;
+
     if (
       !signal ||
       signal.aborted ||
@@ -150,6 +152,7 @@ export default function useMovieResults(
         (current) => Math.min(current, movies.length) + MOVIE_BATCH_SIZE
       );
       setLoadMoreError(null);
+
       return;
     }
 
@@ -163,6 +166,7 @@ export default function useMovieResults(
         { ...params, page: moviesData.page + 1 },
         signal
       );
+
       if (!isCurrentRequest()) {
         return;
       }
