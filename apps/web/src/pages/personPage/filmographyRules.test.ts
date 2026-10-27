@@ -7,6 +7,7 @@ import {
   getFilmographyRoles,
   getFilmographySelection,
   filmographyIdentity,
+  replaceFilmographyGroup,
 } from './filmographyRules';
 
 function movie(
@@ -45,6 +46,28 @@ const seriesCredit: PersonSeriesCredit = {
 };
 
 describe('Combined filmography rules', () => {
+  it('replaces one recovered media group while preserving sibling entries and availability', () => {
+    const current = {
+      entries: [{ ...movie(1), mediaType: 'movie' as const }, seriesCredit],
+      groups: {
+        movie: { status: 'available' as const },
+        tv: { status: 'unavailable' as const },
+      },
+    };
+    const replacement = {
+      entries: [{ ...seriesCredit, id: 2, title: 'Recovered Series' }],
+      groups: { tv: { status: 'available' as const } },
+    };
+
+    expect(replaceFilmographyGroup(current, replacement, 'tv')).toEqual({
+      entries: [current.entries[0], replacement.entries[0]],
+      groups: {
+        movie: { status: 'available' },
+        tv: { status: 'available' },
+      },
+    });
+  });
+
   it.each([null, 0, -1, 1.5, NaN, Infinity])(
     'omits unreliable episode count %s while preserving roles',
     (episodeCount) => {

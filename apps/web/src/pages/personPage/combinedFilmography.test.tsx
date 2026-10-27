@@ -317,6 +317,17 @@ it('retains unavailable-group URL selections, recovers only that group and prese
   expect(
     screen.getByText('Credits for this selection are unavailable.')
   ).toBeInTheDocument();
+  fetchMock.mockResolvedValueOnce(Response.json({}, { status: 503 }));
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Retry series credits' })
+  );
+  expect(
+    await screen.findByText('Series credits unavailable. Please try again.')
+  ).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Movies' }));
+  expect(screen.getByRole('link', { name: 'A Movie' })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Series' }));
+
   fetchMock.mockResolvedValueOnce(
     Response.json({
       entries: [series],
@@ -334,7 +345,7 @@ it('retains unavailable-group URL selections, recovers only that group and prese
   );
   await userEvent.click(screen.getByRole('button', { name: 'Movies' }));
   expect(screen.getByRole('link', { name: 'A Movie' })).toBeInTheDocument();
-  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(fetchMock).toHaveBeenCalledTimes(3);
 });
 
 it('restores Series selection after navigating to Series Details and Back', async () => {

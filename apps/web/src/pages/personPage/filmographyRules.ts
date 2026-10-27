@@ -1,5 +1,7 @@
 import type {
+  CombinedFilmography,
   CombinedFilmographyEntry,
+  FilmographyMediaType,
   PersonCrewCredit,
   PersonFilmographyEntry,
 } from '@movie-explorer/contracts';
@@ -15,6 +17,20 @@ export function filmographyDate(entry: FilmographyEntry) {
   return 'mediaType' in entry && entry.mediaType === 'tv'
     ? entry.firstAirDate
     : entry.releaseDate;
+}
+
+export function replaceFilmographyGroup(
+  current: CombinedFilmography,
+  replacement: CombinedFilmography,
+  mediaType: Exclude<FilmographyMediaType, 'all'>
+): CombinedFilmography {
+  return {
+    entries: [
+      ...current.entries.filter((entry) => entry.mediaType !== mediaType),
+      ...replacement.entries,
+    ],
+    groups: { ...current.groups, ...replacement.groups },
+  };
 }
 
 export type FilmographyView = 'acting' | 'crew';

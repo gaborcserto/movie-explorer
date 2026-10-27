@@ -1,10 +1,8 @@
 import { Fragment, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type {
-  MovieCastMember,
   MovieDetails,
   MovieSection,
-  MovieDirector,
   WatchProvider,
   Ratings,
 } from '@movie-explorer/contracts';
@@ -16,6 +14,11 @@ import HeroImage from '../heroImage';
 import MovieMetadata from './metadata';
 import CastPreview from './credits';
 import useCrewPreview from './credits/useCrewPreview';
+import {
+  getMoviePersonCredits,
+  hasPersonId,
+  type MoviePersonCredit,
+} from './credits/personCredits';
 import { DetailsHeroFrame, DetailsLowerLayout } from './detailsPageLayout';
 import './media/media.scss';
 import WatchProviders from './watchProviders';
@@ -37,106 +40,7 @@ interface LowerDetailsProps {
   ) => Promise<void>;
 }
 
-interface PersonCredit extends MovieDirector {
-  key: string;
-  roles: string[];
-}
-
-function hasPersonId(id: number | undefined): id is number {
-  return id !== undefined && Number.isSafeInteger(id) && id > 0;
-}
-
-function getPersonCredits(movie: MovieDetails) {
-  const groupPeople = (
-    members: (MovieDirector & { roles?: string[] })[],
-    category: string
-  ): PersonCredit[] => {
-    const byId = new Map<number, PersonCredit>();
-    const unlinkedByName = new Map<string, PersonCredit>();
-    const people: PersonCredit[] = [];
-    members.forEach((person, index) => {
-      if (!person.name.trim()) {
-        return;
-      }
-
-      let credit = hasPersonId(person.id) ? byId.get(person.id) : undefined;
-
-      if (!hasPersonId(person.id) && category !== 'cast') {
-        credit = unlinkedByName.get(person.name.trim());
-      }
-
-      if (!credit) {
-        credit = {
-          ...person,
-          name: person.name.trim(),
-          key: hasPersonId(person.id)
-            ? `person-${person.id}`
-            : `${category}-${index}`,
-          roles: [],
-        };
-        people.push(credit);
-        if (hasPersonId(person.id)) {
-          byId.set(person.id, credit);
-        } else if (category !== 'cast') {
-          unlinkedByName.set(credit.name, credit);
-        }
-      }
-
-      credit.profileUrl ||= person.profileUrl;
-      credit.profileSrcSet ||= person.profileSrcSet;
-
-      (person.roles ?? []).forEach((role) => {
-        const label = role.trim();
-
-        if (label && !credit.roles.includes(label)) {
-          credit.roles.push(label);
-        }
-      });
-    });
-
-    return people;
-  };
-  const directors = groupPeople(movie.directors ?? [], 'director');
-  const writers = groupPeople(movie.writers ?? [], 'writer');
-  const producers = groupPeople(movie.producers ?? [], 'producer');
-  const structuredCast = (movie.castMembers ?? []).filter((person) =>
-    person.name.trim()
-  );
-
-  // Keep legacy names missing from a partial structured response as plain text.
-  // Consume occurrences only for display; names never supply or merge identities.
-  const legacyNames = movie.cast.map((name) => name.trim()).filter(Boolean);
-
-  structuredCast.forEach((person) => {
-    const index = legacyNames.indexOf(person.name.trim());
-
-    if (index >= 0) {
-      legacyNames.splice(index, 1);
-    }
-  });
-
-  const castMembers: MovieCastMember[] = [
-    ...structuredCast,
-    ...legacyNames.map((name) => ({ name })),
-  ];
-
-  const cast = groupPeople(
-    castMembers.map((person) => ({
-      ...person,
-      roles: person.character ? [person.character] : [],
-    })),
-    'cast'
-  );
-
-  return {
-    directors,
-    writers,
-    producers,
-    cast,
-  };
-}
-
-function CreditNames({ people }: { people: PersonCredit[] }) {
+function CreditNames({ people }: { people: MoviePersonCredit[] }) {
   return people.map((person) => (
     <Fragment key={person.key}>
       {hasPersonId(person.id) ? (
@@ -156,7 +60,7 @@ function CrewGroup({
   measurement = false,
 }: {
   label: string;
-  people: PersonCredit[];
+  people: MoviePersonCredit[];
   measurement?: boolean;
 }) {
   const headingId = `crew-${label.toLowerCase()}-heading`;
@@ -185,7 +89,7 @@ function CrewGroups({
   groupId,
   measurement = false,
 }: {
-  groups: { label: string; people: PersonCredit[] }[];
+  groups: { label: string; people: MoviePersonCredit[] }[];
   visibleKeys: string[];
   groupId: string;
   measurement?: boolean;
@@ -295,7 +199,8 @@ export function DetailsLowerContent({
     posters = [],
     videos = [],
   } = movieData;
-  const { cast, directors, writers, producers } = getPersonCredits(movieData);
+  const { cast, directors, writers, producers } =
+    getMoviePersonCredits(movieData);
   const crewGroups = [
     { label: 'Directors', people: directors },
     { label: 'Writers', people: writers },

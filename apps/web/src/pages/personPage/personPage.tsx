@@ -25,6 +25,7 @@ import HeaderSearch from '../../components/search/headerSearch';
 import getPersonAge from './personAge';
 import useDetailPage from '../../components/details/hooks';
 import parseDetailId from '../../util/detailId';
+import { replaceFilmographyGroup } from './filmographyRules';
 
 type PersonState =
   | { status: 'loading' | 'not-found' | 'error' }
@@ -206,6 +207,59 @@ function PersonDetailsPage({ id }: { id: string }) {
 
   const mainRef = useDetailPage(pageTitle);
 
+  const recoverFilmographyGroup = async (
+    type: 'movie' | 'tv',
+    signal: AbortSignal
+  ) => {
+    const result = await getCombinedFilmography(personId, type, signal);
+
+    if (signal.aborted) {
+      return;
+    }
+
+    setState((previous) => {
+      if (
+        previous.status !== 'success' ||
+        !previous.person.combinedFilmography
+      ) {
+        return previous;
+      }
+
+      return {
+        status: 'success',
+        person: {
+          ...previous.person,
+          combinedFilmography: replaceFilmographyGroup(
+            previous.person.combinedFilmography,
+            result,
+            type
+          ),
+        },
+      };
+    });
+  };
+
+  const recoverFilmography = async (signal: AbortSignal) => {
+    const result = await getFilmography(personId, signal);
+
+    if (signal.aborted) {
+      return;
+    }
+
+    setState((previous) =>
+      previous.status === 'success'
+        ? {
+            status: 'success',
+            person: {
+              ...previous.person,
+              ...result,
+              filmographyAvailability: { status: 'available' },
+            },
+          }
+        : previous
+    );
+  };
+
   return (
     <div className="detail-page">
       <header className="detail-page__navigation movie-details container">
@@ -300,42 +354,9 @@ function PersonDetailsPage({ id }: { id: string }) {
                             availability={
                               state.person.combinedFilmography?.groups[type]
                             }
-                            recover={async (signal) => {
-                              const result = await getCombinedFilmography(
-                                personId,
-                                type,
-                                signal
-                              );
-
-                              if (signal.aborted) {
-                                return;
-                              }
-                              setState((previous) =>
-                                previous.status === 'success' &&
-                                previous.person.combinedFilmography
-                                  ? {
-                                      status: 'success',
-                                      person: {
-                                        ...previous.person,
-                                        combinedFilmography: {
-                                          entries: [
-                                            ...previous.person.combinedFilmography.entries.filter(
-                                              (entry) =>
-                                                entry.mediaType !== type
-                                            ),
-                                            ...result.entries,
-                                          ],
-                                          groups: {
-                                            ...previous.person
-                                              .combinedFilmography.groups,
-                                            ...result.groups,
-                                          },
-                                        },
-                                      },
-                                    }
-                                  : previous
-                              );
-                            }}
+                            recover={(signal) =>
+                              recoverFilmographyGroup(type, signal)
+                            }
                           />
                         ))}
                       </>
@@ -343,28 +364,7 @@ function PersonDetailsPage({ id }: { id: string }) {
                       <SectionRecovery
                         label="Filmography"
                         availability={state.person.filmographyAvailability}
-                        recover={async (signal) => {
-                          const result = await getFilmography(personId, signal);
-
-                          if (signal.aborted) {
-                            return;
-                          }
-
-                          setState((previous) =>
-                            previous.status === 'success'
-                              ? {
-                                  status: 'success',
-                                  person: {
-                                    ...previous.person,
-                                    ...result,
-                                    filmographyAvailability: {
-                                      status: 'available',
-                                    },
-                                  },
-                                }
-                              : previous
-                          );
-                        }}
+                        recover={recoverFilmography}
                       />
                     )
                   }
