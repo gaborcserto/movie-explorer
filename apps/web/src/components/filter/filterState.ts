@@ -1,7 +1,9 @@
 import { genresFilter } from '../../data';
 import { sortParams, sortOrderParams } from '../../util/apiUtils';
 
-export const ratingOptions = ['5', '6', '7', '8', '9'];
+export const ratingOptions = Array.from({ length: 20 }, (_, index) =>
+  String((index + 1) / 2)
+);
 export const validYear = (value: string) =>
   /^\d{4}$/.test(value) && Number(value) >= 1874 && Number(value) <= 9999;
 
@@ -12,13 +14,24 @@ export function readSearchView(params: URLSearchParams) {
 }
 
 export function readFilters(params: URLSearchParams, isSearch: boolean) {
-  const genre = params.get('filter') ?? '';
+  const genres = Array.from(
+    new Set(
+      params
+        .getAll('filter')
+        .flatMap((value) => value.split(','))
+        .map((genre) => genre.trim().toLowerCase())
+        .filter((genre) => genresFilter.includes(genre))
+    )
+  ).sort(
+    (first, second) =>
+      genresFilter.indexOf(first) - genresFilter.indexOf(second)
+  );
   const year = params.get('year') ?? '';
   const rating = params.get('rating') ?? '';
   const sorting = sortParams(params.get('sorting')) ?? 'popularity';
 
   return {
-    filter: genresFilter.includes(genre) ? genre : '',
+    filter: genres,
     year: validYear(year) ? year : '',
     rating: ratingOptions.includes(rating) ? rating : '',
     sorting: isSearch ? 'popularity' : sorting,
@@ -42,7 +55,19 @@ export function writeFilters(
     order: omitSorting ? '' : values.order,
   };
   Object.entries(entries).forEach(([key, value]) => {
-    if (value) next.set(key, value);
+    if (key === 'filter') {
+      const genres = Array.isArray(value) ? value : [];
+
+      if (genres.length) {
+        next.set('filter', genres.join(','));
+      } else {
+        next.delete('filter');
+      }
+
+      return;
+    }
+
+    if (value) next.set(key, String(value));
     else next.delete(key);
   });
 

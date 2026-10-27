@@ -1,79 +1,25 @@
-import { useId, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useId, useRef, useState } from 'react';
+import { FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
 import {
-  FaSliders,
-  FaFilm,
   FaCalendarDays,
   FaStar,
   FaArrowDownWideShort,
-  FaArrowUp,
-  FaArrowDown,
   FaArrowRotateLeft,
   FaCheck,
   FaXmark,
-  FaChevronDown,
 } from 'react-icons/fa6';
 import { genresFilter, sortOptions } from '../../data';
 import { sortParams } from '../../util/apiUtils';
-import { ratingOptions, readFilters, validYear } from './filterState';
+import { readFilters, validYear } from './filterState';
 import type { FilterValues } from './filterState';
-import useFilterPanelDialog from './hooks/useFilterPanelDialog';
-import useFilterPanelPosition from './hooks/useFilterPanelPosition';
+import Drawer from '../drawer/drawer';
 
-function getSortLabel(sorting: FilterValues['sorting']) {
-  if (sorting === 'releaseDate') return 'Release Date';
-  if (sorting === 'popularity') return 'Popularity';
-  if (sorting === 'title') return 'Title';
+function getSortOptionLabel(option: string, series: boolean) {
+  if (option !== 'Release Date') {
+    return option;
+  }
 
-  return 'Rating';
-}
-
-function FilterSection({
-  title,
-  value,
-  icon,
-  children,
-}: {
-  title: string;
-  value: string;
-  icon: ReactNode;
-  children: ReactNode;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const id = useId();
-
-  return (
-    <section className="filter-section">
-      <h3>
-        <button
-          type="button"
-          aria-expanded={expanded}
-          aria-controls={id}
-          onClick={() => setExpanded(!expanded)}
-        >
-          {icon}
-          <span>
-            {title}
-            <small>{value}</small>
-          </span>
-          <FaChevronDown
-            className="filter-section__chevron"
-            aria-hidden="true"
-          />
-        </button>
-      </h3>
-      <div
-        id={id}
-        className={`filter-section__body${expanded ? ' is-expanded' : ''}`}
-        inert={!expanded}
-      >
-        <div>
-          <div className="filter-section__content">{children}</div>
-        </div>
-      </div>
-    </section>
-  );
+  return series ? 'First-air Date' : 'Date';
 }
 
 export default function FilterPanel({
@@ -92,246 +38,397 @@ export default function FilterPanel({
   closing: boolean;
 }) {
   const [draft, setDraft] = useState(committed);
-  const panel = useRef<HTMLDivElement>(null);
-  const mobile = useFilterPanelPosition(panel);
-  const titleId = useId();
   const yearId = useId();
+  const yearListId = useId();
+  const ratingId = useId();
+  const formId = useId();
+  const yearInput = useRef<HTMLInputElement>(null);
+  const yearTrigger = useRef<HTMLButtonElement>(null);
+  const yearList = useRef<HTMLDivElement>(null);
+  const [yearPickerOpen, setYearPickerOpen] = useState(false);
+  const [earlierYearPage, setEarlierYearPage] = useState(0);
+  const currentYear = new Date().getFullYear();
   const update = (values: Partial<FilterValues>) =>
     setDraft((current) => ({ ...current, ...values }));
   const invalidYear = Boolean(draft.year && !validYear(draft.year));
+  const ratingNumber = Number(draft.rating);
+  const validRating =
+    !draft.rating ||
+    (Number.isFinite(ratingNumber) &&
+      ratingNumber >= 0.5 &&
+      ratingNumber <= 10 &&
+      ratingNumber * 2 === Math.round(ratingNumber * 2));
+  const invalidRating = Boolean(draft.rating && !validRating);
+  const years = Array.from({ length: 12 }, (_, index) =>
+    String(currentYear - earlierYearPage * 12 - index)
+  ).filter((year) => Number(year) >= 1874);
+  const invalidFilters = invalidYear || invalidRating;
 
-  useFilterPanelDialog({ panel, mobile, onClose });
+  useEffect(() => {
+    if (yearPickerOpen) {
+      yearList.current?.scrollIntoView?.({ block: 'nearest' });
+    }
+  }, [yearPickerOpen]);
 
-  const content = (
-    <div
-      ref={panel}
-      className={`filter-panel${closing ? ' is-closing' : ''}`}
-      role="dialog"
-      aria-modal={mobile || undefined}
-      aria-labelledby={titleId}
-      tabIndex={-1}
-    >
-      <header className="filter-panel__header">
-        <h2 id={titleId}>
-          <FaSliders aria-hidden="true" />
-          Filters & Sort
-        </h2>
-        <button type="button" aria-label="Close filters" onClick={onClose}>
-          <FaXmark aria-hidden="true" />
+  useEffect(() => {
+    const closeYearPicker = (event: KeyboardEvent) => {
+      if (!yearPickerOpen || event.key !== 'Escape') {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      setYearPickerOpen(false);
+      yearTrigger.current?.focus();
+    };
+
+    if (yearPickerOpen) {
+      document.addEventListener('keydown', closeYearPicker);
+    }
+
+    return () => document.removeEventListener('keydown', closeYearPicker);
+  }, [yearPickerOpen]);
+
+  const footer = (
+    <div className="filter-panel__footer">
+      <p>Reset changes the draft. Apply updates results.</p>
+      <div>
+        <button
+          type="button"
+          onClick={() => setDraft(readFilters(new URLSearchParams(), isSearch))}
+        >
+          <FaArrowRotateLeft aria-hidden="true" />
+          Reset
         </button>
-      </header>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!invalidYear) onApply(draft);
-        }}
-      >
-        <div className="filter-panel__content">
-          {!series && (
-            <FilterSection
-              title="Genre"
-              value={
-                draft.filter
-                  ? draft.filter[0].toUpperCase() + draft.filter.slice(1)
-                  : 'All Genres'
-              }
-              icon={<FaFilm aria-hidden="true" />}
-            >
-              <div className="filter-chips" role="group" aria-label="Genre">
-                {['', ...genresFilter].map((genre) => (
-                  <button
-                    type="button"
-                    key={genre}
-                    aria-pressed={draft.filter === genre}
-                    onClick={() =>
-                      update({ filter: draft.filter === genre ? '' : genre })
-                    }
-                  >
-                    {genre || 'All genres'}
-                  </button>
-                ))}
-              </div>
-            </FilterSection>
-          )}
-          <FilterSection
-            title={series ? 'First-air Year' : 'Release Year'}
-            value={draft.year || 'Any Year'}
-            icon={<FaCalendarDays aria-hidden="true" />}
-          >
-            <label htmlFor={yearId}>
-              {series ? 'First-air year' : 'Release year'}
-            </label>
-            <input
-              id={yearId}
-              type="text"
-              inputMode="numeric"
-              maxLength={4}
-              placeholder="Any Year"
-              value={draft.year}
-              aria-invalid={invalidYear}
-              aria-describedby={`${yearId}-help`}
-              onChange={(event) =>
-                update({
-                  year: event.target.value.replace(/\D/g, '').slice(0, 4),
-                })
-              }
-              onKeyDown={(event) => {
-                if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')
-                  return;
-                event.preventDefault();
-                const current = validYear(draft.year)
-                  ? Number(draft.year)
-                  : new Date().getFullYear();
-                update({
-                  year: String(
-                    Math.min(
-                      9999,
-                      Math.max(
-                        1874,
-                        current + (event.key === 'ArrowUp' ? 1 : -1)
-                      )
-                    )
-                  ),
-                });
-              }}
-            />
-            <p id={`${yearId}-help`}>
-              {invalidYear
-                ? 'Enter a year from 1874 to 9999.'
-                : 'One year, from 1874 to 9999. Leave empty for Any Year.'}
-            </p>
-            <button type="button" onClick={() => update({ year: '' })}>
-              Any Year
-            </button>
-          </FilterSection>
-          {(!series || !isSearch) && (
-            <FilterSection
-              title="Minimum Rating"
-              value={
-                draft.rating ? `${draft.rating}+ TMDB rating` : 'Any Rating'
-              }
-              icon={<FaStar aria-hidden="true" />}
-            >
-              <label>
-                Minimum TMDB rating
-                <select
-                  value={draft.rating}
-                  onChange={(event) => update({ rating: event.target.value })}
-                >
-                  <option value="">Any Rating</option>
-                  {ratingOptions.map((rating) => (
-                    <option key={rating} value={rating}>
-                      {rating}+
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </FilterSection>
-          )}
-          <FilterSection
-            title="Sort By"
-            value={isSearch ? 'Relevance' : getSortLabel(draft.sorting)}
-            icon={<FaArrowDownWideShort aria-hidden="true" />}
-          >
-            {isSearch ? (
-              <p>Sorted by relevance.</p>
-            ) : (
-              <label>
-                Sort field
-                <select
-                  value={draft.sorting}
-                  onChange={(event) =>
-                    update({
-                      sorting: sortParams(event.target.value) ?? 'popularity',
-                    })
-                  }
-                >
-                  {sortOptions.map((option) => (
-                    <option key={option} value={sortParams(option)}>
-                      {series && option === 'Release Date'
-                        ? 'First-air Date'
-                        : option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-          </FilterSection>
-          {!isSearch && (
-            <FilterSection
-              title="Sort Direction"
-              value={draft.order === 'asc' ? 'Ascending' : 'Descending'}
-              icon={
-                draft.order === 'asc' ? (
-                  <FaArrowUp aria-hidden="true" />
-                ) : (
-                  <FaArrowDown aria-hidden="true" />
-                )
-              }
-            >
-              <div
-                className="filter-chips"
-                role="group"
-                aria-label="Sort direction"
-              >
-                {(['asc', 'desc'] as const).map((order) => (
-                  <button
-                    key={order}
-                    type="button"
-                    aria-pressed={draft.order === order}
-                    onClick={() => update({ order })}
-                  >
-                    {order === 'asc' ? (
-                      <FaArrowUp aria-hidden="true" />
-                    ) : (
-                      <FaArrowDown aria-hidden="true" />
-                    )}
-                    {order === 'asc' ? 'Ascending' : 'Descending'}
-                  </button>
-                ))}
-              </div>
-            </FilterSection>
-          )}
-        </div>
-        <footer className="filter-panel__footer">
-          <p>Reset changes the draft. Apply updates results.</p>
-          <div>
-            <button
-              type="button"
-              onClick={() =>
-                setDraft(readFilters(new URLSearchParams(), isSearch))
-              }
-            >
-              <FaArrowRotateLeft aria-hidden="true" />
-              Reset
-            </button>
-            <button
-              className="filter-panel__apply"
-              type="submit"
-              disabled={invalidYear}
-            >
-              <FaCheck aria-hidden="true" />
-              Apply
-            </button>
-          </div>
-        </footer>
-      </form>
+        <button
+          className="filter-panel__apply"
+          type="submit"
+          form={formId}
+          disabled={invalidFilters}
+        >
+          <FaCheck aria-hidden="true" />
+          Apply
+        </button>
+      </div>
     </div>
   );
 
-  return mobile
-    ? createPortal(
-        <div className={`filter-overlay${closing ? ' is-closing' : ''}`}>
-          <button
-            type="button"
-            tabIndex={-1}
-            className="filter-backdrop"
-            aria-label="Dismiss filters"
-            onClick={onClose}
-          />
-          {content}
-        </div>,
-        document.body
-      )
-    : content;
+  return (
+    <Drawer
+      open={!closing}
+      title="Filters & Sort"
+      onClose={onClose}
+      footer={footer}
+    >
+      <div className="filter-panel">
+        <form
+          id={formId}
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!invalidFilters) onApply(draft);
+          }}
+        >
+          {!series && (
+            <section className="filter-section">
+              <h3>Genre</h3>
+              <div className="filter-genres" aria-label="Genres">
+                <div
+                  className={`filter-genres__selected${draft.filter.length ? '' : ' is-empty'}`}
+                  role="group"
+                  aria-label="Selected genres"
+                >
+                  {draft.filter.map((genre) => (
+                    <span className="filter-genre-chip is-selected" key={genre}>
+                      {genre}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${genre} genre`}
+                        onClick={() =>
+                          update({
+                            filter: draft.filter.filter(
+                              (item) => item !== genre
+                            ),
+                          })
+                        }
+                      >
+                        <FaXmark aria-hidden="true" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div
+                  className="filter-genres__available"
+                  role="group"
+                  aria-label="Available genres"
+                >
+                  {genresFilter
+                    .filter((genre) => !draft.filter.includes(genre))
+                    .map((genre) => (
+                      <button
+                        type="button"
+                        key={genre}
+                        className="filter-genre-link"
+                        aria-label={`Select ${genre} genre`}
+                        onClick={() =>
+                          update({
+                            filter: draft.filter.includes(genre)
+                              ? draft.filter
+                              : [...draft.filter, genre],
+                          })
+                        }
+                      >
+                        {genre}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            </section>
+          )}
+          <section className="filter-section">
+            <h3>
+              <FaCalendarDays aria-hidden="true" />
+              {series ? 'First-air Year' : 'Release Year'}
+            </h3>
+            {series && <label htmlFor={yearId}>First-air year</label>}
+            <div
+              className={`filter-year-picker${series ? '' : ' filter-year-picker--compact'}`}
+            >
+              <input
+                ref={yearInput}
+                id={yearId}
+                type="text"
+                inputMode="numeric"
+                maxLength={4}
+                aria-label={series ? 'First-air year' : 'Release Year'}
+                placeholder="Any Year"
+                value={draft.year}
+                aria-invalid={invalidYear}
+                aria-describedby={
+                  invalidYear || series ? `${yearId}-help` : undefined
+                }
+                onChange={(event) =>
+                  update({
+                    year: event.target.value.replace(/\D/g, '').slice(0, 4),
+                  })
+                }
+                onKeyDown={(event) => {
+                  if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')
+                    return;
+                  event.preventDefault();
+                  const current = validYear(draft.year)
+                    ? Number(draft.year)
+                    : currentYear;
+                  update({
+                    year: String(
+                      Math.min(
+                        9999,
+                        Math.max(
+                          1874,
+                          current + (event.key === 'ArrowUp' ? 1 : -1)
+                        )
+                      )
+                    ),
+                  });
+                }}
+              />
+              <button
+                ref={yearTrigger}
+                type="button"
+                className="filter-year-picker__trigger"
+                aria-label="Choose a year"
+                aria-expanded={yearPickerOpen}
+                aria-controls={yearListId}
+                onClick={() => setYearPickerOpen((open) => !open)}
+              >
+                <FaCalendarDays aria-hidden="true" />
+              </button>
+              {yearPickerOpen && (
+                <div
+                  ref={yearList}
+                  id={yearListId}
+                  className="filter-year-picker__list"
+                  role="group"
+                  aria-label="Choose a year"
+                >
+                  <div className="filter-year-picker__years">
+                    {years.map((year) => (
+                      <button
+                        type="button"
+                        key={year}
+                        aria-pressed={draft.year === year}
+                        onClick={() => {
+                          update({ year });
+                          setYearPickerOpen(false);
+                          yearInput.current?.focus();
+                        }}
+                      >
+                        {year}
+                      </button>
+                    ))}
+                  </div>
+                  {Number(years[years.length - 1]) > 1874 && (
+                    <button
+                      type="button"
+                      className="filter-year-picker__earlier"
+                      onClick={() => setEarlierYearPage((page) => page + 1)}
+                    >
+                      Earlier years
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            {(invalidYear || series) && (
+              <p id={`${yearId}-help`}>
+                {invalidYear
+                  ? 'Enter a year from 1874 to 9999.'
+                  : 'Leave empty for Any Year.'}
+              </p>
+            )}
+          </section>
+          {(!series || !isSearch) && (
+            <section className="filter-section">
+              <div className="filter-rating__heading">
+                <h3>
+                  <FaStar aria-hidden="true" />
+                  Minimum Rating
+                </h3>
+                <input
+                  id={`${ratingId}-value`}
+                  type="text"
+                  inputMode="decimal"
+                  className="filter-rating__input"
+                  value={draft.rating}
+                  placeholder="Any"
+                  aria-label="Minimum TMDB rating"
+                  aria-invalid={invalidRating}
+                  aria-describedby={
+                    invalidRating ? `${ratingId}-error` : undefined
+                  }
+                  onChange={(event) =>
+                    update({ rating: event.target.value.replace(',', '.') })
+                  }
+                  onKeyDown={(event) => {
+                    if (
+                      (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') ||
+                      invalidRating
+                    ) {
+                      return;
+                    }
+
+                    event.preventDefault();
+                    const currentRating = draft.rating
+                      ? Number(draft.rating)
+                      : 0;
+                    const step = event.key === 'ArrowUp' ? 0.5 : -0.5;
+                    const nextRating = Math.min(
+                      10,
+                      Math.max(0, currentRating + step)
+                    );
+
+                    update({
+                      rating: nextRating === 0 ? '' : String(nextRating),
+                    });
+                  }}
+                />
+              </div>
+              <input
+                id={ratingId}
+                className="filter-rating__slider"
+                type="range"
+                min="0"
+                max="10"
+                step="0.5"
+                value={validRating ? draft.rating || '0' : '0'}
+                aria-label="Minimum TMDB rating slider"
+                aria-valuetext={
+                  draft.rating && validRating
+                    ? `${draft.rating} out of 10 or higher`
+                    : 'Any Rating'
+                }
+                onChange={(event) =>
+                  update({
+                    rating:
+                      event.target.value === '0' ? '' : event.target.value,
+                  })
+                }
+              />
+              <div className="filter-rating__scale" aria-hidden="true">
+                <span>Any</span>
+                <span>10</span>
+              </div>
+              {invalidRating && (
+                <p
+                  id={`${ratingId}-error`}
+                  className="filter-rating__error"
+                  role="alert"
+                >
+                  Enter a rating from 0.5 to 10 in 0.5 increments, or clear the
+                  field.
+                </p>
+              )}
+            </section>
+          )}
+          <section className="filter-section">
+            <h3>
+              <FaArrowDownWideShort aria-hidden="true" />
+              Sort By
+            </h3>
+            {isSearch ? (
+              <p>Sorted by relevance.</p>
+            ) : (
+              <div
+                className="filter-sort-options"
+                role="group"
+                aria-label="Sort by"
+              >
+                {sortOptions.map((option) => {
+                  const sorting = sortParams(option) ?? 'popularity';
+
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      aria-pressed={draft.sorting === sorting}
+                      onClick={() => update({ sorting })}
+                    >
+                      {getSortOptionLabel(option, series)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+          {!isSearch && (
+            <section className="filter-section">
+              <div className="filter-sort-heading">
+                <h3>Sort Direction</h3>
+                <div
+                  className="filter-sort-direction"
+                  role="group"
+                  aria-label="Sort direction"
+                >
+                  {(['asc', 'desc'] as const).map((order) => (
+                    <button
+                      key={order}
+                      type="button"
+                      aria-pressed={draft.order === order}
+                      aria-label={order === 'asc' ? 'Ascending' : 'Descending'}
+                      onClick={() => update({ order })}
+                    >
+                      {order === 'asc' ? (
+                        <FaSortAmountUp aria-hidden="true" />
+                      ) : (
+                        <FaSortAmountDown aria-hidden="true" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+        </form>
+      </div>
+    </Drawer>
+  );
 }

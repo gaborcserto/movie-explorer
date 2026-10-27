@@ -179,7 +179,10 @@ describe('<List />', () => {
     expect(screen.getByAltText('Movie 1')).toHaveAttribute('loading', 'eager');
     expect(screen.getByAltText('Movie 2')).toHaveAttribute('loading', 'lazy');
     expect(screen.getByText('2 matching movies loaded')).toBeInTheDocument();
-    expect(screen.getByText(/genre:/i)).toHaveTextContent('Crime');
+    expect(
+      screen.getByRole('button', { name: 'Remove Crime genre filter' })
+    ).toBeVisible();
+    expect(screen.queryByText(/genre:/i)).toBeNull();
     expect(screen.getByText(/search:/i)).toHaveTextContent('"Movie"');
     expect(getMovies).toHaveBeenCalledWith(
       {
@@ -626,7 +629,10 @@ describe('<List />', () => {
 
     expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();
     expect(screen.queryByText(/837 movies found/)).toBeNull();
-    expect(screen.getByText(/genre:/i)).toHaveTextContent('Genre: Documentary');
+    expect(
+      screen.getByRole('button', { name: 'Remove Documentary genre filter' })
+    ).toBeVisible();
+    expect(screen.queryByText(/genre:/i)).toBeNull();
   });
 
   test('it omits query-based totals when their exactness is unknown', async () => {
@@ -660,7 +666,10 @@ describe('<List />', () => {
 
     await user.click(screen.getByRole('link', { name: 'Documentary' }));
     expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();
-    expect(screen.getByText(/genre:/i)).toHaveTextContent('Genre: Documentary');
+    expect(
+      screen.getByRole('button', { name: 'Remove Documentary genre filter' })
+    ).toBeVisible();
+    expect(screen.queryByText(/genre:/i)).toBeNull();
 
     await user.click(screen.getByRole('link', { name: 'All' }));
     expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();

@@ -16,7 +16,19 @@ function List() {
   const { searchQuery } = useParams();
   const [searchParams] = useSearchParams();
   const signature = movieHistorySignature(searchQuery, searchParams);
-  const filter = searchParams.get('filter');
+  const filterParam = searchParams.getAll('filter').join(',');
+  const filter = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          filterParam
+            .split(',')
+            .map((genre) => genre.trim())
+            .filter(Boolean)
+        )
+      ),
+    [filterParam]
+  );
   const releaseYear = searchParams.get('year');
   const minimumRating = searchParams.get('rating');
   const sort = searchParams.get('sorting');
@@ -28,7 +40,7 @@ function List() {
       sort: searchQuery ? null : sort,
       sortOrder: searchQuery ? null : sortOrder,
       search: searchQuery,
-      genres: filter,
+      genres: filter.length > 1 ? filter : (filter[0] ?? null),
       releaseYear,
       minimumRating,
     }),
@@ -51,12 +63,18 @@ function List() {
     data.charAt(0).toUpperCase() + data.slice(1);
 
   const getEmptyMessage = () => {
-    if (searchQuery && (filter || minimumRating) && moviesData?.totalResults) {
+    if (
+      searchQuery &&
+      (filter.length || minimumRating) &&
+      moviesData?.totalResults
+    ) {
       return moviesData.page < Math.min(moviesData.totalPages, 500)
         ? 'No matching movies yet. Load more to continue.'
         : 'No matching movies found.';
     }
-    const genre = filter ? capitalizeFirstLetter(filter) : null;
+    const genre = filter.length
+      ? filter.map(capitalizeFirstLetter).join(' or ')
+      : null;
 
     if (searchQuery && genre) {
       return `No movies found for "${searchQuery}" in ${genre}.`;
@@ -90,23 +108,23 @@ function List() {
     );
   }
 
-  const genre = filter ? capitalizeFirstLetter(filter) : null;
-  const hasActiveContext = Boolean(
-    genre || searchQuery || releaseYear || minimumRating
-  );
   const hasMore = Boolean(
     moviesData &&
     (visibleMovieCount < movies.length ||
       moviesData.page < Math.min(moviesData.totalPages, 500))
   );
   const hasPageLevelSearchFilters = Boolean(
-    searchQuery && (filter || minimumRating)
+    searchQuery && (filter.length > 0 || minimumRating)
   );
   const visibleMovies = movies.slice(0, visibleMovieCount);
   const sorting = sortParams(sort);
   const badges = [
-    ...(filter
-      ? [{ key: 'filter', label: filter[0].toUpperCase() + filter.slice(1) }]
+    ...(filter.length
+      ? filter.map((value) => ({
+          key: `filter:${value}`,
+          filter: value,
+          label: capitalizeFirstLetter(value),
+        }))
       : []),
     ...(releaseYear ? [{ key: 'year', label: releaseYear }] : []),
     ...(minimumRating
@@ -132,10 +150,14 @@ function List() {
         ]
       : []),
   ];
-  const removeBadge = (key: string) => {
+  const removeBadge = (key: string, genreValue?: string) => {
     const next = new URLSearchParams(searchParams);
 
-    if (key === 'sorting') {
+    if (genreValue) {
+      const remaining = filter.filter((value) => value !== genreValue);
+      next.delete('filter');
+      if (remaining.length) next.set('filter', remaining.join(','));
+    } else if (key === 'sorting') {
       next.set('sorting', 'popularity');
     } else {
       next.delete(key);
@@ -154,18 +176,22 @@ function List() {
     <section className="list__container container">
       {badges.length > 0 && (
         <div className="active-filters" aria-label="Applied movie filters">
-          {badges.map(({ key, label }) => (
-            <button
-              type="button"
-              className="active-filters__badge"
-              key={key}
-              aria-label={`Remove ${label} ${key === 'filter' ? 'genre ' : ''}filter`}
-              onClick={() => removeBadge(key)}
-            >
-              {label}
-              <FaXmark aria-hidden="true" />
-            </button>
-          ))}
+          {badges.map((badge) => {
+            const badgeGenre = 'filter' in badge ? badge.filter : undefined;
+
+            return (
+              <button
+                type="button"
+                className="active-filters__badge"
+                key={badge.key}
+                aria-label={`Remove ${badge.label} ${badgeGenre ? 'genre ' : ''}filter`}
+                onClick={() => removeBadge(badge.key, badgeGenre)}
+              >
+                {badge.label}
+                <FaXmark aria-hidden="true" />
+              </button>
+            );
+          })}
           {badges.length > 1 && (
             <button
               type="button"
@@ -182,28 +208,9 @@ function List() {
           {visibleMovies.length} {hasPageLevelSearchFilters ? 'matching ' : ''}
           {visibleMovies.length === 1 ? 'movie' : 'movies'} loaded
         </p>
-        {hasActiveContext && (
+        {searchQuery && (
           <p className="list__context">
-            {searchQuery && (
-              <span>
-                Search: <strong>&quot;{searchQuery}&quot;</strong>
-              </span>
-            )}
-            {genre && (
-              <span>
-                Genre: <strong>{genre}</strong>
-              </span>
-            )}
-            {releaseYear && (
-              <span>
-                Year: <strong>{releaseYear}</strong>
-              </span>
-            )}
-            {minimumRating && (
-              <span>
-                Rating: <strong>{minimumRating}+</strong>
-              </span>
-            )}
+            Search: <strong>&quot;{searchQuery}&quot;</strong>
           </p>
         )}
       </div>

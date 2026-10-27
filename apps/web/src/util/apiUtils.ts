@@ -452,18 +452,20 @@ export const getMovies = async (
     params.page = urlParams.page;
   }
 
-  const query = new URLSearchParams(
-    Object.entries(params).reduce<Record<string, string>>(
-      (entries, [key, value]) => {
-        if (value !== undefined) {
-          entries[key] = value;
-        }
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined) {
+      return;
+    }
 
-        return entries;
-      },
-      {}
-    )
-  );
+    if (key === 'genre' && Array.isArray(value)) {
+      value.forEach((genre) => query.append(key, genre));
+
+      return;
+    }
+
+    query.set(key, String(value));
+  });
 
   const queryString = query.toString();
 

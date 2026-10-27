@@ -147,9 +147,7 @@ test('Series reuses the filter panel and applies only first-air year, retaining 
     '2005'
   );
   fireEvent.click(screen.getByRole('button', { name: /Filters & Sort/ }));
-  expect(screen.queryByRole('button', { name: /^Genre/ })).toBeNull();
-  expect(screen.queryByRole('button', { name: /^Minimum Rating/ })).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: /^First-air Year/ }));
+  expect(screen.queryByRole('group', { name: 'Genre' })).toBeNull();
   fireEvent.change(screen.getByLabelText('First-air year'), {
     target: { value: '2010' },
   });
@@ -449,8 +447,7 @@ test('Series default filters use discover, preserve movie genre and restore on B
     expect.any(AbortSignal)
   );
   fireEvent.click(screen.getByRole('button', { name: /Filters & Sort/ }));
-  expect(screen.queryByRole('button', { name: /^Genre/ })).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: /^Minimum Rating/ }));
+  expect(screen.queryByRole('group', { name: 'Genre' })).toBeNull();
   fireEvent.change(screen.getByLabelText('Minimum TMDB rating'), {
     target: { value: '7' },
   });

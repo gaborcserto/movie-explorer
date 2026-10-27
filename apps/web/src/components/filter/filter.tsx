@@ -1,6 +1,6 @@
 import './filter.scss';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { FaSliders } from 'react-icons/fa6';
 
@@ -18,14 +18,12 @@ export default function Filter() {
   const [openAt, setOpenAt] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
 
-  const wrapper = useRef<HTMLDivElement>(null);
-
   const committed = readFilters(params, isSearch);
   const open = openAt === location.key;
   const count =
     series && isSearch
       ? Number(Boolean(committed.year))
-      : Number(!series && Boolean(committed.filter)) +
+      : (!series ? committed.filter.length : 0) +
         Number(Boolean(committed.year)) +
         Number(Boolean(committed.rating)) +
         Number(!isSearch && committed.sorting !== 'popularity') +
@@ -59,26 +57,6 @@ export default function Filter() {
   }, [params, isSearch, setParams]);
 
   useEffect(() => {
-    if (!open) return undefined;
-
-    const outside = (event: PointerEvent) => {
-      if (
-        event.target instanceof Node &&
-        !wrapper.current?.contains(event.target) &&
-        !(
-          event.target instanceof Element &&
-          event.target.closest('.filter-overlay')
-        )
-      )
-        closePanel();
-    };
-
-    document.addEventListener('pointerdown', outside);
-
-    return () => document.removeEventListener('pointerdown', outside);
-  }, [open, closePanel]);
-
-  useEffect(() => {
     if (openAt !== null && openAt !== location.key) {
       setOpenAt(null);
       setClosing(false);
@@ -92,7 +70,7 @@ export default function Filter() {
         series ? 'Series filters and sorting' : 'Movie filters and sorting'
       }
     >
-      <div ref={wrapper} className="movie-filters__anchor">
+      <div className="movie-filters__anchor">
         <button
           type="button"
           className="movie-filters__trigger"

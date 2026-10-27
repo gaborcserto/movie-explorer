@@ -1,17 +1,13 @@
 import { useEffect } from 'react';
 import type { RefObject } from 'react';
 
-interface FilterPanelDialogOptions {
-  panel: RefObject<HTMLDivElement | null>;
-  mobile: boolean;
-  onClose: () => void;
-}
-
-export default function useFilterPanelDialog({
+export default function useDrawerDialog({
   panel,
-  mobile,
   onClose,
-}: FilterPanelDialogOptions) {
+}: {
+  panel: RefObject<HTMLElement | null>;
+  onClose: () => void;
+}) {
   useEffect(() => {
     const element = panel.current;
 
@@ -20,20 +16,14 @@ export default function useFilterPanelDialog({
     }
 
     const previousFocus = document.activeElement;
-    element.focus();
-
     const previousOverflow = document.body.style.overflow;
-    const background = mobile
-      ? Array.from(document.querySelectorAll<HTMLElement>('body > *')).filter(
-          (node) => !node.contains(element)
-        )
-      : [];
+    const background = Array.from(
+      document.querySelectorAll<HTMLElement>('body > *')
+    ).filter((node) => !node.contains(element));
     const previousInert = background.map((node) => node.inert);
 
-    if (mobile) {
-      document.body.style.overflow = 'hidden';
-    }
-
+    element.focus();
+    document.body.style.overflow = 'hidden';
     background.forEach((node) => {
       node.inert = true;
     });
@@ -41,29 +31,25 @@ export default function useFilterPanelDialog({
     const focusables = () =>
       Array.from(
         element.querySelectorAll<HTMLElement>(
-          'button, input, select, [tabindex="0"]'
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         )
       ).filter(
-        (node) => !node.closest('[inert]') && !node.hasAttribute('disabled')
+        (node) =>
+          !node.closest('[inert]') &&
+          node.getAttribute('aria-hidden') !== 'true'
       );
-
     const containFocus = (event: FocusEvent) => {
-      if (
-        mobile &&
-        event.target instanceof Node &&
-        !element.contains(event.target)
-      ) {
+      if (event.target instanceof Node && !element.contains(event.target)) {
         element.focus();
       }
     };
-
     const keydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
         onClose();
       }
 
-      if (mobile && event.key === 'Tab') {
+      if (event.key === 'Tab') {
         const items = focusables();
         const first = items[0];
         const last = items.at(-1);
@@ -107,5 +93,5 @@ export default function useFilterPanelDialog({
         previousFocus.focus();
       }
     };
-  }, [mobile, onClose, panel]);
+  }, [onClose, panel]);
 }

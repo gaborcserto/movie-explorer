@@ -211,20 +211,15 @@ test('new committed terms cancel obsolete person results', async () => {
 });
 
 test('filter editing makes no requests, Apply refreshes once, and normalization never fetches invalid filters', async () => {
-  const router = setup(
-    '/search?filter=bad&filter=drama&year=bad&rating=3&extra=keep'
-  );
+  const router = setup('/search?filter=bad&year=bad&rating=11&extra=keep');
   await screen.findByRole('link', { name: 'Movie result' });
   expect(router.state.location.search).toBe('?extra=keep');
   expect(getMovies).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: /Filters & Sort/ }));
-  fireEvent.click(screen.getByRole('button', { name: /^Genre/ }));
-  fireEvent.click(screen.getByRole('button', { name: 'drama' }));
-  fireEvent.click(screen.getByRole('button', { name: /^Release Year/ }));
-  fireEvent.change(screen.getByLabelText('Release year'), {
+  fireEvent.click(screen.getByRole('button', { name: 'Select drama genre' }));
+  fireEvent.change(screen.getByLabelText('Release Year'), {
     target: { value: '2000' },
   });
-  fireEvent.click(screen.getByRole('button', { name: /^Minimum Rating/ }));
   fireEvent.change(screen.getByLabelText('Minimum TMDB rating'), {
     target: { value: '8' },
   });
@@ -274,6 +269,10 @@ test('committed filter badges remove one filter or clear all while preserving qu
     screen.getByRole('button', { name: 'Remove Rating 7+ filter' })
   ).toBeVisible();
   expect(screen.getByRole('button', { name: 'Clear all' })).toBeVisible();
+  expect(screen.queryByText(/genre:/i)).toBeNull();
+  expect(screen.queryByText(/year:/i)).toBeNull();
+  expect(screen.queryByText(/rating:/i)).toBeNull();
+  expect(screen.getByText('1 matching movie loaded')).toBeVisible();
   const firstSignal = vi.mocked(getMovies).mock.calls[0][1];
   fireEvent.click(
     screen.getByRole('button', { name: 'Remove Action genre filter' })
@@ -294,6 +293,43 @@ test('committed filter badges remove one filter or clear all while preserving qu
   expect(
     new URLSearchParams(peopleRouter.state.location.search).get('filter')
   ).toBe('action');
+});
+
+test('renders one active genre chip per value and removes only the chosen genre', async () => {
+  const router = setup(
+    '/search/Alien?filter=action,adventure,crime&year=2026&rating=7'
+  );
+  await screen.findByRole('link', { name: 'Movie result' });
+
+  expect(
+    screen.getByRole('button', { name: 'Remove Action genre filter' })
+  ).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'Remove Adventure genre filter' })
+  ).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'Remove Crime genre filter' })
+  ).toBeVisible();
+  expect(
+    screen.getAllByRole('button', { name: /Remove .* genre filter/ })
+  ).toHaveLength(3);
+
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Remove Adventure genre filter' })
+  );
+  await screen.findByRole('link', { name: 'Movie result' });
+  expect(router.state.location.search).toBe(
+    '?year=2026&rating=7&filter=action%2Ccrime'
+  );
+  expect(
+    screen.getByRole('button', { name: 'Remove Action genre filter' })
+  ).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'Remove Crime genre filter' })
+  ).toBeVisible();
+  expect(
+    screen.queryByRole('button', { name: 'Remove Adventure genre filter' })
+  ).toBeNull();
 });
 
 test('Clear all preserves the query and clears supported movie filters in one request', async () => {

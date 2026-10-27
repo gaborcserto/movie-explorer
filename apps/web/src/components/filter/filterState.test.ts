@@ -48,6 +48,18 @@ test('Series year changes preserve dormant Movie selections and unrelated repeat
   );
 });
 
+test('normalizes multi-genre selection in genre order without duplicates', () => {
+  const filters = readFilters(
+    new URLSearchParams('filter=drama%2Caction&filter=drama'),
+    false
+  );
+
+  expect(filters.filter).toEqual(['action', 'drama']);
+  expect(
+    writeFilters(new URLSearchParams(), filters, false).get('filter')
+  ).toBe('action,drama');
+});
+
 test.each([
   ['default sorting', 'popularity', 'desc', ''],
   ['explicit ascending order', 'title', 'asc', 'sorting=title&order=asc'],

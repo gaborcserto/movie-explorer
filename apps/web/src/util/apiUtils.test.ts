@@ -413,6 +413,17 @@ describe('API functions', () => {
     );
   });
 
+  it('sends multiple genre names as repeated OR filter parameters', async () => {
+    fetchMock.mockResolvedValue(response(mockMoviesData));
+
+    await getMovies({ genres: ['action', 'drama'] });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/movies?sort=popularity&sortOrder=desc&genre=action&genre=drama',
+      { signal: expect.any(AbortSignal) }
+    );
+  });
+
   it('maps advanced filters and pagination to API parameters', async () => {
     fetchMock.mockResolvedValue(response(mockMoviesData));
 
