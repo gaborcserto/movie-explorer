@@ -2,6 +2,7 @@ import type {
   MovieDetails,
   MovieListResponse,
 } from '@movie-explorer/contracts';
+import { BadGatewayException, GatewayTimeoutException } from '@nestjs/common';
 
 import { MovieProvider } from './movie-provider';
 import { MoviesService } from './movies.service';
@@ -38,6 +39,7 @@ describe('MoviesService', () => {
       findAll: jest.fn(),
       findSuggestions: jest.fn(),
       findOne: jest.fn(),
+      findRatings: jest.fn(),
       findPerson: jest.fn(),
       findPeople: jest.fn(),
       findMovieSection: jest.fn(),
@@ -74,5 +76,53 @@ describe('MoviesService', () => {
     movieProvider.findOne.mockResolvedValue(undefined);
 
     await expect(service.findOne(999)).resolves.toBeUndefined();
+  });
+
+  it.each([
+    [new GatewayTimeoutException(), 'timeout'],
+    [
+      new BadGatewayException('Movie provider response was invalid'),
+      'invalid-response',
+    ],
+    [new BadGatewayException('provider failure'), 'upstream-error'],
+    [new Error('provider failure'), 'upstream-error'],
+    [{ unexpected: true }, 'upstream-error'],
+  ] as const)(
+    'classifies a rating provider failure as %s',
+    async (error, reason) => {
+      movieProvider.findRatings?.mockRejectedValue(error);
+
+      await expect(service.findRatings(1)).resolves.toEqual({
+        tmdb: { status: 'unavailable', reason },
+        imdb: { status: 'unavailable', reason: 'not-configured' },
+      });
+    },
+  );
+
+  it('preserves available, unavailable, missing and missing-resource rating outcomes', async () => {
+    movieProvider.findRatings?.mockResolvedValueOnce({
+      status: 'available',
+      score: 8,
+      voteCount: 10,
+    });
+    await expect(service.findRatings(1)).resolves.toMatchObject({
+      tmdb: { status: 'available', score: 8 },
+    });
+
+    movieProvider.findRatings?.mockResolvedValueOnce({
+      status: 'unavailable',
+      reason: 'upstream-error',
+    });
+    await expect(service.findRatings(1)).resolves.toMatchObject({
+      tmdb: { status: 'unavailable', reason: 'upstream-error' },
+    });
+
+    movieProvider.findRatings?.mockResolvedValueOnce({ status: 'missing' });
+    await expect(service.findRatings(1)).resolves.toMatchObject({
+      tmdb: { status: 'missing' },
+    });
+
+    movieProvider.findRatings?.mockResolvedValueOnce(undefined);
+    await expect(service.findRatings(1)).resolves.toBeUndefined();
   });
 });

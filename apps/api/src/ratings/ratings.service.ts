@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type {
   ImdbRatingResponse,
   RatingResult,
@@ -7,6 +7,7 @@ import type {
 
 import { TmdbExternalIds } from '../integrations/tmdb/tmdb-external-ids';
 import { OmdbAdapter } from '../integrations/omdb/omdb.adapter';
+import { ratingFailureReason } from './rating-failure-reason';
 
 @Injectable()
 export class RatingsService {
@@ -62,29 +63,11 @@ export class RatingsService {
       } catch (error) {
         imdb = {
           status: 'unavailable',
-          reason: this.failureReason(error),
+          reason: ratingFailureReason(error),
         };
       }
     }
 
     return { tmdb, imdb };
-  }
-
-  private failureReason(
-    error: unknown,
-  ): 'timeout' | 'invalid-response' | 'upstream-error' {
-    if (!(error instanceof HttpException)) {
-      return 'upstream-error';
-    }
-
-    if (error.getStatus() === 504) {
-      return 'timeout';
-    }
-
-    if (error.message === 'Movie provider response was invalid') {
-      return 'invalid-response';
-    }
-
-    return 'upstream-error';
   }
 }

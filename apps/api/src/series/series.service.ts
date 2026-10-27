@@ -1,4 +1,4 @@
-import { HttpException, Inject, Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import type {
   Ratings,
   SeriesDetails,
@@ -8,6 +8,7 @@ import type {
 import type { SeriesListQuery } from './series-list.dto';
 import { SERIES_PROVIDER, SeriesProvider } from './series-provider';
 import { RatingsService } from '../ratings/ratings.service';
+import { ratingFailureReason } from '../ratings/rating-failure-reason';
 
 @Injectable()
 export class SeriesService {
@@ -30,23 +31,9 @@ export class SeriesService {
     try {
       tmdb = await this.provider.findRatings?.(id);
     } catch (error) {
-      const status = error instanceof HttpException ? error.getStatus() : 502;
-      let reason: 'timeout' | 'invalid-response' | 'upstream-error';
-
-      if (status === 504) {
-        reason = 'timeout';
-      } else if (
-        error instanceof HttpException &&
-        error.message === 'Movie provider response was invalid'
-      ) {
-        reason = 'invalid-response';
-      } else {
-        reason = 'upstream-error';
-      }
-
       tmdb = {
         status: 'unavailable' as const,
-        reason,
+        reason: ratingFailureReason(error),
       };
     }
 

@@ -1,4 +1,8 @@
-import { BadGatewayException } from '@nestjs/common';
+import {
+  BadGatewayException,
+  GatewayTimeoutException,
+  HttpException,
+} from '@nestjs/common';
 
 import { RatingsService } from './ratings.service';
 import { TmdbExternalIds } from '../integrations/tmdb/tmdb-external-ids';
@@ -96,4 +100,27 @@ describe('RatingsService optional data', () => {
       imdb: { status: 'unavailable', reason: 'invalid-response' },
     });
   });
+
+  it.each([
+    [new GatewayTimeoutException(), 'timeout'],
+    [
+      new BadGatewayException('Movie provider response was invalid'),
+      'invalid-response',
+    ],
+    [new HttpException('provider failure', 502), 'upstream-error'],
+    [new Error('provider failure'), 'upstream-error'],
+    [{ unexpected: true }, 'upstream-error'],
+  ] as const)(
+    'classifies an IMDb provider failure as %s',
+    async (error, reason) => {
+      jest.spyOn(ids, 'resolve').mockRejectedValue(error);
+
+      await expect(
+        service.findRatings('movie', 603, { status: 'missing' }),
+      ).resolves.toEqual({
+        tmdb: { status: 'missing' },
+        imdb: { status: 'unavailable', reason },
+      });
+    },
+  );
 });

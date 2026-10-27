@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { BadGatewayException, GatewayTimeoutException } from '@nestjs/common';
 
 import { SERIES_PROVIDER, SeriesProvider } from './series-provider';
 import { SeriesService } from './series.service';
@@ -8,6 +9,7 @@ describe('SeriesService', () => {
   const provider: jest.Mocked<SeriesProvider> = {
     findPopular: jest.fn(),
     findOne: jest.fn(),
+    findRatings: jest.fn(),
     findCredits: jest.fn(),
     findImages: jest.fn(),
     findVideos: jest.fn(),
@@ -44,5 +46,53 @@ describe('SeriesService', () => {
     const error = new Error('provider failure');
     provider.findOne.mockRejectedValue(error);
     await expect(service.findOne(1)).rejects.toBe(error);
+  });
+
+  it.each([
+    [new GatewayTimeoutException(), 'timeout'],
+    [
+      new BadGatewayException('Movie provider response was invalid'),
+      'invalid-response',
+    ],
+    [new BadGatewayException('provider failure'), 'upstream-error'],
+    [new Error('provider failure'), 'upstream-error'],
+    [{ unexpected: true }, 'upstream-error'],
+  ] as const)(
+    'classifies a rating provider failure as %s',
+    async (error, reason) => {
+      provider.findRatings?.mockRejectedValue(error);
+
+      await expect(service.findRatings(1)).resolves.toEqual({
+        tmdb: { status: 'unavailable', reason },
+        imdb: { status: 'unavailable', reason: 'not-configured' },
+      });
+    },
+  );
+
+  it('preserves available, unavailable, missing and missing-resource rating outcomes', async () => {
+    provider.findRatings?.mockResolvedValueOnce({
+      status: 'available',
+      score: 8,
+      voteCount: 10,
+    });
+    await expect(service.findRatings(1)).resolves.toMatchObject({
+      tmdb: { status: 'available', score: 8 },
+    });
+
+    provider.findRatings?.mockResolvedValueOnce({
+      status: 'unavailable',
+      reason: 'upstream-error',
+    });
+    await expect(service.findRatings(1)).resolves.toMatchObject({
+      tmdb: { status: 'unavailable', reason: 'upstream-error' },
+    });
+
+    provider.findRatings?.mockResolvedValueOnce({ status: 'missing' });
+    await expect(service.findRatings(1)).resolves.toMatchObject({
+      tmdb: { status: 'missing' },
+    });
+
+    provider.findRatings?.mockResolvedValueOnce(undefined);
+    await expect(service.findRatings(1)).resolves.toBeUndefined();
   });
 });

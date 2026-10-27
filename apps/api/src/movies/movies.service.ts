@@ -1,4 +1,4 @@
-import { HttpException, Inject, Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import type {
   MovieDetails,
   WatchProviders,
@@ -11,6 +11,7 @@ import type {
 
 import { MOVIE_PROVIDER, MovieProvider } from './movie-provider';
 import { RatingsService } from '../ratings/ratings.service';
+import { ratingFailureReason } from '../ratings/rating-failure-reason';
 
 @Injectable()
 export class MoviesService {
@@ -41,23 +42,9 @@ export class MoviesService {
     try {
       tmdb = await this.movieProvider.findRatings?.(id);
     } catch (error) {
-      const status = error instanceof HttpException ? error.getStatus() : 502;
-      let reason: 'timeout' | 'invalid-response' | 'upstream-error';
-
-      if (status === 504) {
-        reason = 'timeout';
-      } else if (
-        error instanceof HttpException &&
-        error.message === 'Movie provider response was invalid'
-      ) {
-        reason = 'invalid-response';
-      } else {
-        reason = 'upstream-error';
-      }
-
       tmdb = {
         status: 'unavailable' as const,
-        reason,
+        reason: ratingFailureReason(error),
       };
     }
 
