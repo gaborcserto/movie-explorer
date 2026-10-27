@@ -18,7 +18,7 @@
     height: 100%;
     left: 0;
     mix-blend-mode: normal;
-    opacity: 0.3;
+    opacity: 0.1;
     position: absolute;
     top: 0;
     width: 100%;
@@ -44,18 +44,13 @@
     position: relative;
   }
 
-  &__top {
-    display: flex;
-    font-size: 20px;
-    padding: 24px 60px;
-  }
-
   &__title {
     color: $white;
     font-size: clamp(30px, 5vw, 40px);
     font-weight: 300;
     line-height: 1.2;
-    padding: 42px 120px 24px;
+    margin-inline: clamp(32px, 8vw, 120px);
+    padding: 114px 0 24px;
   }
 
   &__search {
@@ -107,13 +102,9 @@
   }
 
   @include media-size(md-down) {
-    &__top {
-      align-items: center;
-      padding: 1rem 0;
-    }
-
     &__title {
-      padding: 1.5rem 0 1rem;
+      margin-inline: 0;
+      padding: 80px 0 1rem;
     }
 
     &__search {

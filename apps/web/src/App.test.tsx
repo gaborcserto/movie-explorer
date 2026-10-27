@@ -92,12 +92,19 @@ describe('<App />', () => {
   test('renders the search route and loaded movie results', async () => {
     renderApp('/search');
 
+    expect(document.querySelector('.app-header')).toHaveClass(
+      'app-header--search'
+    );
+    expect(screen.getByTestId('search-component')).toBeVisible();
     expect(
       screen.getByPlaceholderText('What do you want to watch?')
     ).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'MovieExplorer' })).toHaveLength(
+      1
+    );
     expect(
       screen.getAllByRole('link', { name: 'Movie Explorer' })
-    ).toHaveLength(2);
+    ).toHaveLength(1);
     expect(await screen.findByText('Sample Movie')).toBeInTheDocument();
   });
 
@@ -129,6 +136,7 @@ describe('<App />', () => {
   test('renders movie details for movie routes', async () => {
     renderApp('/movie/1234');
 
+    expect(document.querySelector('.App')).toHaveClass('App--details');
     expect(
       await screen.findByRole('heading', { name: 'Sample Movie' })
     ).toBeInTheDocument();
@@ -187,9 +195,38 @@ describe('<App />', () => {
       screen.getByRole('heading', { level: 1, name: 'Page not found' })
     ).toBeInTheDocument();
     expect(screen.getAllByRole('main')).toHaveLength(1);
+    expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+    expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Back to Search' })
     ).toHaveAttribute('href', '/search');
     expect(getMovies).not.toHaveBeenCalled();
+  });
+
+  test('renders the fatal fallback outside the route layout after a root render failure', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      render(<App />);
+
+      expect(
+        screen.getByRole('heading', { name: 'Something went wrong' })
+      ).toBeVisible();
+      expect(
+        screen.getByText('An unexpected error interrupted this scene.')
+      ).toBeVisible();
+      expect(
+        document.querySelector('svg.popcorn-illustration')
+      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Reload page' })).toBeVisible();
+      expect(
+        screen.getByRole('link', { name: 'Back to Search' })
+      ).toHaveAttribute('href', '/search');
+      expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+      expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument();
+    } finally {
+      // eslint-disable-next-line no-console
+      vi.mocked(console.error).mockRestore();
+    }
   });
 });

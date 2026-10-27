@@ -142,7 +142,7 @@ test.each(['movies', 'people'] as const)(
     fireEvent.click(retry);
     expect(retry).toHaveFocus();
     const status = screen.getByText('Loading...');
-    expect(status).toHaveTextContent('Loading...');
+    expect(status).toHaveClass('visually-hidden');
     expect(status.closest('[role="alert"]')).toBeNull();
     await act(async () => resolve());
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
@@ -306,7 +306,10 @@ test('partial movie keeps primary and media, retries only credits, and preserves
   fireEvent.click(retry);
   expect(getMovieSection).toHaveBeenCalledTimes(2);
   expect(retry).toHaveAttribute('aria-disabled', 'true');
-  expect(screen.getByText('Loading credits...')).toBeVisible();
+  expect(screen.getByText('Loading credits...')).toHaveClass('visually-hidden');
+  expect(
+    screen.getByLabelText('Loading Credits').querySelector('.skeleton')
+  ).toBeInTheDocument();
   await act(async () => resolve({ cast: ['Recovered actor'] }));
   expect(screen.getAllByText('Recovered actor').length).toBeGreaterThan(0);
   expect(screen.getByText('Credits loaded.').parentElement).toHaveFocus();

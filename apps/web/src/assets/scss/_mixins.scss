@@ -1,4 +1,21 @@
 @use 'sass:color';
+@use 'breakpoints' as *;
+
+$page-header-height: 100px;
+$page-header-content-gap: 42px;
+$page-header-content-gap-mobile: 24px;
+
+@mixin container-inline-padding {
+  padding-inline: 60px;
+
+  @include media-size(lg-down) {
+    padding-inline: 20px;
+  }
+
+  @include media-size(md-down) {
+    padding-inline: 10px;
+  }
+}
 
 @mixin btn-variant($background, $color, $border) {
   background-color: $background;

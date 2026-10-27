@@ -91,11 +91,8 @@ test('direct person navigation loads the complete contract through the API witho
     .getByRole('heading', { name: person.name })
     .closest('.person-hero');
   expect(hero).not.toBeNull();
-  expect(hero?.querySelector('.person-hero__posters')).toHaveAttribute(
-    'aria-hidden',
-    'true'
-  );
-  expect(hero?.querySelectorAll('.person-hero__posters img')).toHaveLength(1);
+  expect(hero).toHaveClass('header', 'page-hero', 'header--movie-details');
+  expect(hero?.querySelector('.person-hero__posters')).toBeNull();
   expect(screen.getByText('Budapest, Hungary')).toBeVisible();
   expect(screen.getByText('1970-01-01')).toHaveAttribute(
     'datetime',
@@ -123,8 +120,11 @@ test('direct person navigation loads the complete contract through the API witho
     expect(document.title).toBe(`${person.name} | Movie Explorer`)
   );
 
+  expect(screen.getAllByRole('link', { name: 'MovieExplorer' })).toHaveLength(
+    1
+  );
   expect(screen.getAllByRole('link', { name: 'Movie Explorer' })).toHaveLength(
-    2
+    1
   );
   expect(
     screen
@@ -169,7 +169,7 @@ test('omits optional metadata and uses the missing portrait and biography placeh
   expect(document.querySelector('.person-hero__posters')).toBeNull();
 });
 
-test('uses distinct available filmography posters as decorative hero tiles', async () => {
+test('keeps filmography posters in content without a photographic hero backdrop', async () => {
   fetchMock.mockResolvedValue(
     response({
       ...person,
@@ -183,15 +183,13 @@ test('uses distinct available filmography posters as decorative hero tiles', asy
   );
   renderPage();
   await screen.findByRole('heading', { name: person.name });
-  const backdrop = document.querySelector('.person-hero__posters');
-  expect(backdrop).toHaveAttribute('aria-hidden', 'true');
+  expect(document.querySelector('.person-hero__posters')).toBeNull();
   expect(
-    [...(backdrop?.querySelectorAll('img') ?? [])].map((image) => image.src)
-  ).toEqual([
-    new URL('/movie.jpg', window.location.href).href,
-    new URL('/other-movie.jpg', window.location.href).href,
-  ]);
-  expect(backdrop?.querySelector('a, button')).toBeNull();
+    screen.getAllByRole('link', { name: /A movie/ })[0].querySelector('img')
+  ).toHaveAttribute('src', '/movie.jpg');
+  expect(
+    screen.getByRole('img', { name: `Portrait of ${person.name}` })
+  ).toBeInTheDocument();
 });
 
 test.each(['', '  \n  '])(
@@ -432,17 +430,22 @@ test('announces loading and cancels requests on unmount', () => {
     initialEntries: ['/person/42'],
   });
   const { unmount } = render(<RouterProvider router={router} />);
-  expect(screen.getByRole('status')).toHaveTextContent('Loading...');
-  const loadingHero = screen.getByRole('status').closest('.person-hero');
-  expect(loadingHero).toContainElement(
-    screen.getByRole('heading', { level: 1, name: 'Person details' })
+  expect(screen.getByLabelText('Loading person details')).toHaveAttribute(
+    'aria-busy',
+    'true'
   );
+  const loadingHero = screen
+    .getByLabelText('Loading person details')
+    .closest('.person-hero');
+  expect(loadingHero?.querySelectorAll('.skeleton').length).toBeGreaterThan(5);
   expect(
     loadingHero?.querySelector('.person-profile__portrait')
   ).toHaveAttribute('aria-hidden', 'true');
   expect(
-    loadingHero?.querySelector('.person-profile__biography-placeholder')
-  ).toHaveAttribute('aria-hidden', 'true');
+    loadingHero
+      ?.querySelector('.person-profile__biography-placeholder')
+      ?.closest('[aria-hidden="true"]')
+  ).not.toBeNull();
   expect(screen.queryByRole('img')).toBeNull();
   const signal = fetchMock.mock.calls[0][1]?.signal;
   expect(signal?.aborted).toBe(false);

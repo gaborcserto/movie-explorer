@@ -8,26 +8,48 @@ import { declarationsForSelector } from '../../testUtils/stylesheetDeclarations'
 const stylesheet = postcss.parse(
   compile(fileURLToPath(new URL('./personPage.scss', import.meta.url))).css
 );
-
-test('keeps a dark cinematic fallback and a non-interactive poster overlay', () => {
+const detailStylesheet = postcss.parse(
+  compile(
+    fileURLToPath(
+      new URL('../../components/details/details.scss', import.meta.url)
+    )
+  ).css
+);
+const searchStylesheet = postcss.parse(
+  compile(
+    fileURLToPath(
+      new URL('../../components/search/search.scss', import.meta.url)
+    )
+  ).css
+);
+test('reuses the shared cinematic background for the Person hero', () => {
   expect(declarationsForSelector(stylesheet, '.person-hero')).toMatchObject({
-    background: '#232323',
     'border-bottom': '10px solid #555555',
     isolation: 'isolate',
+    overflow: 'hidden',
+    position: 'relative',
   });
   expect(
-    declarationsForSelector(stylesheet, '.person-hero:after')
+    declarationsForSelector(stylesheet, '.person-hero')
+  ).not.toHaveProperty('background');
+  expect(
+    declarationsForSelector(stylesheet, '.person-hero.header:before').content
+  ).toBeUndefined();
+  expect(declarationsForSelector(stylesheet, '.person-hero:after')).toEqual({});
+  expect(stylesheet.toString()).not.toContain('person-hero__posters');
+  expect(
+    declarationsForSelector(searchStylesheet, '.header:before')
   ).toMatchObject({
-    background: expect.stringContaining('linear-gradient('),
-    'pointer-events': 'none',
+    'background-position': '50% 0',
+    'background-size': 'cover',
+    filter: 'blur(4.0774px)',
+    opacity: '0.1',
   });
   expect(
-    declarationsForSelector(stylesheet, '.person-hero__posters')
-  ).toMatchObject({
-    position: 'absolute',
-    opacity: '0.38',
-    'grid-auto-rows': 'minmax(0, 1fr)',
-  });
+    declarationsForSelector(detailStylesheet, '.header--movie-details:before')
+      .opacity
+  ).toBe('0.1');
+  expect(detailStylesheet.toString()).not.toContain('detail-page__backdrop');
 });
 
 test('matches the movie title typography and preserves a ten pixel portrait radius', () => {

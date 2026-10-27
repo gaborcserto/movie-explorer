@@ -12,7 +12,7 @@ import presentApiError, {
 } from '../../util/errorPresentation';
 import { getSearchResults, getPopularSeries } from '../../util/apiUtils';
 import SearchResultCard from './searchResultCard';
-import Loading from '../../layouts/loading';
+import { ResultsSkeleton, CardSkeletons } from '../skeleton/contentSkeletons';
 import Error from '../../layouts/error';
 import { useResultHistory, useSearchHistory } from './useSearchHistory';
 
@@ -129,7 +129,7 @@ export default function UnifiedList({
   }, [save, data, items, visible]);
 
   if (loading && !data && !error) {
-    return <Loading className="list__container container" />;
+    return <ResultsSkeleton />;
   }
   if (error) {
     return (
@@ -175,6 +175,7 @@ export default function UnifiedList({
             />
           );
         })}
+        {loading && <CardSkeletons count={10} />}
       </div>
       {Boolean(moreError) && (
         <p role="alert">{presentApiError(moreError)?.description}</p>

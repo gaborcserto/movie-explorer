@@ -441,11 +441,7 @@ describe('Series hierarchy', () => {
       expect(
         heading.closest('.detail-page__hero > .movie-details.container')
       ).not.toBeNull();
-      expect(container.querySelector('header')).toHaveClass(
-        'detail-page__navigation',
-        'movie-details',
-        'container'
-      );
+      expect(container.querySelector('header')).toBeNull();
       expect(
         container.querySelector('.movie-details__metadata dt')
       ).not.toBeNull();
@@ -453,7 +449,7 @@ describe('Series hierarchy', () => {
         container.querySelector('.details-section')?.closest('.container')
       ).toHaveClass('movie-details__lower-content');
       expect(screen.getAllByRole('main')).toHaveLength(1);
-      expect(screen.getAllByRole('contentinfo')).toHaveLength(1);
+      expect(screen.queryByRole('contentinfo')).toBeNull();
     }
   );
 
@@ -1183,7 +1179,10 @@ describe('Series hierarchy', () => {
         })
     );
     setup('/series/1');
-    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.getByLabelText('Loading Series')).toHaveAttribute(
+      'aria-busy',
+      'true'
+    );
     await act(async () => resolve(new Response('', { status: 404 })));
     expect(await screen.findByText('Series not found')).toBeInTheDocument();
   });
@@ -1330,6 +1329,24 @@ describe('Season and Episode shared hero images', () => {
 });
 
 describe('Series details polish edge cases', () => {
+  it('keeps the series hero dark when a backdrop image is available', async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({
+        ...series,
+        backdropUrl: 'https://images.test/w500/series-backdrop.jpg',
+      })
+    );
+    setup('/series/1');
+
+    expect(
+      await screen.findByRole('heading', { name: series.title, level: 1 })
+    ).toBeVisible();
+    expect(document.querySelector('.detail-page__backdrop')).toBeNull();
+    expect(
+      screen.getByRole('img', { name: `Poster for ${series.title}` })
+    ).toBeInTheDocument();
+  });
+
   it.each([
     { seasons: [] },
     { seasons: [season] },

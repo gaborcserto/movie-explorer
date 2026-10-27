@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import type { WatchProvider } from '@movie-explorer/contracts';
 
-import { getSeries, getWatchProviders } from '../../util/apiUtils';
+import { getSeries } from '../../util/apiUtils';
 import WatchProviders from '../../components/details/watchProviders';
+import useWatchProvidersResource from '../../components/details/useWatchProvidersResource';
 import parseDetailId from '../../util/detailId';
 import SeasonPreview from './seasonPreview';
 import SeriesSections from './seriesSections';
 import useSeriesResource from './useSeriesResource';
+import { DetailSectionsSkeleton } from '../../components/skeleton/contentSkeletons';
 import useRatingsResource from '../../components/details/useRatingsResource';
 import {
   SeriesLayout,
@@ -31,37 +32,15 @@ function SeriesDetails({ idText }: { idText: string }) {
     Number.isSafeInteger(id)
   );
   const series = resource.data;
-  const seriesId = series?.id;
-  const [watchProviders, setWatchProviders] = useState<WatchProvider[]>([]);
-
-  useEffect(() => {
-    if (seriesId === undefined) {
-      return undefined;
-    }
-
-    const controller = new AbortController();
-    setWatchProviders([]);
-
-    Promise.resolve()
-      .then(() => getWatchProviders('series', id, controller.signal))
-      .then(({ providers }) => {
-        if (!controller.signal.aborted) {
-          setWatchProviders(providers);
-        }
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setWatchProviders([]);
-        }
-      });
-
-    return () => controller.abort();
-  }, [id, seriesId]);
+  const providerResource = useWatchProvidersResource(
+    'series',
+    id,
+    Number.isSafeInteger(id)
+  );
 
   return (
     <SeriesLayout
       title={series?.title ?? 'Series details'}
-      backdrop={series?.backdropUrl}
       navigation={null}
       hero={
         series ? (
@@ -103,7 +82,10 @@ function SeriesDetails({ idText }: { idText: string }) {
                   ['Origin countries', series.originCountries.join(', ')],
                 ]}
               />
-              <WatchProviders providers={watchProviders} />
+              <WatchProviders
+                providers={providerResource.providers}
+                resource={providerResource}
+              />
               <section className="movie-details__section">
                 <h2 className="movie-details__section-title">Overview</h2>
                 <p className="movie-details__overview">
@@ -155,6 +137,7 @@ function SeriesDetails({ idText }: { idText: string }) {
         )
       }
     >
+      {resource.pending && !series && <DetailSectionsSkeleton />}
       {series && (
         <>
           <SeriesSections key={series.id} series={series} />

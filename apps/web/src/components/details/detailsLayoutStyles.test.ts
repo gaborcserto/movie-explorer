@@ -30,7 +30,10 @@ function declarations(selector: string, media?: string) {
 }
 
 test('retains the Movie hero dimensions, grid gap and title typography for every page', () => {
-  expect(declarations('.movie-details')).toMatchObject({ padding: '0 60px' });
+  expect(declarations('.movie-details')).toMatchObject({
+    'padding-block': '0',
+    'padding-inline': '60px',
+  });
   expect(declarations('.movie-details__image')).toMatchObject({
     width: '320px',
     flex: '0 0 320px',
@@ -61,7 +64,7 @@ test('aligns provider categories with Movie metadata tracks and keeps logos comp
   });
 });
 
-test('removes the provider section border with specificity above the shared section rule', () => {
+test('removes decorative borders above credits, media and provider sections', () => {
   let sharedBorder: string | undefined;
 
   mediaStylesheet.walkRules('.details-section', (rule) => {
@@ -75,9 +78,23 @@ test('removes the provider section border with specificity above the shared sect
     'border-top',
     '0'
   );
+  expect(declarations('.details-section.movie-crew-section')).toHaveProperty(
+    'border-top',
+    '0'
+  );
+  expect(declarations('.details-section.media-section')).toHaveProperty(
+    'border-top',
+    '0'
+  );
 });
 
 test('shares tablet and mobile behavior while retaining the episode still aspect ratio', () => {
+  expect(declarations('.movie-details', '(max-width: 991.98px)')).toMatchObject(
+    { 'padding-inline': '20px' }
+  );
+  expect(declarations('.movie-details', '(max-width: 767.98px)')).toMatchObject(
+    { 'padding-inline': '10px' }
+  );
   expect(
     declarations('.movie-details__image', '(max-width: 991.98px)')
   ).toMatchObject({ width: '260px', 'flex-basis': '260px' });

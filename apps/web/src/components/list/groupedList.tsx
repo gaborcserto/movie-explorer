@@ -11,7 +11,7 @@ import type { SearchMediaType } from '@movie-explorer/contracts';
 
 import { getSearchResults } from '../../util/apiUtils';
 import presentApiError from '../../util/errorPresentation';
-import Loading from '../../layouts/loading';
+import { ResultsSkeleton } from '../skeleton/contentSkeletons';
 import SearchResultCard from './searchResultCard';
 import { useResultHistory, useSearchHistory } from './useSearchHistory';
 import type { GroupedSnapshot } from './useSearchHistory';
@@ -41,7 +41,7 @@ export default function GroupedList({ query }: { query: string }) {
       }
       const controller = new AbortController();
       controllers.current.set(type, controller);
-      setPending((current) => [...current, type]);
+      setPending((current) => [...new Set([...current, type])]);
       try {
         const response = await getSearchResults(
           query,
@@ -97,16 +97,22 @@ export default function GroupedList({ query }: { query: string }) {
       aria-label="All results"
       aria-busy={pending.length > 0}
     >
-      {!complete && !Object.keys(groups).length && (
-        <Loading
-          className="list__container--loading"
-          title="Loading search results"
-        />
-      )}
       {empty && <p role="status">{`No results found for "${query}".`}</p>}
       {categories.map(({ type, view, label, Icon }) => {
         const response = groups[type];
         const error = errors[type];
+
+        if (!response && !error) {
+          return (
+            <section key={type} aria-label={label}>
+              <h2>{label}</h2>
+              <ResultsSkeleton
+                className="grouped-results__pending"
+                label={`Loading ${label.toLowerCase()}`}
+              />
+            </section>
+          );
+        }
 
         if (!error && !response?.results.length) {
           return null;

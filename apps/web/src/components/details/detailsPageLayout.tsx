@@ -1,8 +1,4 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
-
-import HeaderSearch from '../search/headerSearch';
-import Footer from '../../layouts/footer';
 import useDetailPage from './hooks';
 import './details.scss';
 import './media/media.scss';
@@ -11,51 +7,30 @@ export default function DetailsPageLayout({
   title,
   hero,
   navigation,
-  backdrop,
   children,
 }: {
   title: string;
   hero: ReactNode;
   navigation?: ReactNode;
-  backdrop?: string | null;
   children?: ReactNode;
 }) {
   const mainRef = useDetailPage(title);
 
   return (
-    <>
-      <div className="detail-page">
-        <header className="detail-page__navigation movie-details container">
-          <div className="movie-details__top detail-header">
-            <Link to="/search" className="movie-details__brand brand">
-              <strong>Movie</strong> Explorer
-            </Link>
-            <HeaderSearch />
+    <div className="detail-page">
+      <main ref={mainRef} tabIndex={-1} aria-label={title}>
+        <div
+          className="header page-hero header--movie-details detail-page__hero"
+          data-testid="details-component"
+        >
+          <div className="movie-details container">
+            {navigation}
+            {hero}
           </div>
-        </header>
-        <main ref={mainRef} tabIndex={-1} aria-label={title}>
-          <div
-            className="header header--movie-details detail-page__hero"
-            data-testid="details-component"
-          >
-            {backdrop && (
-              <img
-                className="detail-page__backdrop"
-                src={backdrop}
-                alt=""
-                decoding="async"
-              />
-            )}
-            <div className="movie-details container">
-              {navigation}
-              {hero}
-            </div>
-          </div>
-          {children}
-        </main>
-      </div>
-      <Footer />
-    </>
+        </div>
+        {children}
+      </main>
+    </div>
   );
 }
 

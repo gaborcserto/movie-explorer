@@ -1,26 +1,25 @@
 import { useState, useEffect } from 'react';
 import './details.scss';
 import { useParams } from 'react-router-dom';
-import type {
-  MovieDetails,
-  MovieSection,
-  WatchProvider,
-} from '@movie-explorer/contracts';
-import DetailsPageLayout from './detailsPageLayout';
+import type { MovieDetails, MovieSection } from '@movie-explorer/contracts';
+import DetailsPageLayout, { DetailsLowerLayout } from './detailsPageLayout';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
 import { DetailError } from './recovery';
 import presentApiError, {
   isCancelledError,
 } from '../../util/errorPresentation';
-import Loading from '../../layouts/loading';
+import {
+  DetailHeroSkeleton,
+  DetailSectionsSkeleton,
+} from '../skeleton/contentSkeletons';
 import {
   getMovie,
   getMovieSection,
-  getWatchProviders,
   isNotFoundError,
 } from '../../util/apiUtils';
 import parseDetailId from '../../util/detailId';
 import useRatingsResource from './useRatingsResource';
+import useWatchProvidersResource from './useWatchProvidersResource';
 
 type DetailsState = 'loading' | 'success' | 'not-found' | 'error';
 
@@ -35,7 +34,11 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
   const ratingResource = useRatingsResource('movie', movieId, validId);
 
   const [movieData, setMovieData] = useState<MovieDetails | null>(null);
-  const [watchProviders, setWatchProviders] = useState<WatchProvider[]>([]);
+  const providerResource = useWatchProvidersResource(
+    'movies',
+    movieId,
+    validId
+  );
 
   useEffect(() => {
     let current = true;
@@ -83,29 +86,6 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
     };
   }, [movieId, validId, attempt]);
 
-  useEffect(() => {
-    if (!validId || detailsState !== 'success') {
-      return undefined;
-    }
-
-    const controller = new AbortController();
-
-    Promise.resolve()
-      .then(() => getWatchProviders('movies', movieId, controller.signal))
-      .then(({ providers }) => {
-        if (!controller.signal.aborted) {
-          setWatchProviders(providers);
-        }
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setWatchProviders([]);
-        }
-      });
-
-    return () => controller.abort();
-  }, [movieId, validId, detailsState]);
-
   const recoverSection = async (section: MovieSection, signal: AbortSignal) => {
     const result = await getMovieSection(movieId, section, signal);
 
@@ -140,9 +120,7 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
 
   const renderContent = () => {
     if (detailsState === 'loading') {
-      return (
-        <Loading className="movie-details__container movie-details__container--loading" />
-      );
+      return <DetailHeroSkeleton label="Loading movie details" />;
     }
 
     if (detailsState === 'not-found') {
@@ -178,7 +156,8 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
       return (
         <DetailsContent
           movieData={movieData}
-          watchProviders={watchProviders}
+          watchProviders={providerResource.providers}
+          providerResource={providerResource}
           ratings={ratingResource.ratings}
           ratingsError={ratingResource.error}
           ratingsLoading={ratingResource.loading}
@@ -194,6 +173,11 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
 
   return (
     <DetailsPageLayout title={pageTitle} hero={renderContent()}>
+      {detailsState === 'loading' && (
+        <DetailsLowerLayout>
+          <DetailSectionsSkeleton />
+        </DetailsLowerLayout>
+      )}
       {isLoaded && (
         <DetailsLowerContent
           movieData={movieData}

@@ -113,7 +113,6 @@ function EpisodeDetails({
   return (
     <SeriesLayout
       title={episode?.title ?? 'Episode details'}
-      backdrop={episode?.stillUrl}
       navigation={
         valid && (
           <SeriesBreadcrumbs>

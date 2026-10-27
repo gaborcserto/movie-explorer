@@ -6,7 +6,7 @@ import { FaXmark } from 'react-icons/fa6';
 import presentApiError from '../../util/errorPresentation';
 import Card from '../card/card';
 import Error from '../../layouts/error';
-import Loading from '../../layouts/loading';
+import { ResultsSkeleton, CardSkeletons } from '../skeleton/contentSkeletons';
 import { defaultSortOrder, sortParams } from '../../util/apiUtils';
 import { movieHistorySignature, useSearchHistory } from './useSearchHistory';
 import useMovieResults from './hooks/useMovieResults';
@@ -90,9 +90,7 @@ function List() {
   };
 
   if (loadingData && !errorData) {
-    return (
-      <Loading className="list__container container list__container--loading" />
-    );
+    return <ResultsSkeleton />;
   }
 
   if (errorData) {
@@ -173,7 +171,12 @@ function List() {
   };
 
   return (
-    <section className="list__container container">
+    <section className="list__container container" aria-busy={loadingMore}>
+      {loadingMore && (
+        <span role="status" className="visually-hidden">
+          Loading more movies
+        </span>
+      )}
       {badges.length > 0 && (
         <div className="active-filters" aria-label="Applied movie filters">
           {badges.map((badge) => {
@@ -227,6 +230,7 @@ function List() {
             loading={index === 0 ? 'eager' : 'lazy'}
           />
         ))}
+        {loadingMore && <CardSkeletons count={10} />}
       </div>
       {Boolean(loadMoreError) && (
         <div className="list__more-error" role="alert">

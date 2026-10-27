@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import Details from '../details';
 import PersonPage from '../../pages/personPage/personPage';
+import Header from '../../layouts/header';
 import { getMovie, getPerson, getSearchSuggestions } from '../../util/apiUtils';
 
 vi.mock('../../util/apiUtils', async () => ({
@@ -40,9 +41,33 @@ describe.each([
   async function setup() {
     const router = createMemoryRouter(
       [
-        { path: '/movie/:movieId', element: <Details /> },
-        { path: '/person/:id', element: <PersonPage /> },
-        { path: '/search/:searchQuery', element: <h1>Search results</h1> },
+        {
+          path: '/movie/:movieId',
+          element: (
+            <>
+              <Header />
+              <Details />
+            </>
+          ),
+        },
+        {
+          path: '/person/:id',
+          element: (
+            <>
+              <Header />
+              <PersonPage />
+            </>
+          ),
+        },
+        {
+          path: '/search/:searchQuery',
+          element: (
+            <>
+              <Header />
+              <h1>Search results</h1>
+            </>
+          ),
+        },
       ],
       { initialEntries: [path] }
     );

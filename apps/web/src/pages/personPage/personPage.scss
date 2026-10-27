@@ -1,45 +1,10 @@
 @use '../../assets/scss' as *;
 
 .person-hero {
-  background: $grey-3;
   border-bottom: 10px solid $grey-1;
   isolation: isolate;
   overflow: hidden;
   position: relative;
-
-  &:after {
-    background: linear-gradient(
-      90deg,
-      rgb(0 0 0 / 0.88),
-      rgb(0 0 0 / 0.78) 55%,
-      rgb(0 0 0 / 0.88)
-    );
-    content: '';
-    inset: 0;
-    pointer-events: none;
-    position: absolute;
-    z-index: -1;
-  }
-
-  &__posters {
-    display: grid;
-    gap: 2px;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-
-    // Intrinsic image sizes must not redistribute the decorative rows.
-    grid-auto-rows: minmax(0, 1fr);
-    inset: -8px;
-    opacity: 0.38;
-    position: absolute;
-    z-index: -2;
-
-    img {
-      height: 100%;
-      min-height: 100%;
-      object-fit: cover;
-      width: 100%;
-    }
-  }
 
   &__container {
     position: relative;
@@ -103,23 +68,7 @@
     right: 12px;
   }
 
-  &__placeholder,
-  &__metadata-placeholder {
-    background: $grey-2;
-  }
-
-  &__loading-status {
-    margin-top: 8px;
-  }
-
-  &__metadata-placeholder {
-    // One label and value, matching the metadata's normal line boxes.
-    min-height: calc(12px + 4px + 16px * 1.4);
-    border-radius: 2px;
-  }
-
   &__biography-placeholder {
-    // Text-shaped reservation; real biographies always retain natural height.
     height: calc(8 * 1.45em);
     margin-top: 22px;
     background: repeating-linear-gradient(

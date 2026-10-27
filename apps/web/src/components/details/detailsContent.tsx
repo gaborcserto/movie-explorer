@@ -22,10 +22,12 @@ import {
 import { DetailsHeroFrame, DetailsLowerLayout } from './detailsPageLayout';
 import './media/media.scss';
 import WatchProviders from './watchProviders';
+import type useWatchProvidersResource from './useWatchProvidersResource';
 
 interface DetailsProps {
   movieData: MovieDetails;
   watchProviders?: WatchProvider[];
+  providerResource?: ReturnType<typeof useWatchProvidersResource>;
   ratings?: Ratings;
   ratingsError?: boolean;
   ratingsLoading?: boolean;
@@ -119,6 +121,7 @@ function CrewGroups({
 export function DetailsHero({
   movieData,
   watchProviders = [],
+  providerResource,
   ratings,
   ratingsError,
   ratingsLoading,
@@ -175,7 +178,7 @@ export function DetailsHero({
         </div>
       )}
       <MovieMetadata movie={movieData} />
-      <WatchProviders providers={watchProviders} />
+      <WatchProviders providers={watchProviders} resource={providerResource} />
       {movieData.description?.trim() && (
         <section className="movie-details__section">
           <h2 className="movie-details__section-title">Overview</h2>

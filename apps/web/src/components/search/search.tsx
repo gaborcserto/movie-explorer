@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import useAutocomplete from './useAutocomplete';
 import Suggestions from './suggestions';
@@ -9,13 +9,8 @@ function Search() {
   const autocomplete = useAutocomplete(searchQuery);
 
   return (
-    <header className="header" data-testid="search-component">
+    <header className="header page-hero" data-testid="search-component">
       <div className="header__container container">
-        <div className="header__top">
-          <Link to="/search" className="header__brand brand">
-            <strong>Movie</strong> Explorer
-          </Link>
-        </div>
         <h1 className="header__title">FIND YOUR NEXT STORY</h1>
         <form
           className="header__search"

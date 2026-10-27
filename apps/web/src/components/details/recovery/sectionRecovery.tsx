@@ -4,6 +4,7 @@ import type { SectionAvailability } from '@movie-explorer/contracts';
 import { ApiRequestError } from '../../../util/apiUtils';
 import { isCancelledError } from '../../../util/errorPresentation';
 import './sectionRecovery.scss';
+import { SectionSkeleton } from '../../skeleton/contentSkeletons';
 
 interface Props {
   label: string;
@@ -93,8 +94,23 @@ export default function SectionRecovery({
   }
 
   return (
-    <div className="section-recovery" ref={containerRef} tabIndex={-1}>
-      <p role="status">{message}</p>
+    <div
+      className="section-recovery"
+      ref={containerRef}
+      tabIndex={-1}
+      aria-busy={pending}
+    >
+      <p role="status" className={pending ? 'visually-hidden' : undefined}>
+        {message}
+      </p>
+      {pending && (
+        <div aria-hidden="true">
+          <SectionSkeleton
+            label={label}
+            portraits={/cast|crew|credits/i.test(label)}
+          />
+        </div>
+      )}
       {unavailable && (
         <button
           type="button"

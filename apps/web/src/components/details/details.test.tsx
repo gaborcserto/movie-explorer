@@ -119,7 +119,13 @@ describe('<Details />', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.getByLabelText('Loading movie details')).toHaveAttribute(
+      'aria-busy',
+      'true'
+    );
+    expect(
+      screen.getByLabelText('Loading movie details').querySelector('.skeleton')
+    ).toBeInTheDocument();
     expect(document.title).toBe('Loading movie | Movie Explorer');
     expect(screen.getByRole('main')).toHaveFocus();
   });
@@ -163,6 +169,114 @@ describe('<Details />', () => {
     await waitFor(() =>
       expect(document.title).toBe('Sample Movie | Movie Explorer')
     );
+  });
+
+  it('starts providers independently and replaces only their skeleton when ready', async () => {
+    useParams.mockReturnValue({ movieId: '1234' });
+    let resolveMovie!: (movie: MovieDetails) => void;
+    let resolveProviders!: (result: { providers: [] }) => void;
+    getMovie.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveMovie = resolve;
+      })
+    );
+    getWatchProviders.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveProviders = resolve;
+      })
+    );
+    render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
+
+    expect(getWatchProviders).toHaveBeenCalledWith(
+      'movies',
+      1234,
+      expect.any(AbortSignal)
+    );
+    await act(async () => resolveMovie(mockData));
+    expect(screen.getByRole('heading', { name: mockData.title })).toBeVisible();
+    expect(screen.getByLabelText('Loading watch providers')).toHaveAttribute(
+      'aria-busy',
+      'true'
+    );
+    expect(screen.queryByLabelText('Loading movie details')).toBeNull();
+    await act(async () => resolveProviders({ providers: [] }));
+    expect(screen.queryByLabelText('Loading watch providers')).toBeNull();
+    expect(screen.getByRole('heading', { name: mockData.title })).toBeVisible();
+  });
+
+  it('retries a failed provider section without reloading metadata and retains focus during retry', async () => {
+    useParams.mockReturnValue({ movieId: '1234' });
+    getMovie.mockResolvedValueOnce(mockData);
+    let resolveRetry!: (result: { providers: [] }) => void;
+    getWatchProviders
+      .mockRejectedValueOnce(new Error('Unavailable'))
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveRetry = resolve;
+        })
+      );
+    render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
+    const retry = await screen.findByRole('button', {
+      name: 'Retry watch providers',
+    });
+    retry.focus();
+    fireEvent.click(retry);
+    expect(retry).toHaveFocus();
+    expect(retry).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(retry);
+    expect(getWatchProviders).toHaveBeenCalledTimes(2);
+    await act(async () => resolveRetry({ providers: [] }));
+    expect(
+      screen.queryByRole('button', { name: 'Retry watch providers' })
+    ).toBeNull();
+    expect(screen.getByRole('main')).toHaveFocus();
+    expect(getMovie).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('heading', { name: mockData.title })).toBeVisible();
+  });
+
+  it('aborts an old provider request on navigation and ignores its late failure', async () => {
+    useParams.mockReturnValue({ movieId: '1234' });
+    getMovie.mockResolvedValue(mockData);
+    let rejectOld!: (error: Error) => void;
+    getWatchProviders.mockReturnValueOnce(
+      new Promise((_, reject) => {
+        rejectOld = reject;
+      })
+    );
+    const { rerender } = render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
+    await screen.findByRole('heading', { name: mockData.title });
+    const oldSignal = getWatchProviders.mock.calls[0][2];
+    useParams.mockReturnValue({ movieId: '969681' });
+    getMovie.mockResolvedValueOnce({
+      ...mockData,
+      id: 969681,
+      title: 'New movie',
+    });
+    rerender(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
+    await screen.findByRole('heading', { name: 'New movie' });
+    expect(oldSignal.aborted).toBe(true);
+    await act(async () => rejectOld(new Error('Late failure')));
+    expect(screen.getByRole('heading', { name: 'New movie' })).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Retry watch providers' })
+    ).toBeNull();
+    expect(screen.queryByLabelText('Loading watch providers')).toBeNull();
   });
 
   it('loads unified ratings independently and retries ratings without reloading movie details', async () => {

@@ -416,7 +416,10 @@ describe('<List />', () => {
     });
     expect(getMovies).toHaveBeenCalledTimes(2);
     expect(button).toBeDisabled();
+    expect(document.querySelectorAll('.skeleton-card')).toHaveLength(10);
+    expect(screen.getByText('First page 1')).toBeVisible();
     await act(async () => nextPage.resolve(moviePage('Second page', 2)));
+    expect(document.querySelector('.skeleton-card')).toBeNull();
     expect(screen.getByText('20 movies loaded')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Load more' }));
     expect(await screen.findByText('Third page 1')).toBeInTheDocument();

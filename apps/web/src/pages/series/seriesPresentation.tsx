@@ -13,7 +13,7 @@ import DetailsPageLayout, {
   DetailsHeroFrame,
 } from '../../components/details/detailsPageLayout';
 import { DetailError } from '../../components/details/recovery';
-import Loading from '../../layouts/loading';
+import { DetailHeroSkeleton } from '../../components/skeleton/contentSkeletons';
 import presentApiError from '../../util/errorPresentation';
 import { isNotFoundError } from '../../util/apiUtils';
 import '../../components/details/details.scss';
@@ -23,22 +23,15 @@ export function SeriesLayout({
   title,
   hero,
   navigation,
-  backdrop,
   children,
 }: {
   title: string;
   hero: React.ReactNode;
   navigation?: React.ReactNode;
-  backdrop?: string | null;
   children?: React.ReactNode;
 }) {
   return (
-    <DetailsPageLayout
-      title={title}
-      hero={hero}
-      navigation={navigation}
-      backdrop={backdrop}
-    >
+    <DetailsPageLayout title={title} hero={hero} navigation={navigation}>
       {children && <DetailsLowerLayout>{children}</DetailsLowerLayout>}
     </DetailsPageLayout>
   );
@@ -66,7 +59,7 @@ export function SeriesRequestState({
     );
   }
   if (pending && !error) {
-    return <Loading className="series-loading" title={`Loading ${resource}`} />;
+    return <DetailHeroSkeleton label={`Loading ${resource}`} />;
   }
   if (isNotFoundError(error)) {
     return (

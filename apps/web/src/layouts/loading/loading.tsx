@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 
+import Skeleton, { SkeletonRegion } from '../../components/skeleton/skeleton';
+
 interface LoadingProps {
   className: string;
   title?: string;
@@ -19,9 +21,22 @@ function Loading({ className, title }: LoadingProps) {
   }, [title]);
 
   return (
-    <div className={className} role="status" aria-live="polite">
-      <div>Loading...</div>
-    </div>
+    <main className={className} tabIndex={-1}>
+      <div className="header page-hero header--movie-details detail-page__hero">
+        <div className="movie-details container">
+          <SkeletonRegion
+            className="movie-details__container movie-details__container--loading"
+            label={title ?? 'Loading content'}
+          >
+            <div className="skeleton-copy">
+              <Skeleton height={32} width="60%" />
+              <Skeleton height={20} />
+              <Skeleton height={20} width="80%" />
+            </div>
+          </SkeletonRegion>
+        </div>
+      </div>
+    </main>
   );
 }
 

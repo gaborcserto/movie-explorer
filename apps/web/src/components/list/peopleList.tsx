@@ -15,7 +15,7 @@ import presentApiError, {
 } from '../../util/errorPresentation';
 import { getPeople } from '../../util/apiUtils';
 import Card from '../card/card';
-import Loading from '../../layouts/loading';
+import { ResultsSkeleton, CardSkeletons } from '../skeleton/contentSkeletons';
 import Error from '../../layouts/error';
 import { useResultHistory, useSearchHistory } from './useSearchHistory';
 
@@ -97,7 +97,7 @@ export default function PeopleList({ query }: { query: string }) {
   }, [save, data, people, visible]);
 
   if (loading && !data && !error) {
-    return <Loading className="list__container container" />;
+    return <ResultsSkeleton />;
   }
   if (error) {
     return (
@@ -152,6 +152,7 @@ export default function PeopleList({ query }: { query: string }) {
             genreNavigation={false}
           />
         ))}
+        {loading && <CardSkeletons count={10} />}
       </div>
       {Boolean(moreError) && (
         <p role="alert">{presentApiError(moreError)?.description}</p>

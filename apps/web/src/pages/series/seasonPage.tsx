@@ -53,7 +53,6 @@ function SeasonDetails({
   return (
     <SeriesLayout
       title={season?.title ?? 'Season details'}
-      backdrop={series?.backdropUrl}
       navigation={
         <SeriesBreadcrumbs>
           <Link to={seriesPath(idText)}>

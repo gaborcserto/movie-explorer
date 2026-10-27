@@ -477,9 +477,32 @@ test('query Series Load more shares outline, loading and disabled states and kee
   expect(button).toBeDisabled();
   expect(button).toHaveTextContent('Loading more...');
   expect(button).not.toHaveClass('btn--primary');
+  const grid = screen.getByRole('region', { name: 'Series results' });
+  expect(grid.querySelectorAll('.skeleton-card')).toHaveLength(10);
+  expect(within(grid).getByRole('link', { name: 'Series 1' })).toBeVisible();
   await act(async () => {
     next.resolve(page(2, 2, 1));
   });
   expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
   expect(screen.getByText('11 results loaded')).toHaveFocus();
+  expect(grid.querySelector('.skeleton')).toBeNull();
+});
+
+test('keeps unfinished grouped searches visible as skeletons after another category finishes', async () => {
+  const pendingSeries = deferred();
+  api.mockImplementation(async (_query, type) => {
+    if (type === 'tv') return pendingSeries.promise;
+
+    return { ...page(1, 1, 0), results: [] };
+  });
+  setup('/search/Story?view=all');
+  const pending = screen.getByLabelText('Loading series');
+  expect(pending.querySelectorAll('.skeleton-card')).toHaveLength(10);
+  await act(async () => {});
+  expect(screen.getByLabelText('Loading series')).toBeInTheDocument();
+  expect(screen.queryByLabelText('Loading movies')).toBeNull();
+  expect(screen.queryByLabelText('Loading persons')).toBeNull();
+  await act(async () => pendingSeries.resolve(page(1, 1, 1)));
+  expect(screen.getByRole('link', { name: 'Series 1' })).toBeVisible();
+  expect(screen.queryByLabelText('Loading series')).toBeNull();
 });

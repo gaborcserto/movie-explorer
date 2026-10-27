@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import type { PersonDetails } from '@movie-explorer/contracts';
 
 import {
@@ -8,8 +8,8 @@ import {
 } from '../../components/details/recovery';
 import HeroImage from '../../components/heroImage';
 import PhotoPreview from '../../components/details/media';
-import Footer from '../../layouts/footer';
-import Loading from '../../layouts/loading';
+import Skeleton, { SkeletonRegion } from '../../components/skeleton/skeleton';
+import { ResultsSkeleton } from '../../components/skeleton/contentSkeletons';
 import presentApiError, {
   isCancelledError,
 } from '../../util/errorPresentation';
@@ -21,25 +21,15 @@ import {
 } from '../../util/apiUtils';
 import './personPage.scss';
 import Filmography from './filmography';
-import HeaderSearch from '../../components/search/headerSearch';
 import getPersonAge from './personAge';
 import useDetailPage from '../../components/details/hooks';
 import parseDetailId from '../../util/detailId';
 import { replaceFilmographyGroup } from './filmographyRules';
+import '../../components/details/details.scss';
 
 type PersonState =
   | { status: 'loading' | 'not-found' | 'error' }
   | { status: 'success'; person: PersonDetails };
-
-function getPosterUrls(person: PersonDetails) {
-  return [
-    ...new Set(
-      person.filmography
-        .map((entry) => entry.posterUrl?.trim())
-        .filter((url): url is string => Boolean(url))
-    ),
-  ].slice(0, 12);
-}
 
 function PersonProfile({ person }: { person: PersonDetails }) {
   const [expanded, setExpanded] = useState(false);
@@ -119,25 +109,28 @@ function PersonProfile({ person }: { person: PersonDetails }) {
 
 function PersonProfileLoading() {
   return (
-    <div className="person-profile person-profile--loading">
-      <div
-        className="person-profile__portrait person-profile__placeholder"
-        aria-hidden="true"
-      />
-      <div className="person-profile__content">
-        <h1>Person details</h1>
-        <Loading className="person-profile__loading-status" />
-        <div className="person-profile__metadata" aria-hidden="true">
-          {['department', 'birthday', 'age', 'birthplace'].map((field) => (
-            <div key={field} className="person-profile__metadata-placeholder" />
-          ))}
+    <SkeletonRegion label="Loading person details">
+      <div className="person-profile person-profile--loading">
+        <Skeleton className="person-profile__portrait" radius={10} />
+        <div className="person-profile__content">
+          <Skeleton height={50} width="75%" />
+          <div className="person-profile__metadata">
+            {['department', 'birthday', 'age', 'birthplace'].map((field) => (
+              <Skeleton key={field} height={39} />
+            ))}
+          </div>
+          <div className="person-profile__biography-placeholder skeleton-copy">
+            {Array.from({ length: 8 }, (_, index) => (
+              <Skeleton
+                key={index}
+                height={16}
+                width={index === 7 ? '65%' : '100%'}
+              />
+            ))}
+          </div>
         </div>
-        <div
-          className="person-profile__biography person-profile__biography-placeholder"
-          aria-hidden="true"
-        />
       </div>
-    </div>
+    </SkeletonRegion>
   );
 }
 
@@ -188,8 +181,6 @@ function PersonDetailsPage({ id }: { id: string }) {
   }, [personId, validId, attempt]);
 
   const title = validId ? 'Person not found' : 'Invalid person ID';
-  const posterUrls =
-    state.status === 'success' ? getPosterUrls(state.person) : [];
 
   let pageTitle = title;
 
@@ -261,24 +252,9 @@ function PersonDetailsPage({ id }: { id: string }) {
   };
 
   return (
-    <div className="detail-page">
-      <header className="detail-page__navigation movie-details container">
-        <div className="movie-details__top person-header detail-header">
-          <Link to="/search" className="movie-details__brand brand">
-            <strong>Movie</strong> Explorer
-          </Link>
-          <HeaderSearch />
-        </div>
-      </header>
+    <div className="detail-page main">
       <main ref={mainRef} tabIndex={-1} aria-label={pageTitle}>
-        <div className="person-hero detail-page__hero">
-          {posterUrls.length > 0 && (
-            <div className="person-hero__posters" aria-hidden="true">
-              {posterUrls.map((url) => (
-                <img key={url} src={url} alt="" loading="lazy" />
-              ))}
-            </div>
-          )}
+        <div className="header page-hero header--movie-details person-hero detail-page__hero">
           <div className="movie-details container person-hero__container">
             {validId && state.status === 'loading' && <PersonProfileLoading />}
             {state.status === 'success' && (
@@ -287,6 +263,12 @@ function PersonDetailsPage({ id }: { id: string }) {
           </div>
         </div>
         <div className="main person-page container">
+          {validId && state.status === 'loading' && (
+            <ResultsSkeleton
+              className="person-filmography-skeleton"
+              label="Loading filmography"
+            />
+          )}
           {!validId || state.status === 'not-found' ? (
             <DetailError
               heading={title}
@@ -374,7 +356,6 @@ function PersonDetailsPage({ id }: { id: string }) {
           )}
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

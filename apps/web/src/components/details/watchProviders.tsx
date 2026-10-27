@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type {
   WatchProvider,
   WatchProviderCategory,
 } from '@movie-explorer/contracts';
+
+import Skeleton, { SkeletonRegion } from '../skeleton/skeleton';
+import type useWatchProvidersResource from './useWatchProvidersResource';
 
 import appleLogo from '../../assets/img/providers/apple.webp';
 import disneyLogo from '../../assets/img/providers/disney.webp';
@@ -59,9 +62,22 @@ function ProviderLogo({
 
 export default function WatchProviders({
   providers,
+  resource,
 }: {
   providers: WatchProvider[];
+  resource?: ReturnType<typeof useWatchProvidersResource>;
 }) {
+  const retryRef = useRef<HTMLButtonElement>(null);
+
+  const attachRetry = useCallback((button: HTMLButtonElement | null) => {
+    const previous = retryRef.current;
+
+    if (!button && previous && document.activeElement === previous) {
+      previous.closest('main')?.focus({ preventScroll: true });
+    }
+    retryRef.current = button;
+  }, []);
+
   const groups = categories
     .map(([key, label]) => ({
       key,
@@ -72,6 +88,48 @@ export default function WatchProviders({
     }))
     .filter((group) => group.providers.length > 0);
 
+  if (resource?.error) {
+    return (
+      <div className="section-recovery" aria-busy={resource.pending}>
+        <p role="status">
+          {resource.pending
+            ? 'Loading watch providers'
+            : 'Watch providers could not be loaded.'}
+        </p>
+        {resource.pending && (
+          <div aria-hidden="true">
+            <Skeleton width={160} height={42} />
+          </div>
+        )}
+        <button
+          type="button"
+          className="btn btn--outline btn--action"
+          ref={attachRetry}
+          aria-disabled={resource.pending}
+          onClick={() => {
+            if (!resource.pending) resource.retry();
+          }}
+        >
+          Retry watch providers
+        </button>
+      </div>
+    );
+  }
+  if (resource?.pending && groups.length === 0) {
+    return (
+      <SkeletonRegion
+        label="Loading watch providers"
+        className="watch-providers details-section"
+      >
+        <Skeleton width={160} height={22} />
+        <div className="watch-providers__groups">
+          <Skeleton width={42} height={42} radius={8} />
+          <Skeleton width={42} height={42} radius={8} />
+          <Skeleton width={42} height={42} radius={8} />
+        </div>
+      </SkeletonRegion>
+    );
+  }
   if (groups.length === 0) {
     return null;
   }

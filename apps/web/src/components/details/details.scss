@@ -66,24 +66,34 @@
   border-top: 0;
 }
 
-.header--movie-details {
-  &:before {
-    opacity: 0.1;
-  }
+.details-section.movie-crew-section,
+.details-section.media-section,
+.cast-crew-layout > .details-section,
+.details-section.series-credits {
+  border-top: 0;
+}
+
+.header--movie-details:before {
+  opacity: 0.1;
 }
 
 .movie-details {
   min-height: 396px;
   position: relative;
   z-index: 100;
-  padding: 0 60px;
+  padding-block: 0;
+
+  @include container-inline-padding;
+
   color: $white;
 
   &__top {
     align-items: center;
-    padding: 28px 0;
+    box-sizing: border-box;
     display: flex;
+    height: $page-header-height;
     justify-content: space-between;
+    padding-block: 28px;
   }
 
   &__brand {
@@ -248,8 +258,6 @@
   }
 
   @include media-size(lg-down) {
-    padding: 0 20px;
-
     &__container {
       gap: 20px;
     }
@@ -269,8 +277,6 @@
   }
 
   @include media-size(md-down) {
-    padding: 0 10px;
-
     &__container {
       display: block;
       gap: 0;
@@ -301,38 +307,23 @@
 }
 
 .detail-page {
-  display: flex;
   flex: 1 1 auto;
-  flex-direction: column;
   position: relative;
 
   > main {
     flex: 1 1 auto;
   }
 
-  &__navigation {
-    left: 0;
-    right: 0;
-    position: absolute;
-    min-height: 0;
-    z-index: 101;
-  }
-
-  // The navigation is 44px tall with 28px padding on each side.
   &__hero {
-    padding-top: 100px;
+    padding-top: $page-header-height;
 
     > .movie-details {
       min-height: 296px;
     }
   }
-}
 
-@media (width <= 480px) {
-  .detail-page__hero {
-    padding-top: 104px;
-
-    > .movie-details {
+  @media (width <= 480px) {
+    &__hero > .movie-details {
       min-height: 292px;
     }
   }
@@ -341,20 +332,6 @@
 // Still images keep their native shape within the shared poster column.
 .movie-details__image--still {
   aspect-ratio: 16 / 9;
-}
-
-.detail-page__hero {
-  isolation: isolate;
-}
-
-.detail-page__backdrop {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.12;
-  pointer-events: none;
 }
 
 @include media-size(md-down) {

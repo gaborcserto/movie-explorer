@@ -4,11 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import DetailsPageLayout from './detailsPageLayout';
 import { DetailsHero, DetailsLowerContent } from './detailsContent';
 
-vi.mock('../search/headerSearch', () => ({
-  default: () => <button type="button">Search</button>,
-}));
-
-test('preserves Movie navigation, hero, title, rating, overview and lower-content structure', () => {
+test('preserves the Movie hero, title, rating, overview and lower-content structure', () => {
   const movie = {
     id: 1,
     title: 'Movie reference',
@@ -33,11 +29,8 @@ test('preserves Movie navigation, hero, title, rating, overview and lower-conten
   const main = screen.getByRole('main', { name: movie.title });
   expect(main).toHaveFocus();
   expect(document.title).toBe('Movie reference | Movie Explorer');
-  expect(container.querySelector('header')).toHaveClass(
-    'detail-page__navigation',
-    'movie-details',
-    'container'
-  );
+  expect(container.querySelector('header')).toBeNull();
+  expect(container.querySelectorAll('main')).toHaveLength(1);
   const hero = container.querySelector(
     '.detail-page__hero > .movie-details.container > .movie-details__container'
   );

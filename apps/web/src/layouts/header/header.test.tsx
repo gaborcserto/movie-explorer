@@ -1,53 +1,50 @@
 import { render, screen } from '@testing-library/react';
-import {
-  MemoryRouter,
-  Route,
-  Routes,
-  useParams as originalUseParams,
-} from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+
 import Header from './header';
 
-const useParams = vi.mocked(originalUseParams);
-
-vi.mock('react-router-dom', async () => ({
-  ...(await vi.importActual<typeof import('react-router-dom')>(
-    'react-router-dom'
-  )),
-  useParams: vi.fn(),
-}));
-
 describe('Header component', () => {
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
-  it('renders the Details component if movieId is present', () => {
-    useParams.mockReturnValue({ movieId: '1234' });
-
+  it('keeps the brand in one shared position and offers detail search on detail routes', () => {
     render(
-      <MemoryRouter initialEntries={['/movies/1234']}>
+      <MemoryRouter initialEntries={['/movie/1234']}>
         <Routes>
-          <Route path="/movies/:movieId" element={<Header />} />
+          <Route path="/movie/:movieId" element={<Header />} />
         </Routes>
       </MemoryRouter>
     );
 
-    expect(screen.getByTestId('details-component')).toBeInTheDocument();
-    expect(screen.queryByTestId('search-component')).toBeNull();
+    expect(screen.getByRole('banner')).toContainElement(
+      screen.getByRole('link', { name: 'MovieExplorer' })
+    );
+    expect(screen.getByRole('button', { name: /search/i })).toBeInTheDocument();
   });
 
-  it('renders the Search component if movieId is not present', () => {
-    useParams.mockReturnValue({});
+  it('shows the shared brand without duplicating search controls on Search', () => {
+    render(
+      <MemoryRouter initialEntries={['/search']}>
+        <Routes>
+          <Route path="/search" element={<Header />} />
+        </Routes>
+      </MemoryRouter>
+    );
 
+    expect(screen.getByRole('link', { name: 'MovieExplorer' })).toHaveAttribute(
+      'href',
+      '/search'
+    );
+    expect(screen.getByRole('banner')).toHaveClass('app-header--search');
+    expect(screen.queryByRole('button', { name: /search/i })).toBeNull();
+  });
+
+  it('keeps the Home redirect header integrated with the Search hero', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <Routes>
-          <Route path="*" element={<Header />} />
+          <Route path="/" element={<Header />} />
         </Routes>
       </MemoryRouter>
     );
 
-    expect(screen.getByTestId('search-component')).toBeInTheDocument();
-    expect(screen.queryByTestId('details-component')).toBeNull();
+    expect(screen.getByRole('banner')).toHaveClass('app-header--search');
   });
 });

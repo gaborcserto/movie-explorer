@@ -616,6 +616,9 @@ test('query Persons Load more uses the default outline variant during loading an
   fireEvent.click(button);
   expect(button).toBeDisabled();
   expect(button).toHaveTextContent('Loading more...');
+  const results = screen.getByRole('region', { name: 'People results' });
+  expect(results.querySelectorAll('.skeleton-card')).toHaveLength(10);
+  expect(within(results).getByRole('link', { name: 'Person 1' })).toBeVisible();
   fireEvent.click(button);
   expect(getPeople).toHaveBeenCalledTimes(2);
   await act(async () => {
@@ -623,6 +626,35 @@ test('query Persons Load more uses the default outline variant during loading an
   });
   expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
   expect(screen.getByRole('link', { name: 'Person 21' })).toBeVisible();
+  expect(results.querySelector('.skeleton')).toBeNull();
+});
+
+test('shows a correctly sized skeleton grid for new filters without mislabeling old results', async () => {
+  const router = setup('/search/Actor?filter=drama');
+  await screen.findByRole('link', { name: 'Movie result' });
+  let resolve!: (value: MovieListResponse) => void;
+  vi.mocked(getMovies).mockReturnValueOnce(
+    new Promise((done) => {
+      resolve = done;
+    })
+  );
+  await act(async () => router.navigate('/search/Actor?filter=action'));
+  const pending = screen.getByLabelText('Loading results');
+  expect(pending.querySelectorAll('.skeleton-card')).toHaveLength(10);
+  expect(screen.queryByRole('link', { name: 'Movie result' })).toBeNull();
+  expect(router.state.location.search).toBe('?filter=action');
+  await act(async () =>
+    resolve({
+      movies: [
+        { id: 2, title: 'Action result', posterUrl: '', genres: ['Action'] },
+      ],
+      page: 1,
+      totalPages: 1,
+      totalResults: 1,
+    })
+  );
+  expect(screen.getByRole('link', { name: 'Action result' })).toBeVisible();
+  expect(screen.queryByLabelText('Loading results')).toBeNull();
 });
 
 test('uses the TV icon for Series while preserving Movie and Person icons', async () => {
