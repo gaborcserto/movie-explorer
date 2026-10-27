@@ -45,6 +45,17 @@ import {
 } from './seriesValidation';
 import combinedFilmography from './filmographyValidation';
 import { searchResponse, searchResult } from './searchValidation';
+import request from './apiTransport';
+import { ApiRequestError } from './apiErrors';
+
+export { ApiRequestError };
+
+export {
+  API_REQUEST_TIMEOUT_MS,
+  classifyHttpStatus,
+  isNotFoundError,
+} from './apiErrors';
+export type { ApiErrorCategory } from './apiErrors';
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const apiBaseUrl = (configuredApiBaseUrl ?? 'http://localhost:4000').replace(
@@ -52,133 +63,6 @@ const apiBaseUrl = (configuredApiBaseUrl ?? 'http://localhost:4000').replace(
   ''
 );
 const moviesUrl = `${apiBaseUrl}/api/v1/movies`;
-
-export type ApiErrorCategory =
-  | 'invalid-request'
-  | 'not-found'
-  | 'rate-limited'
-  | 'internal-server'
-  | 'service-unavailable'
-  | 'http'
-  | 'network'
-  | 'timeout'
-  | 'cancelled'
-  | 'invalid-response';
-
-export class ApiRequestError extends Error {
-  constructor(
-    public readonly category: ApiErrorCategory,
-    public readonly status?: number,
-    public readonly retryAfterSeconds?: number
-  ) {
-    super(`API request failed: ${category}`);
-    this.name = 'ApiRequestError';
-  }
-}
-
-export const API_REQUEST_TIMEOUT_MS = 12_000;
-
-export function classifyHttpStatus(status: number): ApiErrorCategory {
-  switch (status) {
-    case 400:
-    case 422:
-      return 'invalid-request';
-    case 404:
-      return 'not-found';
-    case 429:
-      return 'rate-limited';
-    case 500:
-      return 'internal-server';
-    case 502:
-    case 503:
-    case 504:
-      return 'service-unavailable';
-    default:
-      return 'http';
-  }
-}
-
-async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
-  const controller = new AbortController();
-  const callerSignal = init.signal;
-  const cancel = () => {
-    if (!controller.signal.aborted) {
-      controller.abort('cancelled');
-    }
-  };
-
-  if (callerSignal?.aborted) {
-    cancel();
-  } else {
-    callerSignal?.addEventListener('abort', cancel, { once: true });
-  }
-
-  const timer = setTimeout(() => {
-    if (!controller.signal.aborted) {
-      controller.abort('timeout');
-    }
-  }, API_REQUEST_TIMEOUT_MS);
-  let status: number | undefined;
-
-  try {
-    controller.signal.throwIfAborted();
-
-    const response = await fetch(url, { ...init, signal: controller.signal });
-    status = response.status;
-    controller.signal.throwIfAborted();
-
-    if (!response.ok) {
-      const delay = response.headers?.get('Retry-After');
-      const seconds = delay && /^\d+$/.test(delay) ? Number(delay) : undefined;
-      const retryAfterSeconds =
-        status === 429 &&
-        seconds !== undefined &&
-        Number.isSafeInteger(seconds) &&
-        seconds > 0 &&
-        seconds <= 86_400
-          ? seconds
-          : undefined;
-      throw new ApiRequestError(
-        classifyHttpStatus(status),
-        status,
-        retryAfterSeconds
-      );
-    }
-
-    try {
-      const body: unknown = await response.json();
-      controller.signal.throwIfAborted();
-
-      return body as T;
-    } catch {
-      if (controller.signal.aborted) {
-        throw controller.signal.reason;
-      }
-      throw new ApiRequestError('invalid-response', status);
-    }
-  } catch (error: unknown) {
-    if (controller.signal.aborted) {
-      throw new ApiRequestError(
-        controller.signal.reason === 'timeout' ? 'timeout' : 'cancelled',
-        status
-      );
-    }
-
-    if (error instanceof ApiRequestError) {
-      throw error;
-    }
-    throw new ApiRequestError('network', status);
-  } finally {
-    clearTimeout(timer);
-    callerSignal?.removeEventListener('abort', cancel);
-    // Release any unread error response body using this request's controller.
-    controller.abort();
-  }
-}
-
-export const isNotFoundError = (error: unknown): boolean => {
-  return error instanceof ApiRequestError && error.status === 404;
-};
 
 export async function getSeries(
   id: number,

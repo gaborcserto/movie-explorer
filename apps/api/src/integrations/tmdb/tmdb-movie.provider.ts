@@ -23,6 +23,7 @@ import { normalizeTmdbRating } from './tmdb-ratings';
 import type { MovieProvider } from '../../movies/movie-provider';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbMovieMapper } from './tmdb-movie.mapper';
+import { mapMovieSection } from './tmdb-movie-section.mapper';
 import { TmdbTransport } from './tmdb.transport';
 import {
   mapPeople,
@@ -37,9 +38,6 @@ import {
 } from './tmdb-person.mapper';
 import {
   TmdbGenre,
-  TmdbCredits,
-  TmdbImage,
-  TmdbVideos,
   TmdbGenreListResponse,
   TmdbMovieDetails,
   TmdbMovieListItem,
@@ -240,11 +238,12 @@ export class TmdbMovieProvider implements MovieProvider {
       try {
         Object.assign(
           details,
-          this.mapMovieSection(
+          mapMovieSection(
             section,
             section === 'photos' || section === 'posters'
               ? movie.images
               : movie[section],
+            this.mapper,
           ),
         );
         sections[section] = { status: 'available' };
@@ -304,96 +303,6 @@ export class TmdbMovieProvider implements MovieProvider {
     return mapWatchProviders(body, this.config.imageBaseUrl);
   }
 
-  private mapMovieSection(
-    section: MovieSection,
-    value: unknown,
-  ): MovieSectionResponse {
-    const resource = detailRecord(value);
-    const imageKey = section === 'posters' ? 'posters' : 'backdrops';
-    const isImages = section === 'photos' || section === 'posters';
-
-    if (
-      !resource ||
-      resource.success === false ||
-      (section === 'credits'
-        ? !Array.isArray(resource.cast) || !Array.isArray(resource.crew)
-        : !Array.isArray(resource[isImages ? imageKey : 'results']))
-    ) {
-      throw new BadGatewayException('Movie section response was invalid');
-    }
-
-    const validEntries = (
-      key: string,
-      fields: string[],
-      metadata: (item: Record<string, unknown>) => boolean = () => true,
-    ) =>
-      Array.isArray(resource[key]) &&
-      resource[key].every((entry: unknown) => {
-        const item = detailRecord(entry);
-
-        return (
-          item &&
-          fields.every((field) => typeof item[field] === 'string') &&
-          metadata(item)
-        );
-      });
-    let entriesAreValid: boolean;
-
-    if (section === 'credits') {
-      entriesAreValid =
-        validEntries('cast', ['name']) && validEntries('crew', ['name', 'job']);
-    } else if (isImages) {
-      entriesAreValid = validEntries(imageKey, ['file_path'], (image) => {
-        return (
-          typeof image.file_path === 'string' &&
-          image.file_path.startsWith('/') &&
-          ['width', 'height', 'aspect_ratio'].every(
-            (key) =>
-              image[key] === undefined ||
-              (typeof image[key] === 'number' &&
-                Number.isFinite(image[key]) &&
-                image[key] > 0),
-          ) &&
-          (image.iso_639_1 === undefined ||
-            image.iso_639_1 === null ||
-            typeof image.iso_639_1 === 'string')
-        );
-      });
-    } else {
-      entriesAreValid = validEntries(
-        'results',
-        ['name', 'key', 'site'],
-        (video) => {
-          return (
-            ['id', 'type'].every(
-              (key) =>
-                video[key] === undefined || typeof video[key] === 'string',
-            ) &&
-            (video.iso_639_1 === undefined ||
-              video.iso_639_1 === null ||
-              typeof video.iso_639_1 === 'string')
-          );
-        },
-      );
-    }
-
-    if (!entriesAreValid) {
-      throw new BadGatewayException('Movie section response was invalid');
-    }
-
-    // Mapping errors are isolated to their section, including malformed entries.
-    if (isImages) {
-      const images = this.mapper.toImages(resource[imageKey] as TmdbImage[]);
-
-      return section === 'photos' ? { backdrops: images } : { posters: images };
-    }
-    if (section === 'videos') {
-      return { videos: this.mapper.toMovieVideos(value as TmdbVideos) };
-    }
-
-    return this.mapper.toMovieCredits(value as TmdbCredits);
-  }
-
   public async findMovieSection(
     id: number,
     section: MovieSection,
@@ -407,7 +316,7 @@ export class TmdbMovieProvider implements MovieProvider {
     );
 
     try {
-      return this.mapMovieSection(section, value);
+      return mapMovieSection(section, value, this.mapper);
     } catch {
       this.logFailure(`movie-${section}`, 'invalid-response', 502, 200);
       throw new BadGatewayException('Movie section response was invalid');

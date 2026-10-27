@@ -10,11 +10,20 @@ import {
   getMovieSuggestions,
   getSearchSuggestions,
   getPeople,
+  ApiRequestError,
   isNotFoundError,
   API_REQUEST_TIMEOUT_MS,
   sortParams,
 } from './apiUtils';
 import type { URLParams } from '../types';
+import { ApiRequestError as TransportApiRequestError } from './apiErrors';
+
+test('keeps the public API error constructor identity', () => {
+  expect(ApiRequestError).toBe(TransportApiRequestError);
+  expect(new TransportApiRequestError('network')).toBeInstanceOf(
+    ApiRequestError
+  );
+});
 
 function response(body?: unknown, status = 200): Response {
   return {
