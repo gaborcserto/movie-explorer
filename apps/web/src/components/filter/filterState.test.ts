@@ -47,3 +47,40 @@ test('Series year changes preserve dormant Movie selections and unrelated repeat
     'view=tv&filter=drama&rating=8&year=2010&extra=a&extra=b'
   );
 });
+
+test.each([
+  ['default sorting', 'popularity', 'desc', ''],
+  ['explicit ascending order', 'title', 'asc', 'sorting=title&order=asc'],
+  ['explicit descending order', 'title', 'desc', 'sorting=title&order=desc'],
+])(
+  'round trips %s through canonical URL parameters',
+  (_, sorting, order, expected) => {
+    const params = new URLSearchParams(
+      expected || 'sorting=popularity&order=desc'
+    );
+    const filters = readFilters(params, false);
+
+    expect(filters.sorting).toBe(sorting);
+    expect(filters.order).toBe(order);
+    expect(writeFilters(params, filters, false).toString()).toBe(expected);
+  }
+);
+
+test('forces relevance sorting and omits sort parameters in search mode', () => {
+  const params = new URLSearchParams('sorting=title&order=asc');
+  const filters = readFilters(params, true);
+
+  expect(filters.sorting).toBe('popularity');
+  expect(filters.order).toBe('desc');
+  expect(writeFilters(params, filters, true).toString()).toBe('');
+});
+
+test('normalizes invalid sorting and order to the default sort and order', () => {
+  const filters = readFilters(
+    new URLSearchParams('sorting=unknown&order=invalid'),
+    false
+  );
+
+  expect(filters.sorting).toBe('popularity');
+  expect(filters.order).toBe('desc');
+});

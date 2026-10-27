@@ -501,10 +501,22 @@ export const sortParams = (
 export const defaultSortOrder = (sort: MovieSortField): MovieSortOrder =>
   sort === 'title' ? 'asc' : 'desc';
 
-export const sortOrderParams = (
+export function sortOrderParams(
+  data: string | undefined | null,
+  sort: MovieSortField
+): MovieSortOrder;
+export function sortOrderParams(
+  data: string | undefined | null,
+  sort: undefined
+): undefined;
+export function sortOrderParams(
   data: string | undefined | null,
   sort: MovieSortField | undefined
-): MovieSortOrder | undefined => {
+): MovieSortOrder | undefined;
+export function sortOrderParams(
+  data: string | undefined | null,
+  sort: MovieSortField | undefined
+): MovieSortOrder | undefined {
   if (!sort) {
     return undefined;
   }
@@ -513,7 +525,7 @@ export const sortOrderParams = (
   }
 
   return defaultSortOrder(sort);
-};
+}
 
 export const getMovies = async (
   urlParams: URLParams,

@@ -1,9 +1,5 @@
 import { genresFilter } from '../../data';
-import {
-  defaultSortOrder,
-  sortParams,
-  sortOrderParams,
-} from '../../util/apiUtils';
+import { sortParams, sortOrderParams } from '../../util/apiUtils';
 
 export const ratingOptions = ['5', '6', '7', '8', '9'];
 export const validYear = (value: string) =>
@@ -26,10 +22,7 @@ export function readFilters(params: URLSearchParams, isSearch: boolean) {
     year: validYear(year) ? year : '',
     rating: ratingOptions.includes(rating) ? rating : '',
     sorting: isSearch ? 'popularity' : sorting,
-    order: isSearch
-      ? 'desc'
-      : (sortOrderParams(params.get('order'), sorting) ??
-        defaultSortOrder(sorting)),
+    order: isSearch ? 'desc' : sortOrderParams(params.get('order'), sorting),
   };
 }
 
@@ -41,16 +34,12 @@ export function writeFilters(
   isSearch: boolean
 ) {
   const next = new URLSearchParams(params);
+  const omitSorting =
+    isSearch || (values.sorting === 'popularity' && values.order === 'desc');
   const entries = {
     ...values,
-    sorting:
-      isSearch || (values.sorting === 'popularity' && values.order === 'desc')
-        ? ''
-        : values.sorting,
-    order:
-      isSearch || (values.sorting === 'popularity' && values.order === 'desc')
-        ? ''
-        : values.order,
+    sorting: omitSorting ? '' : values.sorting,
+    order: omitSorting ? '' : values.order,
   };
   Object.entries(entries).forEach(([key, value]) => {
     if (value) next.set(key, value);

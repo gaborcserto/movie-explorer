@@ -25,6 +25,14 @@ function episodeLabel(count: number | null) {
     : `${count} ${count === 1 ? 'episode' : 'episodes'}`;
 }
 
+function departmentRank(department: string | null) {
+  const priority = ['Directing', 'Writing', 'Production'].indexOf(
+    department ?? ''
+  );
+
+  return priority < 0 ? 3 : priority;
+}
+
 function castRoles(person: SeriesCastMember) {
   const counts = person.characters.map((role) => role.episodeCount);
   const characterTotal =
@@ -70,21 +78,17 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
       ? { status: 'available' as const }
       : unavailable;
   const crewGroups = new Map<string, NonNullable<typeof credits>['crew']>();
-  const priority = (department: string | null) =>
-    ['Directing', 'Writing', 'Production'].indexOf(department ?? '');
-  const crew = [...(credits?.crew ?? [])].sort((a, b) => {
-    const rank = (person: typeof a) =>
+  const crew = [...(credits?.crew ?? [])].sort(
+    (a, b) =>
       Math.min(
-        ...person.departments.map((item) => {
-          const index = priority(item.department);
-
-          return index < 0 ? 3 : index;
-        }),
+        ...a.departments.map((item) => departmentRank(item.department)),
         3
-      );
-
-    return rank(a) - rank(b);
-  });
+      ) -
+      Math.min(
+        ...b.departments.map((item) => departmentRank(item.department)),
+        3
+      )
+  );
   const crewPreview = useCrewPreview(crew, series.id);
   crewPreview.visible.forEach((person) => {
     const departments = new Set(
@@ -194,15 +198,7 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
           {crewPreview.summary}
           <div className="crew-groups" id={crewPreview.groupId}>
             {[...crewGroups]
-              .sort(([a], [b]) => {
-                const rank = (department: string) => {
-                  const index = priority(department);
-
-                  return index < 0 ? 3 : index;
-                };
-
-                return rank(a) - rank(b);
-              })
+              .sort(([a], [b]) => departmentRank(a) - departmentRank(b))
               .map(([department, people]) => (
                 <section className="crew-group" key={department}>
                   <h3>{department}</h3>
