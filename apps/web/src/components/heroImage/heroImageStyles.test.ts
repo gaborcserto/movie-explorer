@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url';
 import { compile } from 'sass';
 import postcss from 'postcss';
 
+import { declarationsForSelector } from '../../testUtils/stylesheetDeclarations';
+
 const movieStylesheet = postcss.parse(
   compile(fileURLToPath(new URL('../details/details.scss', import.meta.url)))
     .css
@@ -17,21 +19,6 @@ const personStylesheet = postcss.parse(
 const interactionStylesheet = postcss.parse(
   compile(fileURLToPath(new URL('./heroImage.scss', import.meta.url))).css
 );
-
-function declarations(stylesheet: postcss.Root, selector: string) {
-  const values: Record<string, string> = {};
-
-  stylesheet.walkRules((rule) => {
-    if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector)) {
-      return;
-    }
-    rule.walkDecls((declaration) => {
-      values[declaration.prop] = declaration.value;
-    });
-  });
-
-  return values;
-}
 
 const heroImages = [
   {
@@ -49,7 +36,7 @@ const heroImages = [
 test.each(heroImages)(
   '$name uses the shared layered neutral light shadow',
   ({ stylesheet, selector }) => {
-    const shadow = declarations(stylesheet, selector)['box-shadow'];
+    const shadow = declarationsForSelector(stylesheet, selector)['box-shadow'];
     expect(shadow).toContain('0 24px 32px -6px rgba(0, 0, 0, 0.58)');
     expect(shadow).toContain('0 14px 20px -4px rgba(0, 0, 0, 0.42)');
     expect(shadow).toContain('0 5px 8px -2px rgba(0, 0, 0, 0.3)');
@@ -65,11 +52,13 @@ test.each(heroImages)(
 );
 
 test('both detail hero images have matching ten pixel rounded corners', () => {
-  expect(declarations(movieStylesheet, '.movie-details__image')).toMatchObject({
+  expect(
+    declarationsForSelector(movieStylesheet, '.movie-details__image')
+  ).toMatchObject({
     'border-radius': '10px',
   });
   expect(
-    declarations(personStylesheet, '.person-profile__portrait')
+    declarationsForSelector(personStylesheet, '.person-profile__portrait')
   ).toMatchObject({ 'border-radius': '10px' });
 });
 
@@ -108,7 +97,9 @@ test('hero images have visible keyboard focus and reduced-motion hover behavior'
   expect(hoverShadow).toContain('rgba(220, 228, 238, 0.38)');
   expect(hoverShadow).not.toContain('246, 82, 97');
   expect(hoverTransform).toBe('scale(1.06)');
-  expect(declarations(interactionStylesheet, '.hero-image')).toMatchObject({
+  expect(
+    declarationsForSelector(interactionStylesheet, '.hero-image')
+  ).toMatchObject({
     transition: expect.stringContaining('box-shadow 0.24s ease'),
   });
   let reducedMotionHoverTransform: string | undefined;

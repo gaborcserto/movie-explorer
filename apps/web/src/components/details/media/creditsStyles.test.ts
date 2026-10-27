@@ -3,46 +3,19 @@ import { fileURLToPath } from 'node:url';
 import { compile } from 'sass';
 import postcss from 'postcss';
 
+import {
+  declarationsForMedia as findDeclarationsForMedia,
+  declarationsForSelector,
+} from '../../../testUtils/stylesheetDeclarations';
+
 const stylesheet = postcss.parse(
   compile(fileURLToPath(new URL('./media.scss', import.meta.url))).css
 );
 
-function declarations(selector: string) {
-  const values: Record<string, string> = {};
-  stylesheet.walkRules((rule) => {
-    if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector)) {
-      return;
-    }
-    rule.walkDecls((declaration) => {
-      values[declaration.prop] = declaration.value;
-    });
-  });
-
-  return values;
-}
-
-function declarationsForMedia(selector: string, query: string) {
-  const values: Record<string, string> = {};
-  stylesheet.walkAtRules('media', (media) => {
-    if (
-      query.includes('prefers-reduced-motion')
-        ? !media.params.includes(query)
-        : media.params !== query
-    ) {
-      return;
-    }
-    media.walkRules((rule) => {
-      if (!rule.selectors.includes(selector)) {
-        return;
-      }
-      rule.walkDecls((declaration) => {
-        values[declaration.prop] = declaration.value;
-      });
-    });
-  });
-
-  return values;
-}
+const declarations = (selector: string) =>
+  declarationsForSelector(stylesheet, selector);
+const declarationsForMedia = (selector: string, query: string) =>
+  findDeclarationsForMedia(stylesheet, selector, query);
 
 test('keeps all card names coral and role labels muted without changing typography', () => {
   expect(declarations('.cast-member h3')).toMatchObject({
