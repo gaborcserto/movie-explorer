@@ -1,5 +1,6 @@
 import {
   act,
+  cleanup,
   fireEvent,
   render,
   screen,
@@ -316,10 +317,11 @@ test('reduced motion dismisses immediately without an exit delay', async () => {
 test('desktop panel moves above a low trigger and repositions when the viewport grows', async () => {
   vi.stubGlobal('innerHeight', 500);
   vi.stubGlobal('innerWidth', 1024);
+  let anchorRect = new DOMRect(850, 400, 150, 44);
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
     function getRect(this: HTMLElement) {
       return this.classList.contains('movie-filters__anchor')
-        ? new DOMRect(850, 400, 150, 44)
+        ? anchorRect
         : new DOMRect();
     }
   );
@@ -342,6 +344,115 @@ test('desktop panel moves above a low trigger and repositions when the viewport 
   expect(dialog.style.getPropertyValue('--filter-available-height')).toBe(
     '530px'
   );
+
+  anchorRect = new DOMRect(700, 300, 150, 44);
+  fireEvent.scroll(window);
+
+  expect(dialog.style.top).toBe('354px');
+  expect(dialog.style.left).toBe('370px');
+});
+
+test('switching from mobile to desktop releases drawer resources and updates layout', async () => {
+  let mobile = true;
+  const mediaListeners = new Set<(event: MediaQueryListEvent) => void>();
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn((query: string) => ({
+      get matches() {
+        return query.includes('767') && mobile;
+      },
+      addEventListener: (
+        _type: string,
+        listener: (event: MediaQueryListEvent) => void
+      ) => {
+        mediaListeners.add(listener);
+      },
+      removeEventListener: (
+        _type: string,
+        listener: (event: MediaQueryListEvent) => void
+      ) => {
+        mediaListeners.delete(listener);
+      },
+    }))
+  );
+
+  setup();
+  const background = screen.getByRole('button', { name: 'Outside' });
+  const backgroundRoot = Array.from(document.body.children).find((node) =>
+    node.contains(background)
+  ) as HTMLElement;
+  let backgroundIsInert = false;
+  Object.defineProperty(backgroundRoot, 'inert', {
+    configurable: true,
+    get: () => backgroundIsInert,
+    set: (value: boolean) => {
+      backgroundIsInert = value;
+    },
+  });
+  const dialog = await open();
+
+  expect(dialog).toHaveAttribute('aria-modal', 'true');
+  expect(document.body.style.overflow).toBe('hidden');
+  expect(backgroundRoot.inert).toBe(true);
+
+  mobile = false;
+  act(() => {
+    mediaListeners.forEach((listener) => listener({} as MediaQueryListEvent));
+  });
+
+  await waitFor(() => {
+    expect(screen.getByRole('dialog')).not.toHaveAttribute('aria-modal');
+    expect(document.body.style.overflow).toBe('');
+    expect(backgroundRoot.inert).toBe(false);
+  });
+
+  await userEvent.keyboard('{Escape}');
+  await closed();
+});
+
+test('unmounting the mobile drawer restores prior scroll and background state', async () => {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn((query: string) => ({
+      matches: query.includes('767'),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  );
+  document.body.style.overflow = 'scroll';
+
+  const router = createMemoryRouter(
+    [
+      {
+        path: '/search/:searchQuery?',
+        element: (
+          <>
+            <Filter />
+            <button type="button">Outside</button>
+          </>
+        ),
+      },
+    ],
+    { initialEntries: ['/search'] }
+  );
+  const { container } = render(<RouterProvider router={router} />);
+  let backgroundIsInert = false;
+  Object.defineProperty(container, 'inert', {
+    configurable: true,
+    get: () => backgroundIsInert,
+    set: (value: boolean) => {
+      backgroundIsInert = value;
+    },
+  });
+
+  await open();
+  expect(document.body.style.overflow).toBe('hidden');
+  expect(container.inert).toBe(true);
+
+  cleanup();
+
+  expect(document.body.style.overflow).toBe('scroll');
+  expect(container.inert).toBe(false);
 });
 
 test('mobile drawer follows visual viewport changes while the keyboard is open', async () => {
