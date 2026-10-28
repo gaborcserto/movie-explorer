@@ -4,6 +4,8 @@ import type { MovieSummary } from '@movie-explorer/contracts';
 
 import MovieImage from '../utility/customImage';
 import { getPosterDisplaySrcSet } from '../../util/imageSizing';
+import PersonalLibraryActions from '../../features/library/personalLibraryActions';
+import type { LibraryMediaType } from '../../features/library/libraryStore';
 import './card.scss';
 
 interface CardProps {
@@ -13,6 +15,9 @@ interface CardProps {
   subtitle?: string;
   displayDate?: string;
   genreNavigation?: boolean;
+  libraryMedia?: { mediaType: LibraryMediaType; firstAirDate?: string | null };
+  rating?: string;
+  onLibraryMembershipRemoved?: () => void;
 }
 
 function Card({
@@ -22,6 +27,9 @@ function Card({
   subtitle,
   displayDate,
   genreNavigation = true,
+  libraryMedia,
+  rating,
+  onLibraryMembershipRemoved,
 }: CardProps) {
   const { id, title, releaseDate, posterUrl, posterSrcSet, genres } = movie;
   const [searchParams] = useSearchParams();
@@ -66,6 +74,23 @@ function Card({
         />
       </div>
       <div className="card__footer">
+        {(libraryMedia || releaseYear) && (
+          <div className="card__metadata-row">
+            {libraryMedia && (
+              <PersonalLibraryActions
+                mediaType={libraryMedia.mediaType}
+                id={id}
+                title={title}
+                posterUrl={posterUrl}
+                releaseDate={releaseDate}
+                firstAirDate={libraryMedia.firstAirDate}
+                presentation="compact"
+                onMembershipRemoved={onLibraryMembershipRemoved}
+              />
+            )}
+            {releaseYear && <p className="card__date">{releaseYear}</p>}
+          </div>
+        )}
         <div className="card__footer__part">
           <span className="card__title">{title}</span>
           <p
@@ -75,9 +100,7 @@ function Card({
           </p>
           {subtitle && <p className="card__subtitle">{subtitle}</p>}
         </div>
-        <div className="card__footer__part">
-          {releaseYear && <p className="card__date">{releaseYear}</p>}
-        </div>
+        {rating && <p className="card__subtitle card__rating">{rating}</p>}
       </div>
     </article>
   );

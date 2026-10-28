@@ -23,6 +23,7 @@ import { DetailsHeroFrame, DetailsLowerLayout } from './detailsPageLayout';
 import './media/media.scss';
 import WatchProviders from './watchProviders';
 import type useWatchProvidersResource from './useWatchProvidersResource';
+import PersonalLibraryActions from '../../features/library/personalLibraryActions';
 
 interface DetailsProps {
   movieData: MovieDetails;
@@ -178,6 +179,14 @@ export function DetailsHero({
         </div>
       )}
       <MovieMetadata movie={movieData} />
+      <PersonalLibraryActions
+        mediaType="movie"
+        id={movieData.id}
+        title={title}
+        posterUrl={posterUrl}
+        releaseDate={releaseDate}
+        presentation="expanded"
+      />
       <WatchProviders providers={watchProviders} resource={providerResource} />
       {movieData.description?.trim() && (
         <section className="movie-details__section">

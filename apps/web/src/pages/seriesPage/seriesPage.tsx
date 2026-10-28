@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { getSeries } from '../../util/apiUtils';
@@ -18,6 +18,8 @@ import {
   ProductionCompanies,
   SeriesRequestState,
 } from './seriesPresentation';
+import PersonalLibraryActions from '../../features/library/personalLibraryActions';
+import { useLibraryStore } from '../../features/library/libraryStore';
 
 function SeriesDetails({ idText }: { idText: string }) {
   const id = parseDetailId(idText);
@@ -32,6 +34,19 @@ function SeriesDetails({ idText }: { idText: string }) {
     Number.isSafeInteger(id)
   );
   const series = resource.data;
+  const updateSnapshot = useLibraryStore((state) => state.updateSnapshot);
+
+  useEffect(() => {
+    if (series) {
+      updateSnapshot({
+        mediaType: 'tv',
+        id: series.id,
+        title: series.title,
+        posterUrl: series.posterUrl,
+        firstAirDate: series.firstAirDate,
+      });
+    }
+  }, [series, updateSnapshot]);
   const providerResource = useWatchProvidersResource(
     'series',
     id,
@@ -56,6 +71,14 @@ function SeriesDetails({ idText }: { idText: string }) {
             image={series.posterUrl}
             srcSet={series.posterSrcSet}
           >
+            <PersonalLibraryActions
+              mediaType="tv"
+              id={series.id}
+              title={series.title}
+              posterUrl={series.posterUrl}
+              firstAirDate={series.firstAirDate}
+              presentation="expanded"
+            />
             <div className="series-hero-metadata">
               {series.originalTitle &&
                 series.originalTitle !== series.title && (

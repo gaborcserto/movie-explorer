@@ -148,7 +148,7 @@ function List() {
         ]
       : []),
   ];
-  const removeBadge = (key: string, genreValue?: string) => {
+  const handleRemoveBadge = (key: string, genreValue?: string) => {
     const next = new URLSearchParams(searchParams);
 
     if (genreValue) {
@@ -162,7 +162,7 @@ function List() {
     }
     setSearchParams(next);
   };
-  const clearFilters = () => {
+  const handleClearFilters = () => {
     const next = new URLSearchParams(searchParams);
     ['filter', 'year', 'rating', 'sorting', 'order'].forEach((key) =>
       next.delete(key)
@@ -188,7 +188,7 @@ function List() {
                 className="active-filters__badge"
                 key={badge.key}
                 aria-label={`Remove ${badge.label} ${badgeGenre ? 'genre ' : ''}filter`}
-                onClick={() => removeBadge(badge.key, badgeGenre)}
+                onClick={() => handleRemoveBadge(badge.key, badgeGenre)}
               >
                 {badge.label}
                 <FaXmark aria-hidden="true" />
@@ -199,7 +199,7 @@ function List() {
             <button
               type="button"
               className="active-filters__clear"
-              onClick={clearFilters}
+              onClick={handleClearFilters}
             >
               Clear all
             </button>
@@ -227,6 +227,7 @@ function List() {
           <Card
             key={movie.id}
             movie={movie}
+            libraryMedia={{ mediaType: 'movie' }}
             loading={index === 0 ? 'eager' : 'lazy'}
           />
         ))}
@@ -239,7 +240,7 @@ function List() {
             type="button"
             className="btn btn--outline"
             disabled={loadingMore}
-            onClick={() => loadMore()}
+            onClick={loadMore}
           >
             Try again
           </button>
@@ -251,7 +252,7 @@ function List() {
             type="button"
             className="btn btn--outline btn--action"
             disabled={loadingMore}
-            onClick={() => loadMore()}
+            onClick={loadMore}
           >
             {loadingMore ? 'Loading more…' : 'Load more'}
           </button>

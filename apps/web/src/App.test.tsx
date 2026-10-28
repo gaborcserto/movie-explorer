@@ -15,13 +15,13 @@ import {
 } from './util/apiUtils';
 
 vi.mock('./util/apiUtils');
-vi.mock('./pages/series/seriesPage', () => ({
+vi.mock('./pages/seriesPage', () => ({
   default: () => <h1>Series page</h1>,
 }));
-vi.mock('./pages/series/seasonPage', () => ({
+vi.mock('./pages/seriesPage/seasonPage', () => ({
   default: () => <h1>Season page</h1>,
 }));
-vi.mock('./pages/series/episodePage', () => ({
+vi.mock('./pages/seriesPage/episodePage', () => ({
   default: () => <h1>Episode page</h1>,
 }));
 

@@ -1,0 +1,13 @@
+@use '../../assets/scss' as *;
+
+.library-persistence-notice {
+  background: rgb(246 82 97 / 0.1);
+  border-block: 1px solid rgb(246 82 97 / 0.35);
+  color: $white;
+  line-height: 1.5;
+  padding: 10px max(16px, calc((100% - 1480px) / 2));
+  position: fixed;
+  inset-inline: 0;
+  top: 44px;
+  z-index: 5;
+}

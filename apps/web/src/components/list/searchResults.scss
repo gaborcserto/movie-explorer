@@ -6,6 +6,10 @@
   gap: 20px;
   padding: 0 12px;
 
+  &__library {
+    margin-left: auto;
+  }
+
   a {
     position: relative;
     display: inline-flex;
@@ -60,22 +64,28 @@
 }
 
 .search-toolbar__content {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
   border-bottom: 1px solid rgb(255 255 255 / 0.16);
+}
+
+.search-toolbar__filters {
+  display: flex;
+  justify-content: flex-end;
 }
 
 @media (width < 768px) {
   .search-toolbar__content {
     display: block;
-    padding-bottom: 12px;
   }
 
   .search-views {
     display: flex;
     gap: 0;
     padding: 0;
+
+    &__library {
+      flex: 0 0 auto;
+      margin-left: auto;
+    }
 
     a {
       justify-content: center;

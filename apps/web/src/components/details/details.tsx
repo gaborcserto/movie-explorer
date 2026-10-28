@@ -20,6 +20,7 @@ import {
 import parseDetailId from '../../util/detailId';
 import useRatingsResource from './useRatingsResource';
 import useWatchProvidersResource from './useWatchProvidersResource';
+import { useLibraryStore } from '../../features/library/libraryStore';
 
 type DetailsState = 'loading' | 'success' | 'not-found' | 'error';
 
@@ -39,6 +40,7 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
     movieId,
     validId
   );
+  const updateSnapshot = useLibraryStore((state) => state.updateSnapshot);
 
   useEffect(() => {
     let current = true;
@@ -85,6 +87,18 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
       controller.abort();
     };
   }, [movieId, validId, attempt]);
+
+  useEffect(() => {
+    if (detailsState === 'success' && movieData) {
+      updateSnapshot({
+        mediaType: 'movie',
+        id: movieData.id,
+        title: movieData.title,
+        posterUrl: movieData.posterUrl,
+        releaseDate: movieData.releaseDate,
+      });
+    }
+  }, [detailsState, movieData, updateSnapshot]);
 
   const recoverSection = async (section: MovieSection, signal: AbortSignal) => {
     const result = await getMovieSection(movieId, section, signal);

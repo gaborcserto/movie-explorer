@@ -8,11 +8,13 @@ import Loading from './layouts/loading';
 import Header from './layouts/header';
 import Footer from './layouts/footer';
 import ErrorBoundary from './components/errorBoundary/errorBoundary';
+import LibraryPage from './pages/libraryPage';
+import PersistenceNotice from './features/library/persistenceNotice';
 
 const PersonPage = lazy(() => import('./pages/personPage/personPage'));
-const SeriesPage = lazy(() => import('./pages/series/seriesPage'));
-const SeasonPage = lazy(() => import('./pages/series/seasonPage'));
-const EpisodePage = lazy(() => import('./pages/series/episodePage'));
+const SeriesPage = lazy(() => import('./pages/seriesPage'));
+const SeasonPage = lazy(() => import('./pages/seriesPage/seasonPage'));
+const EpisodePage = lazy(() => import('./pages/seriesPage/episodePage'));
 
 function LegacySeriesRedirect() {
   const location = useLocation();
@@ -36,14 +38,15 @@ function SiteLayout() {
     pathname === '/search' ||
     pathname.startsWith('/search/');
   const isDetailRoute = /^\/(movie|series|person)\//.test(pathname);
+  const isLibraryRoute = pathname === '/library';
+  const appClassName = `App${isSearchRoute ? ' App--search' : ''}${
+    isDetailRoute ? ' App--details' : ''
+  }${isLibraryRoute ? ' App--library' : ''}`;
 
   return (
-    <div
-      className={`App${isSearchRoute ? ' App--search' : ''}${
-        isDetailRoute ? ' App--details' : ''
-      }`}
-    >
+    <div className={appClassName}>
       <Header />
+      <PersistenceNotice />
       <Outlet />
       <Footer />
     </div>
@@ -59,6 +62,7 @@ function App() {
             <Route path="/" element={<Navigate to="/search" />} />
             <Route path="/search/:searchQuery" element={<HomePage />} />
             <Route path="/search" element={<HomePage />} />
+            <Route path="/library" element={<LibraryPage />} />
             <Route path="/movie/:movieId" element={<HomePage />} />
             <Route
               path="/series/:id"

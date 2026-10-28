@@ -9,13 +9,14 @@ export default function SearchResultCard({ item }: { item: SearchResult }) {
   const person = item.mediaType === 'person';
   const label = typeLabels[item.mediaType];
   let date: string | undefined;
-  let metadata: string | undefined;
+  let rating: string | undefined;
 
-  if (item.mediaType === 'person') {
-    metadata = item.knownForDepartment;
-  } else {
-    date = item.mediaType === 'tv' ? item.firstAirDate : item.releaseDate;
-    if (item.rating !== undefined) metadata = `${item.rating.toFixed(1)} / 10`;
+  if (item.mediaType !== 'person') {
+    date =
+      item.mediaType === 'tv'
+        ? (item.firstAirDate ?? undefined)
+        : item.releaseDate;
+    if (item.rating !== undefined) rating = `${item.rating.toFixed(1)} / 10`;
   }
 
   return (
@@ -29,7 +30,21 @@ export default function SearchResultCard({ item }: { item: SearchResult }) {
       }}
       destination={mediaPath(item.mediaType, item.id)}
       displayDate={date}
-      subtitle={[label, metadata].filter(Boolean).join(' / ')}
+      subtitle={
+        person
+          ? [label, item.knownForDepartment].filter(Boolean).join(' / ')
+          : undefined
+      }
+      rating={rating}
+      libraryMedia={
+        item.mediaType === 'person'
+          ? undefined
+          : {
+              mediaType: item.mediaType,
+              firstAirDate:
+                item.mediaType === 'tv' ? item.firstAirDate : undefined,
+            }
+      }
       genreNavigation={false}
     />
   );

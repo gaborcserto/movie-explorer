@@ -20,6 +20,7 @@ import * as apiUtils from '../../util/apiUtils';
 import SeriesPage from './seriesPage';
 import SeasonPage from './seasonPage';
 import EpisodePage from './episodePage';
+import { useLibraryStore } from '../../features/library/libraryStore';
 import {
   getSeries,
   getSeason,
@@ -136,6 +137,7 @@ function setup(path: string) {
 }
 
 beforeEach(() => {
+  useLibraryStore.setState({ items: {}, persistenceWarning: null });
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
   fetchMock.mockImplementation(async (input) => {
@@ -935,6 +937,16 @@ describe('Series hierarchy', () => {
     expect(screen.getByText(/wait about 12 seconds/)).toBeInTheDocument();
   });
   it('renders series metadata, named seasons and separate Specials without per-season calls', async () => {
+    useLibraryStore.getState().add(
+      {
+        mediaType: 'tv',
+        id: series.id,
+        title: 'Old series name',
+        posterUrl: '/old-poster.jpg',
+        firstAirDate: '2010-01-01',
+      },
+      'favorites'
+    );
     setup('/series/1');
     expect(
       await screen.findByRole('heading', { level: 1, name: 'The Journey' })
@@ -944,6 +956,16 @@ describe('Series hierarchy', () => {
     expect(screen.getByText('Returning Series')).toBeInTheDocument();
     expect(screen.getByText('Network')).toBeInTheDocument();
     expect(screen.getByText('US')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Remove from Favorites The Journey' })
+    ).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() =>
+      expect(useLibraryStore.getState().items['tv:1']).toMatchObject({
+        title: 'The Journey',
+        year: 2025,
+        collections: { favorites: true },
+      })
+    );
     expect(
       screen.getByLabelText('TMDB rating: 8.5 out of 10 from 200 votes')
     ).toBeInTheDocument();

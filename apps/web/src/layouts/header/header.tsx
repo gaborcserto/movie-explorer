@@ -4,6 +4,7 @@ import HeaderSearch from '../../components/search/headerSearch';
 function Header() {
   const { pathname } = useLocation();
   const showSearch = /^\/(movie|series|person|tv)\//.test(pathname);
+  const showLibrarySearch = pathname === '/library';
   const isSearchPage =
     pathname === '/' ||
     pathname === '/search' ||
@@ -17,7 +18,7 @@ function Header() {
         <Link to="/search" className="brand app-header__brand">
           <strong>Movie</strong>Explorer
         </Link>
-        {showSearch && <HeaderSearch />}
+        {(showSearch || showLibrarySearch) && <HeaderSearch />}
       </div>
     </header>
   );

@@ -39,6 +39,21 @@
   }
 }
 
+.App--library {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+
+  > .app-header,
+  > .main {
+    grid-area: 1 / 1;
+  }
+
+  > .app-header {
+    align-self: start;
+    background: transparent;
+  }
+}
+
 .container {
   box-sizing: border-box;
   margin: 0 auto;

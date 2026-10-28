@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import type { MovieDetails, SeriesDetails } from '@movie-explorer/contracts';
 
 import { DetailsLowerContent } from '../detailsContent';
-import SeriesSections from '../../../pages/series/seriesSections';
+import SeriesSections from '../../../pages/seriesPage/seriesSections';
 
 const movie: MovieDetails = {
   id: 1,

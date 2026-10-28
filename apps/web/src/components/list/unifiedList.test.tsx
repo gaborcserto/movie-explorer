@@ -173,6 +173,35 @@ test('Series reuses the filter panel and applies only first-air year, retaining 
   expect(screen.getByText(/First-air year: 2005/)).toBeVisible();
 });
 
+test('Series cards show library actions, year, title, and rating without intercepting card navigation', async () => {
+  const router = setup('/search/Story?view=tv');
+
+  await screen.findByRole('link', { name: 'Series 1' });
+
+  const seriesLink = screen.getByRole('link', { name: 'Series 1' });
+  const card = seriesLink.closest('article');
+
+  if (!card) {
+    throw new Error('Series result card was not rendered.');
+  }
+
+  expect(within(card).getByText('2005')).toBeVisible();
+  expect(within(card).getByText('8.0 / 10')).toBeVisible();
+  expect(within(card).getByText('Series 1')).toBeVisible();
+
+  const favorite = within(card).getByRole('button', {
+    name: 'Add to Favorites Series 1',
+  });
+  expect(favorite.closest('a')).toBeNull();
+  fireEvent.click(favorite);
+
+  expect(router.state.location.pathname).toBe('/search/Story');
+  expect(favorite).toHaveAttribute('aria-pressed', 'true');
+  expect(seriesLink).toHaveAttribute('href', '/series/1');
+  fireEvent.click(seriesLink);
+  expect(router.state.location.pathname).toBe('/series/1');
+});
+
 test('reveals ten at a time, retries the same next page, deduplicates composite IDs and stops at the last page', async () => {
   api
     .mockResolvedValueOnce(page())

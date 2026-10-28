@@ -16,6 +16,7 @@ describe('Header component', () => {
     expect(screen.getByRole('banner')).toContainElement(
       screen.getByRole('link', { name: 'MovieExplorer' })
     );
+    expect(screen.queryByRole('link', { name: 'Library' })).toBeNull();
     expect(screen.getByRole('button', { name: /search/i })).toBeInTheDocument();
   });
 
@@ -32,6 +33,7 @@ describe('Header component', () => {
       'href',
       '/search'
     );
+    expect(screen.queryByRole('link', { name: 'Library' })).toBeNull();
     expect(screen.getByRole('banner')).toHaveClass('app-header--search');
     expect(screen.queryByRole('button', { name: /search/i })).toBeNull();
   });
@@ -46,5 +48,18 @@ describe('Header component', () => {
     );
 
     expect(screen.getByRole('banner')).toHaveClass('app-header--search');
+  });
+
+  it('shows the shared expandable search on Library without adding Library navigation', () => {
+    render(
+      <MemoryRouter initialEntries={['/library']}>
+        <Routes>
+          <Route path="/library" element={<Header />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('button', { name: /search/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Library' })).toBeNull();
   });
 });

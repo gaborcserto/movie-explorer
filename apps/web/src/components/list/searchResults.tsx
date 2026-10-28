@@ -6,7 +6,7 @@ import {
   useParams,
   useSearchParams,
 } from 'react-router-dom';
-import { FaClapperboard, FaTv, FaUsers } from 'react-icons/fa6';
+import { FaClapperboard, FaRegBookmark, FaTv, FaUsers } from 'react-icons/fa6';
 
 import Filter from '../filter';
 import { normalizeSearchFilters, readSearchView } from '../filter/filterState';
@@ -58,7 +58,7 @@ function ResultViews({ query }: { query: string }) {
     <>
       <div className="search-toolbar list__container container">
         <div className="search-toolbar__content">
-          <nav className="search-views" aria-label="Search result views">
+          <nav className="search-views" aria-label="Main navigation">
             {(['all', 'movies', 'tv', 'people'] as const)
               .filter((target) => query || target !== 'all')
               .map((target) => {
@@ -89,9 +89,23 @@ function ResultViews({ query }: { query: string }) {
                   </Link>
                 );
               })}
+            <Link
+              className="search-views__library"
+              to="/library"
+              aria-current={
+                location.pathname === '/library' ? 'page' : undefined
+              }
+            >
+              <FaRegBookmark aria-hidden="true" />
+              Library
+            </Link>
           </nav>
-          {(view === 'movies' || view === 'tv') && <Filter />}
         </div>
+        {(view === 'movies' || view === 'tv') && (
+          <div className="search-toolbar__filters">
+            <Filter />
+          </div>
+        )}
       </div>
       <div hidden={view !== 'movies'}>
         {visited.movies && (view === 'movies' || people) && (

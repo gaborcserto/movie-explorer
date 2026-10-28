@@ -70,10 +70,10 @@ configured. The API also exposes `npm run format --workspace
 - Inspect the existing implementation, tests, configuration, and neighboring
   patterns before changing architecture. Preserve existing behavior unless a
   change is explicitly required.
-- Consider code readability during implementation, not only during final review.
-  Read `.agents/skills/code-readability/SKILL.md` for TypeScript, React, NestJS,
-  or readability work; use it alongside the focused implementation skill and
-  check readability again before completing the change.
+- When writing or modifying `.ts` or `.tsx` files, follow the reusable
+  conventions in `.agents/skills/code-readability/SKILL.md` from implementation
+  through final review. For React, NestJS, or other focused work, use it
+  alongside the relevant implementation skill.
 - Keep changes small, focused, readable, and reviewable. Prefer descriptive
   names and focused functions/components over clever code.
 - Prefer existing local patterns when they are still appropriate. Introduce

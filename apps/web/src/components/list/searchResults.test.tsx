@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { FaClapperboard, FaTv, FaUsers } from 'react-icons/fa6';
+import { FaClapperboard, FaRegBookmark, FaTv, FaUsers } from 'react-icons/fa6';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { createMemoryRouter, Outlet, RouterProvider } from 'react-router-dom';
 import type {
@@ -68,6 +68,17 @@ afterEach(() => vi.restoreAllMocks());
 test('defaults to Movies, scopes filters, lazily loads People and retains independent results across URL history', async () => {
   const router = setup();
   await screen.findByRole('link', { name: 'Movie result' });
+  const navigation = screen.getByRole('navigation', {
+    name: 'Main navigation',
+  });
+  expect(
+    within(navigation).getByRole('link', { name: 'Library' })
+  ).toHaveAttribute('href', '/library');
+  const toolbar = navigation.closest('.search-toolbar__content');
+  expect(toolbar?.nextElementSibling).toHaveClass('search-toolbar__filters');
+  expect(
+    toolbar?.nextElementSibling?.querySelector('button')
+  ).toHaveAccessibleName(/Filters & Sort/);
   expect(getPeople).not.toHaveBeenCalled();
   expect(getMovies).toHaveBeenCalledWith(
     expect.objectContaining({
@@ -661,7 +672,7 @@ test('uses the TV icon for Series while preserving Movie and Person icons', asyn
   setup();
   await screen.findByRole('link', { name: 'Movie result' });
   const nav = within(
-    screen.getByRole('navigation', { name: 'Search result views' })
+    screen.getByRole('navigation', { name: 'Main navigation' })
   );
   (
     [
@@ -678,4 +689,19 @@ test('uses the TV icon for Series while preserving Movie and Person icons', asyn
     expect(svg?.innerHTML).toBe(expected.querySelector('svg')?.innerHTML);
     expect(svg).toHaveAttribute('aria-hidden', 'true');
   });
+  const libraryLink = nav.getByRole('link', { name: 'Library' });
+  const expectedLibraryIcon = document.createElement('div');
+  expectedLibraryIcon.innerHTML = renderToStaticMarkup(
+    <FaRegBookmark aria-hidden="true" />
+  );
+  expect(libraryLink).toBeInTheDocument();
+  expect(libraryLink).toHaveClass('search-views__library');
+  expect(libraryLink.querySelector('svg')?.innerHTML).toBe(
+    expectedLibraryIcon.querySelector('svg')?.innerHTML
+  );
+  expect(libraryLink.querySelector('svg')).toHaveAttribute(
+    'aria-hidden',
+    'true'
+  );
+  expect(libraryLink.parentElement?.lastElementChild).toBe(libraryLink);
 });

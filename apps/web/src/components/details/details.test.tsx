@@ -12,6 +12,7 @@ import type { MovieDetails } from '@movie-explorer/contracts';
 
 import Details from './details';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
+import { useLibraryStore } from '../../features/library/libraryStore';
 import {
   getMovie as originalGetMovie,
   getWatchProviders as originalGetWatchProviders,
@@ -51,12 +52,61 @@ vi.mock('react-router-dom', async () => ({
 describe('<Details />', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useLibraryStore.setState({ items: {}, persistenceWarning: null });
     getWatchProviders.mockResolvedValue({ providers: [] });
     getRatings.mockResolvedValue({
       tmdb: { status: 'available', score: 8.5, voteCount: null },
       imdb: { status: 'missing' },
     });
     isNotFoundError.mockReturnValue(false);
+  });
+
+  it('renders Movie actions and refreshes only an existing saved snapshot', async () => {
+    useLibraryStore.getState().add(
+      {
+        mediaType: 'movie',
+        id: mockData.id,
+        title: 'Old title',
+        posterUrl: '/old.jpg',
+        releaseDate: '2010-01-01',
+      },
+      'watched'
+    );
+    useLibraryStore.getState().add(
+      {
+        mediaType: 'movie',
+        id: mockData.id,
+        title: 'Old title',
+        posterUrl: '/old.jpg',
+        releaseDate: '2010-01-01',
+      },
+      'favorites'
+    );
+    useParams.mockReturnValue({ movieId: '1234' });
+    getMovie.mockResolvedValueOnce(mockData);
+
+    render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
+
+    expect(
+      await screen.findByRole('button', {
+        name: 'Add to Watchlist Sample Movie',
+      })
+    ).toHaveAttribute('aria-pressed', 'false');
+    expect(
+      screen.getByRole('button', { name: 'Mark as Not Watched Sample Movie' })
+    ).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() =>
+      expect(useLibraryStore.getState().items['movie:1234']).toMatchObject({
+        title: 'Sample Movie',
+        posterUrl: '/sample.jpg',
+        year: 2021,
+        collections: { watched: true, favorites: true, watchlist: false },
+      })
+    );
   });
 
   it.each(['network', 'http', 'invalid-response'] as const)(

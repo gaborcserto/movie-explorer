@@ -46,6 +46,86 @@ syntax and wrapping, and do not add an import sorter for this convention.
 
 ## Vertical Spacing / Logical Grouping
 
+### Function-valued Variable Declarations in TypeScript and TSX
+
+When writing or modifying `.ts` and `.tsx` files, put exactly one blank line
+before a variable declaration initialized with a function when another
+statement precedes it. This includes arrow functions, async arrows, function
+expressions, and generator function expressions, including declarations inside
+components, hooks, event handlers, callbacks, and tests.
+
+Before:
+
+```ts
+const value = 10;
+const calculate = () => value * 2;
+```
+
+After:
+
+```ts
+const value = 10;
+
+const calculate = () => value * 2;
+```
+
+Keep related non-function declarations together. Do not insert blank lines
+between every `const` or `let`; separate a function-valued declaration from
+the preceding setup, then keep later declarations in their logical group.
+
+```ts
+const firstName = "John";
+const lastName = "Doe";
+const fullName = `${firstName} ${lastName}`;
+
+const calculate = () => fullName.length;
+```
+
+Apply the same grouping to async callbacks and function expressions. Do not
+add spacing before inline callbacks passed directly as arguments, inside
+chained expressions, or where Prettier or established project conventions
+require another layout. This convention applies to both newly written and
+modified TypeScript and TSX code.
+
+### Logical Declaration Grouping
+
+For `.ts` and `.tsx` files, separate logically independent variable
+declarations with exactly one blank line. Keep tightly related declarations
+together when they form one initialization group. Apply this to `const` and
+`let` declarations, derived values, validation results, intermediate
+calculations, configuration, function-valued declarations, React components
+and hooks, and tests.
+
+Preferred when each declaration represents a separate validation or operation:
+
+```ts
+const identityMatches = validateIdentity(value);
+
+const validSnapshot = validateSnapshot(value);
+
+const flags = value.collections;
+
+const validFlags = validateCollectionFlags(flags);
+
+return identityMatches && validSnapshot && validFlags;
+```
+
+Keep a cohesive initialization group together:
+
+```ts
+const firstName = "John";
+const lastName = "Doe";
+const fullName = `${firstName} ${lastName}`;
+```
+
+Do not add a blank line mechanically before every `const` or `let`. Separate
+independent logical stages, and keep declarations together when they depend on
+one another as parts of the same setup. The function-valued declaration rule
+above still applies: a function-valued variable starts a separate visual block
+when another statement precedes it. This rule applies consistently to newly
+written and modified TypeScript and TSX code, while respecting Prettier and
+established project conventions.
+
 ### Declaration-to-Control-Flow Spacing
 
 Always insert exactly one blank line between a completed variable declaration
@@ -57,8 +137,8 @@ that statement begins the next logical operation. This applies to `const`,
 ```ts
 let entriesAreValid: boolean;
 
-if (section === 'credits') {
-  entriesAreValid = validEntries('cast', ['name']);
+if (section === "credits") {
+  entriesAreValid = validEntries("cast", ["name"]);
 }
 ```
 
@@ -121,7 +201,7 @@ Before:
 ```ts
 let imdb: RatingResult;
 if (!this.omdb.enabled) {
-  imdb = { status: 'unavailable', reason: 'not-configured' };
+  imdb = { status: "unavailable", reason: "not-configured" };
 }
 return { tmdb, imdb };
 ```
@@ -132,7 +212,7 @@ After:
 let imdb: RatingResult;
 
 if (!this.omdb.enabled) {
-  imdb = { status: 'unavailable', reason: 'not-configured' };
+  imdb = { status: "unavailable", reason: "not-configured" };
 }
 
 return { tmdb, imdb };
@@ -241,6 +321,64 @@ if (second) {
   updatePan(dx, dy);
 }
 ```
+
+### Named Event Handlers in React and TSX
+
+Prefer named `handle`-prefixed event-handler functions over non-trivial inline
+JSX event-handler implementations. Keep JSX focused on presentation and event
+wiring. Move multi-statement event logic and other meaningful behavior into a
+named function. Use direct handler references when possible, and keep short
+inline wrappers when they only pass arguments or forward an event. Pass the
+event object when the handler needs it. Apply this convention in React `.tsx`
+components and in custom hooks that return event handlers for components to
+use. Do not extract every trivial one-line operation mechanically.
+
+Preferred when the handler needs an event and an argument:
+
+```tsx
+const handleToggle = (
+  event: MouseEvent<HTMLButtonElement>,
+  collection: LibraryCollection,
+) => {
+  event.stopPropagation();
+  toggle(media, collection);
+};
+
+return (
+  <button onClick={(event) => handleToggle(event, collection)}>Toggle</button>
+);
+```
+
+Preferred when a handler does not need arguments:
+
+```tsx
+const handleSubmit = () => {
+  validateForm();
+  submitForm();
+};
+
+return <button onClick={handleSubmit}>Submit</button>;
+```
+
+Avoid putting multi-step behavior directly in JSX:
+
+```tsx
+return (
+  <button
+    onClick={(event) => {
+      event.stopPropagation();
+      toggle(media, collection);
+    }}
+  >
+    Toggle
+  </button>
+);
+```
+
+Preserve event propagation, `preventDefault()` calls, callback order, and
+keyboard and pointer behavior when extracting a handler. A short inline
+argument-forwarding wrapper remains appropriate when it keeps the handler
+usable across different event arguments.
 
 ### Braced control flow
 
