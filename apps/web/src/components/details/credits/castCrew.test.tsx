@@ -446,7 +446,7 @@ test.each(['Directors', 'Writers', 'Producers'])(
   }
 );
 
-test('removes duplicate hero Credits and keeps Movie information before the overview', () => {
+test('removes duplicate hero Credits and keeps the overview before Movie information', () => {
   render(
     <MemoryRouter>
       <DetailsContent
@@ -470,7 +470,7 @@ test('removes duplicate hero Credits and keeps Movie information before the over
     name: 'Movie information',
   });
   expect(informationHeading).toBeVisible();
-  expect(informationHeading.compareDocumentPosition(overviewHeading)).toBe(
+  expect(overviewHeading.compareDocumentPosition(informationHeading)).toBe(
     Node.DOCUMENT_POSITION_FOLLOWING
   );
   expect(screen.queryByRole('link', { name: 'Actor 7' })).toBeNull();

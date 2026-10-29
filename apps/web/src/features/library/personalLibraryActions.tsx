@@ -54,6 +54,12 @@ const actions: ActionDefinition[] = [
   },
 ];
 
+const actionLabels: Record<LibraryCollection, string> = {
+  watchlist: 'Watchlist',
+  watched: 'Watched',
+  favorites: 'Favorites',
+};
+
 export interface PersonalLibraryActionsProps {
   mediaType: LibraryMediaType;
   id: number;
@@ -145,6 +151,11 @@ export default function PersonalLibraryActions({
               onClick={(event) => handleToggle(event, collection, isActive)}
             >
               <Icon aria-hidden="true" focusable="false" />
+              {presentation === 'expanded' && (
+                <span className="personal-library-actions__label">
+                  {actionLabels[collection]}
+                </span>
+              )}
             </button>
           );
         }

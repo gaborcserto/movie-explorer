@@ -59,15 +59,21 @@ test('preserves the original Search submit button width', () => {
 });
 
 test('preserves page-specific dark hero treatments without detail backdrops', () => {
-  expect(declarationsFor(stylesheet, '.header').background).toBe('#000000');
-  expect(declarationsFor(stylesheet, '.header')['border-bottom']).toContain(
+  expect(declarationsFor(appStylesheet, '.header').background).toBe('#000000');
+  expect(declarationsFor(appStylesheet, '.header')['border-bottom']).toContain(
     '10px'
   );
   expect(
     declarationsFor(detailsStylesheet, '.header--movie-details')
   ).not.toHaveProperty('background');
-  expect(stylesheet.toString()).toContain('movie-posters-background.webp');
-  expect(declarationsFor(stylesheet, '.header:before').opacity).toBe('0.1');
+  expect(stylesheet.toString()).not.toContain('movie-posters-background.webp');
+  expect(appStylesheet.toString()).toContain('movie-posters-background.webp');
+  expect(declarationsFor(appStylesheet, '.header:before').opacity).toBe('0.1');
+  expect(
+    declarationsFor(appStylesheet, '.header:before', '(max-width: 767.98px)')[
+      'background-image'
+    ]
+  ).toContain('movie-posters-background-mobile.webp');
   expect(
     declarationsFor(detailsStylesheet, '.header--movie-details:before').opacity
   ).toBe('0.1');
@@ -81,6 +87,13 @@ test('aligns shared Header, Search and detail content geometry', () => {
   expect(appHeaderPadding['min-height']).toBe('44px');
   expect(detailsPadding['padding-inline']).toBe('60px');
   expect(appHeaderPadding['padding-inline']).toBe('60px');
+  expect(
+    declarationsFor(
+      appStylesheet,
+      '.app-header__inner',
+      '(width > 480px) and (width < 1200px)'
+    )['padding-inline']
+  ).toBe('0');
   expect(
     declarationsFor(appStylesheet, '.App--details > .app-header').background
   ).toBe('transparent');

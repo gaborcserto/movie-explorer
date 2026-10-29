@@ -71,7 +71,7 @@ export default function PhotoPreview({
         {visibleCount < available.length && (
           <button
             type="button"
-            className="btn btn--outline btn--action media-preview__action"
+            className="btn btn--outline"
             aria-label={`Show more ${plural} for ${title}`}
             onClick={() => {
               focusLastPhoto.current =

@@ -8,22 +8,30 @@ export default function DetailsPageLayout({
   hero,
   navigation,
   children,
+  className,
+  heroClassName,
+  heroContainerClassName,
 }: {
   title: string;
   hero: ReactNode;
   navigation?: ReactNode;
   children?: ReactNode;
+  className?: string;
+  heroClassName?: string;
+  heroContainerClassName?: string;
 }) {
   const mainRef = useDetailPage(title);
 
   return (
-    <div className="detail-page">
+    <div className={className ?? 'detail-page'}>
       <main ref={mainRef} tabIndex={-1} aria-label={title}>
         <div
-          className="header page-hero header--movie-details detail-page__hero"
+          className={`header page-hero header--movie-details detail-page__hero${heroClassName ? ` ${heroClassName}` : ''}`}
           data-testid="details-component"
         >
-          <div className="movie-details container">
+          <div
+            className={`movie-details container${heroContainerClassName ? ` ${heroContainerClassName}` : ''}`}
+          >
             {navigation}
             {hero}
           </div>
@@ -47,14 +55,18 @@ export function DetailsHeroFrame({
   title,
   rating,
   children,
+  className,
 }: {
   image: ReactNode;
   title: string;
   rating?: ReactNode;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="movie-details__container">
+    <div
+      className={`movie-details__container${className ? ` ${className}` : ''}`}
+    >
       {image}
       <div className="movie-details__content">
         <div className="movie-details__title__wrapper">

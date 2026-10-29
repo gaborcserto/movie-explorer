@@ -180,8 +180,15 @@
     gap: 12px 50px;
   }
 
+  &__facts-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    justify-content: space-between;
+  }
+
   &__section {
-    max-width: 720px;
     padding-top: 30px;
   }
 
@@ -304,6 +311,10 @@
       max-width: 100%;
     }
   }
+}
+
+.personal-library-actions--expanded {
+  margin-left: auto;
 }
 
 .detail-page {

@@ -124,6 +124,14 @@ test('reserves thumbnail space for loaded, missing, and failed images', () => {
     width: '100%',
     height: '100%',
   });
+  expect(
+    declarations(
+      '.photo-grid:not(.photo-grid--portraits) .media-thumbnail__img'
+    )['object-fit']
+  ).toBe('contain');
+  expect(
+    declarations('.photo-grid--posters .media-thumbnail__img')['object-fit']
+  ).toBe('contain');
 });
 
 test('disables lightbox button transitions and hover/active scaling for reduced motion', () => {
@@ -136,5 +144,27 @@ test('disables lightbox button transitions and hover/active scaling for reduced 
     '.lightbox button:active:not(:disabled)',
   ].forEach((selector) => {
     expect(declarationsForMedia(selector, query).transform).toBe('none');
+  });
+});
+
+test('shares the photo overlay and control geometry with video playback', () => {
+  expect(declarations('.lightbox')).toMatchObject({
+    background: 'rgba(0, 0, 0, 0.9)',
+    display: 'flex',
+    inset: '0',
+    position: 'fixed',
+    'z-index': '1000',
+  });
+  expect(declarations('.lightbox__toolbar')).toMatchObject({
+    'justify-content': 'flex-end',
+    'padding-bottom': '12px',
+  });
+  expect(declarations('.lightbox__toolbar span')['margin-right']).toBe('auto');
+  expect(declarations('.lightbox__nav--previous').left).toBe('16px');
+  expect(declarations('.lightbox__nav--next').right).toBe('16px');
+  expect(declarations('.video-lightbox__player iframe')).toMatchObject({
+    'aspect-ratio': '16/9',
+    'max-height': '100%',
+    width: 'min(100%, (100dvh - 220px) * 1.7778, 1280px)',
   });
 });

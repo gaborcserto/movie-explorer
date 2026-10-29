@@ -66,6 +66,31 @@ test('keeps movie and TV items with the same TMDB ID independent', () => {
   );
 });
 
+test('shows text labels for expanded actions while compact card actions stay icon-only', () => {
+  const { rerender } = render(
+    <PersonalLibraryActions
+      mediaType="movie"
+      id={18}
+      title="Dune"
+      presentation="expanded"
+    />
+  );
+
+  expect(screen.getByText('Watchlist')).toBeVisible();
+  expect(screen.getByText('Watched')).toBeVisible();
+  expect(screen.getByText('Favorites')).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'Add to Watchlist Dune' })
+  ).toHaveAttribute('aria-pressed', 'false');
+
+  rerender(<PersonalLibraryActions mediaType="movie" id={18} title="Dune" />);
+
+  expect(screen.queryByText('Watchlist')).not.toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'Add to Watchlist Dune' })
+  ).toBeInTheDocument();
+});
+
 test('supports native keyboard activation for the action buttons', async () => {
   const user = userEvent.setup();
 

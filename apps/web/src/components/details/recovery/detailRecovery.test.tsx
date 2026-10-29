@@ -293,7 +293,9 @@ test('partial movie keeps primary and media, retries only credits, and preserves
   expect(
     screen.getByRole('button', { name: 'View Partial movie backdrop 1' })
   ).toBeVisible();
-  expect(screen.getByText('No videos available.')).toBeVisible();
+  expect(
+    screen.queryByRole('heading', { name: 'Videos & Trailers' })
+  ).not.toBeInTheDocument();
   expect(
     screen.queryByText('No cast or crew available.')
   ).not.toBeInTheDocument();

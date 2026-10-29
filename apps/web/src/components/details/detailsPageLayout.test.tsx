@@ -39,6 +39,12 @@ test('preserves the Movie hero, title, rating, overview and lower-content struct
   expect(screen.getByRole('heading', { level: 1 })).toHaveClass(
     'movie-details__title'
   );
+  const actions = screen.getByRole('button', {
+    name: 'Add to Watchlist Movie reference',
+  });
+  expect(actions.closest('.personal-library-actions')).toHaveClass(
+    'personal-library-actions--expanded'
+  );
   expect(
     screen
       .getByLabelText('TMDB rating: 8.5 out of 10')
@@ -50,6 +56,14 @@ test('preserves the Movie hero, title, rating, overview and lower-content struct
   expect(screen.getByText('123 min').parentElement).toHaveClass(
     'movie-details__data'
   );
+  expect(screen.getByText('2020').compareDocumentPosition(actions)).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING
+  );
+  expect(
+    actions.compareDocumentPosition(
+      screen.getByRole('heading', { name: 'Overview' })
+    )
+  ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   expect(screen.getByText('Overview text')).toHaveClass(
     'movie-details__overview'
   );

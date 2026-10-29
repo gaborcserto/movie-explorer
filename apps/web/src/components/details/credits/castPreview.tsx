@@ -14,14 +14,17 @@ export default function CastPreview({
   members,
   initialVisibleCount = 10,
   batchSize = 10,
+  memberLabel = 'cast',
 }: {
   members: CastCredit[];
   initialVisibleCount?: number;
   batchSize?: number;
+  memberLabel?: string;
 }) {
   const gridId = useId();
   const [visibleCount, setVisibleCount] = useState(initialVisibleCount);
   const countRef = useRef<HTMLSpanElement>(null);
+  const pluralMemberLabel = memberLabel === 'cast' ? 'cast' : `${memberLabel}s`;
 
   if (members.length === 0) {
     return null;
@@ -33,7 +36,8 @@ export default function CastPreview({
     <>
       <div className="media-preview__summary">
         <span ref={countRef} role="status" tabIndex={-1} className="cast-count">
-          Showing {visible.length} of {members.length} cast members
+          Showing {visible.length} of {members.length}{' '}
+          {memberLabel === 'cast' ? 'cast members' : `${memberLabel}s`}
         </span>
       </div>
       <div className="cast-grid" id={gridId}>
@@ -83,7 +87,7 @@ export default function CastPreview({
           <button
             type="button"
             className="btn btn--outline btn--action"
-            aria-label="Show more cast"
+            aria-label={`Show more ${pluralMemberLabel}`}
             aria-controls={gridId}
             aria-expanded={visibleCount > initialVisibleCount}
             onClick={() => {
@@ -105,7 +109,7 @@ export default function CastPreview({
           <button
             type="button"
             className="btn btn--outline btn--action"
-            aria-label="Show less cast"
+            aria-label={`Show less ${pluralMemberLabel}`}
             aria-controls={gridId}
             aria-expanded
             onClick={() => {

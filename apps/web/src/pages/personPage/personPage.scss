@@ -31,28 +31,14 @@
 }
 
 .person-profile {
-  align-items: start;
-  display: flex;
-  gap: 60px;
   min-width: 0;
-  padding-bottom: 30px;
 
   &__portrait {
     @include hero-image-shadow;
 
-    aspect-ratio: 2 / 3;
     border-radius: 10px;
-    flex: 0 0 320px;
-    height: auto;
     position: relative;
-    width: 320px;
     z-index: 0;
-  }
-
-  &__content {
-    flex: 1 1 auto;
-    min-width: 0;
-    max-width: none;
   }
 
   button.person-profile__portrait:after {
@@ -85,6 +71,7 @@
     letter-spacing: 1px;
     line-height: 1.25;
     overflow-wrap: anywhere;
+    text-transform: none;
   }
 
   &__metadata {
@@ -138,25 +125,7 @@
     white-space: pre-line;
   }
 
-  @include media-size(lg-down) {
-    gap: 20px;
-
-    &__portrait {
-      flex-basis: 260px;
-      width: 260px;
-    }
-  }
-
   @include media-size(md-down) {
-    display: block;
-
-    &__portrait {
-      display: block;
-      margin: 0 auto 24px;
-      max-width: 320px;
-      width: 100%;
-    }
-
     h1 {
       font-size: 24px;
     }
@@ -164,6 +133,20 @@
     &__biography {
       font-size: 18px;
     }
+  }
+}
+
+.person-profile--loading {
+  display: flex;
+  gap: 60px;
+  padding-bottom: 30px;
+
+  @include media-size(lg-down) {
+    gap: 20px;
+  }
+
+  @include media-size(md-down) {
+    display: block;
   }
 }
 

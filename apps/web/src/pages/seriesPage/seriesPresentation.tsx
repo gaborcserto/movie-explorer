@@ -1,7 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import type { CreditPerson, Ratings } from '@movie-explorer/contracts';
+import type {
+  CreditPerson,
+  MoviePhoto,
+  Ratings,
+  SeasonSummary,
+  SeriesDetails,
+} from '@movie-explorer/contracts';
 
 import DetailsRatings, {
   RatingsDisplay,
@@ -16,6 +22,8 @@ import { DetailError } from '../../components/details/recovery';
 import { DetailHeroSkeleton } from '../../components/skeleton/contentSkeletons';
 import presentApiError from '../../util/errorPresentation';
 import { isNotFoundError } from '../../util/apiUtils';
+import { seriesPath } from '../../util/seriesRoutes';
+import seasonName from './seriesNames';
 import '../../components/details/details.scss';
 import './series.scss';
 
@@ -82,11 +90,34 @@ export function SeriesRequestState({
   );
 }
 
+export function SeriesRating({
+  rating,
+  votes,
+}: {
+  rating: number | null;
+  votes: number | null;
+}) {
+  if (
+    rating === null ||
+    !Number.isFinite(rating) ||
+    rating <= 0 ||
+    rating > 10
+  ) {
+    return null;
+  }
+
+  const voteCount =
+    votes !== null && Number.isFinite(votes) && votes > 0 ? votes : null;
+
+  return <RatingsDisplay tmdb={rating} votes={voteCount} />;
+}
+
 export function SeriesHero({
   title,
   image,
   srcSet,
   still = false,
+  imageSizes,
   seriesId,
   rating,
   votes,
@@ -94,12 +125,16 @@ export function SeriesHero({
   ratingsError,
   ratingsLoading,
   retryRatings,
+  showVoteCount = true,
+  photos,
+  className,
   children,
 }: {
   title: string;
   image: string | null;
   srcSet?: string;
   still?: boolean;
+  imageSizes?: string;
   seriesId?: number;
   rating?: number | null;
   votes?: number | null;
@@ -107,14 +142,18 @@ export function SeriesHero({
   ratingsError?: boolean;
   ratingsLoading?: boolean;
   retryRatings?: () => void;
+  showVoteCount?: boolean;
+  photos?: MoviePhoto[];
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
     <DetailsHeroFrame
       title={title}
+      className={className}
       rating={
         seriesId === undefined ? (
-          <RatingsDisplay tmdb={rating} votes={votes} />
+          <SeriesRating rating={rating ?? null} votes={votes ?? null} />
         ) : (
           <DetailsRatings
             tmdb={rating}
@@ -128,13 +167,21 @@ export function SeriesHero({
       }
       image={
         <HeroImage
+          key={seriesId}
           src={image ?? undefined}
           srcSet={srcSet}
           fullSrcSet={srcSet}
+          photos={photos}
+          actionLabel={
+            seriesId !== undefined
+              ? `Open poster gallery for ${title}`
+              : undefined
+          }
           sizes={
-            still
+            imageSizes ??
+            (still
               ? '(max-width: 767.98px) min(500px, calc(100vw - 52px)), (max-width: 991.98px) 260px, 320px'
-              : '(max-width: 767.98px) min(320px, calc(100vw - 52px)), (max-width: 991.98px) 260px, 320px'
+              : '(max-width: 767.98px) min(320px, calc(100vw - 52px)), (max-width: 991.98px) 260px, 320px')
           }
           alt={still ? `Still from ${title}` : `Poster for ${title}`}
           title={title}
@@ -142,7 +189,7 @@ export function SeriesHero({
         />
       }
     >
-      {votes !== null && votes !== undefined && (
+      {showVoteCount && votes !== null && votes !== undefined && (
         <p className="series-rating">{votes.toLocaleString()} votes</p>
       )}
       {children}
@@ -176,28 +223,6 @@ export function SeriesFacts({
         </div>
       ))}
     </dl>
-  );
-}
-
-export function SeriesRating({
-  rating,
-  votes,
-}: {
-  rating: number | null;
-  votes: number | null;
-}) {
-  if (rating === null) {
-    return null;
-  }
-
-  return (
-    <p
-      className="series-rating"
-      aria-label={`TMDB rating ${rating} out of 10${votes !== null ? ` from ${votes} votes` : ''}`}
-    >
-      <strong>{rating.toFixed(1)} / 10</strong> TMDB{' '}
-      {votes !== null && <span>({votes.toLocaleString()} votes)</span>}
-    </p>
   );
 }
 
@@ -271,40 +296,158 @@ export function ProductionCompanies({
   );
 }
 
-export function SeriesPeople({
+export function EpisodeCrew({
   people,
 }: {
   people: (CreditPerson & {
-    characters?: string[];
-    jobs?: string[];
-    department?: string | null;
+    department: string | null;
+    jobs: string[];
   })[];
 }) {
+  if (people.length === 0) {
+    return null;
+  }
+
+  const departments = new Map<string, typeof people>();
+
+  people.forEach((person) => {
+    const department = person.department?.trim() || 'Other';
+    const departmentPeople = departments.get(department) ?? [];
+
+    departmentPeople.push(person);
+    departments.set(department, departmentPeople);
+  });
+
   return (
-    <ul className="series-people">
-      {people.map((person) => (
-        <li
-          key={`${person.id ?? person.name}:${person.department ?? ''}:${(person.characters ?? person.jobs ?? []).join(',')}`}
-        >
-          {person.id ? (
-            <Link to={`/person/${person.id}`}>{person.name}</Link>
-          ) : (
-            person.name
-          )}
-          {person.characters?.length || person.jobs?.length
-            ? ` — ${(person.characters ?? person.jobs ?? []).join(', ')}`
-            : null}
-        </li>
+    <div className="crew-groups episode-crew-groups">
+      {[...departments].map(([department, departmentPeople]) => (
+        <section className="crew-group" key={department}>
+          <h4>{department}</h4>
+          <ul className="crew-group__people">
+            {departmentPeople.map((person) => (
+              <li
+                key={`${person.id ?? `${department}:${person.name}`}:${person.jobs.join('|')}`}
+              >
+                {person.id ? (
+                  <Link
+                    to={`/person/${person.id}`}
+                    className="person-credit-link"
+                  >
+                    {person.name}
+                  </Link>
+                ) : (
+                  person.name
+                )}
+                {person.jobs.length > 0 && (
+                  <span>{` — ${person.jobs.join(', ')}`}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
       ))}
-    </ul>
+    </div>
   );
 }
 
 export function SeriesBreadcrumbs({ children }: { children: React.ReactNode }) {
   return (
     <nav aria-label="Breadcrumb" className="series-breadcrumbs">
-      {children}
+      <ol>{children}</ol>
     </nav>
+  );
+}
+
+export function SeasonSelector({
+  seriesId,
+  series,
+  seasons,
+  currentSeason,
+}: {
+  seriesId: number;
+  series: SeriesDetails;
+  seasons: SeasonSummary[];
+  currentSeason: SeasonSummary;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectorId = useId();
+  const selectorRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const availableSeasons = seasons.some(
+    (season) => season.seasonNumber === currentSeason.seasonNumber
+  )
+    ? seasons
+    : [...seasons, currentSeason];
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !selectorRef.current?.contains(event.target)
+      ) {
+        setOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    document.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [open]);
+
+  return (
+    <div className="series-season-selector" ref={selectorRef}>
+      <button
+        ref={triggerRef}
+        type="button"
+        className="series-season-selector__trigger"
+        aria-expanded={open}
+        aria-controls={selectorId}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span>
+          {seasonName(currentSeason.seasonNumber, currentSeason.title)}
+        </span>
+        <span className="series-season-selector__chevron" aria-hidden="true" />
+      </button>
+      <ul
+        id={selectorId}
+        className="series-season-selector__options"
+        data-open={open}
+        aria-hidden={!open}
+        inert={!open}
+      >
+        {availableSeasons.map((season) => (
+          <li key={season.id}>
+            {season.seasonNumber === currentSeason.seasonNumber ? (
+              <span aria-current="page">
+                {seasonName(season.seasonNumber, season.title)}
+              </span>
+            ) : (
+              <Link
+                to={seriesPath(seriesId, season.seasonNumber)}
+                state={{ series }}
+              >
+                {seasonName(season.seasonNumber, season.title)}
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -315,12 +458,5 @@ export function SeasonName({
   number: number;
   title?: string;
 }) {
-  const label = number === 0 ? 'Specials' : `Season ${number}`;
-
-  return (
-    <>
-      {label}
-      {title && title.toLowerCase() !== label.toLowerCase() ? `: ${title}` : ''}
-    </>
-  );
+  return seasonName(number, title);
 }

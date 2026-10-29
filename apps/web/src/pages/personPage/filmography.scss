@@ -1,4 +1,5 @@
 @use '../../assets/scss' as *;
+@use '../../assets/scss/interactive-row' as interactive;
 
 .filmography {
   border-top: 1px solid $grey-2;
@@ -179,7 +180,15 @@
     padding: 0;
   }
 
+  &__list
+    > li:has(+ li > .filmography__row:is(:hover, :focus-visible, :focus-within))
+    > .filmography__row {
+    border-bottom-color: transparent;
+  }
+
   &__row {
+    @include interactive.interactive-row;
+
     align-items: center;
     border-bottom: 1px solid $grey-2;
     border-radius: 4px;
@@ -190,21 +199,12 @@
     grid-template-rows: auto auto;
     min-height: 96px;
     padding: 12px;
-    position: relative;
     text-decoration: none;
-    transform-origin: center top;
-    transition:
-      transform 0.24s ease,
-      filter 0.24s ease,
-      box-shadow 0.24s ease;
 
+    &:hover,
+    &:focus-visible,
     &:focus-within {
-      z-index: 2;
-    }
-
-    &:focus-visible {
-      outline: 2px solid $red-1;
-      outline-offset: 4px;
+      border-bottom-color: transparent;
     }
   }
 
@@ -313,13 +313,6 @@
     }
 
     @media (hover: hover) and (pointer: fine) {
-      &:hover {
-        filter: saturate(1.2);
-        transform: scale(1.06);
-        z-index: 3;
-        box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
-      }
-
       &:hover .filmography__poster {
         box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
       }
@@ -351,12 +344,6 @@
     &__media-tabs button,
     &__media-tabs button:after {
       transition: none;
-    }
-
-    @media (hover: hover) and (pointer: fine) {
-      a.filmography__row:hover {
-        transform: none;
-      }
     }
   }
 

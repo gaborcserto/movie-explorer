@@ -146,32 +146,21 @@ describe('video lightbox', () => {
   });
 });
 
-test('describes keyboard exit from the cross-origin player and offers a safe YouTube fallback', async () => {
+test('describes keyboard exit from the cross-origin player without playback help', async () => {
   render(<DetailsLowerContent movieData={movie} />);
   await userEvent.click(
     screen.getByRole('button', { name: 'Play Official Trailer' })
   );
   const dialog = screen.getByRole('dialog');
   expect(dialog).toHaveAccessibleDescription(
-    /Tab or Shift\+Tab.*Close.*Escape outside the player/
+    /Tab or Shift\+Tab.*Escape outside the player/
   );
   expect(screen.getByTitle('Official Trailer')).toHaveAccessibleDescription(
     /Tab or Shift\+Tab/
   );
-  const fallback = screen.getByRole('link', { name: 'Watch on YouTube' });
-  expect(fallback).toHaveAttribute(
-    'href',
-    'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-  );
-  expect(fallback).toHaveAttribute('target', '_blank');
-  expect(fallback).toHaveAttribute('rel', 'noopener noreferrer');
-  await userEvent.click(screen.getByRole('button', { name: 'Next video' }));
-  expect(fallback).toHaveAttribute(
-    'href',
-    'https://www.youtube.com/watch?v=9bZkp7q19f0'
-  );
-  fallback.focus();
-  fireEvent.keyDown(fallback, { key: 'Escape' });
+  expect(screen.queryByText('Video not playing?')).toBeNull();
+  expect(screen.queryByRole('link', { name: /watch on youtube/i })).toBeNull();
+  fireEvent.keyDown(dialog, { key: 'Escape' });
   expect(screen.queryByRole('dialog')).toBeNull();
 });
 
@@ -198,4 +187,30 @@ test('keeps video thumbnails and missing-image placeholders independent of play 
   expect(missing.querySelector('.image-placeholder')).not.toBeNull();
   await userEvent.click(first);
   expect(screen.getByRole('dialog')).toBeVisible();
+});
+
+test('keeps long video titles accessible without adding a visible header', async () => {
+  const longTitle = 'An unusually long official trailer title '.repeat(6);
+  render(
+    <DetailsLowerContent
+      movieData={{
+        ...movie,
+        videos: [{ ...movie.videos![0], name: longTitle }],
+      }}
+    />
+  );
+  await userEvent.click(
+    screen.getByRole('button', { name: /^Play An unusually long official/ })
+  );
+
+  const dialog = screen.getByRole('dialog');
+  const title = dialog.querySelector('#video-lightbox-title');
+  const toolbar = dialog.querySelector('.lightbox__toolbar');
+
+  expect(dialog).toHaveAccessibleName(/^An unusually long official trailer/);
+  expect(title).toHaveClass('visually-hidden');
+  expect(toolbar).toContainElement(screen.getByText('1 / 1'));
+  expect(toolbar).toContainElement(
+    screen.getByRole('button', { name: 'Close video player' })
+  );
 });

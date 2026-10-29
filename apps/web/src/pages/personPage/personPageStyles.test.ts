@@ -15,12 +15,8 @@ const detailStylesheet = postcss.parse(
     )
   ).css
 );
-const searchStylesheet = postcss.parse(
-  compile(
-    fileURLToPath(
-      new URL('../../components/search/search.scss', import.meta.url)
-    )
-  ).css
+const appStylesheet = postcss.parse(
+  compile(fileURLToPath(new URL('../../App.scss', import.meta.url))).css
 );
 test('reuses the shared cinematic background for the Person hero', () => {
   expect(declarationsForSelector(stylesheet, '.person-hero')).toMatchObject({
@@ -38,7 +34,7 @@ test('reuses the shared cinematic background for the Person hero', () => {
   expect(declarationsForSelector(stylesheet, '.person-hero:after')).toEqual({});
   expect(stylesheet.toString()).not.toContain('person-hero__posters');
   expect(
-    declarationsForSelector(searchStylesheet, '.header:before')
+    declarationsForSelector(appStylesheet, '.header:before')
   ).toMatchObject({
     'background-position': '50% 0',
     'background-size': 'cover',
@@ -53,18 +49,13 @@ test('reuses the shared cinematic background for the Person hero', () => {
 });
 
 test('matches the movie title typography and preserves a ten pixel portrait radius', () => {
-  expect(declarationsForSelector(stylesheet, '.person-profile')).toMatchObject({
-    display: 'flex',
-    gap: '60px',
-  });
+  expect(
+    declarationsForSelector(detailStylesheet, '.movie-details__container')
+  ).toMatchObject({ display: 'flex', gap: '60px', 'padding-bottom': '30px' });
   expect(
     declarationsForSelector(stylesheet, '.person-profile__portrait')
   ).toMatchObject({
     'border-radius': '10px',
-    'aspect-ratio': '2/3',
-    height: 'auto',
-    flex: '0 0 320px',
-    width: '320px',
   });
   expect(
     declarationsForSelector(stylesheet, '.person-profile h1')
@@ -74,6 +65,7 @@ test('matches the movie title typography and preserves a ten pixel portrait radi
     'letter-spacing': '1px',
     'line-height': '1.25',
     'overflow-wrap': 'anywhere',
+    'text-transform': 'none',
   });
   expect(
     declarationsForSelector(stylesheet, '.person-profile__metadata dt')
@@ -94,6 +86,15 @@ test('matches the movie title typography and preserves a ten pixel portrait radi
   ).toMatchObject({
     'margin-top': '14px',
   });
+});
+
+test('keeps the loading profile geometry while sharing the successful hero geometry', () => {
+  expect(
+    declarationsForSelector(stylesheet, '.person-profile--loading')
+  ).toMatchObject({ display: 'flex', gap: '60px', 'padding-bottom': '30px' });
+  expect(
+    declarationsForSelector(detailStylesheet, '.movie-details__image')
+  ).toMatchObject({ width: '320px', flex: '0 0 320px', 'aspect-ratio': '2/3' });
 });
 
 test('keeps the person name and biography readable in the mobile layout', () => {

@@ -1,34 +1,6 @@
 @use '../../assets/scss' as *;
 
 .header {
-  background: $black;
-  border-bottom: 10px solid $grey-1;
-  min-height: 360px;
-  position: relative;
-  z-index: 2;
-
-  &:before {
-    background-image: url('../../assets/img/movie-posters-background.webp');
-    background-blend-mode: darken;
-    background-position: 50% 0;
-    background-size: cover;
-    filter: blur(4.0774px);
-    content: ' ';
-    display: block;
-    height: 100%;
-    left: 0;
-    mix-blend-mode: normal;
-    opacity: 0.1;
-    position: absolute;
-    top: 0;
-    width: 100%;
-    z-index: 0;
-
-    @include media-size(md-down) {
-      background-image: url('../../assets/img/movie-posters-background-mobile.webp');
-    }
-  }
-
   &__container {
     position: relative;
     z-index: 1;

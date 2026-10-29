@@ -21,8 +21,8 @@ const videos = Array.from({ length: 8 }, (_, index) => ({
   url: `https://www.youtube.com/watch?v=dQw4w9WgXc${index}`,
 }));
 
-test.each([0, 2, 6, 8, 10])(
-  'shows the photo count and a bounded preview for %i items',
+test.each([0, 2, 6, 8, 10, 25])(
+  'shows the photo count and bounded preview for %i items',
   (count) => {
     render(<PhotoPreview photos={photos.slice(0, count)} title="Movie" />);
     expect(
@@ -31,6 +31,11 @@ test.each([0, 2, 6, 8, 10])(
     expect(
       screen.queryByRole('button', { name: /Show more photos/ }) !== null
     ).toBe(count > 10);
+    if (count > 10) {
+      expect(
+        screen.getByRole('button', { name: /Show more photos/ })
+      ).not.toHaveClass('btn--action');
+    }
     if (count) {
       expect(screen.getByText(`${count} photos available`)).toBeVisible();
     }
@@ -38,7 +43,7 @@ test.each([0, 2, 6, 8, 10])(
   }
 );
 
-test('person photos reveal ten at a time, preserve order and hide the final partial batch control', async () => {
+test('person photos reveal ten at a time and preserve order', async () => {
   const user = userEvent.setup();
 
   render(<PhotoPreview photos={photos} title="Person" />);
@@ -48,6 +53,8 @@ test('person photos reveal ten at a time, preserve order and hide the final part
   const more = screen.getByRole('button', {
     name: 'Show more photos for Person',
   });
+  expect(more).not.toHaveClass('btn--action');
+  expect(more).toHaveTextContent('Show more');
   more.focus();
   await user.keyboard('{Enter}');
   expect(tiles()).toHaveLength(20);
@@ -102,7 +109,7 @@ test('lightbox navigates the complete backdrop collection without revealing grid
   ).toHaveLength(6);
   expect(
     screen.getByRole('button', { name: 'Show more backdrops for Movie' })
-  ).toBeVisible();
+  ).not.toHaveClass('btn--action');
 });
 
 test('deduplicates photos and preserves missing and failed thumbnail fallbacks', () => {
@@ -176,7 +183,7 @@ test.each(['backdrops', 'posters'] as const)(
   }
 );
 
-test('empty categories keep recovery messaging and one-item galleries omit navigation', async () => {
+test('empty categories are omitted while one-item galleries omit navigation', async () => {
   const user = userEvent.setup();
   render(
     <DetailsLowerContent
@@ -194,9 +201,14 @@ test('empty categories keep recovery messaging and one-item galleries omit navig
       }}
     />
   );
-  expect(screen.getByText('No backdrops available.')).toBeVisible();
-  expect(screen.getByText('0 backdrops available')).toBeVisible();
-  expect(screen.getByText('0 videos available')).toBeVisible();
+  expect(
+    screen.queryByRole('heading', { name: 'Backdrops' })
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('heading', { name: 'Videos & Trailers' })
+  ).not.toBeInTheDocument();
+  expect(screen.queryByText('0 backdrops available')).not.toBeInTheDocument();
+  expect(screen.queryByText('0 videos available')).not.toBeInTheDocument();
   expect(screen.getByText('1 poster available')).toBeVisible();
   expect(screen.queryByRole('button', { name: /Show more/ })).toBeNull();
   const trigger = screen.getByRole('button', { name: 'View Movie poster 1' });
@@ -223,7 +235,7 @@ test('unknown video sites retain their title without an unsafe link or eager pla
   expect(document.querySelector('iframe')).toBeNull();
 });
 
-test.each([0, 2, 4, 5])(
+test.each([0, 2, 4, 5, 8])(
   'renders four initial videos and count for %i available',
   (count) => {
     render(
@@ -237,6 +249,11 @@ test.each([0, 2, 4, 5])(
     expect(
       screen.queryByRole('button', { name: /Show more videos/ }) !== null
     ).toBe(count > 4);
+    if (count > 4) {
+      expect(
+        screen.getByRole('button', { name: 'Show more videos' })
+      ).not.toHaveClass('btn--action');
+    }
     if (count) {
       expect(screen.getByText(`${count} videos available`)).toBeVisible();
     }
@@ -244,7 +261,7 @@ test.each([0, 2, 4, 5])(
   }
 );
 
-test('reveals videos in batches of four, handles a partial final batch, and preserves playback', async () => {
+test('reveals videos in batches, handles a partial final batch, and preserves playback', async () => {
   const user = userEvent.setup();
   render(
     <DetailsLowerContent
@@ -258,6 +275,8 @@ test('reveals videos in batches of four, handles a partial final batch, and pres
     />
   );
   const more = screen.getByRole('button', { name: 'Show more videos' });
+  expect(more).not.toHaveClass('btn--action');
+  expect(more).toHaveTextContent('Show more');
   await user.click(more);
   expect(document.querySelectorAll('.video-tile')).toHaveLength(8);
   expect(document.querySelector('iframe')).toBeNull();
@@ -276,7 +295,6 @@ test('reveals videos in batches of four, handles a partial final batch, and pres
     'href',
     'https://example.com/clip'
   );
-  expect(screen.queryByRole('button', { name: 'Show more videos' })).toBeNull();
 });
 
 test('resets the video reveal count when the movie changes', async () => {

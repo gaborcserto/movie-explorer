@@ -9,7 +9,7 @@ import type {
 
 import DetailsRatings from './ratings';
 import { SectionRecovery } from './recovery';
-import PhotoPreview, { VideoPreview } from './media';
+import { MediaSection } from './media';
 import HeroImage from '../heroImage';
 import MovieMetadata from './metadata';
 import CastPreview from './credits';
@@ -134,6 +134,7 @@ export function DetailsHero({
     posterUrl,
     posterSrcSet,
     posterPreviewUrl,
+    posters = [],
     genres,
     rating,
     runtimeMinutes,
@@ -150,12 +151,18 @@ export function DetailsHero({
       title={title}
       image={
         <HeroImage
+          key={movieData.id}
           src={posterUrl}
           srcSet={posterSrcSet}
           previewSrc={posterPreviewUrl}
+          photos={posters.map((poster, index) => ({
+            ...poster,
+            alt: poster.alt ?? `Poster ${index + 1} for ${title}`,
+          }))}
           sizes="(max-width: 767.98px) min(320px, calc(100vw - 52px)), (max-width: 991.98px) 260px, 320px"
           alt={title}
           title={title}
+          actionLabel={`Open poster gallery for ${title}`}
           className="movie-details__image"
         />
       }
@@ -172,30 +179,30 @@ export function DetailsHero({
       {genresData.length > 0 && (
         <div className="movie-details__genre">{genresData.join(', ')}</div>
       )}
-      {(releaseYear || hasRuntime) && (
-        <div className="movie-details__data">
-          {releaseYear && <span>{releaseYear}</span>}
-          {hasRuntime && <span>{runtimeMinutes} min</span>}
-        </div>
-      )}
-      <MovieMetadata movie={movieData} />
-      <PersonalLibraryActions
-        mediaType="movie"
-        id={movieData.id}
-        title={title}
-        posterUrl={posterUrl}
-        releaseDate={releaseDate}
-        presentation="expanded"
-      />
-      <WatchProviders providers={watchProviders} resource={providerResource} />
+      <div className="movie-details__facts-actions">
+        {(releaseYear || hasRuntime) && (
+          <div className="movie-details__data">
+            {releaseYear && <span>{releaseYear}</span>}
+            {hasRuntime && <span>{runtimeMinutes} min</span>}
+          </div>
+        )}
+        <PersonalLibraryActions
+          mediaType="movie"
+          id={movieData.id}
+          title={title}
+          posterUrl={posterUrl}
+          releaseDate={releaseDate}
+          presentation="expanded"
+        />
+      </div>
       {movieData.description?.trim() && (
         <section className="movie-details__section">
           <h2 className="movie-details__section-title">Overview</h2>
-          <p className="movie-details__overview">
-            {movieData.description.trim()}
-          </p>
+          <p className="movie-details__overview">{movieData.description}</p>
         </section>
       )}
+      <MovieMetadata movie={movieData} />
+      <WatchProviders providers={watchProviders} resource={providerResource} />
     </DetailsHeroFrame>
   );
 }
@@ -346,83 +353,51 @@ export function DetailsLowerContent({
         </div>
       )}
 
-      {(visiblePhotos.length > 0 ||
-        posters.length > 0 ||
-        videos.length > 0 ||
-        movieData.sections) && (
-        <section
-          className="details-section media-section"
-          aria-labelledby="media-heading"
-        >
-          <h2 id="media-heading">Media</h2>
-          {(visiblePhotos.length > 0 || movieData.sections) && (
-            <div className="media-block">
-              <h3>Backdrops</h3>
-              <SectionRecovery
-                label="Backdrops"
-                availability={movieData.sections?.photos}
-                recover={(signal) =>
-                  recoverSection
-                    ? recoverSection('photos', signal)
-                    : Promise.reject(new Error('Recovery unavailable'))
-                }
-              />
-              {movieData.sections?.photos.status === 'available' &&
-                visiblePhotos.length === 0 && <p>No backdrops available.</p>}
-              <PhotoPreview
-                photos={visiblePhotos}
-                title={title}
-                category="backdrops"
-                resetKey={movieData.id}
-              />
-            </div>
-          )}
-          {(posters.length > 0 || movieData.sections?.posters) && (
-            <div className="media-block">
-              <h3>Posters</h3>
-              <SectionRecovery
-                label="Posters"
-                availability={movieData.sections?.posters}
-                recover={(signal) =>
-                  recoverSection
-                    ? recoverSection('posters', signal)
-                    : Promise.reject(new Error('Recovery unavailable'))
-                }
-              />
-              {movieData.sections?.posters?.status === 'available' &&
-                posters.length === 0 && <p>No posters available.</p>}
-              <PhotoPreview
-                photos={posters}
-                title={title}
-                portrait
-                category="posters"
-                resetKey={movieData.id}
-              />
-            </div>
-          )}
-          {(videos.length > 0 || movieData.sections) && (
-            <div className="media-block">
-              <h3>Videos &amp; Trailers</h3>
-              <SectionRecovery
-                label="Videos"
-                availability={movieData.sections?.videos}
-                recover={(signal) =>
-                  recoverSection
-                    ? recoverSection('videos', signal)
-                    : Promise.reject(new Error('Recovery unavailable'))
-                }
-              />
-              {movieData.sections?.videos.status === 'available' &&
-                videos.length === 0 && <p>No videos available.</p>}
-              <VideoPreview
-                videos={videos}
-                title={title}
-                resetKey={movieData.id}
-              />
-            </div>
-          )}
-        </section>
-      )}
+      <MediaSection
+        title={title}
+        resetKey={movieData.id}
+        backdrops={visiblePhotos}
+        posters={posters}
+        videos={videos}
+        availability={{
+          backdrops: movieData.sections?.photos,
+          posters: movieData.sections?.posters,
+          videos: movieData.sections?.videos,
+        }}
+        backdropsRecovery={
+          <SectionRecovery
+            label="Backdrops"
+            availability={movieData.sections?.photos}
+            recover={(signal) =>
+              recoverSection
+                ? recoverSection('photos', signal)
+                : Promise.reject(new Error('Recovery unavailable'))
+            }
+          />
+        }
+        postersRecovery={
+          <SectionRecovery
+            label="Posters"
+            availability={movieData.sections?.posters}
+            recover={(signal) =>
+              recoverSection
+                ? recoverSection('posters', signal)
+                : Promise.reject(new Error('Recovery unavailable'))
+            }
+          />
+        }
+        videosRecovery={
+          <SectionRecovery
+            label="Videos"
+            availability={movieData.sections?.videos}
+            recover={(signal) =>
+              recoverSection
+                ? recoverSection('videos', signal)
+                : Promise.reject(new Error('Recovery unavailable'))
+            }
+          />
+        }
+      />
     </DetailsLowerLayout>
   );
 }

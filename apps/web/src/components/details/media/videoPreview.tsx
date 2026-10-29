@@ -94,7 +94,7 @@ export default function VideoPreview({ videos, title, resetKey }: Props) {
         {visibleVideoCount < videos.length && (
           <button
             type="button"
-            className="btn btn--outline btn--action media-preview__action"
+            className="btn btn--outline"
             aria-controls={gridId}
             aria-label="Show more videos"
             onClick={() => {

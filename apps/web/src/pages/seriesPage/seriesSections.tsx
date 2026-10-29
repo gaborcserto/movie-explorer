@@ -8,14 +8,9 @@ import type {
 
 import CastPreview from '../../components/details/credits';
 import useCrewPreview from '../../components/details/credits/useCrewPreview';
-import PhotoPreview, { VideoPreview } from '../../components/details/media';
+import { MediaSection } from '../../components/details/media';
 import { SectionRecovery } from '../../components/details/recovery';
-import {
-  getSeriesCredits,
-  getSeriesImages,
-  getSeriesVideos,
-} from '../../util/apiUtils';
-import '../../components/details/media/media.scss';
+import { getSeriesCredits } from '../../util/apiUtils';
 
 const unavailable: SectionAvailability = { status: 'unavailable' };
 
@@ -55,14 +50,21 @@ function castRoles(person: SeriesCastMember) {
   return roles.filter(Boolean).join(' · ');
 }
 
-export default function SeriesSections({ series }: { series: SeriesDetails }) {
+export default function SeriesSections({
+  series,
+  recoverImages,
+  recoverVideos,
+}: {
+  series: SeriesDetails;
+  recoverImages: (signal: AbortSignal) => Promise<void>;
+  recoverVideos: (signal: AbortSignal) => Promise<void>;
+}) {
   const [activeCreditTab, setActiveCreditTab] = useState<'cast' | 'crew'>(
     'cast'
   );
   const creditTabId = useId();
   const [credits, setCredits] = useState(series.credits);
-  const [images, setImages] = useState(series.images);
-  const [videos, setVideos] = useState(series.videos);
+  const { images, videos } = series;
   const creditState =
     credits &&
     Object.values(credits.sections).every(
@@ -70,13 +72,19 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
     )
       ? { status: 'available' as const }
       : unavailable;
-  const imageState =
-    images &&
-    Object.values(images.sections).every(
-      (value) => value.status === 'available'
-    )
-      ? { status: 'available' as const }
-      : unavailable;
+  let imageState: SectionAvailability = unavailable;
+
+  if (images) {
+    const { backdrops, posters } = images.sections;
+
+    if (backdrops.status === 'unavailable') {
+      imageState = backdrops;
+    } else if (posters.status === 'unavailable') {
+      imageState = posters;
+    } else {
+      imageState = { status: 'available' };
+    }
+  }
   const crewGroups = new Map<string, NonNullable<typeof credits>['crew']>();
   const crew = [...(credits?.crew ?? [])].sort(
     (a, b) =>
@@ -256,82 +264,32 @@ export default function SeriesSections({ series }: { series: SeriesDetails }) {
             !credits.crew.length && <p>No crew information available.</p>}
         </div>
       </section>
-      <section
-        className="details-section"
-        aria-labelledby="series-images-heading"
-      >
-        <div className="details-section__heading">
-          <h2 id="series-images-heading">Images</h2>
-        </div>
-        <SectionRecovery
-          label="Images"
-          availability={imageState}
-          recover={async (signal) => {
-            const result = await getSeriesImages(series.id, signal);
-
-            if (!signal.aborted) {
-              setImages(result);
-            }
-          }}
-        />
-        <h3>Posters</h3>
-        {images?.posters.length ? (
-          <PhotoPreview
-            photos={images.posters}
-            title={series.title}
-            category="posters"
-            portrait
-            resetKey={series.id}
+      <MediaSection
+        title={series.title}
+        resetKey={series.id}
+        backdrops={images?.backdrops ?? []}
+        posters={images?.posters ?? []}
+        videos={videos?.videos ?? []}
+        availability={{
+          backdrops: images?.sections.backdrops,
+          posters: images?.sections.posters,
+          videos: videos?.availability,
+        }}
+        imagesRecovery={
+          <SectionRecovery
+            label="Images"
+            availability={imageState}
+            recover={recoverImages}
           />
-        ) : (
-          images?.sections.posters.status === 'available' && (
-            <p>No posters available.</p>
-          )
-        )}
-        <h3>Backdrops</h3>
-        {images?.backdrops.length ? (
-          <PhotoPreview
-            photos={images.backdrops}
-            title={series.title}
-            category="backdrops"
-            resetKey={series.id}
+        }
+        videosRecovery={
+          <SectionRecovery
+            label="Videos"
+            availability={videos?.availability ?? unavailable}
+            recover={recoverVideos}
           />
-        ) : (
-          images?.sections.backdrops.status === 'available' && (
-            <p>No backdrops available.</p>
-          )
-        )}
-      </section>
-      <section
-        className="details-section"
-        aria-labelledby="series-videos-heading"
-      >
-        <div className="details-section__heading">
-          <h2 id="series-videos-heading">Videos</h2>
-        </div>
-        <SectionRecovery
-          label="Videos"
-          availability={videos?.availability ?? unavailable}
-          recover={async (signal) => {
-            const result = await getSeriesVideos(series.id, signal);
-
-            if (!signal.aborted) {
-              setVideos(result);
-            }
-          }}
-        />
-        {videos?.videos.length ? (
-          <VideoPreview
-            videos={videos.videos}
-            title={series.title}
-            resetKey={series.id}
-          />
-        ) : (
-          videos?.availability.status === 'available' && (
-            <p>No videos available.</p>
-          )
-        )}
-      </section>
+        }
+      />
     </div>
   );
 }

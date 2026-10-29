@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FaAngleLeft, FaAngleRight, FaXmark } from 'react-icons/fa6';
+import { FaChevronLeft, FaChevronRight, FaXmark } from 'react-icons/fa6';
 import type { MovieVideo } from '@movie-explorer/contracts';
 
 interface Props {
@@ -137,7 +137,7 @@ export default function VideoLightbox({
       tabIndex={-1}
     >
       <div className="lightbox__toolbar">
-        <h2 id="video-lightbox-title">
+        <h2 id="video-lightbox-title" className="visually-hidden">
           {video.video.name || `${title} video`}
         </h2>
         <span aria-live="polite">
@@ -152,9 +152,9 @@ export default function VideoLightbox({
           <FaXmark aria-hidden="true" focusable="false" />
         </button>
       </div>
-      <p id="video-keyboard-help" className="lightbox__notice">
-        In the YouTube player, use Tab or Shift+Tab to reach the dialog
-        controls. Then use Close, or press Escape outside the player.
+      <p id="video-keyboard-help" className="visually-hidden">
+        Use Tab or Shift+Tab to reach the dialog controls. Press Escape outside
+        the player to close this viewer.
       </p>
       <div className="video-lightbox__player">
         <iframe
@@ -166,16 +166,6 @@ export default function VideoLightbox({
           allowFullScreen
         />
       </div>
-      <p className="lightbox__notice">
-        Playback unavailable?{' '}
-        <a
-          href={`https://www.youtube.com/watch?v=${video.videoId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Watch on YouTube
-        </a>
-      </p>
       {videos.length > 1 && (
         <>
           <button
@@ -185,7 +175,7 @@ export default function VideoLightbox({
             disabled={index === 0}
             onClick={() => setIndex((current) => Math.max(0, current - 1))}
           >
-            <FaAngleLeft aria-hidden="true" focusable="false" />
+            <FaChevronLeft aria-hidden="true" focusable="false" />
           </button>
           <button
             type="button"
@@ -196,7 +186,7 @@ export default function VideoLightbox({
               setIndex((current) => Math.min(videos.length - 1, current + 1))
             }
           >
-            <FaAngleRight aria-hidden="true" focusable="false" />
+            <FaChevronRight aria-hidden="true" focusable="false" />
           </button>
         </>
       )}

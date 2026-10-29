@@ -41,10 +41,23 @@
       outline: 2px solid $red-1;
       outline-offset: 1px;
     }
+
+    .personal-library-actions__label {
+      white-space: nowrap;
+    }
   }
 
   &--expanded {
+    display: flex;
+    flex-wrap: wrap;
     gap: 6px;
+    max-width: 100%;
+    width: fit-content;
+
+    .personal-library-actions__button {
+      gap: 8px;
+      padding-inline: 10px;
+    }
   }
 }
 

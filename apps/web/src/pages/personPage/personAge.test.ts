@@ -16,6 +16,7 @@ describe('getPersonAge', () => {
 
   it('uses age at death and never falls back to current age for a deceased person', () => {
     expect(getPersonAge('2000-06-16', '2024-06-15', today)).toBe(23);
+    expect(getPersonAge('2000-06-16', '2000-06-16', today)).toBe(0);
     expect(
       getPersonAge('2000-06-16', 'invalid-death-date', today)
     ).toBeUndefined();

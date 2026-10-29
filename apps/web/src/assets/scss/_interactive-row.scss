@@ -1,0 +1,36 @@
+@mixin interactive-row {
+  position: relative;
+  transform-origin: center top;
+  transition:
+    transform 0.24s ease,
+    filter 0.24s ease,
+    box-shadow 0.24s ease;
+
+  &:focus-within {
+    z-index: 2;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #f65261;
+    outline-offset: 4px;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
+      filter: saturate(1.2);
+      transform: scale(1.06);
+      z-index: 3;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        transform: none;
+      }
+    }
+  }
+}

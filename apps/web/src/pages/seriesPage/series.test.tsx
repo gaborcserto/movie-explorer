@@ -7,7 +7,14 @@ import {
   waitFor,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
+import {
+  Link,
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   SeriesDetails,
@@ -115,9 +122,27 @@ const series: SeriesDetails = {
 };
 const fetchMock = vi.fn<typeof fetch>();
 
-function setup(path: string) {
+function MemoryHistoryControls() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <output data-testid="current-route">{location.pathname}</output>
+      <button type="button" onClick={() => navigate(-1)}>
+        History back
+      </button>
+      <button type="button" onClick={() => navigate(1)}>
+        History forward
+      </button>
+    </>
+  );
+}
+
+function setup(path: string, showHistoryControls = false) {
   return render(
     <MemoryRouter initialEntries={[path]}>
+      {showHistoryControls && <MemoryHistoryControls />}
       <Link to="/series/2">Other series</Link>
       <Link to="/series/1/seasons/0/episodes/8">Other episode</Link>
       <Routes>
@@ -158,7 +183,13 @@ beforeEach(() => {
       });
     }
     if (path.includes('/seasons/')) {
-      return Response.json(season);
+      const seasonNumber = Number(path.split('/').at(-1));
+
+      return Response.json({
+        ...season,
+        seasonNumber,
+        episodes: season.episodes.map((item) => ({ ...item, seasonNumber })),
+      });
     }
 
     return Response.json(series);
@@ -172,6 +203,40 @@ afterEach(() => {
 });
 
 describe('Series hierarchy', () => {
+  it.each([
+    { airDate: '2025-04-01', hasYear: true },
+    { airDate: null, hasYear: false },
+  ])(
+    'shows available season year and episode count in one compact row',
+    async ({ airDate, hasYear }) => {
+      fetchMock.mockResolvedValue(
+        Response.json({
+          ...series,
+          seasons: [{ ...season, airDate, episodeCount: 10 }],
+        })
+      );
+      setup('/series/1');
+
+      await screen.findByRole('link', { name: 'View season details' });
+
+      const facts = document.querySelector('.season-preview__facts');
+      expect(facts).toHaveTextContent(
+        hasYear ? '2025·10 Episodes' : '10 Episodes'
+      );
+      const year = facts?.querySelector('.season-preview__year');
+
+      if (hasYear) {
+        expect(year).toHaveTextContent('2025');
+      } else {
+        expect(year).not.toBeInTheDocument();
+      }
+      expect(
+        facts?.querySelector('.season-preview__episode-count')
+      ).toHaveTextContent('10 Episodes');
+      expect(facts).not.toHaveTextContent('Year');
+    }
+  );
+
   it.each(['network', 'http', 'invalid-response'] as const)(
     'keeps series details available when the Watch Providers client fails: %s',
     async (failure) => {
@@ -345,7 +410,7 @@ describe('Series hierarchy', () => {
     castTab.focus();
     await user.keyboard('{ArrowRight}');
     expect(screen.getByRole('link', { name: 'Crew 15' })).toBeVisible();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('shows short Series Cast lists without progressive controls', async () => {
@@ -438,17 +503,28 @@ describe('Series hierarchy', () => {
         level: 1,
         name: title,
       });
+      const detailSelector =
+        path === '/series/1'
+          ? '.movie-details__metadata dt'
+          : '.series-detail__metadata';
+      const expectedSelector = path.includes('/episodes/')
+        ? '.series-detail__context'
+        : detailSelector;
+
       expect(heading).toHaveClass('movie-details__title');
       expect(heading.closest('.movie-details__container')).not.toBeNull();
       expect(
         heading.closest('.detail-page__hero > .movie-details.container')
       ).not.toBeNull();
       expect(container.querySelector('header')).toBeNull();
+      expect(container.querySelector(expectedSelector)).not.toBeNull();
+      if (path !== '/series/1') {
+        expect(container.querySelector('.personal-library-actions')).toBeNull();
+      }
       expect(
-        container.querySelector('.movie-details__metadata dt')
-      ).not.toBeNull();
-      expect(
-        container.querySelector('.details-section')?.closest('.container')
+        container
+          .querySelector('.movie-details__lower-content .details-section')
+          ?.closest('.container')
       ).toHaveClass('movie-details__lower-content');
       expect(screen.getAllByRole('main')).toHaveLength(1);
       expect(screen.queryByRole('contentinfo')).toBeNull();
@@ -500,7 +576,7 @@ describe('Series hierarchy', () => {
       screen.queryByRole('button', { name: 'Show more crew' })
     ).not.toBeInTheDocument();
     expect(screen.getByText('Showing 21 of 21 crew members')).toHaveFocus();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('renders aggregate characters/jobs and bounded galleries from one details request', async () => {
@@ -612,7 +688,7 @@ describe('Series hierarchy', () => {
     expect(
       screen.getAllByRole('button', { name: /View The Journey poster/ })
     ).toHaveLength(10);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     await userEvent.click(
       screen.getByRole('button', { name: 'View The Journey poster 1' })
     );
@@ -633,22 +709,99 @@ describe('Series hierarchy', () => {
     expect(
       await screen.findByRole('heading', { name: 'The Journey' })
     ).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     fetchMock.mockResolvedValueOnce(
       Response.json({ videos: [], availability: { status: 'available' } })
     );
     await userEvent.click(screen.getByRole('button', { name: 'Retry videos' }));
-    expect(await screen.findByText('No videos available.')).toBeInTheDocument();
-    expect(String(fetchMock.mock.calls[1][0])).toContain(
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: 'Retry videos' })
+      ).not.toBeInTheDocument();
+    });
+    expect(
+      screen.queryByRole('heading', { name: 'Videos & Trailers' })
+    ).not.toBeInTheDocument();
+    expect(String(fetchMock.mock.calls[2][0])).toContain(
       '/api/v1/series/1/videos'
     );
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(
       screen.getByRole('button', { name: 'Retry images' })
     ).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: 'The Journey' })
     ).toBeInTheDocument();
+  });
+
+  it('updates the hero and Media poster galleries from one recovered Images response', async () => {
+    fetchMock.mockResolvedValueOnce(
+      Response.json({ ...series, posterUrl: '/hero.jpg' })
+    );
+    setup('/series/1');
+    await screen.findByRole('heading', { name: 'The Journey' });
+    fireEvent.load(screen.getByRole('img', { name: 'Poster for The Journey' }));
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        posters: [
+          { thumbnailUrl: '/recovered-thumb.jpg', fullUrl: '/recovered.jpg' },
+        ],
+        backdrops: [],
+        sections: {
+          posters: { status: 'available' },
+          backdrops: { status: 'available' },
+        },
+      })
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Retry images' }));
+
+    expect(
+      await screen.findByRole('button', { name: 'View The Journey poster 1' })
+    ).toBeInTheDocument();
+    const heroGallery = screen.getByRole('button', {
+      name: 'Open poster gallery for The Journey',
+    });
+    await userEvent.click(heroGallery);
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
+      'src',
+      '/recovered.jpg'
+    );
+    await userEvent.keyboard('{Escape}');
+    expect(heroGallery).toHaveFocus();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(String(fetchMock.mock.calls[2][0])).toContain(
+      '/api/v1/series/1/images'
+    );
+  });
+
+  it('keeps recovery status and focus after Images recovery returns empty collections', async () => {
+    setup('/series/1');
+    await screen.findByRole('heading', { name: 'The Journey' });
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        posters: [],
+        backdrops: [],
+        sections: {
+          posters: { status: 'available' },
+          backdrops: { status: 'available' },
+        },
+      })
+    );
+    const retry = screen.getByRole('button', { name: 'Retry images' });
+
+    await userEvent.click(retry);
+
+    const status = await screen.findByText('Images loaded.');
+    expect(status).toHaveTextContent('Images loaded.');
+    expect(status.parentElement).toHaveFocus();
+    expect(
+      screen.queryByRole('heading', { name: 'Media' })
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('0 posters available')).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('aborts section recovery on navigation and ignores an obsolete result', async () => {
@@ -783,19 +936,17 @@ describe('Series hierarchy', () => {
     expect(
       screen.getByRole('tabpanel', { name: 'Specials, Season 0' })
     ).toBeVisible();
-    expect(screen.getByRole('link', { name: 'View episodes' })).toHaveAttribute(
-      'href',
-      '/series/1/seasons/0'
-    );
+    expect(
+      screen.getByRole('link', { name: 'View season details' })
+    ).toHaveAttribute('href', '/series/1/seasons/0');
     await user.keyboard('{ArrowRight}');
     expect(first).toHaveFocus();
-    expect(screen.getByRole('link', { name: 'View episodes' })).toHaveAttribute(
-      'href',
-      '/series/1/seasons/1'
-    );
+    expect(
+      screen.getByRole('link', { name: 'View season details' })
+    ).toHaveAttribute('href', '/series/1/seasons/1');
     await user.click(screen.getByRole('button', { name: 'Next season' }));
     expect(first).toHaveAttribute('aria-selected', 'true');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
     if (originalClientWidth) {
       Object.defineProperty(
         HTMLElement.prototype,
@@ -823,13 +974,16 @@ describe('Series hierarchy', () => {
       seasonNumber: index + 1,
       title: `Season ${index + 1}`,
     }));
-    let resize: ResizeObserverCallback | undefined;
+    const observers: {
+      callback: ResizeObserverCallback;
+      observed: Set<Element>;
+    }[] = [];
     const disconnect = vi.fn();
     class ResizeObserverMock {
       private readonly observed = new Set<Element>();
 
       constructor(callback: ResizeObserverCallback) {
-        resize = callback;
+        observers.push({ callback, observed: this.observed });
       }
 
       observe(element: Element) {
@@ -872,11 +1026,14 @@ describe('Series hierarchy', () => {
     const view = setup('/series/1');
     const first = await screen.findByRole('tab', { name: 'Season 1' });
     // The tabs can commit before the passive effect registers the observer.
-    await waitFor(() => expect(resize).toBeTypeOf('function'));
-    expect(screen.queryByRole('button', { name: 'Next season' })).toBeNull();
     const list = screen.getByRole('tablist', { name: 'Seasons' });
+    await waitFor(() =>
+      expect(observers.some(({ observed }) => observed.has(list))).toBe(true)
+    );
+    expect(screen.queryByRole('button', { name: 'Next season' })).toBeNull();
     list.setAttribute('data-overflow', 'yes');
-    act(() => resize?.([], {} as ResizeObserver));
+    const seasonObserver = observers.find(({ observed }) => observed.has(list));
+    act(() => seasonObserver?.callback([], {} as ResizeObserver));
     const next = screen.getByRole('button', { name: 'Next season' });
     const previous = screen.getByRole('button', { name: 'Previous season' });
     expect(previous).toBeDisabled();
@@ -897,11 +1054,12 @@ describe('Series hierarchy', () => {
     fireEvent.scroll(list);
     expect(next).toBeDisabled();
     view.unmount();
-    expect(disconnect).toHaveBeenCalledOnce();
+    expect(disconnect).toHaveBeenCalledTimes(observers.length);
     addEventListener.mockRestore();
   });
 
-  it('uses actual season choices with accessible keyboard controls', async () => {
+  it('opens the season selector accessibly and navigates without duplicate requests', async () => {
+    const user = userEvent.setup();
     fetchMock.mockImplementation(async (input) => {
       const path = new URL(String(input)).pathname;
 
@@ -910,20 +1068,64 @@ describe('Series hierarchy', () => {
           ? {
               ...season,
               seasonNumber: Number(path.split('/').at(-1)),
+              title:
+                Number(path.split('/').at(-1)) === 5
+                  ? 'Book Five'
+                  : season.title,
               episodes: [],
               episodeCount: 0,
             }
           : series
       );
     });
-    setup('/series/1/seasons/0');
-    const selector = await screen.findByRole('combobox', { name: 'Season' });
-    expect(screen.getAllByRole('option')).toHaveLength(2);
-    await userEvent.selectOptions(selector, '5');
-    expect(await screen.findByRole('combobox', { name: 'Season' })).toHaveValue(
-      '5'
+    setup('/series/1/seasons/0', true);
+    const selector = await screen.findByRole('button', {
+      name: 'Specials: Special stories',
+    });
+
+    expect(selector).toHaveAttribute('aria-expanded', 'false');
+    await user.click(selector);
+    expect(selector).toHaveAttribute('aria-expanded', 'true');
+    expect(
+      document.querySelector(
+        '.series-season-selector__options [aria-current="page"]'
+      )
+    ).toHaveTextContent('Specials: Special stories');
+
+    await user.keyboard('{Escape}');
+    expect(selector).toHaveAttribute('aria-expanded', 'false');
+    expect(selector).toHaveFocus();
+
+    await user.click(selector);
+    fireEvent.pointerDown(document.body);
+    expect(selector).toHaveAttribute('aria-expanded', 'false');
+
+    await user.click(selector);
+    await user.tab();
+    expect(
+      screen.getByRole('link', { name: 'Season 5: Book Five' })
+    ).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(
+      await screen.findByRole('heading', { name: 'Book Five' })
+    ).toBeVisible();
+    expect(screen.getByTestId('current-route')).toHaveTextContent(
+      '/series/1/seasons/5'
     );
     expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    await user.click(screen.getByRole('button', { name: 'History back' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('current-route')).toHaveTextContent(
+        '/series/1/seasons/0'
+      )
+    );
+    await user.click(screen.getByRole('button', { name: 'History forward' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('current-route')).toHaveTextContent(
+        '/series/1/seasons/5'
+      )
+    );
   });
 
   it('presents Retry-After guidance through the shared error state', async () => {
@@ -936,7 +1138,305 @@ describe('Series hierarchy', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/wait about 12 seconds/)).toBeInTheDocument();
   });
-  it('renders series metadata, named seasons and separate Specials without per-season calls', async () => {
+  it('wraps a long series title and omits genres when none are available', async () => {
+    const title = 'A Very Long Series Title That Needs To Wrap Across Lines';
+    fetchMock.mockResolvedValue(
+      Response.json({ ...series, title, genres: [' ', ''] })
+    );
+
+    setup('/series/1');
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: title })
+    ).toBeInTheDocument();
+    expect(document.querySelector('.movie-details__genre')).toBeNull();
+  });
+
+  it('renders the complete Series overview without truncation controls', async () => {
+    const description = 'A complete series overview that stays intact. '.repeat(
+      12
+    );
+    fetchMock.mockResolvedValue(Response.json({ ...series, description }));
+
+    setup('/series/1');
+
+    await screen.findByRole('heading', { level: 1, name: series.title });
+    expect(
+      document.querySelector('.movie-details__overview')?.textContent
+    ).toBe(description);
+    expect(
+      screen.queryByRole('button', { name: /^(Show more|Show less)$/i })
+    ).toBeNull();
+  });
+
+  it.each(['', '   '])(
+    'preserves empty Series overview text (%j)',
+    async (description) => {
+      fetchMock.mockResolvedValue(Response.json({ ...series, description }));
+
+      setup('/series/1');
+
+      await screen.findByRole('heading', { level: 1, name: series.title });
+      expect(
+        document.querySelector('.movie-details__overview')?.textContent
+      ).toBe(description);
+    }
+  );
+
+  it('shows the selected season overview above its full-width episode rows', async () => {
+    fetchMock.mockImplementation(async (input) =>
+      String(input).includes('/seasons/')
+        ? Response.json({ ...season, description: 'A season overview.' })
+        : Response.json(series)
+    );
+    setup('/series/1');
+
+    const firstEpisode = await screen.findByRole('link', {
+      name: '1. Beginning',
+    });
+    const overview = screen.getByText('A season overview.');
+    const episodesHeading = screen.getByRole('heading', { name: 'Episodes' });
+    expect(overview.compareDocumentPosition(episodesHeading)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(firstEpisode).toHaveAttribute(
+      'href',
+      '/series/1/seasons/0/episodes/1'
+    );
+    expect(
+      fetchMock.mock.calls
+        .map(([url]) => String(url))
+        .filter((url) => url.includes('/seasons/'))
+    ).toEqual(['http://localhost:4000/api/v1/series/1/seasons/0']);
+  });
+
+  it('shows the Season title with compact year and episode-count facts', async () => {
+    fetchMock.mockImplementation(async (input) =>
+      String(input).includes('/seasons/')
+        ? Response.json({
+            ...season,
+            seasonNumber: 1,
+            title: 'Season 1',
+            airDate: '2021-04-01',
+            episodeCount: 8,
+            episodes: Array.from({ length: 8 }, (_, index) => ({
+              ...season.episodes[index % season.episodes.length],
+              id: 100 + index,
+              episodeNumber: index + 1,
+              seasonNumber: 1,
+            })),
+          })
+        : Response.json(series)
+    );
+    setup('/series/1/seasons/1');
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Season 1' })
+    ).toBeVisible();
+    const facts = screen.getByLabelText('Season information');
+
+    expect(within(facts).getByText('2021')).toBeVisible();
+    expect(within(facts).getByText('8 Episodes')).toBeVisible();
+    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    const title = screen.getByRole('heading', { level: 1, name: 'Season 1' });
+    expect(title.compareDocumentPosition(breadcrumb)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(
+      within(breadcrumb).getByRole('link', { name: 'The Journey' })
+    ).toHaveAttribute('href', '/series/1');
+    expect(within(breadcrumb).getByText('Season 1')).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+    expect(facts.parentElement).toBe(breadcrumb.parentElement);
+  });
+
+  it('renders every selected-season episode without an episode Show more button', async () => {
+    const episodes = Array.from({ length: 10 }, (_, index) => ({
+      ...episode,
+      id: index + 1,
+      episodeNumber: index + 1,
+      title: `Episode ${index + 1}`,
+    }));
+    fetchMock.mockImplementation(async (input) =>
+      String(input).includes('/seasons/')
+        ? Response.json({ ...season, episodeCount: episodes.length, episodes })
+        : Response.json(series)
+    );
+    setup('/series/1');
+
+    expect(
+      await screen.findByRole('link', { name: '10. Episode 10' })
+    ).toHaveAttribute('href', '/series/1/seasons/0/episodes/10');
+    expect(
+      screen.getAllByRole('link', { name: /^\d+\. Episode \d+$/ })
+    ).toHaveLength(10);
+    expect(screen.queryByRole('button', { name: /^Show more$/ })).toBeNull();
+  });
+
+  it('updates the complete episode list when switching seasons', async () => {
+    fetchMock.mockImplementation(async (input) => {
+      const path = new URL(String(input)).pathname;
+
+      if (path.includes('/seasons/')) {
+        const seasonNumber = Number(path.split('/').at(-1));
+
+        return Response.json(
+          seasonNumber === 0
+            ? {
+                ...season,
+                episodeCount: 10,
+                episodes: Array.from({ length: 10 }, (_, index) => ({
+                  ...episode,
+                  id: index + 1,
+                  episodeNumber: index + 1,
+                  title: `Special ${index + 1}`,
+                })),
+              }
+            : {
+                ...season,
+                seasonNumber,
+                episodeCount: 2,
+                episodes: [
+                  {
+                    ...episode,
+                    id: 51,
+                    seasonNumber,
+                    episodeNumber: 1,
+                    title: 'Book Five 1',
+                  },
+                  {
+                    ...episode,
+                    id: 52,
+                    seasonNumber,
+                    episodeNumber: 2,
+                    title: 'Book Five 2',
+                  },
+                ],
+              }
+        );
+      }
+
+      return Response.json(series);
+    });
+    setup('/series/1');
+
+    expect(
+      await screen.findByRole('link', { name: '10. Special 10' })
+    ).toBeVisible();
+    await userEvent.click(screen.getByRole('tab', { name: 'Season 5' }));
+
+    expect(
+      await screen.findByRole('link', { name: '2. Book Five 2' })
+    ).toHaveAttribute('href', '/series/1/seasons/5/episodes/2');
+    expect(screen.queryByRole('link', { name: '1. Special 1' })).toBeNull();
+    expect(
+      screen.getAllByRole('link', { name: /^\d+\. Book Five \d+$/ })
+    ).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: /^Show more$/ })).toBeNull();
+  });
+
+  it('ignores a stale season response after rapidly switching season tabs', async () => {
+    const pendingSeasons = new Map<number, (response: Response) => void>();
+    let firstSeasonSignal: AbortSignal | undefined;
+    fetchMock.mockImplementation((input, init) => {
+      const path = new URL(String(input)).pathname;
+
+      if (path.includes('/seasons/')) {
+        const seasonNumber = Number(path.split('/').at(-1));
+
+        if (seasonNumber === 0) {
+          firstSeasonSignal = init?.signal ?? undefined;
+        }
+
+        return new Promise<Response>((resolve) => {
+          pendingSeasons.set(seasonNumber, resolve);
+        });
+      }
+
+      return Promise.resolve(Response.json(series));
+    });
+    setup('/series/1');
+
+    expect(await screen.findByText('Loading episodes…')).toBeVisible();
+    await userEvent.click(screen.getByRole('tab', { name: 'Season 5' }));
+    await waitFor(() => expect(pendingSeasons.has(5)).toBe(true));
+
+    await act(async () =>
+      pendingSeasons.get(5)?.(
+        Response.json({
+          ...season,
+          seasonNumber: 5,
+          episodeCount: 1,
+          episodes: [
+            {
+              ...episode,
+              id: 51,
+              seasonNumber: 5,
+              episodeNumber: 1,
+              title: 'Current season episode',
+            },
+          ],
+        })
+      )
+    );
+    expect(
+      await screen.findByRole('link', { name: '1. Current season episode' })
+    ).toBeVisible();
+
+    await act(async () =>
+      pendingSeasons.get(0)?.(
+        Response.json({
+          ...season,
+          episodeCount: 1,
+          episodes: [
+            { ...episode, id: 1, episodeNumber: 1, title: 'Stale episode' },
+          ],
+        })
+      )
+    );
+    expect(firstSeasonSignal?.aborted).toBe(true);
+    expect(screen.queryByRole('link', { name: '1. Stale episode' })).toBeNull();
+  });
+
+  it('shows selected-season empty and error states', async () => {
+    fetchMock.mockImplementation(async (input) => {
+      const path = new URL(String(input)).pathname;
+
+      if (path.includes('/seasons/')) {
+        return Response.json({ ...season, episodeCount: 0, episodes: [] });
+      }
+
+      return Response.json(series);
+    });
+    const view = setup('/series/1');
+    expect(
+      await screen.findByText('No episodes available for this season yet.')
+    ).toBeVisible();
+
+    view.unmount();
+    fetchMock.mockReset();
+    fetchMock.mockImplementation(async (input) =>
+      String(input).includes('/seasons/')
+        ? new Response('', { status: 500 })
+        : Response.json(series)
+    );
+    setup('/series/1');
+    expect(await screen.findByText(/Episodes unavailable\./)).toBeVisible();
+  });
+
+  it('loads only the selected season while rendering named seasons and Specials', async () => {
+    vi.mocked(apiUtils.getWatchProviders).mockResolvedValueOnce({
+      providers: [
+        {
+          id: 8,
+          name: 'Netflix',
+          category: 'streaming',
+          region: 'US',
+        },
+      ],
+    });
     useLibraryStore.getState().add(
       {
         mediaType: 'tv',
@@ -951,9 +1451,50 @@ describe('Series hierarchy', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'The Journey' })
     ).toBeInTheDocument();
-    expect(screen.getByText('Original Journey')).toBeInTheDocument();
+    expect(
+      screen.getByText('Original Journey').closest('.series-information')
+    ).not.toBeNull();
     expect(screen.getByText('No overview available.')).toBeInTheDocument();
-    expect(screen.getByText('Returning Series')).toBeInTheDocument();
+    const seriesTitle = screen.getByRole('heading', {
+      level: 1,
+      name: 'The Journey',
+    });
+    const firstAired = screen.getByText('2025');
+    const actions = screen.getByRole('button', {
+      name: 'Add to Watchlist The Journey',
+    });
+    expect(actions.closest('.personal-library-actions')).toHaveClass(
+      'personal-library-actions--expanded'
+    );
+    const overview = screen.getByRole('heading', { name: 'Overview' });
+    const information = screen.getByRole('heading', {
+      name: 'Series Information',
+    });
+    const providers = screen.getByRole('heading', { name: /Where to watch/i });
+    expect(seriesTitle.compareDocumentPosition(actions)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(firstAired.parentElement).toHaveClass('movie-details__data');
+    expect(screen.getByText('2 seasons')).toBeInTheDocument();
+    expect(screen.getByText('12 episodes')).toBeInTheDocument();
+    expect(firstAired.compareDocumentPosition(actions)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(firstAired.compareDocumentPosition(overview)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(actions.compareDocumentPosition(overview)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(overview.compareDocumentPosition(information)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(information.compareDocumentPosition(providers)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(
+      screen.getByText('Returning Series').closest('.series-information')
+    ).not.toBeNull();
     expect(screen.getByText('Network')).toBeInTheDocument();
     expect(screen.getByText('US')).toBeInTheDocument();
     expect(
@@ -969,39 +1510,71 @@ describe('Series hierarchy', () => {
     expect(
       screen.getByLabelText('TMDB rating: 8.5 out of 10 from 200 votes')
     ).toBeInTheDocument();
+    expect(screen.queryByText('200 votes')).toBeNull();
+    expect(document.querySelector('.series-rating')).toBeNull();
     expect(screen.getByRole('link', { name: 'Creator' })).toHaveAttribute(
       'href',
       '/person/7'
     );
-    expect(screen.getByRole('link', { name: 'View episodes' })).toHaveAttribute(
-      'href',
-      '/series/1/seasons/0'
-    );
-    await userEvent.click(screen.getByRole('tab', { name: 'Season 5' }));
     expect(
-      screen.getByRole('heading', { name: 'Season 5: Book Five' })
-    ).toBeVisible();
-    expect(screen.getByRole('link', { name: 'View episodes' })).toHaveAttribute(
-      'href',
-      '/series/1/seasons/5'
-    );
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+      screen.getByRole('link', { name: 'View season details' })
+    ).toHaveAttribute('href', '/series/1/seasons/0');
+    await userEvent.click(screen.getByRole('tab', { name: 'Season 5' }));
+    expect(screen.getByRole('heading', { name: 'Season 5' })).toBeVisible();
+    expect(
+      screen.getByRole('link', { name: 'View season details' })
+    ).toHaveAttribute('href', '/series/1/seasons/5');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(document.title).toBe('The Journey | Movie Explorer');
+  });
+
+  it('keeps zero counts highlighted and Last aired in Series Information', async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({
+        ...series,
+        originalTitle: series.title,
+        seasonCount: 0,
+        episodeCount: 0,
+        lastAirDate: '2026-02-03',
+      })
+    );
+
+    setup('/series/1');
+
+    await screen.findByRole('heading', { level: 1, name: series.title });
+    const seasons = screen.getByText('0 seasons');
+    const episodes = screen.getByText('0 episodes');
+    const informationSection = screen
+      .getByRole('heading', { name: 'Series Information' })
+      .closest('.series-information');
+
+    expect(seasons.parentElement).toHaveClass('movie-details__data');
+    expect(episodes.parentElement).toBe(seasons.parentElement);
+    expect(screen.getAllByText('0 seasons')).toHaveLength(1);
+    expect(screen.getAllByText('0 episodes')).toHaveLength(1);
+    expect(informationSection).toHaveTextContent('2026-02-03');
+    expect(informationSection).toHaveTextContent('Returning Series');
+    expect(informationSection).not.toHaveTextContent('0 seasons');
+    expect(informationSection).not.toHaveTextContent('0 episodes');
+    expect(
+      screen.queryByText(series.title, { selector: '.series-original-title' })
+    ).toBeNull();
   });
 
   it('navigates series → Specials → episode and uses actual sparse neighbors with no redundant season fetch', async () => {
     const user = userEvent.setup();
     setup('/series/1');
     await user.click(
-      await screen.findByRole('link', { name: 'View episodes' })
+      await screen.findByRole('link', { name: 'View season details' })
     );
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Special stories' })
     ).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Season' })).toHaveValue('0');
     expect(
-      screen.getByText('No season overview available.')
-    ).toBeInTheDocument();
+      screen.getByRole('button', { name: 'Specials: Special stories' })
+    ).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Overview' })).toBeVisible();
+    expect(screen.getByText('No season overview available.')).toBeVisible();
     await user.click(screen.getByRole('link', { name: '3. Arrival' }));
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Arrival' })
@@ -1009,6 +1582,30 @@ describe('Series hierarchy', () => {
     expect(screen.getByRole('link', { name: 'The Journey' })).toHaveAttribute(
       'href',
       '/series/1'
+    );
+    expect(document.querySelector('.details-ratings')).toBeNull();
+    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    const episodeTitle = screen.getByRole('heading', {
+      level: 1,
+      name: 'Arrival',
+    });
+    const episodeDetails = screen.getByLabelText('Episode details');
+    const overview = screen.getByRole('heading', { name: 'Overview' });
+
+    expect(episodeTitle.compareDocumentPosition(breadcrumb)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(breadcrumb.compareDocumentPosition(overview)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(episodeDetails).toHaveTextContent('2026-01-02 · 24 min');
+
+    expect(
+      within(breadcrumb).getByRole('link', { name: 'Specials' })
+    ).toHaveAttribute('href', '/series/1/seasons/0');
+    expect(within(breadcrumb).getByText('Episode 3')).toHaveAttribute(
+      'aria-current',
+      'page'
     );
     expect(
       screen.getByRole('link', { name: 'Previous: 1. Beginning' })
@@ -1020,6 +1617,9 @@ describe('Series hierarchy', () => {
       'href',
       '/person/12'
     );
+    expect(screen.getByText('Showing 1 of 1 guest stars')).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Guest stars' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Writing' })).toBeVisible();
     expect(screen.getByText(/Writer, Story/)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(3);
 
@@ -1036,7 +1636,7 @@ describe('Series hierarchy', () => {
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
-  it('loads episode URLs directly with one concurrent season request', async () => {
+  it('loads direct Episode URLs with their Series breadcrumb and season context', async () => {
     setup('/series/1/seasons/0/episodes/3');
     expect(
       await screen.findByRole('heading', { name: 'Arrival', level: 1 })
@@ -1044,12 +1644,14 @@ describe('Series hierarchy', () => {
     expect(
       await screen.findByRole('link', { name: 'Next: 8. Departure' })
     ).toBeInTheDocument();
-    expect(screen.getByText('2026-01-02')).toBeInTheDocument();
-    expect(screen.getByText('24 min')).toBeInTheDocument();
+    expect(screen.getByLabelText('Episode details')).toHaveTextContent(
+      '2026-01-02 · 24 min'
+    );
+    expect(screen.queryByText('0 votes')).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/^TMDB rating:/)).not.toBeInTheDocument();
     expect(screen.queryByText('0.0')).not.toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(screen.getByRole('link', { name: 'Series 1' })).toHaveAttribute(
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(screen.getByRole('link', { name: 'The Journey' })).toHaveAttribute(
       'href',
       '/series/1'
     );
@@ -1351,6 +1953,69 @@ describe('Season and Episode shared hero images', () => {
 });
 
 describe('Series details polish edge cases', () => {
+  it('opens the series poster first and navigates the available poster collection', async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({
+        ...series,
+        posterUrl: '/series-poster.jpg',
+        posterSrcSet: '/series-large.jpg 2x, /series-original.jpg 3x',
+        images: {
+          posters: [
+            {
+              thumbnailUrl: '/series-poster.jpg',
+              fullUrl: '/series-original.jpg',
+            },
+            {
+              thumbnailUrl: '/alternate-poster.jpg',
+              fullUrl: '/alternate-original.jpg',
+            },
+          ],
+          backdrops: [
+            {
+              thumbnailUrl: '/backdrop.jpg',
+              fullUrl: '/backdrop-original.jpg',
+            },
+          ],
+          sections: {
+            posters: { status: 'available' },
+            backdrops: { status: 'available' },
+          },
+        },
+      })
+    );
+    setup('/series/1');
+
+    const poster = await screen.findByRole('img', {
+      name: `Poster for ${series.title}`,
+    });
+    expect(poster).toHaveAttribute('src', '/series-poster.jpg');
+    fireEvent.load(poster);
+    const trigger = screen.getByRole('button', {
+      name: `Open poster gallery for ${series.title}`,
+    });
+    await userEvent.click(trigger);
+
+    const dialog = screen.getByRole('dialog', {
+      name: `${series.title} photo viewer`,
+    });
+    expect(dialog.querySelector('img')).toHaveAttribute(
+      'src',
+      '/series-original.jpg'
+    );
+    expect(screen.getByText('1 / 2')).toBeInTheDocument();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(dialog.querySelector('img')).toHaveAttribute(
+      'src',
+      '/alternate-original.jpg'
+    );
+    expect(dialog.querySelector('img')).not.toHaveAttribute(
+      'src',
+      '/backdrop-original.jpg'
+    );
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
   it('keeps the series hero dark when a backdrop image is available', async () => {
     fetchMock.mockResolvedValue(
       Response.json({
@@ -1397,7 +2062,7 @@ describe('Series details polish edge cases', () => {
           screen.queryByRole('button', { name: 'Next season' })
         ).toBeNull();
         expect(
-          screen.getByRole('link', { name: 'View episodes' })
+          screen.getByRole('link', { name: 'View season details' })
         ).toHaveAttribute(
           'href',
           `/series/1/seasons/${seasons[0].seasonNumber}`
@@ -1412,7 +2077,7 @@ describe('Series details polish edge cases', () => {
         expect(panel).not.toHaveTextContent('undefined');
         expect(panel).not.toHaveTextContent('null');
       }
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledTimes(seasons.length ? 2 : 1);
     }
   );
 
@@ -1455,6 +2120,6 @@ describe('Series details polish edge cases', () => {
     await user.click(networkSummary);
     expect(networkSummary.closest('details')).toHaveAttribute('open');
     expect(screen.getByText('Network 11')).toBeVisible();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

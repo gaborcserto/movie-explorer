@@ -1,7 +1,12 @@
 import { useCallback } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 
-import { getEpisode, getSeason, getEpisodeCredits } from '../../util/apiUtils';
+import {
+  getEpisode,
+  getSeason,
+  getEpisodeCredits,
+  getSeries,
+} from '../../util/apiUtils';
 import { seriesPath } from '../../util/seriesRoutes';
 import { record } from '../../util/partialValidation';
 import { seasonDetails, seriesDetails } from '../../util/seriesValidation';
@@ -14,12 +19,11 @@ import '../../components/details/media/media.scss';
 import {
   SeriesLayout,
   SeriesHero,
-  SeriesFacts,
-  SeriesPeople,
+  EpisodeCrew,
   SeriesRequestState,
   SeriesBreadcrumbs,
-  SeasonName,
 } from './seriesPresentation';
+import seasonName from './seriesNames';
 
 function EpisodeDetails({
   idText,
@@ -36,7 +40,7 @@ function EpisodeDetails({
   const valid = [id, seasonNumber, episodeNumber].every(Number.isSafeInteger);
   const location = useLocation();
   const routeState: unknown = location.state;
-  const series =
+  const initialSeries =
     record(routeState) && seriesDetails(routeState.series, id)
       ? routeState.series
       : undefined;
@@ -53,10 +57,16 @@ function EpisodeDetails({
     (signal: AbortSignal) => getSeason(id, seasonNumber, signal),
     [id, seasonNumber]
   );
+  const loadSeries = useCallback(
+    (signal: AbortSignal) => getSeries(id, signal),
+    [id]
+  );
   const resource = useSeriesResource(load, valid);
   const parent = useSeriesResource(loadSeason, valid, initialSeason);
+  const seriesResource = useSeriesResource(loadSeries, valid, initialSeries);
   const episode = resource.data;
   const season = parent.data;
+  const series = seriesResource.data;
   const index =
     season?.episodes.findIndex(
       (item) => item.episodeNumber === episodeNumber
@@ -113,47 +123,56 @@ function EpisodeDetails({
   return (
     <SeriesLayout
       title={episode?.title ?? 'Episode details'}
-      navigation={
-        valid && (
-          <SeriesBreadcrumbs>
-            <Link to={seriesPath(idText)}>
-              {series?.title ?? `Series ${id}`}
-            </Link>
-            <Link to={seriesPath(idText, seasonText)} state={{ series }}>
-              <SeasonName number={seasonNumber} title={season?.title} />
-            </Link>
-          </SeriesBreadcrumbs>
-        )
-      }
       hero={
         episode ? (
           <SeriesHero
             title={episode.title}
             rating={episode.rating}
             votes={episode.voteCount}
+            showVoteCount={false}
             image={episode.stillUrl}
             srcSet={episode.stillSrcSet}
+            className="episode-hero"
             still
           >
-            <p>
-              <SeasonName number={seasonNumber} /> · Episode {episodeNumber}
-            </p>
-            <SeriesFacts
-              hero
-              facts={[
-                ['Air date', episode.airDate],
-                [
-                  'Runtime',
-                  episode.runtimeMinutes === null
-                    ? null
-                    : `${episode.runtimeMinutes} min`,
-                ],
-              ]}
-            />
+            <div className="series-detail__context">
+              {valid && (
+                <SeriesBreadcrumbs>
+                  <li>
+                    <Link to={seriesPath(idText)}>
+                      {series?.title ?? `Series ${id}`}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to={seriesPath(idText, seasonText)}
+                      state={{ series }}
+                    >
+                      {seasonName(seasonNumber)}
+                    </Link>
+                  </li>
+                  <li>
+                    <span aria-current="page">Episode {episodeNumber}</span>
+                  </li>
+                </SeriesBreadcrumbs>
+              )}
+              {(episode.airDate || episode.runtimeMinutes !== null) && (
+                <p
+                  className="series-detail__metadata"
+                  aria-label="Episode details"
+                >
+                  {episode.airDate}
+                  {episode.airDate && episode.runtimeMinutes !== null && ' · '}
+                  {episode.runtimeMinutes !== null &&
+                    `${episode.runtimeMinutes} min`}
+                </p>
+              )}
+            </div>
             <section className="movie-details__section">
               <h2 className="movie-details__section-title">Overview</h2>
               <p className="movie-details__overview">
-                {episode.description ?? 'No episode overview available.'}
+                {episode.description?.trim() ||
+                  'No episode overview available.'}
               </p>
             </section>
           </SeriesHero>
@@ -167,18 +186,28 @@ function EpisodeDetails({
           <nav aria-label="Episode navigation" className="series-neighbors">
             {previous && (
               <Link
+                className="series-neighbors__previous"
                 to={seriesPath(id, seasonNumber, previous.episodeNumber)}
                 state={{ season, series }}
+                aria-label={`Previous: ${previous.episodeNumber}. ${previous.title}`}
               >
-                Previous: {previous.episodeNumber}. {previous.title}
+                <span>Previous episode</span>
+                <strong>
+                  {previous.episodeNumber}. {previous.title}
+                </strong>
               </Link>
             )}
             {next && (
               <Link
+                className="series-neighbors__next"
                 to={seriesPath(id, seasonNumber, next.episodeNumber)}
                 state={{ season, series }}
+                aria-label={`Next: ${next.episodeNumber}. ${next.title}`}
               >
-                Next: {next.episodeNumber}. {next.title}
+                <span>Next episode</span>
+                <strong>
+                  {next.episodeNumber}. {next.title}
+                </strong>
               </Link>
             )}
           </nav>
@@ -215,9 +244,12 @@ function EpisodeDetails({
                   <section key={category}>
                     <h3>{labels[category]}</h3>
                     {category === 'crew' ? (
-                      <SeriesPeople people={episode.credits.crew} />
+                      <EpisodeCrew people={episode.credits.crew} />
                     ) : (
                       <CastPreview
+                        memberLabel={
+                          category === 'guestStars' ? 'guest star' : 'cast'
+                        }
                         members={episode.credits[category].map(
                           (person, position) => ({
                             ...person,

@@ -1,11 +1,14 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { SeriesDetails } from '@movie-explorer/contracts';
 
 import MovieImage from '../../components/utility/customImage';
 import { getPosterDisplaySrcSet } from '../../util/imageSizing';
 import { seriesPath } from '../../util/seriesRoutes';
-import { SeasonName, SeriesFacts } from './seriesPresentation';
+import { getSeason } from '../../util/apiUtils';
+import { SeasonName } from './seriesPresentation';
+import EpisodeList from './episodeList';
+import useSeriesResource from './useSeriesResource';
 
 function measureScroll(container: HTMLDivElement) {
   const maxScroll = container.scrollWidth - container.clientWidth;
@@ -27,6 +30,18 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
     atEnd: true,
   });
   const season = series.seasons[selected];
+  const seasonYear = season?.airDate?.match(/^\d{4}/)?.[0] ?? null;
+
+  const loadSeason = useCallback(
+    (signal: AbortSignal) =>
+      getSeason(series.id, season?.seasonNumber ?? 0, signal),
+    [series.id, season?.seasonNumber]
+  );
+  const seasonResource = useSeriesResource(loadSeason, Boolean(season));
+  const selectedSeason =
+    seasonResource.data?.seasonNumber === season?.seasonNumber
+      ? seasonResource.data
+      : season;
 
   useEffect(() => {
     const container = tabs.current;
@@ -181,26 +196,86 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
           className="series-season-poster"
         />
         <div>
-          <h3>
-            <SeasonName number={season.seasonNumber} title={season.title} />
-          </h3>
-          <SeriesFacts
-            facts={[
-              ['Air date', season.airDate],
-              ['Episodes', season.episodeCount],
-            ]}
-          />
-          {season.description && (
-            <p className="season-preview__overview">{season.description}</p>
+          <div className="season-preview__header">
+            <h3>
+              <SeasonName number={season.seasonNumber} />
+            </h3>
+            {(seasonYear || season.episodeCount !== null) && (
+              <p className="season-preview__facts">
+                {seasonYear && (
+                  <span className="season-preview__year">{seasonYear}</span>
+                )}
+                {seasonYear && season.episodeCount !== null && (
+                  <span
+                    className="season-preview__separator"
+                    aria-hidden="true"
+                  >
+                    ·
+                  </span>
+                )}
+                {season.episodeCount !== null && (
+                  <span className="season-preview__episode-count">
+                    {season.episodeCount}{' '}
+                    {season.episodeCount === 1 ? 'Episode' : 'Episodes'}
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
+          {selectedSeason?.description?.trim() && (
+            <p className="season-preview__overview">
+              {selectedSeason.description}
+            </p>
           )}
-          <Link
-            className="btn btn--outline btn--action"
-            to={seriesPath(series.id, season.seasonNumber)}
-            state={{ series }}
-          >
-            View episodes
-          </Link>
+          <div className="season-preview__actions">
+            <Link
+              className="btn btn--outline btn--action"
+              to={seriesPath(series.id, season.seasonNumber)}
+              state={{
+                series,
+                season:
+                  seasonResource.data?.seasonNumber === season.seasonNumber
+                    ? seasonResource.data
+                    : undefined,
+              }}
+            >
+              View season details
+            </Link>
+          </div>
         </div>
+        <section
+          className="season-preview__episodes"
+          aria-labelledby={`${id}-episodes-heading`}
+        >
+          <h4 id={`${id}-episodes-heading`}>Episodes</h4>
+          {seasonResource.pending && <p role="status">Loading episodes…</p>}
+          {seasonResource.error !== undefined && (
+            <p role="status">
+              Episodes unavailable.{' '}
+              <button
+                type="button"
+                onClick={seasonResource.retry}
+                disabled={seasonResource.pending}
+              >
+                Retry
+              </button>
+            </p>
+          )}
+          {seasonResource.data?.seasonNumber === season.seasonNumber &&
+            !seasonResource.data.episodes.length && (
+              <p>No episodes available for this season yet.</p>
+            )}
+          {seasonResource.data?.seasonNumber === season.seasonNumber &&
+            seasonResource.data.episodes.length > 0 && (
+              <EpisodeList
+                seriesId={series.id}
+                seasonNumber={season.seasonNumber}
+                episodes={seasonResource.data.episodes}
+                season={seasonResource.data}
+                series={series}
+              />
+            )}
+        </section>
       </div>
     </>
   );

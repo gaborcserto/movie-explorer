@@ -183,6 +183,16 @@ describe('<Details />', () => {
   it('displays movie data once it is fetched', async () => {
     useParams.mockReturnValue({ movieId: '1234' });
     getMovie.mockResolvedValueOnce(mockData);
+    getWatchProviders.mockResolvedValueOnce({
+      providers: [
+        {
+          id: 8,
+          name: 'Netflix',
+          category: 'streaming',
+          region: 'US',
+        },
+      ],
+    });
 
     render(
       <MemoryRouter>
@@ -198,6 +208,34 @@ describe('<Details />', () => {
       expect(screen.getByText('120 min')).toBeInTheDocument();
     });
     expect(screen.getByRole('heading', { name: 'Overview' })).toBeVisible();
+    const movieTitle = screen.getByRole('heading', { name: mockData.title });
+    const actions = screen.getByRole('button', {
+      name: 'Add to Watchlist Sample Movie',
+    });
+    const firstFact = screen.getByText('2021');
+    const overview = screen.getByRole('heading', { name: 'Overview' });
+    const information = screen.getByRole('heading', {
+      name: 'Movie information',
+    });
+    const providers = screen.getByRole('heading', { name: /Where to watch/i });
+    expect(movieTitle.compareDocumentPosition(actions)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(movieTitle.compareDocumentPosition(firstFact)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(firstFact.compareDocumentPosition(actions)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(firstFact.compareDocumentPosition(overview)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(overview.compareDocumentPosition(information)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(information.compareDocumentPosition(providers)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
     expect(screen.queryByText('Director Name')).toBeNull();
     expect(screen.getByRole('heading', { name: 'Actor One' })).toBeVisible();
     expect(screen.queryByRole('heading', { name: 'Credits' })).toBeNull();
@@ -219,6 +257,38 @@ describe('<Details />', () => {
     await waitFor(() =>
       expect(document.title).toBe('Sample Movie | Movie Explorer')
     );
+  });
+
+  it('keeps a long title readable and omits an empty genre row', async () => {
+    const description =
+      'A complete overview with enough text to remain uncut. '.repeat(12);
+    useParams.mockReturnValue({ movieId: '1234' });
+    getMovie.mockResolvedValueOnce({
+      ...mockData,
+      title: 'A Movie Title That Needs To Wrap Across Several Lines',
+      genres: [],
+      description,
+    });
+
+    render(
+      <MemoryRouter>
+        <Details />
+      </MemoryRouter>
+    );
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'A Movie Title That Needs To Wrap Across Several Lines',
+      })
+    ).toBeInTheDocument();
+    expect(document.querySelector('.movie-details__genre')).toBeNull();
+    expect(
+      document.querySelector('.movie-details__overview')?.textContent
+    ).toBe(description);
+    expect(
+      screen.queryByRole('button', { name: /^(Show more|Show less)$/i })
+    ).toBeNull();
   });
 
   it('starts providers independently and replaces only their skeleton when ready', async () => {
@@ -438,6 +508,12 @@ describe('<Details />', () => {
     expect(screen.queryByLabelText(/rating/i)).toBeNull();
   });
 
+  it('omits a whitespace-only Movie overview', () => {
+    render(<DetailsContent movieData={{ ...mockData, description: '   ' }} />);
+
+    expect(screen.queryByRole('heading', { name: 'Overview' })).toBeNull();
+  });
+
   it('uses thumbnails in the photo grid and full images in lightbox navigation', async () => {
     const user = userEvent.setup();
     render(
@@ -552,7 +628,9 @@ describe('<Details />', () => {
     const poster = screen.getByRole('img', { name: 'Sample Movie' });
     expect(poster).toHaveAttribute('srcset', '/poster-large.jpg 2x');
     fireEvent.load(poster);
-    const trigger = screen.getByRole('button', { name: 'Sample Movie' });
+    const trigger = screen.getByRole('button', {
+      name: 'Open poster gallery for Sample Movie',
+    });
     trigger.focus();
     await user.keyboard('{Enter}');
 
@@ -567,6 +645,72 @@ describe('<Details />', () => {
       screen.getByRole('button', { name: 'Close photo viewer' })
     );
     await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it('opens the current poster first, deduplicates posters, and navigates by keyboard', async () => {
+    const user = userEvent.setup();
+    render(
+      <DetailsContent
+        movieData={{
+          ...mockData,
+          posterSrcSet: '/poster-large.jpg 2x, /poster-original.jpg 3x',
+          posters: [
+            {
+              thumbnailUrl: '/poster-large.jpg',
+              fullUrl: '/poster-original.jpg',
+            },
+            {
+              thumbnailUrl: '/other.jpg',
+              fullUrl: '/other-original.jpg',
+            },
+            {
+              thumbnailUrl: '/other-duplicate.jpg',
+              fullUrl: '/other-original.jpg',
+            },
+          ],
+        }}
+      />
+    );
+    const trigger = screen.getByRole('button', {
+      name: 'Open poster gallery for Sample Movie',
+    });
+    fireEvent.load(screen.getByRole('img', { name: 'Sample Movie' }));
+    await user.click(trigger);
+
+    const dialog = screen.getByRole('dialog', {
+      name: 'Sample Movie photo viewer',
+    });
+    expect(dialog.querySelector('img')).toHaveAttribute(
+      'src',
+      '/poster-original.jpg'
+    );
+    expect(screen.getByText('1 / 2')).toBeInTheDocument();
+    await user.keyboard('{ArrowRight}');
+    expect(dialog.querySelector('img')).toHaveAttribute(
+      'src',
+      '/other-original.jpg'
+    );
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it('opens a single current poster and keeps a missing poster non-interactive', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<DetailsContent movieData={mockData} />);
+    const trigger = screen.getByRole('button', {
+      name: 'Open poster gallery for Sample Movie',
+    });
+    fireEvent.load(screen.getByRole('img', { name: 'Sample Movie' }));
+    await user.click(trigger);
+    expect(screen.getByText('1 / 1')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+
+    rerender(<DetailsContent movieData={{ ...mockData, posterUrl: '' }} />);
+    expect(
+      screen.queryByRole('button', {
+        name: 'Open poster gallery for Sample Movie',
+      })
+    ).toBeNull();
   });
 
   it('handles errors and shows an error message when fetching fails', async () => {

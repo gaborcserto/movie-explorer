@@ -14,7 +14,13 @@ function declarations(selector: string, within?: postcss.AtRule) {
     if (rule.parent !== root) {
       return;
     }
-    if (!rule.selectors.includes(selector)) {
+    if (
+      !rule.selectors.some(
+        (current) =>
+          current.replace(/\s+/g, ' ').trim() ===
+          selector.replace(/\s+/g, ' ').trim()
+      )
+    ) {
       return;
     }
     rule.nodes?.forEach((node) => {
@@ -96,9 +102,7 @@ test('matches Movie Card hover scale, transition, elevation, and focus stacking'
       node.params === '(hover: hover) and (pointer: fine)'
   );
   expect(hover).toBeDefined();
-  expect(
-    declarations('.filmography a.filmography__row:hover', hover)
-  ).toMatchObject({
+  expect(declarations('.filmography__row:hover', hover)).toMatchObject({
     transform: 'scale(1.06)',
     filter: 'saturate(1.2)',
     'z-index': '3',
@@ -119,6 +123,27 @@ test('matches Movie Card hover scale, transition, elevation, and focus stacking'
   });
 });
 
+test('hides the preceding separator while a Filmography row is hovered or focused', () => {
+  expect(declarations('.filmography__row')['border-bottom']).toBe(
+    '1px solid #424242'
+  );
+  expect(declarations('.filmography__row:hover')).toMatchObject({
+    'border-bottom-color': 'transparent',
+  });
+  expect(declarations('.filmography__row:focus-visible')).toMatchObject({
+    'border-bottom-color': 'transparent',
+    outline: '2px solid #f65261',
+  });
+  expect(declarations('.filmography__row:focus-within')).toMatchObject({
+    'border-bottom-color': 'transparent',
+  });
+  expect(
+    declarations(
+      '.filmography__list > li:has(+ li > .filmography__row:is(:hover, :focus-visible, :focus-within)) > .filmography__row'
+    )
+  ).toEqual({ 'border-bottom-color': 'transparent' });
+});
+
 test('removes the row hover scale and transitions for reduced motion', () => {
   const reducedMotion = stylesheet.nodes.find(
     (node): node is postcss.AtRule =>
@@ -127,19 +152,9 @@ test('removes the row hover scale and transitions for reduced motion', () => {
       node.params === '(prefers-reduced-motion: reduce)'
   );
   expect(reducedMotion).toBeDefined();
-  expect(reducedMotion?.nodes).toContainEqual(
-    expect.objectContaining({
-      type: 'rule',
-      selectors: expect.arrayContaining([
-        '.filmography__row',
-        '.filmography__poster',
-        '.filmography__title',
-      ]),
-      nodes: expect.arrayContaining([
-        expect.objectContaining({ prop: 'transition', value: 'none' }),
-      ]),
-    })
-  );
+  expect(declarations('.filmography__row', reducedMotion)).toMatchObject({
+    transition: 'none',
+  });
   const reducedHover = stylesheet.nodes.find(
     (node): node is postcss.AtRule =>
       node.type === 'atrule' &&
@@ -147,9 +162,9 @@ test('removes the row hover scale and transitions for reduced motion', () => {
       node.params.includes('(prefers-reduced-motion: reduce)') &&
       node.params.includes('(hover: hover)')
   );
-  expect(
-    declarations('.filmography a.filmography__row:hover', reducedHover)
-  ).toMatchObject({ transform: 'none' });
+  expect(declarations('.filmography__row:hover', reducedHover)).toMatchObject({
+    transform: 'none',
+  });
 });
 
 test('keeps filmography titles white and unadorned while styling metadata as secondary text', () => {

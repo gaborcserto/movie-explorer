@@ -92,6 +92,16 @@ test('direct person navigation loads the complete contract through the API witho
     .closest('.person-hero');
   expect(hero).not.toBeNull();
   expect(hero).toHaveClass('header', 'page-hero', 'header--movie-details');
+  expect(hero?.querySelector('.movie-details.container')).toHaveClass(
+    'person-hero__container'
+  );
+  expect(document.querySelector('.person-profile')).toHaveClass(
+    'movie-details__container'
+  );
+  expect(
+    screen.getByRole('heading', { level: 1, name: person.name })
+  ).toHaveClass('movie-details__title');
+  expect(document.querySelector('.person-profile__metadata')).toBeVisible();
   expect(hero?.querySelector('.person-hero__posters')).toBeNull();
   expect(screen.getByText('Budapest, Hungary')).toBeVisible();
   expect(screen.getByText('1970-01-01')).toHaveAttribute(
@@ -107,6 +117,9 @@ test('direct person navigation loads the complete contract through the API witho
     person.biography
   );
   expect(screen.getByRole('main')).toHaveFocus();
+  expect(screen.getAllByRole('main')).toHaveLength(1);
+  expect(screen.queryByRole('button', { name: /library/i })).toBeNull();
+  expect(screen.queryByText(/TMDB|IMDb/)).toBeNull();
   expect(screen.getByRole('main')).toContainElement(
     screen.getByRole('heading', { name: person.name })
   );

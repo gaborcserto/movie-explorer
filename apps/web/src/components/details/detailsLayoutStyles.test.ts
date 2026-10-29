@@ -49,6 +49,9 @@ test('retains the Movie hero dimensions, grid gap and title typography for every
     'font-weight': '300',
     'line-height': '1.25',
   });
+  expect(declarations('.movie-details__section')).not.toHaveProperty(
+    'max-width'
+  );
 });
 
 test('aligns provider categories with Movie metadata tracks and keeps logos compact', () => {
@@ -62,6 +65,23 @@ test('aligns provider categories with Movie metadata tracks and keeps logos comp
     'flex-wrap': 'wrap',
     gap: '8px',
   });
+});
+
+test('places detail facts and Library actions in a centered, wrapping shared row', () => {
+  expect(declarations('.movie-details__facts-actions')).toMatchObject({
+    'align-items': 'center',
+    display: 'flex',
+    'flex-wrap': 'wrap',
+    gap: '12px 20px',
+    'justify-content': 'space-between',
+  });
+  expect(
+    declarations('.personal-library-actions + .movie-details__data')
+  ).toEqual({});
+  expect(declarations('.personal-library-actions--expanded')).toHaveProperty(
+    'margin-left',
+    'auto'
+  );
 });
 
 test('removes decorative borders above credits, media and provider sections', () => {

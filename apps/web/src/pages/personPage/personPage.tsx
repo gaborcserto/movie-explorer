@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import type { PersonDetails } from '@movie-explorer/contracts';
 
@@ -7,6 +8,10 @@ import {
   DetailError,
 } from '../../components/details/recovery';
 import HeroImage from '../../components/heroImage';
+import DetailsMetadata from '../../components/details/metadata/detailsMetadata';
+import DetailsPageLayout, {
+  DetailsHeroFrame,
+} from '../../components/details/detailsPageLayout';
 import PhotoPreview from '../../components/details/media';
 import Skeleton, { SkeletonRegion } from '../../components/skeleton/skeleton';
 import { ResultsSkeleton } from '../../components/skeleton/contentSkeletons';
@@ -22,14 +27,24 @@ import {
 import './personPage.scss';
 import Filmography from './filmography';
 import getPersonAge from './personAge';
-import useDetailPage from '../../components/details/hooks';
 import parseDetailId from '../../util/detailId';
 import { replaceFilmographyGroup } from './filmographyRules';
-import '../../components/details/details.scss';
 
 type PersonState =
   | { status: 'loading' | 'not-found' | 'error' }
   | { status: 'success'; person: PersonDetails };
+
+function isVisibleMetadataValue(value: ReactNode | undefined) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value);
+  }
+
+  if (typeof value === 'string') {
+    return value.trim().length > 0;
+  }
+
+  return value !== undefined;
+}
 
 function PersonProfile({ person }: { person: PersonDetails }) {
   const [expanded, setExpanded] = useState(false);
@@ -40,48 +55,51 @@ function PersonProfile({ person }: { person: PersonDetails }) {
   const excerpt = biography.slice(0, 800).replace(/\s+\S*$/, '');
 
   const age = getPersonAge(person.birthday, person.deathDate);
-  const metadata: [string, string | number | undefined][] = [
+  const metadata: [string, ReactNode | undefined][] = [
     ['Known for', person.knownForDepartment],
-    ['Birthday', person.birthday],
+    [
+      'Birthday',
+      person.birthday?.trim() ? (
+        <time dateTime={person.birthday}>{person.birthday}</time>
+      ) : undefined,
+    ],
     ['Age', age],
-    ['Death date', person.deathDate],
+    [
+      'Death date',
+      person.deathDate?.trim() ? (
+        <time dateTime={person.deathDate}>{person.deathDate}</time>
+      ) : undefined,
+    ],
     ['Place of birth', person.placeOfBirth],
   ];
   const visibleMetadata = metadata.filter(([, value]) =>
-    typeof value === 'number' ? Number.isFinite(value) : value?.trim()
+    isVisibleMetadataValue(value)
   );
 
   return (
-    <div className="person-profile">
-      <HeroImage
-        src={person.profileUrl}
-        srcSet={person.profileSrcSet}
-        fullSrcSet={person.profileSrcSet}
-        sizes="(max-width: 767.98px) min(320px, calc(100vw - 52px)), 320px"
-        alt={`Portrait of ${person.name}`}
-        title={person.name}
-        photos={person.profilePhotos}
-        actionLabel={`Open portrait gallery for ${person.name}`}
-        className="person-profile__portrait"
-      />
+    <DetailsHeroFrame
+      className="person-profile"
+      title={person.name}
+      image={
+        <HeroImage
+          src={person.profileUrl}
+          srcSet={person.profileSrcSet}
+          fullSrcSet={person.profileSrcSet}
+          sizes="(max-width: 767.98px) min(320px, calc(100vw - 52px)), 320px"
+          alt={`Portrait of ${person.name}`}
+          title={person.name}
+          photos={person.profilePhotos}
+          actionLabel={`Open portrait gallery for ${person.name}`}
+          className="movie-details__image person-profile__portrait"
+        />
+      }
+    >
       <div className="person-profile__content">
-        <h1>{person.name}</h1>
         {visibleMetadata.length > 0 && (
-          <dl className="person-profile__metadata">
-            {visibleMetadata.map(([label, value]) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>
-                  {typeof value === 'string' &&
-                  (label === 'Birthday' || label === 'Death date') ? (
-                    <time dateTime={value}>{value}</time>
-                  ) : (
-                    value
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <DetailsMetadata
+            entries={visibleMetadata}
+            className="person-profile__metadata"
+          />
         )}
         <section aria-labelledby="biography-heading">
           <h2 id="biography-heading">Biography</h2>
@@ -103,7 +121,7 @@ function PersonProfile({ person }: { person: PersonDetails }) {
           )}
         </section>
       </div>
-    </div>
+    </DetailsHeroFrame>
   );
 }
 
@@ -111,7 +129,10 @@ function PersonProfileLoading() {
   return (
     <SkeletonRegion label="Loading person details">
       <div className="person-profile person-profile--loading">
-        <Skeleton className="person-profile__portrait" radius={10} />
+        <Skeleton
+          className="movie-details__image person-profile__portrait"
+          radius={10}
+        />
         <div className="person-profile__content">
           <Skeleton height={50} width="75%" />
           <div className="person-profile__metadata">
@@ -196,8 +217,6 @@ function PersonDetailsPage({ id }: { id: string }) {
           }[state.status];
   }
 
-  const mainRef = useDetailPage(pageTitle);
-
   const recoverFilmographyGroup = async (
     type: 'movie' | 'tv',
     signal: AbortSignal
@@ -252,111 +271,113 @@ function PersonDetailsPage({ id }: { id: string }) {
   };
 
   return (
-    <div className="detail-page main">
-      <main ref={mainRef} tabIndex={-1} aria-label={pageTitle}>
-        <div className="header page-hero header--movie-details person-hero detail-page__hero">
-          <div className="movie-details container person-hero__container">
-            {validId && state.status === 'loading' && <PersonProfileLoading />}
-            {state.status === 'success' && (
-              <PersonProfile person={state.person} />
+    <DetailsPageLayout
+      title={pageTitle}
+      className="detail-page main"
+      heroClassName="person-hero"
+      heroContainerClassName="person-hero__container"
+      hero={
+        <>
+          {validId && state.status === 'loading' && <PersonProfileLoading />}
+          {state.status === 'success' && (
+            <PersonProfile person={state.person} />
+          )}
+        </>
+      }
+    >
+      <div className="main person-page container">
+        {validId && state.status === 'loading' && (
+          <ResultsSkeleton
+            className="person-filmography-skeleton"
+            label="Loading filmography"
+          />
+        )}
+        {!validId || state.status === 'not-found' ? (
+          <DetailError
+            heading={title}
+            description={
+              validId
+                ? 'We could not find that person.'
+                : 'Please use a valid positive whole-number person ID.'
+            }
+          />
+        ) : (
+          <>
+            {state.status === 'error' && (
+              <DetailError
+                {...(presentApiError(requestError) ?? {
+                  heading: 'Something went wrong',
+                  description: 'Please try again.',
+                })}
+                pending={pending}
+                retry={() => {
+                  setPending(true);
+                  setAttempt((value) => value + 1);
+                }}
+              />
             )}
-          </div>
-        </div>
-        <div className="main person-page container">
-          {validId && state.status === 'loading' && (
-            <ResultsSkeleton
-              className="person-filmography-skeleton"
-              label="Loading filmography"
-            />
-          )}
-          {!validId || state.status === 'not-found' ? (
-            <DetailError
-              heading={title}
-              description={
-                validId
-                  ? 'We could not find that person.'
-                  : 'Please use a valid positive whole-number person ID.'
-              }
-            />
-          ) : (
-            <>
-              {state.status === 'error' && (
-                <DetailError
-                  {...(presentApiError(requestError) ?? {
-                    heading: 'Something went wrong',
-                    description: 'Please try again.',
-                  })}
-                  pending={pending}
-                  retry={() => {
-                    setPending(true);
-                    setAttempt((value) => value + 1);
-                  }}
-                />
+            {state.status === 'success' &&
+              Boolean(state.person.profilePhotos?.length) && (
+                <section
+                  className="details-section media-section"
+                  aria-labelledby="person-photos-heading"
+                >
+                  <div className="media-block">
+                    <h3 id="person-photos-heading">Photos</h3>
+                    <PhotoPreview
+                      photos={state.person.profilePhotos ?? []}
+                      title={state.person.name}
+                      portrait
+                      resetKey={state.person.id}
+                    />
+                  </div>
+                </section>
               )}
-              {state.status === 'success' &&
-                Boolean(state.person.profilePhotos?.length) && (
-                  <section
-                    className="details-section media-section"
-                    aria-labelledby="person-photos-heading"
-                  >
-                    <div className="media-block">
-                      <h3 id="person-photos-heading">Photos</h3>
-                      <PhotoPreview
-                        photos={state.person.profilePhotos ?? []}
-                        title={state.person.name}
-                        portrait
-                        resetKey={state.person.id}
-                      />
-                    </div>
-                  </section>
-                )}
-              {state.status === 'success' && (
-                <Filmography
-                  entries={
-                    state.person.combinedFilmography?.entries ??
-                    state.person.filmography
-                  }
-                  groups={state.person.combinedFilmography?.groups}
-                  unavailable={
-                    !state.person.combinedFilmography &&
-                    state.person.filmographyAvailability?.status ===
-                      'unavailable'
-                  }
-                  recovery={
-                    state.person.combinedFilmography ? (
-                      <>
-                        {(['movie', 'tv'] as const).map((type) => (
-                          <SectionRecovery
-                            key={type}
-                            label={
-                              type === 'movie'
-                                ? 'Movie credits'
-                                : 'Series credits'
-                            }
-                            availability={
-                              state.person.combinedFilmography?.groups[type]
-                            }
-                            recover={(signal) =>
-                              recoverFilmographyGroup(type, signal)
-                            }
-                          />
-                        ))}
-                      </>
-                    ) : (
-                      <SectionRecovery
-                        label="Filmography"
-                        availability={state.person.filmographyAvailability}
-                        recover={recoverFilmography}
-                      />
-                    )
-                  }
-                />
-              )}
-            </>
-          )}
-        </div>
-      </main>
-    </div>
+            {state.status === 'success' && (
+              <Filmography
+                entries={
+                  state.person.combinedFilmography?.entries ??
+                  state.person.filmography
+                }
+                groups={state.person.combinedFilmography?.groups}
+                unavailable={
+                  !state.person.combinedFilmography &&
+                  state.person.filmographyAvailability?.status === 'unavailable'
+                }
+                recovery={
+                  state.person.combinedFilmography ? (
+                    <>
+                      {(['movie', 'tv'] as const).map((type) => (
+                        <SectionRecovery
+                          key={type}
+                          label={
+                            type === 'movie'
+                              ? 'Movie credits'
+                              : 'Series credits'
+                          }
+                          availability={
+                            state.person.combinedFilmography?.groups[type]
+                          }
+                          recover={(signal) =>
+                            recoverFilmographyGroup(type, signal)
+                          }
+                        />
+                      ))}
+                    </>
+                  ) : (
+                    <SectionRecovery
+                      label="Filmography"
+                      availability={state.person.filmographyAvailability}
+                      recover={recoverFilmography}
+                    />
+                  )
+                }
+              />
+            )}
+          </>
+        )}
+      </div>
+    </DetailsPageLayout>
   );
 }
 

@@ -82,7 +82,11 @@ function setup(kind: 'movie' | 'series') {
       {kind === 'movie' ? (
         <DetailsLowerContent movieData={movie} />
       ) : (
-        <SeriesSections series={series} />
+        <SeriesSections
+          series={series}
+          recoverImages={async () => undefined}
+          recoverVideos={async () => undefined}
+        />
       )}
     </MemoryRouter>
   );
@@ -190,6 +194,8 @@ test.each([0, 2])(
     render(
       <MemoryRouter>
         <SeriesSections
+          recoverImages={async () => undefined}
+          recoverVideos={async () => undefined}
           series={{
             ...series,
             credits: {
