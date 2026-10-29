@@ -4,6 +4,9 @@ import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import type {
   MovieDetails,
   MovieListResponse,
+  PersonListResponse,
+  SearchResponse,
+  StreamingProviderInfo,
 } from '@movie-explorer/contracts';
 
 import App from './App';
@@ -12,6 +15,9 @@ import {
   getMovies as originalGetMovies,
   getWatchProviders as originalGetWatchProviders,
   getRatings as originalGetRatings,
+  getDiscoverySection as originalGetDiscoverySection,
+  getStreamingProviders as originalGetStreamingProviders,
+  getPeople as originalGetPeople,
 } from './util/apiUtils';
 
 vi.mock('./util/apiUtils');
@@ -29,6 +35,9 @@ const getMovie = vi.mocked(originalGetMovie);
 const getMovies = vi.mocked(originalGetMovies);
 const getWatchProviders = vi.mocked(originalGetWatchProviders);
 const getRatings = vi.mocked(originalGetRatings);
+const getDiscoverySection = vi.mocked(originalGetDiscoverySection);
+const getStreamingProviders = vi.mocked(originalGetStreamingProviders);
+const getPeople = vi.mocked(originalGetPeople);
 
 const movie: MovieDetails = {
   cast: ['Actor One'],
@@ -47,6 +56,21 @@ const moviesResponse: MovieListResponse = {
   page: 1,
   totalPages: 1,
   totalResults: 1,
+};
+
+const emptyDiscoveryResponse: SearchResponse = {
+  results: [],
+  page: 1,
+  totalPages: 1,
+  totalResults: 0,
+};
+const streamingProviders: StreamingProviderInfo[] = [];
+
+const emptyPeopleResponse: PersonListResponse = {
+  people: [],
+  page: 1,
+  totalPages: 1,
+  totalResults: 0,
 };
 
 function RouteLocation() {
@@ -69,7 +93,7 @@ function RouteLocation() {
 }
 
 const renderApp = (initialEntry = '/search') => {
-  render(
+  return render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <RouteLocation />
       <App />
@@ -87,6 +111,91 @@ describe('<App />', () => {
       tmdb: { status: 'available', score: 8.5, voteCount: null },
       imdb: { status: 'missing' },
     });
+    getDiscoverySection.mockResolvedValue(emptyDiscoveryResponse);
+    getStreamingProviders.mockResolvedValue(streamingProviders);
+    getPeople.mockResolvedValue(emptyPeopleResponse);
+  });
+
+  test('renders the original search homepage before discovery content', async () => {
+    renderApp('/');
+
+    expect(
+      screen.getByRole('heading', { name: 'FIND YOUR NEXT STORY' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText('What do you want to watch?')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('navigation', { name: 'Main navigation' })
+    ).toBeInTheDocument();
+    expect(
+      Array.from(
+        screen
+          .getByRole('navigation', { name: 'Main navigation' })
+          .querySelectorAll('a')
+      ).map((link) => link.textContent)
+    ).toEqual(['Home', 'Movies', 'Series', 'Library']);
+    expect(
+      await screen.findByRole('heading', { name: 'Movies' })
+    ).toBeInTheDocument();
+    const homeLink = screen.getByRole('link', { name: 'Home' });
+    expect(homeLink).toHaveAttribute('href', '/');
+    expect(homeLink.querySelector('svg')).toHaveAttribute(
+      'aria-hidden',
+      'true'
+    );
+    expect(homeLink).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByText('10 movies loaded')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('navigation', { name: 'Main navigation' })
+    ).toBeInTheDocument();
+    expect(getMovies).not.toHaveBeenCalled();
+    expect(getDiscoverySection).toHaveBeenCalledTimes(3);
+  });
+
+  test('hides homepage discovery when a search or browsing tab is active', async () => {
+    const { unmount } = renderApp('/search/Inception');
+
+    expect(await screen.findByText('Sample Movie')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Movies' })
+    ).not.toBeInTheDocument();
+
+    unmount();
+    renderApp('/?view=people');
+
+    expect(
+      await screen.findByRole('navigation', { name: 'Main navigation' })
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Persons' })).toBeNull();
+    expect(
+      await screen.findByRole('region', { name: 'People results' })
+    ).toBeInTheDocument();
+    expect(getPeople).toHaveBeenCalledWith('', 1, expect.any(AbortSignal));
+    expect(
+      screen.queryByRole('heading', { name: 'Movies' })
+    ).not.toBeInTheDocument();
+  });
+
+  test('switches between Home and browsing while preserving browser history', async () => {
+    const user = userEvent.setup();
+    renderApp('/');
+
+    await user.click(screen.getByRole('link', { name: 'Movies' }));
+    expect(await screen.findByText('Sample Movie')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Movies' })
+    ).not.toBeInTheDocument();
+
+    const homeLink = screen.getByRole('link', { name: 'Home' });
+    expect(homeLink).toHaveAttribute('href', '/');
+    await user.click(homeLink);
+    expect(
+      await screen.findByRole('heading', { name: 'Movies' })
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Sample Movie')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(await screen.findByText('Sample Movie')).toBeInTheDocument();
   });
 
   test('renders the search route and loaded movie results', async () => {

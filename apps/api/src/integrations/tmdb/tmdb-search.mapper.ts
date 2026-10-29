@@ -132,6 +132,7 @@ export function mapSearch(
       mediaType === 'person' ? item.profile_path : item.poster_path,
     );
     const image = path?.startsWith('/') ? `${imageBaseUrl}${path}` : undefined;
+    const backdropUrl = searchImage(item.backdrop_path, imageBaseUrl);
     const popularity =
       typeof item.popularity === 'number' &&
       Number.isFinite(item.popularity) &&
@@ -158,13 +159,15 @@ export function mapSearch(
         id,
         title,
         posterUrl: image,
+        ...(backdropUrl && { backdropUrl }),
         description: searchText(item.overview),
         popularity,
         rating:
           typeof item.vote_average === 'number' &&
           Number.isFinite(item.vote_average) &&
-          item.vote_average >= 0 &&
-          item.vote_average <= 10
+          item.vote_average > 0 &&
+          item.vote_average <= 10 &&
+          item.vote_count !== 0
             ? item.vote_average
             : undefined,
       };
@@ -194,4 +197,12 @@ export function mapSearch(
     totalPages: Math.min(response.total_pages, 500),
     totalResults: response.total_results,
   };
+}
+
+function searchImage(value: unknown, imageBaseUrl: string): string | undefined {
+  const path = searchText(value);
+
+  const backdropBaseUrl = imageBaseUrl.replace(/\/w\d+$/, '/w1280');
+
+  return path?.startsWith('/') ? `${backdropBaseUrl}${path}` : undefined;
 }

@@ -23,6 +23,8 @@ import type {
   EpisodeCredits,
   WatchProviders,
   Ratings,
+  DiscoverySection,
+  StreamingProviderInfo,
 } from '@movie-explorer/contracts';
 
 import type { URLParams } from '../types';
@@ -538,6 +540,71 @@ export async function getSearchResults(
     body.page !== page ||
     body.results.some((item) => type !== 'all' && item.mediaType !== type)
   ) {
+    throw new ApiRequestError('invalid-response');
+  }
+
+  return body;
+}
+
+export async function getDiscoverySection(
+  section: DiscoverySection,
+  signal?: AbortSignal,
+  page = 1
+): Promise<SearchResponse> {
+  const params = new URLSearchParams({ page: String(page) });
+  const body = await request<unknown>(
+    `${apiBaseUrl}/api/v1/discover/${section}?${params}`,
+    signal ? { signal } : {}
+  );
+
+  if (!searchResponse(body) || body.page !== page) {
+    throw new ApiRequestError('invalid-response');
+  }
+
+  return body;
+}
+
+export async function getStreamingProviders(
+  region: string,
+  signal?: AbortSignal
+): Promise<StreamingProviderInfo[]> {
+  const params = new URLSearchParams({ region });
+  const body = await request<unknown>(
+    `${apiBaseUrl}/api/v1/discover/providers?${params}`,
+    signal ? { signal } : {}
+  );
+
+  if (
+    !Array.isArray(body) ||
+    !body.every(
+      (provider) =>
+        record(provider) &&
+        Number.isSafeInteger(provider.id) &&
+        typeof provider.id === 'number' &&
+        provider.id > 0 &&
+        typeof provider.name === 'string' &&
+        provider.name.trim().length > 0
+    )
+  ) {
+    throw new ApiRequestError('invalid-response');
+  }
+
+  return body;
+}
+
+export async function getStreamingProviderSection(
+  providerId: number,
+  region: string,
+  page: number,
+  signal?: AbortSignal
+): Promise<SearchResponse> {
+  const params = new URLSearchParams({ region, page: String(page) });
+  const body = await request<unknown>(
+    `${apiBaseUrl}/api/v1/discover/streaming/${providerId}?${params}`,
+    signal ? { signal } : {}
+  );
+
+  if (!searchResponse(body) || body.page !== page) {
     throw new ApiRequestError('invalid-response');
   }
 

@@ -7,6 +7,7 @@
   overflow: hidden;
   padding: 0;
   position: relative;
+  border-radius: 16px;
   transition:
     transform 0.24s ease,
     filter 0.24s ease,
@@ -29,7 +30,13 @@
     width: 100%;
   }
 
+  &__media {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
   &__media__img {
+    border-radius: 16px;
     object-fit: cover;
     transition:
       transform 0.24s ease,

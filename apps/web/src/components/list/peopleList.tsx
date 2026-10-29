@@ -15,7 +15,7 @@ import presentApiError, {
 } from '../../util/errorPresentation';
 import { getPeople } from '../../util/apiUtils';
 import Card from '../card/card';
-import { ResultsSkeleton, CardSkeletons } from '../skeleton/contentSkeletons';
+import { ResultsSkeleton, CardSkeletons } from '../skeleton';
 import Error from '../../layouts/error';
 import { useResultHistory, useSearchHistory } from './useSearchHistory';
 

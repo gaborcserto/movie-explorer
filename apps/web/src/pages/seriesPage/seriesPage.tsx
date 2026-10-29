@@ -12,7 +12,7 @@ import parseDetailId from '../../util/detailId';
 import SeasonPreview from './seasonPreview';
 import SeriesSections from './seriesSections';
 import useSeriesResource from './useSeriesResource';
-import { DetailSectionsSkeleton } from '../../components/skeleton/contentSkeletons';
+import { DetailSectionsSkeleton } from '../../components/skeleton';
 import useRatingsResource from '../../components/details/useRatingsResource';
 import {
   SeriesLayout,

@@ -1,3 +1,4 @@
+import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
 import type {
   MediaPhoto,
@@ -5,6 +6,7 @@ import type {
   SectionAvailability,
 } from '@movie-explorer/contracts';
 
+import DetailsTabs from '../detailsTabs';
 import PhotoPreview from './photoPreview';
 import VideoPreview from './videoPreview';
 
@@ -25,6 +27,14 @@ interface Props {
   imagesRecovery?: ReactNode;
 }
 
+const mediaTabs = [
+  { key: 'backdrops', label: 'Backdrops' },
+  { key: 'posters', label: 'Posters' },
+  { key: 'videos', label: 'Videos & Trailers' },
+] as const;
+
+type MediaTab = (typeof mediaTabs)[number]['key'];
+
 export default function MediaSection({
   title,
   resetKey,
@@ -37,6 +47,13 @@ export default function MediaSection({
   videosRecovery,
   imagesRecovery,
 }: Props) {
+  const [tabSelection, setTabSelection] = useState<{
+    resetKey: number;
+    tab: MediaTab;
+  }>({ resetKey, tab: 'backdrops' });
+  const tabsId = useId();
+  const activeTab =
+    tabSelection.resetKey === resetKey ? tabSelection.tab : 'backdrops';
   const hasBackdrops = backdrops.length > 0;
   const hasPosters = posters.length > 0;
   const hasVideos = videos.length > 0;
@@ -48,57 +65,90 @@ export default function MediaSection({
   const showVideos = hasVideos || hasVideosState;
   const showSection = showBackdrops || showPosters || showVideos;
 
+  const selectTab = (tab: MediaTab) => setTabSelection({ resetKey, tab });
+
   return (
     <>
       {imagesRecovery}
-      {backdropsRecovery}
-      {postersRecovery}
-      {videosRecovery}
       {showSection && (
         <section
           className="details-section media-section"
-          aria-labelledby="media-heading"
+          aria-labelledby={`${tabsId}-heading`}
         >
-          <h2 id="media-heading">Media</h2>
-          {showBackdrops && (
-            <div className="media-block">
-              <h3>Backdrops</h3>
-              {hasBackdrops && (
-                <PhotoPreview
-                  photos={backdrops}
-                  title={title}
-                  category="backdrops"
-                  resetKey={resetKey}
-                />
-              )}
-            </div>
-          )}
-          {showPosters && (
-            <div className="media-block">
-              <h3>Posters</h3>
-              {hasPosters && (
-                <PhotoPreview
-                  photos={posters}
-                  title={title}
-                  portrait
-                  category="posters"
-                  resetKey={resetKey}
-                />
-              )}
-            </div>
-          )}
-          {showVideos && (
-            <div className="media-block">
-              <h3>Videos &amp; Trailers</h3>
-              {hasVideos && (
-                <VideoPreview
-                  videos={videos}
-                  title={title}
-                  resetKey={resetKey}
-                />
-              )}
-            </div>
-          )}
+          <h2 id={`${tabsId}-heading`}>Media</h2>
+          <DetailsTabs
+            id={tabsId}
+            tabs={mediaTabs}
+            activeTab={activeTab}
+            ariaLabel="Media categories"
+            onChange={selectTab}
+          />
+          <div
+            className="details-tabs__panel"
+            id={`${tabsId}-backdrops-panel`}
+            role="tabpanel"
+            aria-labelledby={`${tabsId}-backdrops-tab`}
+            hidden={activeTab !== 'backdrops'}
+            tabIndex={0}
+          >
+            {backdropsRecovery}
+            {hasBackdrops ? (
+              <PhotoPreview
+                photos={backdrops}
+                title={title}
+                category="backdrops"
+                resetKey={resetKey}
+              />
+            ) : (
+              !hasBackdropsState && (
+                <p className="media-section__empty">
+                  No backdrops are available.
+                </p>
+              )
+            )}
+          </div>
+          <div
+            className="details-tabs__panel"
+            id={`${tabsId}-posters-panel`}
+            role="tabpanel"
+            aria-labelledby={`${tabsId}-posters-tab`}
+            hidden={activeTab !== 'posters'}
+            tabIndex={0}
+          >
+            {postersRecovery}
+            {hasPosters ? (
+              <PhotoPreview
+                photos={posters}
+                title={title}
+                portrait
+                category="posters"
+                resetKey={resetKey}
+              />
+            ) : (
+              !hasPostersState && (
+                <p className="media-section__empty">
+                  No posters are available.
+                </p>
+              )
+            )}
+          </div>
+          <div
+            className="details-tabs__panel"
+            id={`${tabsId}-videos-panel`}
+            role="tabpanel"
+            aria-labelledby={`${tabsId}-videos-tab`}
+            hidden={activeTab !== 'videos'}
+            tabIndex={0}
+          >
+            {videosRecovery}
+            {hasVideos ? (
+              <VideoPreview videos={videos} title={title} resetKey={resetKey} />
+            ) : (
+              !hasVideosState && (
+                <p className="media-section__empty">No videos are available.</p>
+              )
+            )}
+          </div>
         </section>
       )}
     </>

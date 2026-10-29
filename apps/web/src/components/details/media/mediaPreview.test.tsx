@@ -148,20 +148,28 @@ test.each(['backdrops', 'posters'] as const)(
         movieData={{ ...movie, backdrops: photos, posters }}
       />
     );
-    expect(screen.getByRole('heading', { name: 'Backdrops' })).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Posters' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Media' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Backdrops' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
     expect(
       screen.getAllByRole('button', { name: /View Movie backdrop/ })
     ).toHaveLength(6);
+    await user.click(screen.getByRole('tab', { name: 'Posters' }));
     expect(
       screen.getAllByRole('button', { name: /View Movie poster/ })
     ).toHaveLength(10);
-    expect(screen.getByText(`25 ${category} available`)).toBeVisible();
+    expect(screen.getByText('25 posters available')).toBeVisible();
     expect(document.querySelector('.photo-grid--posters')).toHaveClass(
       'photo-grid--portraits'
     );
     expect(document.querySelector('img[src^="/original"]')).toBeNull();
     expect(document.querySelector('img[src^="/poster/original"]')).toBeNull();
+    if (category === 'backdrops') {
+      await user.click(screen.getByRole('tab', { name: 'Backdrops' }));
+    }
+    expect(screen.getByText(`25 ${category} available`)).toBeVisible();
     const trigger = screen.getByRole('button', {
       name: `View Movie ${category.slice(0, -1)} 5`,
     });
@@ -201,14 +209,13 @@ test('empty categories are omitted while one-item galleries omit navigation', as
       }}
     />
   );
-  expect(
-    screen.queryByRole('heading', { name: 'Backdrops' })
-  ).not.toBeInTheDocument();
-  expect(
-    screen.queryByRole('heading', { name: 'Videos & Trailers' })
-  ).not.toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: 'Backdrops' })).toHaveAttribute(
+    'aria-selected',
+    'true'
+  );
   expect(screen.queryByText('0 backdrops available')).not.toBeInTheDocument();
   expect(screen.queryByText('0 videos available')).not.toBeInTheDocument();
+  await user.click(screen.getByRole('tab', { name: 'Posters' }));
   expect(screen.getByText('1 poster available')).toBeVisible();
   expect(screen.queryByRole('button', { name: /Show more/ })).toBeNull();
   const trigger = screen.getByRole('button', { name: 'View Movie poster 1' });
@@ -218,7 +225,8 @@ test('empty categories are omitted while one-item galleries omit navigation', as
   expect(trigger).toHaveFocus();
 });
 
-test('unknown video sites retain their title without an unsafe link or eager player', () => {
+test('unknown video sites retain their title without an unsafe link or eager player', async () => {
+  const user = userEvent.setup();
   render(
     <DetailsLowerContent
       movieData={{
@@ -229,6 +237,7 @@ test('unknown video sites retain their title without an unsafe link or eager pla
       }}
     />
   );
+  await user.click(screen.getByRole('tab', { name: 'Videos & Trailers' }));
   expect(screen.getByText('Interview')).toBeVisible();
   expect(screen.getByText('Playback unavailable for Unknown.')).toBeVisible();
   expect(screen.queryByRole('link')).toBeNull();
@@ -237,12 +246,16 @@ test('unknown video sites retain their title without an unsafe link or eager pla
 
 test.each([0, 2, 4, 5, 8])(
   'renders four initial videos and count for %i available',
-  (count) => {
+  async (count) => {
+    const user = userEvent.setup();
     render(
       <DetailsLowerContent
         movieData={{ ...movie, videos: videos.slice(0, count) }}
       />
     );
+    if (count > 0) {
+      await user.click(screen.getByRole('tab', { name: 'Videos & Trailers' }));
+    }
     expect(
       screen.queryAllByRole('button', { name: /Play Trailer/ })
     ).toHaveLength(Math.min(count, 4));
@@ -274,6 +287,7 @@ test('reveals videos in batches, handles a partial final batch, and preserves pl
       }}
     />
   );
+  await user.click(screen.getByRole('tab', { name: 'Videos & Trailers' }));
   const more = screen.getByRole('button', { name: 'Show more videos' });
   expect(more).not.toHaveClass('btn--action');
   expect(more).toHaveTextContent('Show more');
@@ -302,9 +316,11 @@ test('resets the video reveal count when the movie changes', async () => {
   const { rerender } = render(
     <DetailsLowerContent movieData={{ ...movie, videos }} />
   );
+  await user.click(screen.getByRole('tab', { name: 'Videos & Trailers' }));
   await user.click(screen.getByRole('button', { name: 'Show more videos' }));
   expect(document.querySelectorAll('.video-tile')).toHaveLength(8);
   rerender(<DetailsLowerContent movieData={{ ...movie, id: 2, videos }} />);
+  await user.click(screen.getByRole('tab', { name: 'Videos & Trailers' }));
   expect(document.querySelectorAll('.video-tile')).toHaveLength(4);
   expect(
     screen.getByRole('button', { name: 'Show more videos' })
@@ -326,6 +342,7 @@ test('keeps mixed video order and selects the supported player independently of 
       }}
     />
   );
+  await user.click(screen.getByRole('tab', { name: 'Videos & Trailers' }));
   expect(
     [...document.querySelectorAll('.video-tile')].map(
       (tile) => tile.querySelector('span')?.textContent
@@ -350,6 +367,7 @@ test('closes active playback and resets previews on movie change without resetti
   const { rerender } = render(
     <DetailsLowerContent movieData={{ ...movie, videos }} />
   );
+  await user.click(screen.getByRole('tab', { name: 'Videos & Trailers' }));
   await user.click(screen.getByRole('button', { name: 'Show more videos' }));
   await user.click(screen.getByRole('button', { name: 'Play Trailer 4' }));
 
@@ -359,6 +377,7 @@ test('closes active playback and resets previews on movie change without resetti
   expect(screen.getByRole('dialog', { name: 'Trailer 4' })).toBeVisible();
 
   rerender(<DetailsLowerContent movieData={{ ...movie, id: 2, videos }} />);
+  await user.click(screen.getByRole('tab', { name: 'Videos & Trailers' }));
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(document.querySelector('iframe')).toBeNull();
   expect(document.body.style.overflow).toBe('');
@@ -373,6 +392,7 @@ test('unmounting active video playback restores scroll and background interactio
   const { container, unmount } = render(
     <DetailsLowerContent movieData={{ ...movie, videos }} />
   );
+  await user.click(screen.getByRole('tab', { name: 'Videos & Trailers' }));
   const previousOverflow = document.body.style.overflow;
   const previousInert = container.inert;
   await user.click(screen.getByRole('button', { name: 'Play Trailer 0' }));

@@ -5,7 +5,13 @@ import { mediaPath } from '../../util/seriesRoutes';
 
 const typeLabels = { movie: 'Movie', tv: 'Series', person: 'Person' };
 
-export default function SearchResultCard({ item }: { item: SearchResult }) {
+export default function SearchResultCard({
+  item,
+  showMediaType = false,
+}: {
+  item: SearchResult;
+  showMediaType?: boolean;
+}) {
   const person = item.mediaType === 'person';
   const label = typeLabels[item.mediaType];
   let date: string | undefined;
@@ -16,7 +22,22 @@ export default function SearchResultCard({ item }: { item: SearchResult }) {
       item.mediaType === 'tv'
         ? (item.firstAirDate ?? undefined)
         : item.releaseDate;
-    if (item.rating !== undefined) rating = `${item.rating.toFixed(1)} / 10`;
+    if (
+      item.rating !== undefined &&
+      Number.isFinite(item.rating) &&
+      item.rating > 0 &&
+      item.rating <= 10
+    ) {
+      rating = `${item.rating.toFixed(1)} / 10`;
+    }
+  }
+
+  let subtitle: string | undefined;
+
+  if (person) {
+    subtitle = [label, item.knownForDepartment].filter(Boolean).join(' / ');
+  } else if (showMediaType) {
+    subtitle = label;
   }
 
   return (
@@ -30,11 +51,7 @@ export default function SearchResultCard({ item }: { item: SearchResult }) {
       }}
       destination={mediaPath(item.mediaType, item.id)}
       displayDate={date}
-      subtitle={
-        person
-          ? [label, item.knownForDepartment].filter(Boolean).join(' / ')
-          : undefined
-      }
+      subtitle={subtitle}
       rating={rating}
       libraryMedia={
         item.mediaType === 'person'

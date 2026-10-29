@@ -47,7 +47,10 @@ function CreditNames({ people }: { people: MoviePersonCredit[] }) {
   return people.map((person) => (
     <Fragment key={person.key}>
       {hasPersonId(person.id) ? (
-        <Link to={`/person/${person.id}`} className="person-credit-link">
+        <Link
+          to={`/person/${person.id}`}
+          className="person-credit-link text-link"
+        >
           {person.name}
         </Link>
       ) : (

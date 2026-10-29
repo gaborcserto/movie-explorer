@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 
 import './errorBoundary.scss';
-import ErrorPresentation from '../errorPresentation/errorPresentation';
+import ErrorPresentation from '../errorPresentation';
 import useDetailPage from '../details/hooks';
 
 function FatalErrorFallback() {
@@ -38,21 +38,24 @@ function FatalErrorFallback() {
   );
 }
 
-interface Props {
+export interface ErrorBoundaryProps {
   children?: ReactNode;
 }
 
-interface State {
+interface ErrorBoundaryState {
   hasError: boolean;
 }
 
-class ErrorBoundary extends React.Component<Props, State> {
-  constructor(props: Props) {
+class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(): State {
+  static getDerivedStateFromError(): ErrorBoundaryState {
     return { hasError: true };
   }
 

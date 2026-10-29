@@ -12,7 +12,7 @@ import presentApiError, {
 } from '../../util/errorPresentation';
 import { getSearchResults, getPopularSeries } from '../../util/apiUtils';
 import SearchResultCard from './searchResultCard';
-import { ResultsSkeleton, CardSkeletons } from '../skeleton/contentSkeletons';
+import { ResultsSkeleton, CardSkeletons } from '../skeleton';
 import Error from '../../layouts/error';
 import { useResultHistory, useSearchHistory } from './useSearchHistory';
 

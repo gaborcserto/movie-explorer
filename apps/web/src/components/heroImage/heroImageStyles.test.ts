@@ -51,15 +51,32 @@ test.each(heroImages)(
   }
 );
 
-test('both detail hero images have matching ten pixel rounded corners', () => {
+test('both detail hero images have matching sixteen pixel rounded corners', () => {
   expect(
     declarationsForSelector(movieStylesheet, '.movie-details__image')
   ).toMatchObject({
-    'border-radius': '10px',
+    'border-radius': '16px',
   });
   expect(
     declarationsForSelector(personStylesheet, '.person-profile__portrait')
-  ).toMatchObject({ 'border-radius': '10px' });
+  ).toMatchObject({ 'border-radius': '16px' });
+  expect(
+    declarationsForSelector(interactionStylesheet, '.hero-image')
+  ).toMatchObject({
+    'border-radius': '16px',
+    overflow: 'hidden',
+  });
+  expect(
+    declarationsForSelector(interactionStylesheet, '.hero-image__media')
+  ).toMatchObject({
+    'border-radius': '16px',
+    overflow: 'hidden',
+  });
+  expect(
+    declarationsForSelector(interactionStylesheet, '.hero-image__media__img')[
+      'border-radius'
+    ]
+  ).toBe('16px');
 });
 
 test('hero images have visible keyboard focus and reduced-motion hover behavior', () => {

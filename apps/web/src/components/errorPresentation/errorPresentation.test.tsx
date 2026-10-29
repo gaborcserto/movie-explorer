@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import ErrorPresentation from './errorPresentation';
+import ErrorPresentation from '.';
 
 test('supports a contextual service error without adding landmarks, focus, or announcements', async () => {
   const retry = vi.fn();

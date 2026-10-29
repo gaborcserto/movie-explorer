@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import ErrorPresentation from '../../errorPresentation/errorPresentation';
+import ErrorPresentation from '../../errorPresentation';
 import { useSearchHistory } from '../../list/useSearchHistory';
 
 export default function DetailError({

@@ -256,6 +256,30 @@ test.each([
   }
 );
 
+test('Series year filtering is labeled as Date and Year while keeping URL semantics', async () => {
+  const router = setup('/search?view=tv&year=2001');
+
+  await open();
+  expect(screen.getByRole('heading', { name: 'Date' })).toBeVisible();
+  expect(screen.getByLabelText('Year')).toHaveValue('2001');
+  expect(screen.queryByText('First-air Year')).toBeNull();
+  expect(screen.queryByLabelText('First-air year')).toBeNull();
+
+  await userEvent.clear(screen.getByLabelText('Year'));
+  await userEvent.type(screen.getByLabelText('Year'), '2012');
+  await userEvent.click(screen.getByRole('button', { name: 'Date' }));
+  expect(screen.getByRole('button', { name: 'Date' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  await apply();
+
+  const params = new URLSearchParams(router.state.location.search);
+  expect(params.get('view')).toBe('tv');
+  expect(params.get('year')).toBe('2012');
+  expect(params.get('sorting')).toBe('releaseDate');
+});
+
 test('text search keeps relevance and normalizes unsupported and duplicate URL values', async () => {
   const router = setup(
     '/search/alien?view=people&filter=invalid&filter=drama&year=1800&rating=11&sorting=title&order=asc&extra=keep'

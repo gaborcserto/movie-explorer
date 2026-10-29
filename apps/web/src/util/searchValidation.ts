@@ -14,6 +14,7 @@ export function searchResult(value: unknown): value is SearchResult {
   if (
     !optionalText(value, [
       'posterUrl',
+      'backdropUrl',
       'profileUrl',
       'knownForDepartment',
       'description',

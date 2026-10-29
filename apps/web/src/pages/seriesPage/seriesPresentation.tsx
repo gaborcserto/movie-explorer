@@ -19,7 +19,7 @@ import DetailsPageLayout, {
   DetailsHeroFrame,
 } from '../../components/details/detailsPageLayout';
 import { DetailError } from '../../components/details/recovery';
-import { DetailHeroSkeleton } from '../../components/skeleton/contentSkeletons';
+import { DetailHeroSkeleton } from '../../components/skeleton';
 import presentApiError from '../../util/errorPresentation';
 import { isNotFoundError } from '../../util/apiUtils';
 import { seriesPath } from '../../util/seriesRoutes';
@@ -241,7 +241,9 @@ export function SeriesMetadataList({
       {people.map((person) => (
         <li key={`${person.id ?? 'unknown'}-${person.name}`}>
           {linked && person.id ? (
-            <Link to={`/person/${person.id}`}>{person.name}</Link>
+            <Link className="text-link" to={`/person/${person.id}`}>
+              {person.name}
+            </Link>
           ) : (
             person.name
           )}
@@ -331,7 +333,7 @@ export function EpisodeCrew({
                 {person.id ? (
                   <Link
                     to={`/person/${person.id}`}
-                    className="person-credit-link"
+                    className="person-credit-link text-link"
                   >
                     {person.name}
                   </Link>
@@ -438,6 +440,7 @@ export function SeasonSelector({
               </span>
             ) : (
               <Link
+                className="text-link"
                 to={seriesPath(seriesId, season.seasonNumber)}
                 state={{ series }}
               >

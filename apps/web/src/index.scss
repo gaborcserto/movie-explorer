@@ -39,6 +39,20 @@ textarea,
   }
 }
 
+.text-link {
+  transition: color 200ms ease;
+
+  &:hover {
+    color: $red-1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .text-link {
+    transition: none;
+  }
+}
+
 img {
   display: block;
   max-width: 100%;

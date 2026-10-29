@@ -62,6 +62,16 @@ test('fills the Series content width with a responsive, clamped Cast grid', () =
     declarationsForSelector(seriesStyles, '.series-credits .cast-member__image')
   ).toMatchObject({ 'max-width': 'none' });
   expect(
+    declarationsForSelector(seriesStyles, '.series-season-poster')[
+      'border-radius'
+    ]
+  ).toBe('10px');
+  expect(
+    declarationsForSelector(seriesStyles, '.series-episode-still')[
+      'border-radius'
+    ]
+  ).toBe('10px');
+  expect(
     declarationsForSelector(seriesStyles, '.series-credits .cast-member p')
   ).toMatchObject({
     '-webkit-line-clamp': '2',
@@ -103,19 +113,34 @@ test('leaves provider group columns to the shared WatchProviders styles', () => 
   ).toEqual({});
 });
 
-test('uses available width for Series crew while preserving Movie two-column layout', () => {
+test('uses shared full-width Cast and Crew tabs for Movie and Series credits', () => {
   expect(
     declarationsForSelector(
       mediaStyles,
       '.series-sections .crew-group__people'
     )['grid-template-columns']
   ).toContain('auto-fill');
-  expect(
-    declarationsForSelector(mediaStyles, '.cast-crew-layout')
-  ).toMatchObject({
-    display: 'grid',
-    'grid-template-columns': 'minmax(0, 2.2fr) minmax(250px, 1fr)',
+  expect(declarationsForSelector(mediaStyles, '.details-tabs')).toMatchObject({
+    display: 'flex',
+    'overflow-x': 'auto',
   });
+  expect(
+    declarationsForSelector(seriesStyles, '.series-credits .cast-crew-layout')
+  ).toEqual({});
+});
+
+test('matches the Cast and Crew heading and separator to homepage section headers', () => {
+  expect(
+    declarationsForSelector(seriesStyles, '.series-credits > h2')
+  ).toMatchObject({
+    'font-size': 'clamp(20px, 2vw, 26px)',
+    'line-height': '1.25',
+  });
+  expect(
+    declarationsForSelector(seriesStyles, '.series-credits > .details-tabs')[
+      'border-bottom'
+    ]
+  ).toBe('1px solid rgba(255, 255, 255, 0.16)');
 });
 
 test('hides the season scrollbar while keeping horizontal scrolling and tab focus visible', () => {

@@ -1,0 +1,136 @@
+@use '../../assets/scss' as *;
+
+.animated-select {
+  min-width: 0;
+  width: 100%;
+
+  &__trigger {
+    align-items: center;
+    background: $grey-3;
+    border: 1px solid rgb(255 255 255 / 0.18);
+    border-radius: 10px;
+    color: $white;
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    gap: 12px;
+    justify-content: space-between;
+    line-height: 20px;
+    min-height: 44px;
+    min-width: 0;
+    padding: 10px 12px;
+    text-align: left;
+    transition:
+      background-color 220ms ease,
+      border-color 220ms ease,
+      color 220ms ease;
+    width: 100%;
+
+    > span:first-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &:hover,
+    &[aria-expanded='true'] {
+      border-color: $red-1;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $red-1;
+      outline-offset: 3px;
+    }
+  }
+
+  &__chevron {
+    border-bottom: 2px solid $red-1;
+    border-right: 2px solid $red-1;
+    flex: 0 0 9px;
+    height: 9px;
+    margin: -5px 3px 0 0;
+    transform: rotate(45deg);
+    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    width: 9px;
+  }
+
+  &__trigger[aria-expanded='true'] &__chevron {
+    margin-top: 5px;
+    transform: rotate(225deg);
+  }
+
+  &__options {
+    background: $grey-3;
+    border: 1px solid rgb(255 255 255 / 0.18);
+    border-radius: 10px;
+    box-shadow: 0 12px 28px rgb(0 0 0 / 0.38);
+    max-height: min(40vh, 320px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px;
+    position: fixed;
+    transform: translateY(-8px);
+    transform-origin: top center;
+    transition:
+      opacity 220ms ease,
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s linear 220ms;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 120;
+
+    &[data-placement='top'] {
+      transform: translateY(8px);
+      transform-origin: bottom center;
+    }
+
+    &[data-open='true'] {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+      transition-delay: 0s;
+      visibility: visible;
+    }
+  }
+
+  &__option {
+    border-radius: 6px;
+    color: $white;
+    cursor: pointer;
+    line-height: 1.35;
+    min-height: 40px;
+    padding: 10px 12px;
+    transition:
+      background-color 180ms ease,
+      color 180ms ease;
+
+    &[data-active='true'] {
+      background: rgb(246 82 97 / 0.2);
+    }
+
+    &[aria-selected='true'] {
+      background: $red-1;
+      color: $white;
+      font-weight: 600;
+    }
+
+    &:hover {
+      background: rgb(246 82 97 / 0.28);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $red-1;
+      outline-offset: -2px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated-select__trigger,
+  .animated-select__chevron,
+  .animated-select__options,
+  .animated-select__option {
+    transition: none;
+  }
+}

@@ -25,6 +25,7 @@ All routes use the `/api/v1` prefix:
 - Series, seasons, and episodes: `/series`
 - Persons and filmographies: `/persons`
 - Unified search and suggestions: `/search`
+- Curated discovery feeds: `/discover/:section`
 - IMDb-only ratings: `/ratings`
 
 Swagger documents individual endpoints, parameters, and response schemas. Legacy `/movies` and `/api/v1/tv` route trees are not supported.

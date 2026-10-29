@@ -809,17 +809,15 @@ describe('<Details />', () => {
     );
 
     expect(await screen.findByText('Something went wrong')).toBeVisible();
-    expect(screen.queryByRole('heading', { name: 'Backdrops' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Backdrops' })).toBeNull();
     expect(getMovie).toHaveBeenCalledTimes(1);
 
     await user.click(screen.getByRole('button', { name: /try again/i }));
 
     expect(
-      await screen.findByRole('heading', { name: 'Backdrops' })
-    ).toBeVisible();
-    expect(
-      screen.getByRole('heading', { name: 'Videos & Trailers' })
-    ).toBeVisible();
+      await screen.findByRole('tab', { name: 'Backdrops' })
+    ).toHaveAttribute('aria-selected', 'true');
+    await user.click(screen.getByRole('tab', { name: 'Videos & Trailers' }));
     expect(screen.getByRole('link', { name: 'Trailer' })).toBeVisible();
     expect(getMovie).toHaveBeenCalledTimes(2);
   });
@@ -857,7 +855,10 @@ describe('<Details />', () => {
     expect(
       screen.getByRole('heading', { name: 'Current movie' })
     ).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Backdrops' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Backdrops' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
     expect(screen.queryByRole('heading', { name: 'Sample Movie' })).toBeNull();
     expect(document.title).toBe('Current movie | Movie Explorer');
     expect(screen.getByRole('main')).toHaveFocus();

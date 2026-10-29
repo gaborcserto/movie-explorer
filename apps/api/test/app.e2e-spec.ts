@@ -16,6 +16,7 @@ import { SERIES_PROVIDER } from '../src/series/series-provider';
 import { createApiDocument } from '../src/api-document';
 import { SEARCH_PROVIDER } from '../src/search/search-provider';
 import { RatingsService } from '../src/ratings/ratings.service';
+import { DISCOVERY_PROVIDER } from '../src/discovery/discovery.tokens';
 
 const movies = [
   {
@@ -37,6 +38,11 @@ const movieProvider: jest.Mocked<MovieProvider> = {
   findFilmography: jest.fn(),
   findWatchProviders: jest.fn(),
   findRatings: jest.fn(),
+};
+const discoveryProvider = {
+  find: jest.fn(),
+  findStreamingProviders: jest.fn(),
+  findStreaming: jest.fn(),
 };
 
 describe('AppController (e2e)', () => {
@@ -78,9 +84,64 @@ describe('AppController (e2e)', () => {
     expect(document.components.schemas.UnavailableRatingDto).toBeDefined();
   });
 
+  it('validates and forwards discovery pagination', async () => {
+    discoveryProvider.find.mockResolvedValue({
+      results: [],
+      page: 2,
+      totalPages: 3,
+      totalResults: 42,
+    });
+
+    await request(app.getHttpServer())
+      .get('/api/v1/discover/popular-movies?page=2')
+      .expect(200, {
+        results: [],
+        page: 2,
+        totalPages: 3,
+        totalResults: 42,
+      });
+    expect(discoveryProvider.find).toHaveBeenCalledWith('popular-movies', 2);
+    await request(app.getHttpServer())
+      .get('/api/v1/discover/popular-movies?page=0')
+      .expect(400);
+  });
+
+  it('serves validated regional streaming catalogs and mixed provider results', async () => {
+    discoveryProvider.findStreamingProviders.mockResolvedValue([
+      { id: 88, name: 'Netflix' },
+    ]);
+    discoveryProvider.findStreaming.mockResolvedValue({
+      results: [
+        { id: 1, mediaType: 'movie', title: 'Movie' },
+        { id: 2, mediaType: 'tv', title: 'Series' },
+      ],
+      page: 2,
+      totalPages: 3,
+      totalResults: 42,
+    });
+
+    await request(app.getHttpServer())
+      .get('/api/v1/discover/providers?region=HU')
+      .expect(200, [{ id: 88, name: 'Netflix' }]);
+    await request(app.getHttpServer())
+      .get('/api/v1/discover/streaming/88?region=HU&page=2')
+      .expect(200);
+    expect(discoveryProvider.findStreaming).toHaveBeenCalledWith(88, 'HU', 2);
+
+    await request(app.getHttpServer())
+      .get('/api/v1/discover/providers?region=hu')
+      .expect(400);
+    await request(app.getHttpServer())
+      .get('/api/v1/discover/streaming/0?region=HU')
+      .expect(400);
+  });
+
   it('documents only canonical operations with unique IDs and current schemas', () => {
     const document = createApiDocument(app);
     const expectedPaths = [
+      '/api/v1/discover/{section}',
+      '/api/v1/discover/providers',
+      '/api/v1/discover/streaming/{providerId}',
       '/api/v1/ratings/{mediaType}/{id}/imdb',
       '/api/v1/movies',
       '/api/v1/movies/suggestions',
@@ -119,7 +180,7 @@ describe('AppController (e2e)', () => {
     const ids = operations.map((operation) => operation.operationId);
     expect(new Set(ids).size).toBe(ids.length);
     expect(new Set(operations.flatMap((operation) => operation.tags))).toEqual(
-      new Set(['Movies', 'Series', 'Persons', 'Search', 'Ratings']),
+      new Set(['Discover', 'Movies', 'Series', 'Persons', 'Search', 'Ratings']),
     );
     expect(
       Object.keys(document.components.schemas).filter((name) =>
@@ -150,6 +211,8 @@ describe('AppController (e2e)', () => {
     })
       .overrideProvider(SEARCH_PROVIDER)
       .useValue({})
+      .overrideProvider(DISCOVERY_PROVIDER)
+      .useValue(discoveryProvider)
       .overrideProvider(MOVIE_PROVIDER)
       .useValue(movieProvider)
       .overrideProvider(PERSON_FILMOGRAPHY_PROVIDER)

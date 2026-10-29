@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { CombinedFilmography } from '@movie-explorer/contracts';
 
+import AnimatedSelect from '../../components/animatedSelect';
 import MovieImage from '../../components/utility/customImage';
 import { getPosterDisplaySrcSet } from '../../util/imageSizing';
 import { mediaPath } from '../../util/seriesRoutes';
@@ -16,6 +17,11 @@ import {
 import type { FilmographyView, FilmographyEntry } from './filmographyRules';
 
 const FILMOGRAPHY_BATCH_SIZE = 10;
+const filmographySortOptions = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'title', label: 'Title A–Z' },
+];
 
 function FilmographyResults({
   movies,
@@ -171,6 +177,16 @@ export default function Filmography({
       : 'No credits available for this selection.';
   }
 
+  const jobOptions = [
+    { value: '', label: 'All jobs' },
+    ...roles.map((value) => ({
+      value,
+      label: value.startsWith('job:')
+        ? value.slice(4)
+        : `${value.slice(11)} (department)`,
+    })),
+  ];
+
   useEffect(() => {
     if (!unavailable && !partial && query !== canonicalQuery) {
       setSearchParams(canonicalQuery, { replace: true });
@@ -246,38 +262,26 @@ export default function Filmography({
                 )}
               </div>
               {view === 'crew' && (
-                <label>
-                  Job or department
-                  <select
+                <div className="filmography__field">
+                  <span>Job or department</span>
+                  <AnimatedSelect
+                    label="Job or department"
+                    options={jobOptions}
                     value={role}
-                    onChange={(event) =>
-                      updateSelection('personRole', event.target.value)
-                    }
-                  >
-                    <option value="">All jobs</option>
-                    {roles.map((value) => (
-                      <option key={value} value={value}>
-                        {value.startsWith('job:')
-                          ? value.slice(4)
-                          : `${value.slice(11)} (department)`}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    onChange={(value) => updateSelection('personRole', value)}
+                  />
+                </div>
               )}
-              <label>
-                Sort filmography
-                <select
+              <div className="filmography__field">
+                <span>Sort filmography</span>
+                <AnimatedSelect
+                  label="Sort filmography"
+                  options={filmographySortOptions}
+                  className="filmography__sort-select"
                   value={sort}
-                  onChange={(event) =>
-                    updateSelection('personSort', event.target.value)
-                  }
-                >
-                  <option value="newest">Newest first</option>
-                  <option value="oldest">Oldest first</option>
-                  <option value="title">Title A–Z</option>
-                </select>
-              </label>
+                  onChange={(value) => updateSelection('personSort', value)}
+                />
+              </div>
             </div>
             <FilmographyResults
               key={`${mediaType}:${view}:${role}:${sort}`}

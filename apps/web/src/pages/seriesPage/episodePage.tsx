@@ -139,12 +139,13 @@ function EpisodeDetails({
               {valid && (
                 <SeriesBreadcrumbs>
                   <li>
-                    <Link to={seriesPath(idText)}>
+                    <Link className="text-link" to={seriesPath(idText)}>
                       {series?.title ?? `Series ${id}`}
                     </Link>
                   </li>
                   <li>
                     <Link
+                      className="text-link"
                       to={seriesPath(idText, seasonText)}
                       state={{ series }}
                     >

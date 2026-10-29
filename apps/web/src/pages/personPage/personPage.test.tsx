@@ -650,62 +650,54 @@ test('biography and filmography interactions retain focus and the person title',
   await user.click(expand);
   expect(expand).toHaveFocus();
   const sort = screen.getByRole('combobox', { name: 'Sort filmography' });
-  await user.selectOptions(sort, 'title');
+  await user.click(sort);
+  await user.click(screen.getByRole('option', { name: 'Title A–Z' }));
+  expect(sort).toHaveAttribute('data-value', 'title');
   expect(sort).toHaveFocus();
   expect(document.title).toBe(`${person.name} | Movie Explorer`);
 });
 
-test('person photos reveal progressively, retain full lightbox navigation and reset on route changes', async () => {
-  const profilePhotos = Array.from({ length: 18 }, (_, index) => ({
-    thumbnailUrl: `/profile-${index}.jpg`,
-    fullUrl: `/full-profile-${index}.jpg`,
-    alt: `Portrait ${index + 1} of ${person.name}`,
-  }));
+test('person profile photos remain navigable in the portrait lightbox without a separate section', async () => {
+  const profilePhotos = [
+    {
+      thumbnailUrl: person.profileUrl,
+      fullUrl: '/portrait-original.jpg',
+      alt: `Portrait of ${person.name}`,
+    },
+    ...Array.from({ length: 17 }, (_, index) => ({
+      thumbnailUrl: `/profile-${index}.jpg`,
+      fullUrl: `/full-profile-${index}.jpg`,
+      alt: `Portrait ${index + 2} of ${person.name}`,
+    })),
+  ];
   fetchMock.mockResolvedValueOnce(response({ ...person, profilePhotos }));
   fetchMock.mockResolvedValueOnce(
     response({ ...person, id: 43, name: 'Next person' })
   );
   const router = renderPage();
   const user = userEvent.setup();
-  const more = await screen.findByRole('button', {
-    name: `Show more photos for ${person.name}`,
+  const trigger = await screen.findByRole('button', {
+    name: `Open portrait gallery for ${person.name}`,
   });
+  fireEvent.load(within(trigger).getByRole('img'));
 
-  expect(
-    screen.getAllByRole('button', {
-      name: new RegExp(`View ${person.name} photo`),
-    })
-  ).toHaveLength(10);
+  expect(screen.queryByRole('heading', { name: 'Photos' })).toBeNull();
+  expect(document.querySelector('.photo-grid--portraits')).toBeNull();
 
-  await user.click(more);
-  expect(
-    screen.getAllByRole('button', {
-      name: new RegExp(`View ${person.name} photo`),
-    })
-  ).toHaveLength(18);
+  await user.click(trigger);
+  const dialog = screen.getByRole('dialog');
+  expect(within(dialog).getByText('1 / 18')).toBeVisible();
 
-  await user.click(
-    screen.getByRole('button', { name: `View ${person.name} photo 6` })
-  );
-  expect(within(screen.getByRole('dialog')).getByText('6 / 18')).toBeVisible();
-  await user.keyboard('{Escape}');
+  await user.keyboard('{ArrowRight}'.repeat(17));
 
-  expect(
-    screen.getByRole('button', { name: `View ${person.name} photo 6` })
-  ).toHaveFocus();
-
-  await user.click(
-    screen.getByRole('button', { name: `View ${person.name} photo 6` })
-  );
-  await user.keyboard('{ArrowRight}');
-  expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
+  expect(within(dialog).getByText('18 / 18')).toBeVisible();
+  expect(dialog.querySelector('img')).toHaveAttribute(
     'src',
-    '/full-profile-6.jpg'
+    '/full-profile-16.jpg'
   );
 
   await act(async () => router.navigate('/person/43'));
   await screen.findByRole('heading', { name: 'Next person' });
   expect(screen.queryByRole('dialog')).toBeNull();
-  expect(screen.queryByText('18 photos available')).toBeNull();
   expect(document.body.style.overflow).not.toBe('hidden');
 });

@@ -7,7 +7,7 @@ import SearchHistoryProvider from './components/list/searchHistory';
 import Loading from './layouts/loading';
 import Header from './layouts/header';
 import Footer from './layouts/footer';
-import ErrorBoundary from './components/errorBoundary/errorBoundary';
+import ErrorBoundary from './components/errorBoundary';
 import LibraryPage from './pages/libraryPage';
 import PersistenceNotice from './features/library/persistenceNotice';
 
@@ -59,7 +59,7 @@ function App() {
       <SearchHistoryProvider>
         <Routes>
           <Route element={<SiteLayout />}>
-            <Route path="/" element={<Navigate to="/search" />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/search/:searchQuery" element={<HomePage />} />
             <Route path="/search" element={<HomePage />} />
             <Route path="/library" element={<LibraryPage />} />

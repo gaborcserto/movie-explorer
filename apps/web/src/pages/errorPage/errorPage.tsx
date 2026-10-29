@@ -1,6 +1,6 @@
 import './errorPage.scss';
 import { Link } from 'react-router-dom';
-import ErrorPresentation from '../../components/errorPresentation/errorPresentation';
+import ErrorPresentation from '../../components/errorPresentation';
 import useDetailPage from '../../components/details/hooks';
 
 function ErrorPage() {

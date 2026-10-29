@@ -66,9 +66,8 @@
   border-top: 0;
 }
 
-.details-section.movie-crew-section,
 .details-section.media-section,
-.cast-crew-layout > .details-section,
+.details-section.credits-section,
 .details-section.series-credits {
   border-top: 0;
 }
@@ -105,9 +104,9 @@
 
     aspect-ratio: 2 / 3;
     background: transparent;
+    border-radius: 16px;
     flex: 0 0 320px;
     width: 320px;
-    border-radius: 10px;
   }
 
   &__container {

@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { FaClapperboard, FaRegBookmark, FaTv, FaUsers } from 'react-icons/fa6';
+import { FaClapperboard, FaTv, FaUsers } from 'react-icons/fa6';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { createMemoryRouter, Outlet, RouterProvider } from 'react-router-dom';
 import type {
@@ -40,6 +40,7 @@ function setup(
           </SearchHistoryProvider>
         ),
         children: [
+          { path: '/', element: <SearchResults /> },
           { path: '/search/:searchQuery?', element: <SearchResults /> },
           { path: '/person/:id', element: <h1>Person details</h1> },
           { path: '/movie/:id', element: <h1>Movie details</h1> },
@@ -64,6 +65,23 @@ beforeEach(() => {
   vi.mocked(getPeople).mockResolvedValue(peoplePage());
 });
 afterEach(() => vi.restoreAllMocks());
+
+test('homepage navigation reuses the Home, Movies, Series and Library links', () => {
+  setup('/');
+
+  const navigation = screen.getByRole('navigation', {
+    name: 'Main navigation',
+  });
+
+  expect(
+    within(navigation)
+      .getAllByRole('link')
+      .map((link) => link.textContent?.trim())
+  ).toEqual(['Home', 'Movies', 'Series', 'Library']);
+  expect(
+    within(navigation).getByRole('link', { name: 'Home' })
+  ).toHaveAttribute('aria-current', 'page');
+});
 
 test('defaults to Movies, scopes filters, lazily loads People and retains independent results across URL history', async () => {
   const router = setup();
@@ -689,19 +707,4 @@ test('uses the TV icon for Series while preserving Movie and Person icons', asyn
     expect(svg?.innerHTML).toBe(expected.querySelector('svg')?.innerHTML);
     expect(svg).toHaveAttribute('aria-hidden', 'true');
   });
-  const libraryLink = nav.getByRole('link', { name: 'Library' });
-  const expectedLibraryIcon = document.createElement('div');
-  expectedLibraryIcon.innerHTML = renderToStaticMarkup(
-    <FaRegBookmark aria-hidden="true" />
-  );
-  expect(libraryLink).toBeInTheDocument();
-  expect(libraryLink).toHaveClass('search-views__library');
-  expect(libraryLink.querySelector('svg')?.innerHTML).toBe(
-    expectedLibraryIcon.querySelector('svg')?.innerHTML
-  );
-  expect(libraryLink.querySelector('svg')).toHaveAttribute(
-    'aria-hidden',
-    'true'
-  );
-  expect(libraryLink.parentElement?.lastElementChild).toBe(libraryLink);
 });

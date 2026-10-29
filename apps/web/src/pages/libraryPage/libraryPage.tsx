@@ -4,6 +4,7 @@ import { useStore } from 'zustand';
 
 import Card from '../../components/card/card';
 import '../../components/list/list.scss';
+import PrimaryNavigation from '../../components/navigation';
 import {
   selectLibraryCollection,
   useLibraryStore,
@@ -48,6 +49,11 @@ export default function LibraryPage() {
   return (
     <main className="library-page main" tabIndex={-1}>
       <div className="header page-hero header--movie-details library-page__hero" />
+      <div className="search-toolbar list__container container">
+        <div className="search-toolbar__content">
+          <PrimaryNavigation mode="library" activeView="library" />
+        </div>
+      </div>
       <div className="list__container container library-page__content">
         <h1>Personal Library</h1>
         <p className="library-page__description">

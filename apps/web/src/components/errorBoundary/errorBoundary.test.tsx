@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import ErrorBoundary from './errorBoundary';
+import ErrorBoundary from '.';
 
 interface MockProps {
   shouldThrow: boolean;

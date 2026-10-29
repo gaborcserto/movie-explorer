@@ -11,7 +11,7 @@ import type { SearchMediaType } from '@movie-explorer/contracts';
 
 import { getSearchResults } from '../../util/apiUtils';
 import presentApiError from '../../util/errorPresentation';
-import { ResultsSkeleton } from '../skeleton/contentSkeletons';
+import { ResultsSkeleton } from '../skeleton';
 import SearchResultCard from './searchResultCard';
 import { useResultHistory, useSearchHistory } from './useSearchHistory';
 import type { GroupedSnapshot } from './useSearchHistory';
@@ -138,6 +138,7 @@ export default function GroupedList({ query }: { query: string }) {
                 </p>
               )}
               <Link
+                className="text-link"
                 to={{ pathname: location.pathname, search: next.toString() }}
                 aria-label={`View all ${label.toLowerCase()}`}
               >

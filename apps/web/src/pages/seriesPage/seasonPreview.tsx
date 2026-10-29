@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import type { SeriesDetails } from '@movie-explorer/contracts';
 
 import MovieImage from '../../components/utility/customImage';
@@ -20,9 +20,56 @@ function measureScroll(container: HTMLDivElement) {
   };
 }
 
+function findSeasonIndex(
+  seasons: SeriesDetails['seasons'],
+  seasonText: string | null
+) {
+  if (seasonText === null || !/^\d+$/.test(seasonText)) {
+    return -1;
+  }
+
+  const seasonNumber = Number(seasonText);
+
+  if (!Number.isSafeInteger(seasonNumber)) {
+    return -1;
+  }
+
+  return seasons.findIndex((season) => season.seasonNumber === seasonNumber);
+}
+
+function getDefaultSeasonIndex(
+  seasons: SeriesDetails['seasons'],
+  requestedSeason: string | null
+) {
+  const requestedIndex = findSeasonIndex(seasons, requestedSeason);
+
+  if (requestedIndex >= 0) {
+    return requestedIndex;
+  }
+
+  const firstRegularSeason = seasons
+    .map((season, index) => ({ index, seasonNumber: season.seasonNumber }))
+    .filter(({ seasonNumber }) => seasonNumber > 0)
+    .sort((a, b) => a.seasonNumber - b.seasonNumber)[0];
+
+  if (firstRegularSeason) {
+    return firstRegularSeason.index;
+  }
+
+  const specialsIndex = seasons.findIndex(
+    (season) => season.seasonNumber === 0
+  );
+
+  return specialsIndex >= 0 ? specialsIndex : 0;
+}
+
 export default function SeasonPreview({ series }: { series: SeriesDetails }) {
   const id = useId();
-  const [selected, setSelected] = useState(0);
+  const [searchParams] = useSearchParams();
+  const requestedSeason = searchParams.get('season');
+  const [selected, setSelected] = useState(() =>
+    getDefaultSeasonIndex(series.seasons, requestedSeason)
+  );
   const tabs = useRef<HTMLDivElement>(null);
   const [scrollState, setScrollState] = useState({
     overflow: false,

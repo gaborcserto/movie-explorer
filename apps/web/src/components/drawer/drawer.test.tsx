@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import Drawer from './drawer';
+import Drawer from '.';
 
 afterEach(() => {
   cleanup();

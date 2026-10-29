@@ -178,6 +178,45 @@ describe('unified search', () => {
     ]);
   });
 
+  it('omits zero and unrated scores while preserving a valid rating', () => {
+    const response = mapSearch(
+      page([
+        {
+          id: 1,
+          media_type: 'tv',
+          name: 'Unrated',
+          poster_path: '/unrated.jpg',
+          vote_average: 0,
+          vote_count: 0,
+        },
+        {
+          id: 2,
+          media_type: 'tv',
+          name: 'Inconsistent unrated score',
+          poster_path: '/also-unrated.jpg',
+          vote_average: 8,
+          vote_count: 0,
+        },
+        {
+          id: 3,
+          media_type: 'tv',
+          name: 'Rated',
+          poster_path: '/rated.jpg',
+          vote_average: 7.5,
+          vote_count: 20,
+        },
+      ]),
+      'tv',
+      config.imageBaseUrl,
+    );
+
+    expect(
+      response.results.map((item) =>
+        item.mediaType === 'person' ? undefined : item.rating,
+      ),
+    ).toEqual([undefined, undefined, 7.5]);
+  });
+
   it('aborts timed out requests and clears the timer', async () => {
     jest.useFakeTimers();
     fetchMock.mockImplementation(

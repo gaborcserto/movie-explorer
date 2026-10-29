@@ -36,6 +36,22 @@ const envelope: CombinedFilmography = {
 };
 const fetchMock = vi.fn<typeof fetch>();
 
+async function selectOption(label: string, value: string) {
+  const trigger = screen.getByRole('combobox', { name: label });
+
+  await userEvent.click(trigger);
+
+  const option = screen
+    .getAllByRole('option')
+    .find((item) => item.getAttribute('data-value') === value);
+
+  if (!option) {
+    throw new Error(`Filmography option ${value} was not found.`);
+  }
+
+  await userEvent.click(option);
+}
+
 function setup(combined: CombinedFilmography = envelope, query = '') {
   fetchMock.mockResolvedValue(
     Response.json({
@@ -146,14 +162,8 @@ it('combines type, crew, job and sorting controls with history and repeated URL 
     screen.queryByRole('link', { name: 'A Movie' })
   ).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Crew' }));
-  await userEvent.selectOptions(
-    screen.getByRole('combobox', { name: 'Job or department' }),
-    'job:Writer'
-  );
-  await userEvent.selectOptions(
-    screen.getByRole('combobox', { name: 'Sort filmography' }),
-    'oldest'
-  );
+  await selectOption('Job or department', 'job:Writer');
+  await selectOption('Sort filmography', 'oldest');
   expect(
     new URLSearchParams(router.state.location.search).getAll('tag')
   ).toEqual(['a', 'b']);
@@ -164,13 +174,13 @@ it('combines type, crew, job and sorting controls with history and repeated URL 
   });
   expect(
     screen.getByRole('combobox', { name: 'Sort filmography' })
-  ).toHaveValue('newest');
+  ).toHaveAttribute('data-value', 'newest');
   await act(async () => {
     await router.navigate(1);
   });
   expect(
     screen.getByRole('combobox', { name: 'Sort filmography' })
-  ).toHaveValue('oldest');
+  ).toHaveAttribute('data-value', 'oldest');
   await userEvent.click(screen.getByRole('button', { name: 'Movies' }));
   expect(
     new URLSearchParams(router.state.location.search).has('personRole')
@@ -362,7 +372,7 @@ it('restores Series selection after navigating to Series Details and Back', asyn
   );
   expect(
     screen.getByRole('combobox', { name: 'Sort filmography' })
-  ).toHaveValue('title');
+  ).toHaveAttribute('data-value', 'title');
   expect(
     screen.queryByRole('link', { name: 'A Movie' })
   ).not.toBeInTheDocument();

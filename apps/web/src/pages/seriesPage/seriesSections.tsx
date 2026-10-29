@@ -8,6 +8,7 @@ import type {
 
 import CastPreview from '../../components/details/credits';
 import useCrewPreview from '../../components/details/credits/useCrewPreview';
+import DetailsTabs from '../../components/details/detailsTabs';
 import { MediaSection } from '../../components/details/media';
 import { SectionRecovery } from '../../components/details/recovery';
 import { getSeriesCredits } from '../../util/apiUtils';
@@ -59,10 +60,16 @@ export default function SeriesSections({
   recoverImages: (signal: AbortSignal) => Promise<void>;
   recoverVideos: (signal: AbortSignal) => Promise<void>;
 }) {
-  const [activeCreditTab, setActiveCreditTab] = useState<'cast' | 'crew'>(
-    'cast'
-  );
   const creditTabId = useId();
+  const [creditSelection, setCreditSelection] = useState<{
+    resetKey: number;
+    tab: 'cast' | 'crew';
+  }>({ resetKey: series.id, tab: 'cast' });
+  const activeCreditTab =
+    creditSelection.resetKey === series.id ? creditSelection.tab : 'cast';
+
+  const selectCreditTab = (tab: 'cast' | 'crew') =>
+    setCreditSelection({ resetKey: series.id, tab });
   const [credits, setCredits] = useState(series.credits);
   const { images, videos } = series;
   const creditState =
@@ -114,8 +121,9 @@ export default function SeriesSections({
     <div className="series-sections">
       <section
         className="details-section series-credits"
-        aria-label="Cast and crew"
+        aria-labelledby={`${creditTabId}-heading`}
       >
+        <h2 id={`${creditTabId}-heading`}>Cast &amp; Crew</h2>
         <SectionRecovery
           label="Cast and crew"
           availability={creditState}
@@ -127,51 +135,19 @@ export default function SeriesSections({
             }
           }}
         />
-        <div
-          className="series-credit-tabs"
-          role="tablist"
-          tabIndex={-1}
-          aria-label="Series credits"
-          onKeyDown={(event) => {
-            if (
-              event.key === 'ArrowLeft' ||
-              event.key === 'ArrowRight' ||
-              event.key === 'Home' ||
-              event.key === 'End'
-            ) {
-              event.preventDefault();
-              let next: 'cast' | 'crew';
-
-              if (event.key === 'Home') {
-                next = 'cast';
-              } else if (event.key === 'End') {
-                next = 'crew';
-              } else {
-                next = activeCreditTab === 'cast' ? 'crew' : 'cast';
-              }
-
-              setActiveCreditTab(next);
-              document.getElementById(`${creditTabId}-${next}-tab`)?.focus();
-            }
-          }}
-        >
-          {(['cast', 'crew'] as const).map((tab) => (
-            <button
-              key={tab}
-              id={`${creditTabId}-${tab}-tab`}
-              type="button"
-              role="tab"
-              aria-selected={activeCreditTab === tab}
-              aria-controls={`${creditTabId}-${tab}-panel`}
-              tabIndex={activeCreditTab === tab ? 0 : -1}
-              onClick={() => setActiveCreditTab(tab)}
-            >
-              {tab === 'cast' ? 'Cast' : 'Crew'}
-            </button>
-          ))}
-        </div>
+        <DetailsTabs
+          id={creditTabId}
+          tabs={[
+            { key: 'cast', label: 'Cast' },
+            { key: 'crew', label: 'Crew' },
+          ]}
+          activeTab={activeCreditTab}
+          ariaLabel="Cast and crew"
+          onChange={selectCreditTab}
+        />
         <div
           id={`${creditTabId}-cast-panel`}
+          className="details-tabs__panel"
           role="tabpanel"
           aria-labelledby={`${creditTabId}-cast-tab`}
           hidden={activeCreditTab !== 'cast'}
@@ -179,6 +155,7 @@ export default function SeriesSections({
         >
           {credits?.cast.length ? (
             <CastPreview
+              key={series.id}
               initialVisibleCount={16}
               batchSize={8}
               members={credits.cast.map((person, index) => ({
@@ -195,6 +172,7 @@ export default function SeriesSections({
         </div>
         <div
           id={`${creditTabId}-crew-panel`}
+          className="details-tabs__panel"
           role="tabpanel"
           aria-labelledby={`${creditTabId}-crew-tab`}
           hidden={activeCreditTab !== 'crew'}
@@ -216,7 +194,7 @@ export default function SeriesSections({
                         {person.id ? (
                           <Link
                             to={`/person/${person.id}`}
-                            className="person-credit-link"
+                            className="person-credit-link text-link"
                           >
                             {person.name}
                           </Link>
@@ -273,7 +251,7 @@ export default function SeriesSections({
         availability={{
           backdrops: images?.sections.backdrops,
           posters: images?.sections.posters,
-          videos: videos?.availability,
+          videos: videos?.availability ?? unavailable,
         }}
         imagesRecovery={
           <SectionRecovery

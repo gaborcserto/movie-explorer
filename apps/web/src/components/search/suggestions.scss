@@ -76,11 +76,14 @@
   }
 
   &__image {
+    border-radius: 10px;
     flex: 0 0 40px;
     height: 60px;
+    overflow: hidden;
     width: 40px;
 
     img {
+      border-radius: 10px;
       height: 100%;
       object-fit: cover;
       width: 100%;

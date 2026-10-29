@@ -8,11 +8,17 @@ function Footer() {
         <strong>Movie</strong> Explorer
       </Link>
       <p className="footer__attribution">
-        <a href="https://www.justwatch.com" target="_blank" rel="noreferrer">
+        <a
+          className="text-link"
+          href="https://www.justwatch.com"
+          target="_blank"
+          rel="noreferrer"
+        >
           JustWatch
         </a>
         {' · '}
         <a
+          className="text-link"
           href="https://www.omdbapi.com/"
           target="_blank"
           rel="noreferrer"
@@ -22,6 +28,7 @@ function Footer() {
         </a>
         {' · '}
         <a
+          className="text-link"
           href="https://creativecommons.org/licenses/by-nc/4.0/"
           target="_blank"
           rel="noreferrer"

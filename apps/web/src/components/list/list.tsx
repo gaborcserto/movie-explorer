@@ -6,7 +6,7 @@ import { FaXmark } from 'react-icons/fa6';
 import presentApiError from '../../util/errorPresentation';
 import Card from '../card/card';
 import Error from '../../layouts/error';
-import { ResultsSkeleton, CardSkeletons } from '../skeleton/contentSkeletons';
+import { ResultsSkeleton, CardSkeletons } from '../skeleton';
 import { defaultSortOrder, sortParams } from '../../util/apiUtils';
 import { movieHistorySignature, useSearchHistory } from './useSearchHistory';
 import useMovieResults from './hooks/useMovieResults';

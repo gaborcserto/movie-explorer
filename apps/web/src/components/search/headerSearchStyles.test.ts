@@ -49,6 +49,37 @@ test('keeps the magnifier anchored while the shared field and its content animat
   );
 });
 
+test('uses a fixed two pixel coral border and ten pixel radius for the expandable field', () => {
+  const stylesheet = postcss.parse(
+    compile(fileURLToPath(new URL('./headerSearch.scss', import.meta.url))).css
+  );
+  const declarations = new Map<string, Record<string, string>>();
+
+  stylesheet.walkRules((rule) => {
+    if (rule.parent?.type !== 'root') return;
+    if (
+      !rule.selectors.includes('.detail-search__form') &&
+      !rule.selectors.includes('.detail-search__form--expanded')
+    ) {
+      return;
+    }
+
+    const values: Record<string, string> = {};
+    rule.walkDecls((declaration) => {
+      values[declaration.prop] = declaration.value;
+    });
+    declarations.set(rule.selectors[0], values);
+  });
+
+  expect(declarations.get('.detail-search__form')).toMatchObject({
+    border: '2px solid transparent',
+    'border-radius': '10px',
+  });
+  expect(declarations.get('.detail-search__form--expanded')).toMatchObject({
+    'border-color': '#f65261',
+  });
+});
+
 test('morphs both icons in the anchored toggle and disables that motion for reduced motion', () => {
   const stylesheet = postcss.parse(
     compile(fileURLToPath(new URL('./headerSearch.scss', import.meta.url))).css

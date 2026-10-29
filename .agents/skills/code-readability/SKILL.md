@@ -44,6 +44,29 @@ preserve side-effect imports, including stylesheet imports, in their existing
 order. Let the project's ESLint, Prettier, Oxfmt or equivalent rules determine
 syntax and wrapping, and do not add an import sorter for this convention.
 
+## React component organization
+
+Every new reusable React component in React, Vite, or Next.js projects must
+live in its own dedicated directory with an `index.ts` public entry point.
+Keep its implementation, component-specific styles, tests, hooks, and small
+private utilities colocated where appropriate. Export its public component and
+any types intended for consumers from the entry point, and import it through
+that entry point rather than its implementation file. Apply this to Server and
+Client Components; avoid higher-level barrels and circular dependencies.
+
+```text
+components/
+  animated-select/
+    index.ts
+    animated-select.tsx
+    animated-select.scss
+    animated-select.test.tsx
+```
+
+Use existing repository naming conventions. Do not reorganize unrelated
+components solely to satisfy this rule; for existing shared components, add or
+use a dedicated entry point when it can be done without changing behavior.
+
 ## Vertical Spacing / Logical Grouping
 
 ### Function-valued Variable Declarations in TypeScript and TSX

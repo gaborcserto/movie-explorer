@@ -6,19 +6,21 @@ import { FaXmark } from 'react-icons/fa6';
 import useDrawerDialog from './useDrawerDialog';
 import './drawer.scss';
 
+export interface DrawerProps {
+  open: boolean;
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  footer?: ReactNode;
+}
+
 export default function Drawer({
   open,
   title,
   onClose,
   children,
   footer,
-}: {
-  open: boolean;
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-  footer?: ReactNode;
-}) {
+}: DrawerProps) {
   const panel = useRef<HTMLElement>(null);
   const titleId = useId();
 

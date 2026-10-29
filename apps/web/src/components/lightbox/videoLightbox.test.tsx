@@ -24,11 +24,18 @@ const movie: MovieDetails = {
   ],
 };
 
+async function renderVideoTab(movieData = movie) {
+  const user = userEvent.setup();
+
+  const result = render(<DetailsLowerContent movieData={movieData} />);
+  await user.click(screen.getByRole('tab', { name: 'Videos & Trailers' }));
+
+  return { user, ...result };
+}
+
 describe('video lightbox', () => {
   it('opens a lazy YouTube embed from the thumbnail and closes with its button', async () => {
-    const user = userEvent.setup();
-
-    render(<DetailsLowerContent movieData={movie} />);
+    const { user } = await renderVideoTab();
     const trigger = screen.getByRole('button', {
       name: 'Play Official Trailer',
     });
@@ -60,8 +67,7 @@ describe('video lightbox', () => {
   });
 
   it('closes with Escape and restores focus to the thumbnail', async () => {
-    const user = userEvent.setup();
-    render(<DetailsLowerContent movieData={movie} />);
+    const { user } = await renderVideoTab();
     const trigger = screen.getByRole('button', {
       name: 'Play Official Trailer',
     });
@@ -75,8 +81,7 @@ describe('video lightbox', () => {
   });
 
   it('navigates between videos, replaces the player, and disables edge controls', async () => {
-    const user = userEvent.setup();
-    render(<DetailsLowerContent movieData={movie} />);
+    const { user } = await renderVideoTab();
     await user.click(
       screen.getByRole('button', { name: 'Play Official Trailer' })
     );
@@ -100,8 +105,7 @@ describe('video lightbox', () => {
   });
 
   it('supports arrow keys from the dialog and leaves interactive controls to their own keys', async () => {
-    const user = userEvent.setup();
-    render(<DetailsLowerContent movieData={movie} />);
+    const { user } = await renderVideoTab();
     await user.click(
       screen.getByRole('button', { name: 'Play Official Trailer' })
     );
@@ -123,9 +127,7 @@ describe('video lightbox', () => {
         { name: 'Invalid YouTube', url: 'https://youtube.com/watch?v=bad' },
       ],
     };
-    const { rerender } = render(
-      <DetailsLowerContent movieData={externalMovie} />
-    );
+    const { rerender } = await renderVideoTab(externalMovie);
 
     expect(
       screen.getByRole('link', { name: 'External Trailer' })
@@ -147,7 +149,7 @@ describe('video lightbox', () => {
 });
 
 test('describes keyboard exit from the cross-origin player without playback help', async () => {
-  render(<DetailsLowerContent movieData={movie} />);
+  await renderVideoTab();
   await userEvent.click(
     screen.getByRole('button', { name: 'Play Official Trailer' })
   );
@@ -165,17 +167,13 @@ test('describes keyboard exit from the cross-origin player without playback help
 });
 
 test('keeps video thumbnails and missing-image placeholders independent of play names', async () => {
-  render(
-    <DetailsLowerContent
-      movieData={{
-        ...movie,
-        videos: [
-          movie.videos![0],
-          { name: 'No thumbnail', url: 'https://youtu.be/9bZkp7q19f0' },
-        ],
-      }}
-    />
-  );
+  await renderVideoTab({
+    ...movie,
+    videos: [
+      movie.videos![0],
+      { name: 'No thumbnail', url: 'https://youtu.be/9bZkp7q19f0' },
+    ],
+  });
   const first = screen.getByRole('button', { name: 'Play Official Trailer' });
   fireEvent.error(first.querySelector('img')!);
   expect(first.querySelector('img')).toBeNull();
@@ -191,14 +189,10 @@ test('keeps video thumbnails and missing-image placeholders independent of play 
 
 test('keeps long video titles accessible without adding a visible header', async () => {
   const longTitle = 'An unusually long official trailer title '.repeat(6);
-  render(
-    <DetailsLowerContent
-      movieData={{
-        ...movie,
-        videos: [{ ...movie.videos![0], name: longTitle }],
-      }}
-    />
-  );
+  await renderVideoTab({
+    ...movie,
+    videos: [{ ...movie.videos![0], name: longTitle }],
+  });
   await userEvent.click(
     screen.getByRole('button', { name: /^Play An unusually long official/ })
   );

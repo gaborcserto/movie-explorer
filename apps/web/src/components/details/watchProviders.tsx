@@ -4,7 +4,7 @@ import type {
   WatchProviderCategory,
 } from '@movie-explorer/contracts';
 
-import Skeleton, { SkeletonRegion } from '../skeleton/skeleton';
+import { Skeleton, SkeletonRegion } from '../skeleton';
 import type useWatchProvidersResource from './useWatchProvidersResource';
 
 import appleLogo from '../../assets/img/providers/apple.webp';

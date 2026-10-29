@@ -4,7 +4,7 @@ import type { SectionAvailability } from '@movie-explorer/contracts';
 import { ApiRequestError } from '../../../util/apiUtils';
 import { isCancelledError } from '../../../util/errorPresentation';
 import './sectionRecovery.scss';
-import { SectionSkeleton } from '../../skeleton/contentSkeletons';
+import { SectionSkeleton } from '../../skeleton';
 
 interface Props {
   label: string;

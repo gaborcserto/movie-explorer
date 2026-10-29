@@ -85,6 +85,7 @@ test('aligns shared Header, Search and detail content geometry', () => {
   const appHeaderPadding = declarationsFor(appStylesheet, '.app-header__inner');
 
   expect(appHeaderPadding['min-height']).toBe('44px');
+  expect(appHeaderPadding['padding-top']).toBe('10px');
   expect(detailsPadding['padding-inline']).toBe('60px');
   expect(appHeaderPadding['padding-inline']).toBe('60px');
   expect(
@@ -141,6 +142,13 @@ test('aligns shared Header, Search and detail content geometry', () => {
     padding: '20px clamp(32px, 8vw, 120px) 56px',
     width: '100%',
   });
+  expect(declarationsFor(stylesheet, '.header__search__input')).toMatchObject({
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    'border-radius': '10px',
+  });
+  expect(
+    declarationsFor(stylesheet, '.header__search__input:focus')['border-color']
+  ).toBe('rgba(246, 82, 97, 0.65)');
 });
 
 test('overlays expanded detail search over the brand only on narrow screens', () => {

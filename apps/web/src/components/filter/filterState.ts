@@ -10,7 +10,12 @@ export const validYear = (value: string) =>
 export function readSearchView(params: URLSearchParams) {
   const view = params.get('view');
 
-  return view === 'all' || view === 'tv' || view === 'people' ? view : 'movies';
+  return view === 'discover' ||
+    view === 'all' ||
+    view === 'tv' ||
+    view === 'people'
+    ? view
+    : 'movies';
 }
 
 export function readFilters(params: URLSearchParams, isSearch: boolean) {

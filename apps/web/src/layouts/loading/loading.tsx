@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import Skeleton, { SkeletonRegion } from '../../components/skeleton/skeleton';
+import { Skeleton, SkeletonRegion } from '../../components/skeleton';
 
 interface LoadingProps {
   className: string;

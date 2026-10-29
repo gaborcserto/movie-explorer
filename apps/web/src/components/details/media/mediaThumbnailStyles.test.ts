@@ -17,6 +17,47 @@ const declarations = (selector: string) =>
 const declarationsForMedia = (selector: string, query: string) =>
   findDeclarationsForMedia(stylesheet, selector, query);
 
+test('styles shared detail tabs for horizontal access, focus and reduced motion', () => {
+  expect(declarations('.details-tabs')).toMatchObject({
+    'overflow-x': 'auto',
+    'overscroll-behavior-x': 'contain',
+    'scrollbar-width': 'none',
+    'scroll-behavior': 'smooth',
+  });
+  expect(declarations('.details-tabs button')).toMatchObject({
+    flex: '0 0 auto',
+    'white-space': 'nowrap',
+  });
+  expect(
+    declarations('.details-tabs button[aria-selected=true]:after').transform
+  ).toBe('scaleX(1)');
+  expect(declarations('.details-tabs button:focus-visible').outline).toBe(
+    '2px solid #f65261'
+  );
+  expect(declarations('.media-section > .details-tabs')['border-bottom']).toBe(
+    '1px solid rgba(255, 255, 255, 0.16)'
+  );
+  expect(
+    declarations('.details-tabs button:after')['background-color'] ??
+      declarations('.details-tabs button:after').background
+  ).toBe('#f65261');
+  expect(declarations('.details-tabs button:after').bottom).toBe('-1px');
+  expect(declarations('.details-tabs__panel:not([hidden])').animation).toBe(
+    'details-tab-panel-in 180ms ease both'
+  );
+  expect(
+    declarationsForMedia('.details-tabs', '(prefers-reduced-motion: reduce)')[
+      'scroll-behavior'
+    ]
+  ).toBe('auto');
+  expect(
+    declarationsForMedia(
+      '.details-tabs__panel:not([hidden])',
+      '(prefers-reduced-motion: reduce)'
+    ).animation
+  ).toBe('none');
+});
+
 test.each(['.photo-tile', '.video-tile'])(
   'matches Movie Card outer-card hover behavior for %s',
   (tileSelector) => {
@@ -26,7 +67,7 @@ test.each(['.photo-tile', '.video-tile'])(
       transition: 'transform 0.24s ease, filter 0.24s ease',
     });
     expect(declarations(tileSelector)).toMatchObject({
-      'border-radius': '4px',
+      'border-radius': '10px',
       overflow: 'hidden',
     });
     expect(declarations(imageSelector).transform).toBeUndefined();
@@ -116,10 +157,12 @@ test('reduces media columns at tablet and mobile widths', () => {
 test('reserves thumbnail space for loaded, missing, and failed images', () => {
   expect(declarations('.media-thumbnail')).toMatchObject({
     'aspect-ratio': '16/9',
+    'border-radius': '10px',
     width: '100%',
     overflow: 'hidden',
   });
   expect(declarations('.media-thumbnail__img')).toMatchObject({
+    'border-radius': '10px',
     'object-fit': 'cover',
     width: '100%',
     height: '100%',

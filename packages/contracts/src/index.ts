@@ -74,3 +74,4 @@ export type {
   RatingResult,
   Ratings,
 } from './ratings';
+export type { DiscoverySection, StreamingProviderInfo } from './discovery';

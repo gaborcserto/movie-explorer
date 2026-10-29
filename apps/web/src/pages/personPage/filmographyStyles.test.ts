@@ -48,6 +48,18 @@ test('preserves active category underlines and visible keyboard focus', () => {
   });
 });
 
+test('rounds Filmography view buttons', () => {
+  expect(
+    declarations('.filmography__controls .filmography__views .btn')[
+      'border-radius'
+    ]
+  ).toBe('10px');
+});
+
+test('keeps Filmography top padding without a top border or margin', () => {
+  expect(declarations('.filmography')).toEqual({ 'padding-top': '32px' });
+});
+
 test('keeps media labels inline with wrapping titles and the poster in the left column on mobile', () => {
   expect(declarations('.filmography__heading')).toMatchObject({
     'grid-column': '2',
@@ -67,6 +79,7 @@ test('keeps media labels inline with wrapping titles and the poster in the left 
   expect(declarations('.filmography__poster')).toMatchObject({
     'grid-column': '1',
     'grid-row': '1/-1',
+    'border-radius': '10px',
   });
 
   const mobile = stylesheet.nodes

@@ -11,6 +11,13 @@ import {
 const stylesheet = postcss.parse(
   compile(fileURLToPath(new URL('./media.scss', import.meta.url))).css
 );
+const globalStylesheet = postcss.parse(
+  compile(fileURLToPath(new URL('../../../index.scss', import.meta.url)), {
+    loadPaths: [
+      fileURLToPath(new URL('../../../../../../node_modules', import.meta.url)),
+    ],
+  }).css
+);
 
 const declarations = (selector: string) =>
   declarationsForSelector(stylesheet, selector);
@@ -98,8 +105,12 @@ test('uses five desktop columns, four tablet columns and horizontal Cast scrolli
   expect(declarations('.cast-member')).toMatchObject({ 'min-width': '0' });
   expect(declarations('.cast-member__image')).toMatchObject({
     'aspect-ratio': '2/3',
+    'border-radius': '10px',
     width: '100%',
   });
+  expect(declarations('.cast-member__image__img')['border-radius']).toBe(
+    '10px'
+  );
 });
 
 test.each(['hover', 'focus-visible'])(
@@ -150,14 +161,22 @@ test('disables Cast animations when reduced motion is requested', () => {
   expect(reducedMotionTransform).toBe('none');
 });
 
-test('places Cast and Crew in desktop columns and stacks them at tablet widths', () => {
+test('uses a larger desktop Cast column and a responsive Crew sidebar', () => {
+  expect(declarations('.details-tabs')).toMatchObject({
+    display: 'flex',
+    'overflow-x': 'auto',
+    'overscroll-behavior-x': 'contain',
+  });
   expect(declarations('.cast-crew-layout')).toMatchObject({
     display: 'grid',
+    gap: '32px',
     'grid-template-columns': 'minmax(0, 2.2fr) minmax(250px, 1fr)',
   });
   expect(
-    declarationsForMedia('.cast-crew-layout', '(max-width: 991.98px)')
-  ).toMatchObject({ 'grid-template-columns': 'minmax(0, 1fr)' });
+    declarationsForMedia('.cast-crew-layout', '(max-width: 991.98px)')[
+      'grid-template-columns'
+    ]
+  ).toBe('minmax(0, 1fr)');
   expect(declarations('.cast-grid')['grid-template-columns']).toBe(
     'repeat(5, minmax(0, 1fr))'
   );
@@ -182,9 +201,13 @@ test('uses compact Crew name grids, neutral links and visible focus', () => {
   expect(
     declarations('.crew-group .person-credit-link')['text-decoration']
   ).toBe('none');
-  expect(declarations('.crew-group .person-credit-link:hover').color).toBe(
-    '#f65261'
-  );
+  const textLinkHoverColors: string[] = [];
+  globalStylesheet.walkRules('.text-link:hover', (rule) => {
+    rule.walkDecls('color', (declaration) => {
+      textLinkHoverColors.push(declaration.value);
+    });
+  });
+  expect(textLinkHoverColors).toContain('#f65261');
   expect(
     declarations('.crew-group .person-credit-link:focus-visible').outline
   ).toBe('2px solid #f65261');

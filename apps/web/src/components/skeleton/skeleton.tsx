@@ -2,19 +2,27 @@ import type { CSSProperties, ReactNode } from 'react';
 
 import './skeleton.scss';
 
+export interface SkeletonProps {
+  width?: CSSProperties['width'];
+  height?: CSSProperties['height'];
+  radius?: CSSProperties['borderRadius'];
+  circle?: boolean;
+  className?: string;
+}
+
+export interface SkeletonRegionProps {
+  label: string;
+  className?: string;
+  children: ReactNode;
+}
+
 export default function Skeleton({
   width,
   height,
   radius,
   circle = false,
   className = '',
-}: {
-  width?: CSSProperties['width'];
-  height?: CSSProperties['height'];
-  radius?: CSSProperties['borderRadius'];
-  circle?: boolean;
-  className?: string;
-}) {
+}: SkeletonProps) {
   return (
     <span
       className={`skeleton ${className}`}
@@ -28,11 +36,7 @@ export function SkeletonRegion({
   label,
   className = '',
   children,
-}: {
-  label: string;
-  className?: string;
-  children: ReactNode;
-}) {
+}: SkeletonRegionProps) {
   return (
     <div className={className} aria-busy="true" aria-label={label}>
       <span className="visually-hidden" role="status">

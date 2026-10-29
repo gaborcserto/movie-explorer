@@ -2,8 +2,6 @@
 @use '../../assets/scss/interactive-row' as interactive;
 
 .filmography {
-  border-top: 1px solid $grey-2;
-  margin-top: 48px;
   padding-top: 32px;
 
   h2 {
@@ -74,7 +72,7 @@
     align-items: end;
     margin-bottom: 24px;
 
-    label {
+    .filmography__field {
       display: grid;
       color: rgb(255 255 255 / 0.65);
       flex: 0 1 240px;
@@ -82,48 +80,7 @@
       gap: 8px;
       max-width: 100%;
       min-width: 0;
-      position: relative;
       text-transform: uppercase;
-
-      &:after {
-        background: $red-1;
-        bottom: 12px;
-        content: '';
-        height: 20px;
-        mask: url('../../assets/img/down.svg') center / contain no-repeat;
-        pointer-events: none;
-        position: absolute;
-        right: 10px;
-        width: 20px;
-      }
-    }
-
-    select {
-      appearance: none;
-      background: $grey-3;
-      border: 1px solid rgb(255 255 255 / 0.18);
-      border-radius: 2px;
-      color: $white;
-      cursor: pointer;
-      font: inherit;
-      font-size: 16px;
-      font-weight: 500;
-      line-height: 20px;
-      max-width: 100%;
-      min-height: 44px;
-      min-width: 0;
-      padding: 10px 36px 10px 12px;
-      text-overflow: ellipsis;
-      width: 100%;
-
-      &:hover {
-        border-color: $red-1;
-      }
-
-      &:focus-visible {
-        outline: 2px solid $red-1;
-        outline-offset: 3px;
-      }
     }
 
     .btn {
@@ -137,6 +94,10 @@
       &:hover {
         border-color: $red-1;
       }
+    }
+
+    .filmography__views .btn {
+      border-radius: 10px;
     }
 
     [aria-pressed='true'] {
@@ -211,7 +172,7 @@
   &__poster {
     aspect-ratio: 2 / 3;
     background: rgb(0 0 0 / 0.25);
-    border-radius: 4px;
+    border-radius: 10px;
     grid-column: 1;
     grid-row: 1 / -1;
     overflow: hidden;
@@ -224,6 +185,7 @@
     width: 100%;
 
     &__img {
+      border-radius: 10px;
       height: 100%;
       object-fit: cover;
       width: 100%;

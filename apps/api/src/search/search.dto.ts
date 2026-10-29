@@ -51,6 +51,8 @@ export class SearchMovieDto {
   title: string;
   @ApiPropertyOptional()
   posterUrl?: string;
+  @ApiPropertyOptional()
+  backdropUrl?: string;
   @ApiPropertyOptional({ format: 'date' })
   releaseDate?: string;
   @ApiPropertyOptional({ type: 'integer' })
@@ -72,6 +74,8 @@ export class SearchSeriesDto {
   title: string;
   @ApiPropertyOptional()
   posterUrl?: string;
+  @ApiPropertyOptional()
+  backdropUrl?: string;
   @ApiPropertyOptional({ format: 'date' })
   firstAirDate?: string;
   @ApiPropertyOptional()

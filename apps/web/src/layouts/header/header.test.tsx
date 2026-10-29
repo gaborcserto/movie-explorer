@@ -1,7 +1,19 @@
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 
 import Header from './header';
+
+function CurrentLocation() {
+  const location = useLocation();
+
+  return (
+    <output data-testid="current-location">
+      {location.pathname}
+      {location.search}
+    </output>
+  );
+}
 
 describe('Header component', () => {
   it('keeps the brand in one shared position and offers detail search on detail routes', () => {
@@ -31,7 +43,7 @@ describe('Header component', () => {
 
     expect(screen.getByRole('link', { name: 'MovieExplorer' })).toHaveAttribute(
       'href',
-      '/search'
+      '/'
     );
     expect(screen.queryByRole('link', { name: 'Library' })).toBeNull();
     expect(screen.getByRole('banner')).toHaveClass('app-header--search');
@@ -61,5 +73,26 @@ describe('Header component', () => {
 
     expect(screen.getByRole('button', { name: /search/i })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Library' })).toBeNull();
+  });
+
+  it('returns to the clean Discover route from Library with the brand link', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter
+        initialEntries={['/library?view=tv&filter=drama&sorting=title&page=3']}
+      >
+        <CurrentLocation />
+        <Routes>
+          <Route path="/library" element={<Header />} />
+          <Route path="/" element={<Header />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole('link', { name: 'MovieExplorer' }));
+
+    expect(screen.getByTestId('current-location')).toHaveTextContent('/');
+    expect(screen.getByTestId('current-location')).not.toHaveTextContent('?');
   });
 });

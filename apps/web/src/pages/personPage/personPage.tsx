@@ -12,9 +12,11 @@ import DetailsMetadata from '../../components/details/metadata/detailsMetadata';
 import DetailsPageLayout, {
   DetailsHeroFrame,
 } from '../../components/details/detailsPageLayout';
-import PhotoPreview from '../../components/details/media';
-import Skeleton, { SkeletonRegion } from '../../components/skeleton/skeleton';
-import { ResultsSkeleton } from '../../components/skeleton/contentSkeletons';
+import {
+  ResultsSkeleton,
+  Skeleton,
+  SkeletonRegion,
+} from '../../components/skeleton';
 import presentApiError, {
   isCancelledError,
 } from '../../util/errorPresentation';
@@ -316,23 +318,6 @@ function PersonDetailsPage({ id }: { id: string }) {
                 }}
               />
             )}
-            {state.status === 'success' &&
-              Boolean(state.person.profilePhotos?.length) && (
-                <section
-                  className="details-section media-section"
-                  aria-labelledby="person-photos-heading"
-                >
-                  <div className="media-block">
-                    <h3 id="person-photos-heading">Photos</h3>
-                    <PhotoPreview
-                      photos={state.person.profilePhotos ?? []}
-                      title={state.person.name}
-                      portrait
-                      resetKey={state.person.id}
-                    />
-                  </div>
-                </section>
-              )}
             {state.status === 'success' && (
               <Filmography
                 entries={

@@ -8,10 +8,7 @@ import { DetailError } from './recovery';
 import presentApiError, {
   isCancelledError,
 } from '../../util/errorPresentation';
-import {
-  DetailHeroSkeleton,
-  DetailSectionsSkeleton,
-} from '../skeleton/contentSkeletons';
+import { DetailHeroSkeleton, DetailSectionsSkeleton } from '../skeleton';
 import {
   getMovie,
   getMovieSection,

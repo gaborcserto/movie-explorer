@@ -12,14 +12,14 @@ import { genresFilter, sortOptions } from '../../data';
 import { sortParams } from '../../util/apiUtils';
 import { readFilters, validYear } from './filterState';
 import type { FilterValues } from './filterState';
-import Drawer from '../drawer/drawer';
+import Drawer from '../drawer';
 
-function getSortOptionLabel(option: string, series: boolean) {
+function getSortOptionLabel(option: string) {
   if (option !== 'Release Date') {
     return option;
   }
 
-  return series ? 'First-air Date' : 'Date';
+  return 'Date';
 }
 
 export default function FilterPanel({
@@ -187,9 +187,9 @@ export default function FilterPanel({
           <section className="filter-section">
             <h3>
               <FaCalendarDays aria-hidden="true" />
-              {series ? 'First-air Year' : 'Release Year'}
+              {series ? 'Date' : 'Release Year'}
             </h3>
-            {series && <label htmlFor={yearId}>First-air year</label>}
+            {series && <label htmlFor={yearId}>Year</label>}
             <div
               className={`filter-year-picker${series ? '' : ' filter-year-picker--compact'}`}
             >
@@ -199,7 +199,7 @@ export default function FilterPanel({
                 type="text"
                 inputMode="numeric"
                 maxLength={4}
-                aria-label={series ? 'First-air year' : 'Release Year'}
+                aria-label={series ? 'Year' : 'Release Year'}
                 placeholder="Any Year"
                 value={draft.year}
                 aria-invalid={invalidYear}
@@ -392,7 +392,7 @@ export default function FilterPanel({
                       aria-pressed={draft.sorting === sorting}
                       onClick={() => update({ sorting })}
                     >
-                      {getSortOptionLabel(option, series)}
+                      {getSortOptionLabel(option)}
                     </button>
                   );
                 })}

@@ -4,6 +4,7 @@ React 19, TypeScript, and Vite frontend for Movie Explorer.
 
 ## Routes
 
+- `/` (Discover homepage)
 - `/search` and `/search/:searchQuery` (browse and search)
 - `/movie/:movieId` (movie details)
 - `/series/:id`, `/series/:id/seasons/:seasonNumber`, and `/series/:id/seasons/:seasonNumber/episodes/:episodeNumber` (series, season, and episode details)

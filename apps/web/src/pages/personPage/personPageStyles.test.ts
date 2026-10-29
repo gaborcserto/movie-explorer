@@ -48,14 +48,14 @@ test('reuses the shared cinematic background for the Person hero', () => {
   expect(detailStylesheet.toString()).not.toContain('detail-page__backdrop');
 });
 
-test('matches the movie title typography and preserves a ten pixel portrait radius', () => {
+test('matches the movie title typography and preserves the hero portrait radius', () => {
   expect(
     declarationsForSelector(detailStylesheet, '.movie-details__container')
   ).toMatchObject({ display: 'flex', gap: '60px', 'padding-bottom': '30px' });
   expect(
     declarationsForSelector(stylesheet, '.person-profile__portrait')
   ).toMatchObject({
-    'border-radius': '10px',
+    'border-radius': '16px',
   });
   expect(
     declarationsForSelector(stylesheet, '.person-profile h1')

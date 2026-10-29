@@ -204,6 +204,129 @@ afterEach(() => {
 
 describe('Series hierarchy', () => {
   it.each([
+    {
+      name: 'Season 1 before Specials in an unordered list',
+      seasons: [
+        { ...season, id: 50, seasonNumber: 5 },
+        { ...season, id: 10, seasonNumber: 0 },
+        { ...season, id: 20, seasonNumber: 1 },
+      ],
+      requestedSeason: null,
+      selectedSeason: 1,
+    },
+    {
+      name: 'Season 1 when Specials are absent',
+      seasons: [
+        { ...season, id: 50, seasonNumber: 5 },
+        { ...season, id: 20, seasonNumber: 1 },
+      ],
+      requestedSeason: null,
+      selectedSeason: 1,
+    },
+    {
+      name: 'the lowest regular season when Season 1 is absent',
+      seasons: [
+        { ...season, id: 50, seasonNumber: 5 },
+        { ...season, id: 10, seasonNumber: 0 },
+        { ...season, id: 20, seasonNumber: 2 },
+      ],
+      requestedSeason: null,
+      selectedSeason: 2,
+    },
+    {
+      name: 'Specials when no regular seasons exist',
+      seasons: [{ ...season, seasonNumber: 0 }],
+      requestedSeason: null,
+      selectedSeason: 0,
+    },
+    {
+      name: 'an explicitly requested available season',
+      seasons: [
+        { ...season, seasonNumber: 0 },
+        { ...season, id: 20, seasonNumber: 1 },
+        { ...season, id: 50, seasonNumber: 5 },
+      ],
+      requestedSeason: '0',
+      selectedSeason: 0,
+    },
+  ])(
+    'selects $name by season number',
+    async ({ seasons, requestedSeason, selectedSeason }) => {
+      fetchMock.mockResolvedValue(Response.json({ ...series, seasons }));
+      setup(`/series/1${requestedSeason ? `?season=${requestedSeason}` : ''}`);
+
+      const selectedTab = await screen.findByRole('tab', {
+        name:
+          selectedSeason === 0
+            ? 'Specials, Season 0'
+            : `Season ${selectedSeason}`,
+      });
+      expect(selectedTab).toHaveAttribute('aria-selected', 'true');
+      expect(
+        screen.getByRole('link', { name: 'View season details' })
+      ).toHaveAttribute('href', `/series/1/seasons/${selectedSeason}`);
+    }
+  );
+
+  it('uses the selected regular season and does not retain episodes when navigating to another series', async () => {
+    const firstSeries = {
+      ...series,
+      seasons: [
+        { ...season, id: 20, seasonNumber: 1 },
+        { ...season, seasonNumber: 0 },
+      ],
+    };
+    const secondSeries = {
+      ...series,
+      id: 2,
+      title: 'Another Journey',
+      seasons: [
+        { ...season, seriesId: 2, id: 60, seasonNumber: 3 },
+        { ...season, seriesId: 2, id: 70, seasonNumber: 0 },
+      ],
+    };
+    fetchMock.mockImplementation(async (input) => {
+      const path = new URL(String(input)).pathname;
+
+      if (path.includes('/seasons/')) {
+        const pathParts = path.split('/');
+        const seriesIdNumber = Number(pathParts[4]);
+        const seasonNumber = Number(pathParts[6]);
+
+        return Response.json({
+          ...season,
+          id: seriesIdNumber * 100 + seasonNumber,
+          seriesId: seriesIdNumber,
+          seasonNumber,
+          episodeCount: 0,
+          episodes: [],
+        });
+      }
+
+      return Response.json(path.endsWith('/2') ? secondSeries : firstSeries);
+    });
+    const user = userEvent.setup();
+    setup('/series/1');
+
+    const firstSeasonTab = await screen.findByRole('tab', { name: 'Season 1' });
+    expect(firstSeasonTab).toHaveAttribute('aria-selected', 'true');
+    expect(
+      await screen.findByText('No episodes available for this season yet.')
+    ).toBeVisible();
+
+    await user.click(screen.getByRole('link', { name: 'Other series' }));
+
+    const secondSeasonTab = await screen.findByRole('tab', {
+      name: 'Season 3',
+    });
+    expect(secondSeasonTab).toHaveAttribute('aria-selected', 'true');
+    expect(
+      await screen.findByText('No episodes available for this season yet.')
+    ).toBeVisible();
+    expect(screen.queryByText('The Journey episode')).toBeNull();
+  });
+
+  it.each([
     { airDate: '2025-04-01', hasYear: true },
     { airDate: null, hasYear: false },
   ])(
@@ -664,6 +787,7 @@ describe('Series hierarchy', () => {
       })
     );
     setup('/series/1');
+    await userEvent.click(await screen.findByRole('tab', { name: 'Posters' }));
     expect(
       await screen.findByRole('link', { name: 'Series Actor' })
     ).toHaveAttribute('href', '/person/11');
@@ -713,6 +837,9 @@ describe('Series hierarchy', () => {
     fetchMock.mockResolvedValueOnce(
       Response.json({ videos: [], availability: { status: 'available' } })
     );
+    await userEvent.click(
+      screen.getByRole('tab', { name: 'Videos & Trailers' })
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Retry videos' }));
     await waitFor(() => {
       expect(
@@ -755,6 +882,7 @@ describe('Series hierarchy', () => {
     );
 
     await userEvent.click(screen.getByRole('button', { name: 'Retry images' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Posters' }));
 
     expect(
       await screen.findByRole('button', { name: 'View The Journey poster 1' })
@@ -797,9 +925,12 @@ describe('Series hierarchy', () => {
     const status = await screen.findByText('Images loaded.');
     expect(status).toHaveTextContent('Images loaded.');
     expect(status.parentElement).toHaveFocus();
-    expect(
-      screen.queryByRole('heading', { name: 'Media' })
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Media' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Backdrops' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    expect(screen.getByRole('tab', { name: 'Posters' })).toBeInTheDocument();
     expect(screen.queryByText('0 posters available')).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
@@ -1189,7 +1320,7 @@ describe('Series hierarchy', () => {
         ? Response.json({ ...season, description: 'A season overview.' })
         : Response.json(series)
     );
-    setup('/series/1');
+    setup('/series/1?season=0');
 
     const firstEpisode = await screen.findByRole('link', {
       name: '1. Beginning',
@@ -1264,7 +1395,7 @@ describe('Series hierarchy', () => {
         ? Response.json({ ...season, episodeCount: episodes.length, episodes })
         : Response.json(series)
     );
-    setup('/series/1');
+    setup('/series/1?season=0');
 
     expect(
       await screen.findByRole('link', { name: '10. Episode 10' })
@@ -1320,7 +1451,7 @@ describe('Series hierarchy', () => {
 
       return Response.json(series);
     });
-    setup('/series/1');
+    setup('/series/1?season=0');
 
     expect(
       await screen.findByRole('link', { name: '10. Special 10' })
@@ -1346,7 +1477,7 @@ describe('Series hierarchy', () => {
       if (path.includes('/seasons/')) {
         const seasonNumber = Number(path.split('/').at(-1));
 
-        if (seasonNumber === 0) {
+        if (seasonNumber === 5) {
           firstSeasonSignal = init?.signal ?? undefined;
         }
 
@@ -1360,8 +1491,31 @@ describe('Series hierarchy', () => {
     setup('/series/1');
 
     expect(await screen.findByText('Loading episodes…')).toBeVisible();
-    await userEvent.click(screen.getByRole('tab', { name: 'Season 5' }));
     await waitFor(() => expect(pendingSeasons.has(5)).toBe(true));
+    await userEvent.click(
+      screen.getByRole('tab', { name: 'Specials, Season 0' })
+    );
+    await waitFor(() => expect(pendingSeasons.has(0)).toBe(true));
+
+    await act(async () =>
+      pendingSeasons.get(0)?.(
+        Response.json({
+          ...season,
+          episodeCount: 1,
+          episodes: [
+            {
+              ...episode,
+              id: 1,
+              episodeNumber: 1,
+              title: 'Current season episode',
+            },
+          ],
+        })
+      )
+    );
+    expect(
+      await screen.findByRole('link', { name: '1. Current season episode' })
+    ).toBeVisible();
 
     await act(async () =>
       pendingSeasons.get(5)?.(
@@ -1375,23 +1529,8 @@ describe('Series hierarchy', () => {
               id: 51,
               seasonNumber: 5,
               episodeNumber: 1,
-              title: 'Current season episode',
+              title: 'Stale episode',
             },
-          ],
-        })
-      )
-    );
-    expect(
-      await screen.findByRole('link', { name: '1. Current season episode' })
-    ).toBeVisible();
-
-    await act(async () =>
-      pendingSeasons.get(0)?.(
-        Response.json({
-          ...season,
-          episodeCount: 1,
-          episodes: [
-            { ...episode, id: 1, episodeNumber: 1, title: 'Stale episode' },
           ],
         })
       )
@@ -1410,7 +1549,7 @@ describe('Series hierarchy', () => {
 
       return Response.json(series);
     });
-    const view = setup('/series/1');
+    const view = setup('/series/1?season=0');
     expect(
       await screen.findByText('No episodes available for this season yet.')
     ).toBeVisible();
@@ -1422,7 +1561,7 @@ describe('Series hierarchy', () => {
         ? new Response('', { status: 500 })
         : Response.json(series)
     );
-    setup('/series/1');
+    setup('/series/1?season=0');
     expect(await screen.findByText(/Episodes unavailable\./)).toBeVisible();
   });
 
@@ -1447,7 +1586,7 @@ describe('Series hierarchy', () => {
       },
       'favorites'
     );
-    setup('/series/1');
+    setup('/series/1?season=0');
     expect(
       await screen.findByRole('heading', { level: 1, name: 'The Journey' })
     ).toBeInTheDocument();
@@ -1565,6 +1704,9 @@ describe('Series hierarchy', () => {
     const user = userEvent.setup();
     setup('/series/1');
     await user.click(
+      await screen.findByRole('tab', { name: 'Specials, Season 0' })
+    );
+    await user.click(
       await screen.findByRole('link', { name: 'View season details' })
     );
     expect(
@@ -1621,7 +1763,7 @@ describe('Series hierarchy', () => {
     expect(screen.getByRole('heading', { name: 'Guest stars' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Writing' })).toBeVisible();
     expect(screen.getByText(/Writer, Story/)).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
 
     await user.click(screen.getByRole('link', { name: 'Next: 8. Departure' }));
     expect(
@@ -1633,7 +1775,7 @@ describe('Series hierarchy', () => {
     expect(
       screen.getByRole('link', { name: 'Previous: 3. Arrival' })
     ).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it('loads direct Episode URLs with their Series breadcrumb and season context', async () => {

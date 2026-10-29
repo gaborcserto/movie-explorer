@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react';
 
-import Skeleton, { SkeletonRegion } from './skeleton';
-import { DetailHeroSkeleton, ResultsSkeleton } from './contentSkeletons';
+import {
+  DetailHeroSkeleton,
+  ResultsSkeleton,
+  Skeleton,
+  SkeletonRegion,
+} from '.';
 
 test('hides individual shapes and announces a busy region once', () => {
   const { container } = render(

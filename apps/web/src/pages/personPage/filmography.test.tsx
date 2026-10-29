@@ -96,6 +96,30 @@ function section() {
   return within(screen.getByRole('region', { name: 'Filmography' }));
 }
 
+async function selectFilmographyOption(
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+  value: string
+) {
+  const trigger = section().getByRole('combobox', { name: label });
+
+  if (trigger.getAttribute('aria-expanded') !== 'true') {
+    await user.click(trigger);
+  }
+
+  const option = screen
+    .getAllByRole('option')
+    .find((item) => item.getAttribute('data-value') === value);
+
+  if (!option) {
+    throw new Error(`Filmography option ${value} was not found.`);
+  }
+
+  await user.click(option);
+
+  return trigger;
+}
+
 function titles() {
   return section()
     .queryAllByRole('link')
@@ -185,11 +209,21 @@ test('renders missing posters, dates, characters and job information without fab
   expect(section().queryByText('2020')).toBeNull();
   await user.click(section().getByRole('button', { name: 'Crew' }));
   expect(titles()).toEqual(['Movie 01']);
+  await user.click(
+    section().getByRole('combobox', { name: 'Job or department' })
+  );
   expect(
-    section()
-      .getAllByRole('option')
-      .map((option) => option.textContent)
-  ).toEqual(['All jobs', 'Newest first', 'Oldest first', 'Title A–Z']);
+    screen.getAllByRole('option').map((option) => option.textContent)
+  ).toEqual(['All jobs']);
+  await user.click(
+    section().getByRole('combobox', { name: 'Job or department' })
+  );
+  await user.click(
+    section().getByRole('combobox', { name: 'Sort filmography' })
+  );
+  expect(
+    screen.getAllByRole('option').map((option) => option.textContent)
+  ).toEqual(['Newest first', 'Oldest first', 'Title A–Z']);
 });
 
 test('duplicate movies use later metadata while retaining trimmed roles from earlier credits', async () => {
@@ -235,10 +269,9 @@ test('switches views, offers distinct real jobs, and displays only matching role
   expect(crew).toHaveFocus();
   expect(crew).toHaveAttribute('aria-pressed', 'true');
   const jobs = section().getByRole('combobox', { name: 'Job or department' });
+  await user.click(jobs);
   expect(
-    within(jobs)
-      .getAllByRole('option')
-      .map((option) => option.textContent)
+    screen.getAllByRole('option').map((option) => option.textContent)
   ).toEqual([
     'All jobs',
     'Production (department)',
@@ -248,18 +281,18 @@ test('switches views, offers distinct real jobs, and displays only matching role
     'Screenplay',
     'Writer',
   ]);
-  await user.selectOptions(jobs, 'job:Screenplay');
+  await selectFilmographyOption(user, 'Job or department', 'job:Screenplay');
   expect(titles()).toEqual(['Movie 01', 'Movie 03']);
   expect(section().getAllByText('Screenplay — Writing')).toHaveLength(2);
   expect(section().queryByText(/Director —/)).toBeNull();
   expect(router.state.location.search).toContain('keep=value');
   expect(router.state.location.search).toContain('personRole=job%3AScreenplay');
   expect(jobs).toHaveFocus();
-  await user.selectOptions(jobs, 'job:Producer');
+  await selectFilmographyOption(user, 'Job or department', 'job:Producer');
   expect(titles()).toEqual(['Movie 02']);
   expect(section().getByText('Producer — Production')).toBeVisible();
   expect(section().queryByText('Executive Producer — Production')).toBeNull();
-  await user.selectOptions(jobs, '');
+  await selectFilmographyOption(user, 'Job or department', '');
   expect(titles()).toHaveLength(4);
   expect(
     section().getByText(
@@ -274,8 +307,9 @@ test('switches views, offers distinct real jobs, and displays only matching role
 test('department fallback matches all corresponding roles, including named jobs', async () => {
   const user = userEvent.setup();
   await renderFilmography(both, '?personView=crew');
-  await user.selectOptions(
-    section().getByRole('combobox', { name: 'Job or department' }),
+  await selectFilmographyOption(
+    user,
+    'Job or department',
     'department:Production'
   );
   expect(titles()).toEqual(['Movie 02', 'Movie 04']);
@@ -366,10 +400,10 @@ test('filters before sorting and supports direct URL selections', async () => {
   expect(titles()).toEqual(['Movie 01', 'Movie 03']);
   expect(
     section().getByRole('combobox', { name: 'Job or department' })
-  ).toHaveValue('job:Screenplay');
+  ).toHaveAttribute('data-value', 'job:Screenplay');
   expect(
     section().getByRole('combobox', { name: 'Sort filmography' })
-  ).toHaveValue('oldest');
+  ).toHaveAttribute('data-value', 'oldest');
 });
 
 test('reveals 10, 20, 30, then the final partial batch without extra requests and retains useful focus', async () => {
@@ -426,25 +460,16 @@ test('resets batches on sorting, view, and role changes while preserving biograp
   await renderFilmography(batch, '', 'A long biography. '.repeat(100));
   await user.click(screen.getByRole('button', { name: 'Show More' }));
   await user.click(section().getByRole('button', { name: 'Load more' }));
-  await user.selectOptions(
-    section().getByRole('combobox', { name: 'Sort filmography' }),
-    'oldest'
-  );
+  await selectFilmographyOption(user, 'Sort filmography', 'oldest');
   expect(titles()).toHaveLength(10);
   await user.click(section().getByRole('button', { name: 'Load more' }));
   await user.click(section().getByRole('button', { name: 'Crew' }));
   expect(titles()).toHaveLength(10);
   await user.click(section().getByRole('button', { name: 'Load more' }));
-  await user.selectOptions(
-    section().getByRole('combobox', { name: 'Job or department' }),
-    'job:Director'
-  );
+  await selectFilmographyOption(user, 'Job or department', 'job:Director');
   expect(titles()).toHaveLength(10);
   await user.click(section().getByRole('button', { name: 'Load more' }));
-  await user.selectOptions(
-    section().getByRole('combobox', { name: 'Job or department' }),
-    ''
-  );
+  await selectFilmographyOption(user, 'Job or department', '');
   expect(titles()).toHaveLength(10);
   expect(fetchMock).toHaveBeenCalledTimes(1);
   expect(screen.getByRole('button', { name: 'Show Less' })).toHaveAttribute(
@@ -457,40 +482,34 @@ test('Back/Forward restores selections and resets the local visible count', asyn
   const user = userEvent.setup();
   const router = await renderFilmography(batch);
   await user.click(section().getByRole('button', { name: 'Crew' }));
-  await user.selectOptions(
-    section().getByRole('combobox', { name: 'Job or department' }),
-    'job:Writer'
-  );
-  await user.selectOptions(
-    section().getByRole('combobox', { name: 'Sort filmography' }),
-    'title'
-  );
+  await selectFilmographyOption(user, 'Job or department', 'job:Writer');
+  await selectFilmographyOption(user, 'Sort filmography', 'title');
   await user.click(section().getByRole('button', { name: 'Load more' }));
   await act(async () => {
     await router.navigate(-1);
   });
   expect(
     section().getByRole('combobox', { name: 'Sort filmography' })
-  ).toHaveValue('newest');
+  ).toHaveAttribute('data-value', 'newest');
   expect(titles()).toHaveLength(10);
   await act(async () => {
     await router.navigate(-1);
   });
   expect(
     section().getByRole('combobox', { name: 'Job or department' })
-  ).toHaveValue('');
+  ).toHaveAttribute('data-value', '');
   await act(async () => {
     await router.navigate(1);
   });
   expect(
     section().getByRole('combobox', { name: 'Job or department' })
-  ).toHaveValue('job:Writer');
+  ).toHaveAttribute('data-value', 'job:Writer');
   await act(async () => {
     await router.navigate(1);
   });
   expect(
     section().getByRole('combobox', { name: 'Sort filmography' })
-  ).toHaveValue('title');
+  ).toHaveAttribute('data-value', 'title');
   expect(fetchMock).toHaveBeenCalledTimes(1);
 });
 
@@ -518,7 +537,7 @@ test('person navigation resets local batches and stale roles using the new credi
   expect(titles()).toHaveLength(10);
   expect(
     section().getByRole('combobox', { name: 'Job or department' })
-  ).toHaveValue('');
+  ).toHaveAttribute('data-value', '');
   await waitFor(() =>
     expect(router.state.location.search).toBe('?personView=crew')
   );

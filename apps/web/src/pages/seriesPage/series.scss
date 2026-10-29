@@ -284,12 +284,13 @@
 
 .series-season-poster,
 .series-episode-still {
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
   align-self: start;
 
   img,
   .image-placeholder {
+    border-radius: 10px;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -331,7 +332,6 @@
     text-underline-offset: 4px;
 
     &:hover {
-      color: $red-1;
       text-decoration: underline;
     }
 
@@ -446,7 +446,6 @@
 
     li > a:hover {
       background: rgb(255 255 255 / 0.08);
-      color: $red-1;
     }
 
     li > a:active {
@@ -602,31 +601,13 @@
   }
 }
 
-.series-credit-tabs {
-  display: flex;
-  gap: 24px;
+.series-credits > h2 {
+  font-size: clamp(20px, 2vw, 26px);
+  line-height: 1.25;
+}
+
+.series-credits > .details-tabs {
   border-bottom: 1px solid rgb(255 255 255 / 0.16);
-  margin-bottom: 20px;
-
-  button {
-    border: 0;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    color: rgb(255 255 255 / 0.7);
-    font: inherit;
-    padding: 10px 4px;
-    cursor: pointer;
-
-    &[aria-selected='true'] {
-      border-bottom-color: $red-1;
-      color: $white;
-    }
-
-    &:focus-visible {
-      outline: 2px solid $red-1;
-      outline-offset: 2px;
-    }
-  }
 }
 
 .series-credits [role='tabpanel'] {

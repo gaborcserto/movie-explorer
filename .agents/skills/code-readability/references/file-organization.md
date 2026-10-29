@@ -6,6 +6,30 @@ responsibilities, not simply collect whatever is currently nearby.
 
 ## Component directories
 
+### Reusable React components
+
+In React, Vite, and Next.js projects, put each new reusable component in its
+own dedicated directory and provide an `index.ts` as its public entry point.
+This applies to Server and Client Components. The entry point should export the
+component and any consumer-facing prop or domain types; keep implementation
+details private. Consumers should import from the component directory rather
+than reach into its implementation file. Colocate component-owned styles,
+tests, hooks, and small utilities where that improves cohesion.
+
+```text
+components/
+  animated-select/
+    index.ts
+    animated-select.tsx
+    animated-select.scss
+    animated-select.test.tsx
+```
+
+Follow the repository's established file naming. Avoid adding barrels above
+the component directory or creating cycles between entry points. For existing
+components, add an entry point or migrate imports only when the change is safe
+and does not broaden the task into unrelated reorganization.
+
 For React and other component-based frontend projects, colocate a component's
 implementation, focused tests, styles, small private helpers, and a barrel
 export when that matches local conventions. Keep stylesheets with their owning

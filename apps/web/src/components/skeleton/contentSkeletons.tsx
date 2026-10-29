@@ -1,6 +1,24 @@
 import Skeleton, { SkeletonRegion } from './skeleton';
 
-export function CardSkeletons({ count = 10 }: { count?: number }) {
+export interface CardSkeletonsProps {
+  count?: number;
+}
+
+export interface ResultsSkeletonProps {
+  className?: string;
+  label?: string;
+}
+
+export interface SectionSkeletonProps {
+  label: string;
+  portraits?: boolean;
+}
+
+export interface DetailHeroSkeletonProps {
+  label?: string;
+}
+
+export function CardSkeletons({ count = 10 }: CardSkeletonsProps) {
   return Array.from({ length: count }, (_, index) => (
     <div className="card skeleton-card" aria-hidden="true" key={index}>
       <Skeleton className="skeleton-card__poster" radius={4} />
@@ -15,10 +33,7 @@ export function CardSkeletons({ count = 10 }: { count?: number }) {
 export function ResultsSkeleton({
   className = 'list__container container',
   label = 'Loading results',
-}: {
-  className?: string;
-  label?: string;
-}) {
+}: ResultsSkeletonProps) {
   return (
     <SkeletonRegion className={className} label={label}>
       <div className="list__summary">
@@ -34,10 +49,7 @@ export function ResultsSkeleton({
 export function SectionSkeleton({
   label,
   portraits = false,
-}: {
-  label: string;
-  portraits?: boolean;
-}) {
+}: SectionSkeletonProps) {
   return (
     <SkeletonRegion label={`Loading ${label}`} className="section-skeleton">
       <Skeleton width={150} height={24} />
@@ -62,9 +74,7 @@ export function SectionSkeleton({
 
 export function DetailHeroSkeleton({
   label = 'Loading details',
-}: {
-  label?: string;
-}) {
+}: DetailHeroSkeletonProps) {
   return (
     <SkeletonRegion label={label}>
       <div className="movie-details__container">

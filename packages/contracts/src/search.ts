@@ -29,6 +29,7 @@ export interface SeriesSearchResult {
   title: string;
   firstAirDate?: string;
   posterUrl?: string;
+  backdropUrl?: string;
   description?: string;
   popularity?: number;
   rating?: number;
@@ -38,6 +39,7 @@ export type SearchResult =
   | (MovieSuggestion & {
       mediaType: 'movie';
       releaseDate?: string;
+      backdropUrl?: string;
       description?: string;
       popularity?: number;
       rating?: number;

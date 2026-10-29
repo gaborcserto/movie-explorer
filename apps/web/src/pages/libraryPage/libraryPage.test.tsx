@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   MemoryRouter,
@@ -18,6 +18,7 @@ function RouteControls() {
   return (
     <>
       <output aria-label="Current route">{location.search}</output>
+      <output aria-label="Current pathname">{location.pathname}</output>
       <button type="button" onClick={() => navigate(-1)}>
         Back
       </button>
@@ -34,6 +35,7 @@ function renderLibrary(path = '/library') {
       <RouteControls />
       <Routes>
         <Route path="/library" element={<LibraryPage />} />
+        <Route path="/" element={<h1>Homepage destination</h1>} />
       </Routes>
     </MemoryRouter>
   );
@@ -44,6 +46,42 @@ beforeEach(() => {
 });
 
 describe('Personal Library page', () => {
+  it('reuses the primary navigation with Library active and working browse links', async () => {
+    const user = userEvent.setup();
+    renderLibrary();
+
+    const navigation = screen.getByRole('navigation', {
+      name: 'Main navigation',
+    });
+
+    expect(
+      within(navigation)
+        .getAllByRole('link')
+        .map((link) => link.textContent?.trim())
+    ).toEqual(['Home', 'Movies', 'Series', 'Library']);
+    expect(
+      within(navigation).getByRole('link', { name: 'Library' })
+    ).toHaveAttribute('aria-current', 'page');
+    expect(
+      within(navigation).getByRole('link', { name: 'Home' })
+    ).toHaveAttribute('href', '/');
+    expect(
+      within(navigation).getByRole('link', { name: 'Movies' })
+    ).toHaveAttribute('href', '/?view=movies');
+    expect(
+      within(navigation).getByRole('link', { name: 'Series' })
+    ).toHaveAttribute('href', '/?view=tv');
+
+    await user.click(within(navigation).getByRole('link', { name: 'Movies' }));
+    expect(
+      screen.getByRole('heading', { name: 'Homepage destination' })
+    ).toBeVisible();
+    expect(screen.getByLabelText('Current pathname')).toHaveTextContent('/');
+    expect(screen.getByLabelText('Current route')).toHaveTextContent(
+      'view=movies'
+    );
+  });
+
   it('defaults to Watchlist and reflects collection counts and membership changes', async () => {
     useLibraryStore.getState().add(
       {

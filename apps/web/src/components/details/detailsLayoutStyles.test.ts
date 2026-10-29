@@ -38,6 +38,7 @@ test('retains the Movie hero dimensions, grid gap and title typography for every
     width: '320px',
     flex: '0 0 320px',
     'aspect-ratio': '2/3',
+    'border-radius': '16px',
   });
   expect(declarations('.movie-details__container')).toMatchObject({
     display: 'flex',
@@ -84,28 +85,29 @@ test('places detail facts and Library actions in a centered, wrapping shared row
   );
 });
 
-test('removes decorative borders above credits, media and provider sections', () => {
-  let sharedBorder: string | undefined;
+test('removes top borders and padding from detail sections at every breakpoint', () => {
+  const sharedSectionStyles: Record<string, string> = {};
+  let paddingBottom: string | undefined;
 
   mediaStylesheet.walkRules('.details-section', (rule) => {
-    rule.walkDecls('border-top', (declaration) => {
-      sharedBorder = declaration.value;
+    if (rule.parent?.type === 'root') {
+      rule.walkDecls('padding-bottom', (declaration) => {
+        paddingBottom = declaration.value;
+      });
+    }
+
+    rule.walkDecls((declaration) => {
+      if (
+        declaration.prop === 'border-top' ||
+        declaration.prop === 'padding-top'
+      ) {
+        sharedSectionStyles[declaration.prop] = declaration.value;
+      }
     });
   });
 
-  expect(sharedBorder).toContain('1px solid');
-  expect(declarations('.details-section.watch-providers')).toHaveProperty(
-    'border-top',
-    '0'
-  );
-  expect(declarations('.details-section.movie-crew-section')).toHaveProperty(
-    'border-top',
-    '0'
-  );
-  expect(declarations('.details-section.media-section')).toHaveProperty(
-    'border-top',
-    '0'
-  );
+  expect(sharedSectionStyles).toEqual({});
+  expect(paddingBottom).toBe('8px');
 });
 
 test('shares tablet and mobile behavior while retaining the episode still aspect ratio', () => {

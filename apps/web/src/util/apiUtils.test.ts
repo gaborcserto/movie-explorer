@@ -8,6 +8,9 @@ import {
   getMovieSection,
   getMovies,
   getMovieSuggestions,
+  getDiscoverySection,
+  getStreamingProviders,
+  getStreamingProviderSection,
   getSearchSuggestions,
   getPeople,
   ApiRequestError,
@@ -467,6 +470,53 @@ describe('API functions', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:4000/api/v1/search/suggestions?query=A%26B+%2F+test%3F&limit=6&includeSeries=true',
       { signal: expect.any(AbortSignal) }
+    );
+  });
+
+  it('requests the selected discovery page from the application API', async () => {
+    const result = {
+      results: [],
+      page: 2,
+      totalPages: 3,
+      totalResults: 42,
+    };
+    fetchMock.mockResolvedValue(response(result));
+
+    await expect(
+      getDiscoverySection('popular-movies', new AbortController().signal, 2)
+    ).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/discover/popular-movies?page=2',
+      { signal: expect.any(AbortSignal) }
+    );
+  });
+
+  it('loads the regional provider catalog and normalized mixed discovery page', async () => {
+    const providers = [{ id: 8, name: 'Netflix' }];
+    const results = {
+      results: [
+        { id: 1, mediaType: 'movie', title: 'Movie' },
+        { id: 2, mediaType: 'tv', title: 'Series' },
+      ],
+      page: 1,
+      totalPages: 2,
+      totalResults: 42,
+    };
+    fetchMock
+      .mockResolvedValueOnce(response(providers))
+      .mockResolvedValueOnce(response(results));
+
+    await expect(
+      getStreamingProviders('HU', new AbortController().signal)
+    ).resolves.toEqual(providers);
+    await expect(
+      getStreamingProviderSection(8, 'HU', 1, new AbortController().signal)
+    ).resolves.toEqual(results);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      'http://localhost:4000/api/v1/discover/providers?region=HU'
+    );
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      'http://localhost:4000/api/v1/discover/streaming/8?region=HU&page=1'
     );
   });
 

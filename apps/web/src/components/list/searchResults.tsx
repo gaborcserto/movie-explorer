@@ -1,14 +1,13 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import {
-  Link,
   Navigate,
   useLocation,
   useParams,
   useSearchParams,
 } from 'react-router-dom';
-import { FaClapperboard, FaRegBookmark, FaTv, FaUsers } from 'react-icons/fa6';
-
 import Filter from '../filter';
+import PrimaryNavigation from '../navigation';
 import { normalizeSearchFilters, readSearchView } from '../filter/filterState';
 import CardList from './list';
 import PeopleList from './peopleList';
@@ -21,20 +20,23 @@ import {
   useSearchScroll,
 } from './useSearchHistory';
 
-const viewLabels = {
-  all: 'All',
-  movies: 'Movies',
-  tv: 'Series',
-  people: 'Persons',
-};
-
-function ResultViews({ query }: { query: string }) {
+function ResultViews({
+  query,
+  children,
+}: {
+  query: string;
+  children?: ReactNode;
+}) {
   useSearchScroll();
   const [params] = useSearchParams();
   const location = useLocation();
-  const view = readSearchView(params);
+  const view =
+    location.pathname === '/' && !query && !params.has('view')
+      ? 'discover'
+      : readSearchView(params);
   const people = view === 'people';
   const history = useSearchHistory();
+  const isHomepage = location.pathname === '/' && !query;
   const [visited, setVisited] = useState(() => ({
     movies:
       view === 'movies' ||
@@ -58,48 +60,11 @@ function ResultViews({ query }: { query: string }) {
     <>
       <div className="search-toolbar list__container container">
         <div className="search-toolbar__content">
-          <nav className="search-views" aria-label="Main navigation">
-            {(['all', 'movies', 'tv', 'people'] as const)
-              .filter((target) => query || target !== 'all')
-              .map((target) => {
-                const next = new URLSearchParams(params);
-
-                if (target === 'movies') {
-                  next.delete('view');
-                } else {
-                  next.set('view', target);
-                }
-                const active = view === target;
-
-                return (
-                  <Link
-                    key={target}
-                    to={{
-                      pathname: location.pathname,
-                      search: next.toString(),
-                    }}
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    {target === 'tv' && <FaTv aria-hidden="true" />}
-                    {target !== 'people' && target !== 'tv' && (
-                      <FaClapperboard aria-hidden="true" />
-                    )}
-                    {target === 'people' && <FaUsers aria-hidden="true" />}
-                    {viewLabels[target]}
-                  </Link>
-                );
-              })}
-            <Link
-              className="search-views__library"
-              to="/library"
-              aria-current={
-                location.pathname === '/library' ? 'page' : undefined
-              }
-            >
-              <FaRegBookmark aria-hidden="true" />
-              Library
-            </Link>
-          </nav>
+          <PrimaryNavigation
+            mode={isHomepage ? 'home' : 'results'}
+            activeView={view}
+            query={query}
+          />
         </div>
         {(view === 'movies' || view === 'tv') && (
           <div className="search-toolbar__filters">
@@ -107,6 +72,7 @@ function ResultViews({ query }: { query: string }) {
           </div>
         )}
       </div>
+      {children}
       <div hidden={view !== 'movies'}>
         {visited.movies && (view === 'movies' || people) && (
           <CardList
@@ -137,12 +103,20 @@ function ResultViews({ query }: { query: string }) {
   );
 }
 
-export default function SearchResults() {
+export default function SearchResults({ children }: { children?: ReactNode }) {
   const { searchQuery: rawQuery = '' } = useParams();
   const searchQuery = rawQuery.trim();
   const [params] = useSearchParams();
   const location = useLocation();
   const normalized = normalizeSearchFilters(params, Boolean(searchQuery));
+
+  if (
+    location.pathname === '/' &&
+    params.get('view') === 'movies' &&
+    normalized.get('view') !== 'movies'
+  ) {
+    normalized.set('view', 'movies');
+  }
 
   // Canonicalize before mounting request owners to avoid an intermediate fetch.
   if (normalized.toString() !== params.toString() || rawQuery !== searchQuery) {
@@ -160,5 +134,9 @@ export default function SearchResults() {
     );
   }
 
-  return <ResultViews key={searchQuery} query={searchQuery} />;
+  return (
+    <ResultViews key={searchQuery} query={searchQuery}>
+      {children}
+    </ResultViews>
+  );
 }

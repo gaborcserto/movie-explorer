@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import PopcornIllustration from './popcornIllustration';
 import './errorPresentation.scss';
 
-interface Props {
+export interface ErrorPresentationProps {
   status?: string;
   heading: string;
   description: string;
@@ -23,7 +23,7 @@ function ErrorPresentation({
   illustration = <PopcornIllustration />,
   headingLevel = 2,
   variant = 'contextual',
-}: Props) {
+}: ErrorPresentationProps) {
   const Heading = headingLevel === 1 ? 'h1' : 'h2';
 
   return (

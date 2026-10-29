@@ -15,7 +15,7 @@ function Header() {
       className={`app-header${isSearchPage ? ' app-header--search' : ''}`}
     >
       <div className="app-header__inner container">
-        <Link to="/search" className="brand app-header__brand">
+        <Link to="/" className="brand app-header__brand">
           <strong>Movie</strong>Explorer
         </Link>
         {(showSearch || showLibrarySearch) && <HeaderSearch />}
