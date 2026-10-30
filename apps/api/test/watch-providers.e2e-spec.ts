@@ -60,7 +60,11 @@ describe.each([
     jest.restoreAllMocks();
   });
 
-  afterAll(() => app.close());
+  afterAll(async () => {
+    if (app) {
+      await app.close();
+    }
+  });
 
   it('forwards the media ID to the correct TMDB route and returns only normalized HU categories', async () => {
     const row = {

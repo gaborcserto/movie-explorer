@@ -13,6 +13,7 @@ import { SERIES_PROVIDER } from '../src/series/series-provider';
 import { PERSON_FILMOGRAPHY_PROVIDER } from '../src/persons/person-filmography-provider';
 import { SEARCH_PROVIDER } from '../src/search/search-provider';
 import { createApiDocument } from '../src/api-document';
+import { DISCOVERY_PROVIDER } from '../src/discovery/discovery.tokens';
 
 describe('Unified Search API', () => {
   let app: INestApplication;
@@ -29,6 +30,8 @@ describe('Unified Search API', () => {
       .useValue({})
       .overrideProvider(SEARCH_PROVIDER)
       .useValue(provider)
+      .overrideProvider(DISCOVERY_PROVIDER)
+      .useValue({})
       .compile();
     app = module.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
@@ -44,7 +47,11 @@ describe('Unified Search API', () => {
       people: [{ id: 1, name: 'Person' }],
     });
   });
-  afterAll(() => app.close());
+  afterAll(async () => {
+    if (app) {
+      await app.close();
+    }
+  });
 
   it.each(['all', 'movie', 'tv', 'person'])(
     'searches %s with the exact page',

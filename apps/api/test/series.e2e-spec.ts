@@ -17,6 +17,7 @@ import { SERIES_PROVIDER, SeriesProvider } from '../src/series/series-provider';
 import { minimalSeriesDetails } from './fixtures/series';
 import { createApiDocument } from '../src/api-document';
 import { RatingsService } from '../src/ratings/ratings.service';
+import { DISCOVERY_PROVIDER } from '../src/discovery/discovery.tokens';
 
 describe('Series details API (e2e)', () => {
   let app: INestApplication;
@@ -215,6 +216,8 @@ describe('Series details API (e2e)', () => {
           imdb: { status: 'unavailable', reason: 'not-configured' },
         }),
       })
+      .overrideProvider(DISCOVERY_PROVIDER)
+      .useValue({})
       .compile();
     app = module.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
@@ -413,7 +416,9 @@ describe('Series details API (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it('returns the Series contract through independent dependency injection', async () => {

@@ -12,6 +12,7 @@ import { MOVIE_PROVIDER } from '../src/movies/movie-provider';
 import { SERIES_PROVIDER } from '../src/series/series-provider';
 import { PERSON_FILMOGRAPHY_PROVIDER } from '../src/persons/person-filmography-provider';
 import { createApiDocument } from '../src/api-document';
+import { DISCOVERY_PROVIDER } from '../src/discovery/discovery.tokens';
 
 describe('Person combined filmography API', () => {
   let app: INestApplication;
@@ -33,6 +34,8 @@ describe('Person combined filmography API', () => {
       .useValue({})
       .overrideProvider(PERSON_FILMOGRAPHY_PROVIDER)
       .useValue(combined)
+      .overrideProvider(DISCOVERY_PROVIDER)
+      .useValue({})
       .compile();
     app = module.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
@@ -48,7 +51,11 @@ describe('Person combined filmography API', () => {
     });
     combined.findCombined.mockResolvedValue(envelope);
   });
-  afterAll(() => app.close());
+  afterAll(async () => {
+    if (app) {
+      await app.close();
+    }
+  });
 
   it('keeps default profile and filmography consumers movie-only', async () => {
     await request(app.getHttpServer())

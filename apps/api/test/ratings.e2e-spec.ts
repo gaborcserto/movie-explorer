@@ -26,7 +26,11 @@ describe('Optional IMDb rating API', () => {
     resolve.mockReset();
     findRating.mockReset();
   });
-  afterAll(() => app.close());
+  afterAll(async () => {
+    if (app) {
+      await app.close();
+    }
+  });
 
   it.each(['movie', 'series'])(
     'serves the normalized %s contract',
