@@ -18,6 +18,7 @@ import parseDetailId from '../../util/detailId';
 import useRatingsResource from './useRatingsResource';
 import useWatchProvidersResource from './useWatchProvidersResource';
 import { useLibraryStore } from '../../features/library/libraryStore';
+import { EntityMetadata } from '../routeMetadata';
 
 type DetailsState = 'loading' | 'success' | 'not-found' | 'error';
 
@@ -184,6 +185,7 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
 
   return (
     <DetailsPageLayout title={pageTitle} hero={renderContent()}>
+      {isLoaded && <EntityMetadata kind="movie" data={movieData} />}
       {detailsState === 'loading' && (
         <DetailsLowerLayout>
           <DetailSectionsSkeleton />

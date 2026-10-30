@@ -31,6 +31,7 @@ import Filmography from './filmography';
 import getPersonAge from './personAge';
 import parseDetailId from '../../util/detailId';
 import { replaceFilmographyGroup } from './filmographyRules';
+import { EntityMetadata } from '../../components/routeMetadata';
 
 type PersonState =
   | { status: 'loading' | 'not-found' | 'error' }
@@ -288,6 +289,9 @@ function PersonDetailsPage({ id }: { id: string }) {
       }
     >
       <div className="main person-page container">
+        {state.status === 'success' && (
+          <EntityMetadata kind="person" data={state.person} />
+        )}
         {validId && state.status === 'loading' && (
           <ResultsSkeleton
             className="person-filmography-skeleton"

@@ -34,7 +34,7 @@ npm ci
 cp apps/api/.env.example apps/api/.env
 ```
 
-Set `TMDB_ACCESS_TOKEN` in `apps/api/.env`. `OMDB_API_KEY` is optional and enables IMDb ratings. The frontend defaults to `http://localhost:4000`; set `VITE_API_BASE_URL` in `apps/web/.env` to use another API address.
+Set `TMDB_ACCESS_TOKEN` in `apps/api/.env`. `OMDB_API_KEY` is optional and enables IMDb ratings. The frontend defaults to `http://localhost:4000` in development and same-origin `/api/v1` requests in production; set `VITE_API_BASE_URL` in `apps/web/.env` to use another API address.
 
 Start both apps with `npm run dev`. The web app runs at [http://localhost:5173](http://localhost:5173), the API at [http://localhost:4000](http://localhost:4000), and Swagger UI at [http://localhost:4000/api-docs](http://localhost:4000/api-docs).
 
@@ -58,3 +58,4 @@ The API end-to-end suite uses a mocked provider and does not require TMDB creden
 
 - [Frontend](apps/web/README.md)
 - [Backend API](apps/api/README.md)
+- [Deployment baseline and SEO delivery limitations](docs/deployment.md)

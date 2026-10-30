@@ -18,7 +18,13 @@ Install dependencies from the repository root with `npm ci`. Run the full app wi
 npm run dev --workspace @movie-explorer/web
 ```
 
-Vite serves the frontend at `http://localhost:5173`. The API base URL defaults to `http://localhost:4000`; set `VITE_API_BASE_URL` in `apps/web/.env` to use another address. See [.env.example](.env.example).
+Vite serves the frontend at `http://localhost:5173`. The API base URL defaults to `http://localhost:4000` in development and same-origin requests in production; set `VITE_API_BASE_URL` in `apps/web/.env` to use another address. See [.env.example](.env.example).
+
+Set `VITE_SITE_URL` before a production build to enable public canonical URLs and
+the homepage sitemap. Leave it empty for noindex preview builds. Optional
+`VITE_SOCIAL_IMAGE_URL` supplies a public sharing image. Route metadata is updated
+from loaded application data; reliable entity social cards require initial HTML
+rendering at the selected host. See the [deployment baseline](../../docs/deployment.md).
 
 ## Structure
 

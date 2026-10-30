@@ -66,10 +66,9 @@ export {
 export type { ApiErrorCategory } from './apiErrors';
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-const apiBaseUrl = (configuredApiBaseUrl ?? 'http://localhost:4000').replace(
-  /\/+$/,
-  ''
-);
+const apiBaseUrl = (
+  configuredApiBaseUrl ?? (import.meta.env.PROD ? '' : 'http://localhost:4000')
+).replace(/\/+$/, '');
 const moviesUrl = `${apiBaseUrl}/api/v1/movies`;
 
 export async function getSeries(

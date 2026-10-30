@@ -24,6 +24,7 @@ import {
 } from './seriesPresentation';
 import PersonalLibraryActions from '../../features/library/personalLibraryActions';
 import { useLibraryStore } from '../../features/library/libraryStore';
+import { EntityMetadata } from '../../components/routeMetadata';
 
 function SeriesDetails({ idText }: { idText: string }) {
   const id = parseDetailId(idText);
@@ -219,6 +220,7 @@ function SeriesDetails({ idText }: { idText: string }) {
       {resource.pending && !series && <DetailSectionsSkeleton />}
       {series && (
         <>
+          <EntityMetadata kind="series" data={series} />
           <SeriesSections
             key={series.id}
             series={series}

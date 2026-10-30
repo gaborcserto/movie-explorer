@@ -4,7 +4,6 @@ import {
   BadGatewayException,
   HttpException,
   INestApplication,
-  ValidationPipe,
 } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as request from 'supertest';
@@ -18,6 +17,8 @@ import { createApiDocument } from '../src/api-document';
 import { SEARCH_PROVIDER } from '../src/search/search-provider';
 import { RatingsService } from '../src/ratings/ratings.service';
 import { DISCOVERY_PROVIDER } from '../src/discovery/discovery.tokens';
+import { configureHttp } from '../src/configure-http';
+import { getServerConfig } from '../src/configuration/server.config';
 
 const movies = [
   {
@@ -48,6 +49,15 @@ const discoveryProvider = {
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
+
+  it('serves process health without invoking upstream providers', async () => {
+    await request(app.getHttpServer())
+      .get('/health')
+      .expect('X-Content-Type-Options', 'nosniff')
+      .expect('X-Robots-Tag', 'noindex')
+      .expect(200, { status: 'ok' });
+    expect(movieProvider.findAll).not.toHaveBeenCalled();
+  });
 
   it.each([
     '',
@@ -143,6 +153,7 @@ describe('AppController (e2e)', () => {
   it('documents only canonical operations with unique IDs and current schemas', () => {
     const document = createApiDocument(app);
     const expectedPaths = [
+      '/health',
       '/api/v1/discover/{section}',
       '/api/v1/discover/providers',
       '/api/v1/discover/streaming/{providerId}',
@@ -189,7 +200,15 @@ describe('AppController (e2e)', () => {
     const ids = operations.map((operation) => operation.operationId);
     expect(new Set(ids).size).toBe(ids.length);
     expect(new Set(operations.flatMap((operation) => operation.tags))).toEqual(
-      new Set(['Discover', 'Movies', 'Series', 'Persons', 'Search', 'Ratings']),
+      new Set([
+        'Discover',
+        'Health',
+        'Movies',
+        'Series',
+        'Persons',
+        'Search',
+        'Ratings',
+      ]),
     );
     ok(document.components);
     ok(document.components.schemas);
@@ -241,7 +260,7 @@ describe('AppController (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ transform: true }));
+    configureHttp(app, getServerConfig({ NODE_ENV: 'production' }));
     await app.init();
   });
 

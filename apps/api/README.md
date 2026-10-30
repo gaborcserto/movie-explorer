@@ -11,7 +11,13 @@ cp apps/api/.env.example apps/api/.env
 npm run start:dev --workspace @movie-explorer/api
 ```
 
-The API listens on port `4000` by default. `PORT` and `HOST` can override the listener. Swagger UI and the generated OpenAPI document are available at `http://localhost:4000/api-docs`.
+The API listens on port `4000` by default. `PORT` and `HOST` can override the listener. Swagger UI is available at `http://localhost:4000/api-docs` in development. It and `/api-docs-json` are disabled by default when `NODE_ENV=production`; `SWAGGER_ENABLED=true` explicitly enables them.
+
+`CORS_ORIGINS` accepts comma-separated exact frontend origins without trailing
+slashes. Development defaults allow local frontend origins; production defaults
+grant no cross-origin access. `GET /health` returns `{"status":"ok"}` without
+probing upstream providers. See the [deployment baseline](../../docs/deployment.md)
+for production startup, health monitoring, proxy routing and rate limiting.
 
 ## Configuration
 

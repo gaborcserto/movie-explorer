@@ -1,32 +1,17 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger, ValidationPipe } from '@nestjs/common';
-import { SwaggerModule } from '@nestjs/swagger';
+import { Logger } from '@nestjs/common';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 
 import { AppModule } from './app.module';
-import { createApiDocument } from './api-document';
+import { configureHttp } from './configure-http';
+import { getServerConfig } from './configuration/server.config';
 
 async function bootstrap() {
+  const config = getServerConfig();
   const app = await NestFactory.create(AppModule);
-
-  app.enableCors({
-    exposedHeaders: ['Retry-After'],
-    origin: [
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-    ],
-  });
-
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
-
-  const document = createApiDocument(app);
-  SwaggerModule.setup('api-docs', app, document);
-
-  const port = process.env.PORT ?? 4000;
-  const host = process.env.HOST;
+  configureHttp(app, config);
+  const { port, host } = config;
 
   if (host !== undefined) {
     await app.listen(port, host);
@@ -40,7 +25,7 @@ async function bootstrap() {
     boundHostname === '::1' ||
     (isIP(boundHostname) === 4 && boundHostname.startsWith('127.'));
 
-  if (!process.env.HOST && isLoopbackAddress) {
+  if (!host && isLoopbackAddress) {
     const localhostAddresses = await lookup('localhost', { all: true }).catch(
       () => [],
     );
@@ -52,6 +37,9 @@ async function bootstrap() {
 
   const logger = new Logger('Bootstrap');
   logger.log(`API: ${serverUrl.origin}`);
-  logger.log(`Swagger UI: ${serverUrl.origin}/api-docs`);
+
+  if (config.swaggerEnabled) {
+    logger.log(`Swagger UI: ${serverUrl.origin}/api-docs`);
+  }
 }
 void bootstrap();

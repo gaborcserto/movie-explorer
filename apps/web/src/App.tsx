@@ -10,6 +10,7 @@ import Footer from './layouts/footer';
 import ErrorBoundary from './components/errorBoundary';
 import LibraryPage from './pages/libraryPage';
 import PersistenceNotice from './features/library/persistenceNotice';
+import RouteMetadata from './components/routeMetadata';
 
 const PersonPage = lazy(() => import('./pages/personPage/personPage'));
 const SeriesPage = lazy(() => import('./pages/seriesPage'));
@@ -56,6 +57,7 @@ function SiteLayout() {
 function App() {
   return (
     <ErrorBoundary>
+      <RouteMetadata />
       <SearchHistoryProvider>
         <Routes>
           <Route element={<SiteLayout />}>
