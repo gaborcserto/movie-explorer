@@ -130,13 +130,12 @@
 
   &--outline {
     @include btn-variant(transparent, $red-1, $red-1);
+
+    text-transform: none;
   }
 
   &--action {
-    background: rgb(246 82 97 / 0.08);
-    border-color: rgb(246 82 97 / 0.62);
     border-radius: 4px;
-    color: $red-1;
     font-size: 14px;
     min-height: 40px;
     min-width: 108px;
@@ -176,6 +175,16 @@
 
 .main {
   flex: 1 1 auto;
+}
+
+.tab-panel-stable {
+  transition: min-height 220ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-panel-stable {
+    transition: none;
+  }
 }
 
 .app-header {

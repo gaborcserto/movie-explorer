@@ -5,6 +5,7 @@ import { useStore } from 'zustand';
 import Card from '../../components/card/card';
 import '../../components/list/list.scss';
 import PrimaryNavigation from '../../components/navigation';
+import useStablePanelHeight from '../../hooks/useStablePanelHeight';
 import {
   selectLibraryCollection,
   useLibraryStore,
@@ -36,6 +37,8 @@ export default function LibraryPage() {
   const activeCollection = isCollection(requestedCollection)
     ? requestedCollection
     : 'watchlist';
+  const collectionPanelRef =
+    useStablePanelHeight<HTMLDivElement>(activeCollection);
   const items = useStore(
     useLibraryStore,
     selectLibraryCollection(activeCollection)
@@ -80,40 +83,45 @@ export default function LibraryPage() {
             );
           })}
         </nav>
-        {items.length === 0 ? (
-          <p className="library-page__empty" role="status">
-            {emptyMessages[activeCollection]}
-          </p>
-        ) : (
-          <section
-            className="list__items"
-            aria-label={`${collections.find(({ id }) => id === activeCollection)?.label} items`}
-          >
-            {items.map((item) => (
-              <Card
-                key={item.key}
-                movie={{
-                  id: item.id,
-                  title: item.title,
-                  posterUrl: item.posterUrl ?? '',
-                  releaseDate: item.year ? `${item.year}` : undefined,
-                  genres: [],
-                }}
-                destination={`/${item.mediaType === 'tv' ? 'series' : 'movie'}/${item.id}`}
-                displayDate={item.year ? `${item.year}` : undefined}
-                genreNavigation={false}
-                libraryMedia={{
-                  mediaType: item.mediaType,
-                  firstAirDate:
-                    item.mediaType === 'tv' && item.year
-                      ? `${item.year}`
-                      : undefined,
-                }}
-                onLibraryMembershipRemoved={focusActiveCollection}
-              />
-            ))}
-          </section>
-        )}
+        <div
+          ref={collectionPanelRef}
+          className="library-page__collection-panel tab-panel-stable"
+        >
+          {items.length === 0 ? (
+            <p className="library-page__empty" role="status">
+              {emptyMessages[activeCollection]}
+            </p>
+          ) : (
+            <section
+              className="list__items"
+              aria-label={`${collections.find(({ id }) => id === activeCollection)?.label} items`}
+            >
+              {items.map((item) => (
+                <Card
+                  key={item.key}
+                  movie={{
+                    id: item.id,
+                    title: item.title,
+                    posterUrl: item.posterUrl ?? '',
+                    releaseDate: item.year ? `${item.year}` : undefined,
+                    genres: [],
+                  }}
+                  destination={`/${item.mediaType === 'tv' ? 'series' : 'movie'}/${item.id}`}
+                  displayDate={item.year ? `${item.year}` : undefined}
+                  genreNavigation={false}
+                  libraryMedia={{
+                    mediaType: item.mediaType,
+                    firstAirDate:
+                      item.mediaType === 'tv' && item.year
+                        ? `${item.year}`
+                        : undefined,
+                  }}
+                  onLibraryMembershipRemoved={focusActiveCollection}
+                />
+              ))}
+            </section>
+          )}
+        </div>
       </div>
     </main>
   );

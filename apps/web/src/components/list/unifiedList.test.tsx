@@ -148,7 +148,7 @@ test('Series reuses the filter panel and applies only first-air year, retaining 
   );
   fireEvent.click(screen.getByRole('button', { name: /Filters & Sort/ }));
   expect(screen.queryByRole('group', { name: 'Genre' })).toBeNull();
-  fireEvent.change(screen.getByLabelText('First-air year'), {
+  fireEvent.change(screen.getByLabelText('Year'), {
     target: { value: '2010' },
   });
   expect(api).toHaveBeenCalledTimes(1);

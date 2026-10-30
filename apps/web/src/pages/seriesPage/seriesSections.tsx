@@ -11,6 +11,7 @@ import useCrewPreview from '../../components/details/credits/useCrewPreview';
 import DetailsTabs from '../../components/details/detailsTabs';
 import { MediaSection } from '../../components/details/media';
 import { SectionRecovery } from '../../components/details/recovery';
+import useStablePanelHeight from '../../hooks/useStablePanelHeight';
 import { getSeriesCredits } from '../../util/apiUtils';
 
 const unavailable: SectionAvailability = { status: 'unavailable' };
@@ -67,6 +68,9 @@ export default function SeriesSections({
   }>({ resetKey: series.id, tab: 'cast' });
   const activeCreditTab =
     creditSelection.resetKey === series.id ? creditSelection.tab : 'cast';
+  const creditPanelsRef = useStablePanelHeight<HTMLDivElement>(
+    `${series.id}:${activeCreditTab}`
+  );
 
   const selectCreditTab = (tab: 'cast' | 'crew') =>
     setCreditSelection({ resetKey: series.id, tab });
@@ -145,101 +149,105 @@ export default function SeriesSections({
           ariaLabel="Cast and crew"
           onChange={selectCreditTab}
         />
-        <div
-          id={`${creditTabId}-cast-panel`}
-          className="details-tabs__panel"
-          role="tabpanel"
-          aria-labelledby={`${creditTabId}-cast-tab`}
-          hidden={activeCreditTab !== 'cast'}
-          tabIndex={0}
-        >
-          {credits?.cast.length ? (
-            <CastPreview
-              key={series.id}
-              initialVisibleCount={16}
-              batchSize={8}
-              members={credits.cast.map((person, index) => ({
-                ...person,
-                key: `tv-${series.id}-${person.id ?? index}`,
-                roles: [castRoles(person)].filter(Boolean),
-              }))}
-            />
-          ) : (
-            credits?.sections.cast.status === 'available' && (
-              <p>No cast information available.</p>
-            )
-          )}
-        </div>
-        <div
-          id={`${creditTabId}-crew-panel`}
-          className="details-tabs__panel"
-          role="tabpanel"
-          aria-labelledby={`${creditTabId}-crew-tab`}
-          hidden={activeCreditTab !== 'crew'}
-          tabIndex={0}
-        >
-          {credits?.sections.crew.status === 'unavailable' && (
-            <p>Crew information is incomplete.</p>
-          )}
-          {crewPreview.summary}
-          <div className="crew-groups" id={crewPreview.groupId}>
-            {[...crewGroups]
-              .sort(([a], [b]) => departmentRank(a) - departmentRank(b))
-              .map(([department, people]) => (
-                <section className="crew-group" key={department}>
-                  <h3>{department}</h3>
-                  <ul className="crew-group__people">
-                    {people.map((person, index) => (
-                      <li key={person.id ?? index}>
-                        {person.id ? (
-                          <Link
-                            to={`/person/${person.id}`}
-                            className="person-credit-link text-link"
-                          >
-                            {person.name}
-                          </Link>
-                        ) : (
-                          person.name
-                        )}
-                        {person.jobs
-                          .filter(
-                            (job) =>
-                              (job.department ?? 'Other crew') === department
-                          )
-                          .map((job) => (
-                            <p
-                              key={
-                                job.creditId ?? `${job.job}:${job.episodeCount}`
-                              }
-                            >
-                              {[job.job, episodeLabel(job.episodeCount)]
-                                .filter(Boolean)
-                                .join(' \u2014 ')}
-                            </p>
-                          ))}
-                        {person.departments
-                          .filter(
-                            (credit) =>
-                              (credit.department ?? 'Other crew') ===
-                                department && credit.totalEpisodeCount !== null
-                          )
-                          .map((credit) => (
-                            <p
-                              key={`${credit.department}:${credit.totalEpisodeCount}`}
-                            >
-                              Department total:{' '}
-                              {episodeLabel(credit.totalEpisodeCount)}
-                            </p>
-                          ))}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
+        <div ref={creditPanelsRef} className="tab-panel-stable">
+          <div
+            id={`${creditTabId}-cast-panel`}
+            className="details-tabs__panel"
+            role="tabpanel"
+            aria-labelledby={`${creditTabId}-cast-tab`}
+            hidden={activeCreditTab !== 'cast'}
+            tabIndex={0}
+          >
+            {credits?.cast.length ? (
+              <CastPreview
+                key={series.id}
+                initialVisibleCount={16}
+                batchSize={8}
+                members={credits.cast.map((person, index) => ({
+                  ...person,
+                  key: `tv-${series.id}-${person.id ?? index}`,
+                  roles: [castRoles(person)].filter(Boolean),
+                }))}
+              />
+            ) : (
+              credits?.sections.cast.status === 'available' && (
+                <p>No cast information available.</p>
+              )
+            )}
           </div>
-          {crewPreview.controls}
-          {credits?.sections.crew.status === 'available' &&
-            !credits.crew.length && <p>No crew information available.</p>}
+          <div
+            id={`${creditTabId}-crew-panel`}
+            className="details-tabs__panel"
+            role="tabpanel"
+            aria-labelledby={`${creditTabId}-crew-tab`}
+            hidden={activeCreditTab !== 'crew'}
+            tabIndex={0}
+          >
+            {credits?.sections.crew.status === 'unavailable' && (
+              <p>Crew information is incomplete.</p>
+            )}
+            {crewPreview.summary}
+            <div className="crew-groups" id={crewPreview.groupId}>
+              {[...crewGroups]
+                .sort(([a], [b]) => departmentRank(a) - departmentRank(b))
+                .map(([department, people]) => (
+                  <section className="crew-group" key={department}>
+                    <h3>{department}</h3>
+                    <ul className="crew-group__people">
+                      {people.map((person, index) => (
+                        <li key={person.id ?? index}>
+                          {person.id ? (
+                            <Link
+                              to={`/person/${person.id}`}
+                              className="person-credit-link text-link"
+                            >
+                              {person.name}
+                            </Link>
+                          ) : (
+                            person.name
+                          )}
+                          {person.jobs
+                            .filter(
+                              (job) =>
+                                (job.department ?? 'Other crew') === department
+                            )
+                            .map((job) => (
+                              <p
+                                key={
+                                  job.creditId ??
+                                  `${job.job}:${job.episodeCount}`
+                                }
+                              >
+                                {[job.job, episodeLabel(job.episodeCount)]
+                                  .filter(Boolean)
+                                  .join(' \u2014 ')}
+                              </p>
+                            ))}
+                          {person.departments
+                            .filter(
+                              (credit) =>
+                                (credit.department ?? 'Other crew') ===
+                                  department &&
+                                credit.totalEpisodeCount !== null
+                            )
+                            .map((credit) => (
+                              <p
+                                key={`${credit.department}:${credit.totalEpisodeCount}`}
+                              >
+                                Department total:{' '}
+                                {episodeLabel(credit.totalEpisodeCount)}
+                              </p>
+                            ))}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+            </div>
+            {crewPreview.controls}
+            {credits?.sections.crew.status === 'available' &&
+              !credits.crew.length && <p>No crew information available.</p>}
+          </div>
         </div>
       </section>
       <MediaSection

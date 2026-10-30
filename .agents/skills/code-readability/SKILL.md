@@ -67,6 +67,32 @@ Use existing repository naming conventions. Do not reorganize unrelated
 components solely to satisfy this rule; for existing shared components, add or
 use a dedicated entry point when it can be done without changing behavior.
 
+## Custom React hook organization
+
+Keep a hook beside its owning component or within that component's local
+`hooks/` directory when its behavior is specific to that component or feature.
+Place reusable hooks shared across independent features under `src/hooks/`.
+Give each reusable hook its own directory and an `index.ts` public entry point;
+export its hook and any consumer-facing types there, and prefer importing
+through that entry point. Colocate hook-specific tests, types, and small
+utilities where appropriate. Apply these rules to React, Vite, and Next.js
+projects. Avoid moving hooks into global directories based only on possible
+future reuse, unnecessary higher-level barrels, and circular dependencies.
+
+Use the repository's `use`-prefixed hook naming conventions. Preserve React
+Hooks rules and execution order. In Next.js, keep hooks that use client-side
+React APIs within Client Components and preserve existing Server/Client
+Component boundaries; do not add a client directive to a shared module unless
+its implementation requires one.
+
+```text
+src/hooks/
+  use-example/
+    index.ts
+    use-example.ts
+    use-example.test.ts
+```
+
 ## Vertical Spacing / Logical Grouping
 
 ### Function-valued Variable Declarations in TypeScript and TSX

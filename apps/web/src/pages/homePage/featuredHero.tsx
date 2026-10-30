@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { SearchResult } from '@movie-explorer/contracts';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa6';
+import type { KeyboardEvent } from 'react';
 import { Link } from 'react-router-dom';
 
 import { mediaPath } from '../../util/seriesRoutes';
@@ -36,8 +37,38 @@ export default function FeaturedHero({
   const showNext = () =>
     setActiveIndex((current) => (current + 1) % items.length);
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+      return;
+    }
+
+    const { target } = event;
+    const isCarouselControl =
+      target instanceof Element &&
+      target.closest('.discover-featured__navigation') !== null;
+
+    if (target !== event.currentTarget && !isCarouselControl) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (event.key === 'ArrowLeft') {
+      showPrevious();
+    } else {
+      showNext();
+    }
+  };
+
   return (
-    <section className="discover-featured" aria-label="Featured trending title">
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Focusable carousel region handles its own arrow-key navigation.
+    <section
+      className="discover-featured"
+      aria-label="Featured trending title"
+      aria-roledescription="carousel"
+      tabIndex={items.length > 1 ? 0 : undefined}
+      onKeyDown={handleKeyDown}
+    >
       <div className="discover-featured__visual" aria-hidden="true">
         {items.map((entry, index) => {
           const entryKey = `${entry.mediaType}:${entry.id}`;

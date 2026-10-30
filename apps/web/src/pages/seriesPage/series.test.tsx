@@ -472,6 +472,9 @@ describe('Series hierarchy', () => {
     const castTab = await screen.findByRole('tab', { name: 'Cast' });
     const crewTab = screen.getByRole('tab', { name: 'Crew' });
     expect(castTab).toHaveAttribute('aria-selected', 'true');
+    expect(
+      document.querySelector('.series-credits > .tab-panel-stable')
+    ).toBeInTheDocument();
     expect(screen.getByRole('tabpanel', { name: 'Cast' })).toBeVisible();
     expect(screen.getByRole('link', { name: 'Actor 1' })).toBeVisible();
     expect(
@@ -1755,6 +1758,17 @@ describe('Series hierarchy', () => {
     expect(
       screen.getByRole('link', { name: 'Next: 8. Departure' })
     ).toHaveAttribute('href', '/series/1/seasons/0/episodes/8');
+    expect(
+      screen.getByRole('navigation', { name: 'Episode navigation' })
+    ).toHaveTextContent('Previous Episode');
+    expect(
+      screen.getByRole('navigation', { name: 'Episode navigation' })
+    ).toHaveTextContent('Next Episode');
+    expect(
+      screen
+        .getByRole('navigation', { name: 'Episode navigation' })
+        .querySelectorAll('svg[aria-hidden="true"]')
+    ).toHaveLength(2);
     expect(screen.getByRole('link', { name: 'Guest Actor' })).toHaveAttribute(
       'href',
       '/person/12'

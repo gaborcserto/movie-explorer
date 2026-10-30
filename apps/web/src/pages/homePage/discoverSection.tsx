@@ -1,4 +1,5 @@
 import { CardSkeletons } from '../../components/skeleton';
+import useStablePanelHeight from '../../hooks/useStablePanelHeight';
 import SearchResultCard from '../../components/list/searchResultCard';
 import type { DiscoverSectionData } from './useDiscoverSection';
 import './discover.scss';
@@ -17,6 +18,7 @@ export default function DiscoverRow({
   tabId,
   data: { state, retry, loadMore },
 }: DiscoverRowProps) {
+  const panelRef = useStablePanelHeight<HTMLElement>(tabId);
   const hasMore =
     state.status === 'success' &&
     (state.visibleCount < state.results.length ||
@@ -24,7 +26,8 @@ export default function DiscoverRow({
 
   return (
     <section
-      className="discover-row"
+      ref={panelRef}
+      className="discover-row tab-panel-stable"
       id={`${id}-panel`}
       role="tabpanel"
       aria-labelledby={tabId}

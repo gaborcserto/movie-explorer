@@ -216,6 +216,60 @@ describe('Discover page', () => {
     expect(screen.getByTestId('current-path')).toHaveTextContent('/');
   });
 
+  it('supports scoped arrow-key navigation on the Featured carousel', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <>
+          <DiscoverPage />
+          <input aria-label="Search field outside the carousel" />
+        </>
+      </MemoryRouter>
+    );
+
+    await screen.findByRole('heading', { name: 'Trending Feature' });
+    const featured = screen.getByRole('region', {
+      name: 'Featured trending title',
+    });
+
+    expect(featured).toHaveAttribute('aria-roledescription', 'carousel');
+    expect(featured).toHaveAttribute('tabindex', '0');
+    featured.focus();
+
+    await user.keyboard('{ArrowLeft}');
+    expect(
+      await screen.findByRole('heading', { name: 'Featured Series' })
+    ).toBeInTheDocument();
+
+    await user.keyboard('{ArrowRight}');
+    expect(
+      await screen.findByRole('heading', { name: 'Trending Feature' })
+    ).toBeInTheDocument();
+
+    screen.getByRole('link', { name: 'Explore title' }).focus();
+    await user.keyboard('{ArrowRight}');
+    expect(
+      screen.getByRole('heading', { name: 'Trending Feature' })
+    ).toBeInTheDocument();
+
+    screen
+      .getByRole('textbox', { name: 'Search field outside the carousel' })
+      .focus();
+    await user.keyboard('{ArrowRight}');
+    expect(
+      screen.getByRole('heading', { name: 'Trending Feature' })
+    ).toBeInTheDocument();
+
+    const nextButton = screen.getByRole('button', {
+      name: 'Next featured title',
+    });
+    nextButton.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(
+      await screen.findByRole('heading', { name: 'Featured Series' })
+    ).toBeInTheDocument();
+  });
+
   it('uses the featured fallback when backdrops are missing', async () => {
     vi.mocked(getDiscoverySection).mockResolvedValue({
       results: [
@@ -483,6 +537,7 @@ describe('Discover page', () => {
       ).getByRole('tab', { name: 'Popular' })
     );
     const panel = await screen.findByRole('tabpanel', { name: 'Popular' });
+    expect(panel).toHaveClass('tab-panel-stable');
     await within(panel).findByText('No titles are available right now.');
 
     const pagesRequested = () =>

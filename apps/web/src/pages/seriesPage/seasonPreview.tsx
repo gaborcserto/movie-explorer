@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import type { SeriesDetails } from '@movie-explorer/contracts';
 
 import MovieImage from '../../components/utility/customImage';
+import useStablePanelHeight from '../../hooks/useStablePanelHeight';
 import { getPosterDisplaySrcSet } from '../../util/imageSizing';
 import { seriesPath } from '../../util/seriesRoutes';
 import { getSeason } from '../../util/apiUtils';
@@ -77,6 +78,9 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
     atEnd: true,
   });
   const season = series.seasons[selected];
+  const previewRef = useStablePanelHeight<HTMLDivElement>(
+    `${series.id}:${season?.seasonNumber ?? selected}`
+  );
   const seasonYear = season?.airDate?.match(/^\d{4}/)?.[0] ?? null;
 
   const loadSeason = useCallback(
@@ -227,11 +231,12 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
         )}
       </div>
       <div
+        ref={previewRef}
         role="tabpanel"
         id={`${id}-panel`}
         aria-labelledby={`${id}-tab-${season.seasonNumber}`}
         tabIndex={0}
-        className="season-preview"
+        className="season-preview tab-panel-stable"
       >
         <MovieImage
           src={season.posterUrl ?? undefined}

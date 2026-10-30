@@ -146,15 +146,42 @@
 
   &__list {
     position: absolute;
-    z-index: 2;
-    top: calc(100% + 4px);
+    z-index: 3;
     right: 0;
     left: 0;
     padding: 8px;
     border: 1px solid $grey-1;
-    border-radius: 4px;
+    border-radius: 10px;
     background: $grey-3;
     box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+    max-height: min(40vh, 320px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    opacity: 0;
+    pointer-events: none;
+    top: calc(100% + 4px);
+    transform: translateY(-8px);
+    transform-origin: top center;
+    transition:
+      opacity 220ms ease,
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s linear 220ms;
+    visibility: hidden;
+
+    &[data-placement='top'] {
+      bottom: calc(100% + 4px);
+      top: auto;
+      transform: translateY(8px);
+      transform-origin: bottom center;
+    }
+
+    &[data-open='true'] {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+      transition-delay: 0s;
+      visibility: visible;
+    }
   }
 
   &__years {
@@ -407,7 +434,7 @@
     padding: 14px 4px;
     border: 0;
     border-right: 1px solid $grey-1;
-    border-radius: 8px;
+    border-radius: 0;
     font-size: 12px;
     line-height: 1.25;
     transition:
@@ -419,6 +446,7 @@
     }
 
     &[aria-pressed='true'] {
+      border-radius: 8px;
       background: $red-1;
       color: $white;
     }
@@ -474,6 +502,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .filter-genre-chip,
+  .filter-year-picker__list,
   .filter-sort-options button {
     transition: none;
   }

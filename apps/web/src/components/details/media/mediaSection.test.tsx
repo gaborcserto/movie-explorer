@@ -37,6 +37,9 @@ describe('<MediaSection />', () => {
 
     const media = screen.getByRole('region', { name: 'Media' });
     expect(
+      within(media).getByRole('tabpanel', { name: 'Backdrops' }).parentElement
+    ).toHaveClass('tab-panel-stable');
+    expect(
       within(media)
         .getAllByRole('heading')
         .map((heading) => heading.textContent)

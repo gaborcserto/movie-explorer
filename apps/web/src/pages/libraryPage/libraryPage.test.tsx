@@ -152,6 +152,9 @@ describe('Personal Library page', () => {
       );
     const user = userEvent.setup();
     renderLibrary('/library?collection=invalid');
+    expect(
+      document.querySelector('.library-page__collection-panel')
+    ).toHaveClass('tab-panel-stable');
 
     expect(screen.getByRole('link', { name: /Watchlist/ })).toHaveAttribute(
       'aria-current',

@@ -5,6 +5,7 @@ import type { CombinedFilmography } from '@movie-explorer/contracts';
 
 import AnimatedSelect from '../../components/animatedSelect';
 import MovieImage from '../../components/utility/customImage';
+import useStablePanelHeight from '../../hooks/useStablePanelHeight';
 import { getPosterDisplaySrcSet } from '../../util/imageSizing';
 import { mediaPath } from '../../util/seriesRoutes';
 import './filmography.scss';
@@ -168,6 +169,9 @@ export default function Filmography({
     canonicalQuery,
     sortedMovies,
   } = getFilmographySelection(entries, searchParams, unavailable || partial);
+  const resultsRef = useStablePanelHeight<HTMLDivElement>(
+    `${mediaType}:${view}:${role}`
+  );
   const query = searchParams.toString();
   let emptyMessage = 'No movie credits available.';
 
@@ -283,13 +287,15 @@ export default function Filmography({
                 />
               </div>
             </div>
-            <FilmographyResults
-              key={`${mediaType}:${view}:${role}:${sort}`}
-              combined={Boolean(groups)}
-              movies={sortedMovies}
-              view={view}
-              role={role}
-            />
+            <div ref={resultsRef} className="tab-panel-stable">
+              <FilmographyResults
+                key={`${mediaType}:${view}:${role}:${sort}`}
+                combined={Boolean(groups)}
+                movies={sortedMovies}
+                view={view}
+                role={role}
+              />
+            </div>
           </>
         ) : (
           <p role="status">{emptyMessage}</p>

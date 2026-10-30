@@ -143,6 +143,41 @@ test('matches the Cast and Crew heading and separator to homepage section header
   ).toBe('1px solid rgba(255, 255, 255, 0.16)');
 });
 
+test('styles episode navigation as compact elevated cards with coral labels', () => {
+  expect(
+    declarationsForSelector(seriesStyles, '.series-neighbors a')
+  ).toMatchObject({
+    background: '#232323',
+    'border-radius': '10px',
+    'box-shadow': '0 8px 22px rgba(0, 0, 0, 0.22)',
+    transition: expect.stringContaining('background-color 200ms ease'),
+  });
+  expect(
+    declarationsForSelector(seriesStyles, '.series-neighbors a > span')
+  ).toMatchObject({
+    color: '#f65261',
+    'text-transform': 'uppercase',
+  });
+  expect(
+    declarationsForSelector(seriesStyles, '.series-neighbors a:focus-visible')
+      .outline
+  ).toBe('2px solid #f65261');
+  expect(
+    declarationsForMedia(
+      seriesStyles,
+      '.series-neighbors a',
+      '(width < 600px)'
+    )['flex-basis']
+  ).toBe('100%');
+  expect(
+    declarationsForMedia(
+      seriesStyles,
+      '.series-neighbors a',
+      '(prefers-reduced-motion: reduce)'
+    ).transition
+  ).toBe('none');
+});
+
 test('hides the season scrollbar while keeping horizontal scrolling and tab focus visible', () => {
   expect(declarationsForSelector(seriesStyles, '.season-tabs')).toMatchObject({
     overflow: 'auto hidden',

@@ -400,6 +400,61 @@ test('year picker selects recent and older years, closes with Escape, and restor
   expect(trigger).toHaveAttribute('aria-expanded', 'false');
 });
 
+test('year picker opens downward by default, flips upward near the viewport bottom, and closes outside', async () => {
+  setup();
+  await open();
+  const trigger = screen.getByRole('button', { name: 'Choose a year' });
+
+  await userEvent.click(trigger);
+  const yearList = document.querySelector<HTMLDivElement>(
+    '.filter-year-picker__list'
+  );
+
+  if (!yearList) {
+    throw new Error('The year picker list was not rendered.');
+  }
+
+  expect(yearList).toHaveAttribute('data-placement', 'bottom');
+  expect(yearList).toHaveAttribute('data-open', 'true');
+
+  const originalHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+  Object.defineProperty(window, 'innerHeight', {
+    configurable: true,
+    value: 420,
+  });
+  vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
+    top: 350,
+    bottom: 394,
+    left: 100,
+    right: 300,
+    width: 200,
+    height: 44,
+    x: 100,
+    y: 350,
+    toJSON: () => ({}),
+  });
+  Object.defineProperty(yearList, 'scrollHeight', {
+    configurable: true,
+    value: 180,
+  });
+
+  try {
+    fireEvent(window, new Event('resize'));
+    await waitFor(() =>
+      expect(yearList).toHaveAttribute('data-placement', 'top')
+    );
+
+    await userEvent.click(
+      screen.getByRole('heading', { name: 'Minimum Rating' })
+    );
+    expect(yearList).toHaveAttribute('data-open', 'false');
+  } finally {
+    if (originalHeight) {
+      Object.defineProperty(window, 'innerHeight', originalHeight);
+    }
+  }
+});
+
 test('rating rejects invalid manual values and Date keeps the existing sort value', async () => {
   setup();
   await open();

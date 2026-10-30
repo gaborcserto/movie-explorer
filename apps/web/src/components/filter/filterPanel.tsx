@@ -44,8 +44,14 @@ export default function FilterPanel({
   const formId = useId();
   const yearInput = useRef<HTMLInputElement>(null);
   const yearTrigger = useRef<HTMLButtonElement>(null);
+  const yearPicker = useRef<HTMLDivElement>(null);
   const yearList = useRef<HTMLDivElement>(null);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
+  const [yearPickerReady, setYearPickerReady] = useState(false);
+  const [yearPickerPlacement, setYearPickerPlacement] = useState<
+    'bottom' | 'top'
+  >('bottom');
+  const [yearPickerMaxHeight, setYearPickerMaxHeight] = useState<number>();
   const [earlierYearPage, setEarlierYearPage] = useState(0);
   const currentYear = new Date().getFullYear();
   const update = (values: Partial<FilterValues>) =>
@@ -65,29 +71,100 @@ export default function FilterPanel({
   const invalidFilters = invalidYear || invalidRating;
 
   useEffect(() => {
-    if (yearPickerOpen) {
-      yearList.current?.scrollIntoView?.({ block: 'nearest' });
+    if (!yearPickerOpen) {
+      return undefined;
     }
-  }, [yearPickerOpen]);
 
-  useEffect(() => {
-    const closeYearPicker = (event: KeyboardEvent) => {
-      if (!yearPickerOpen || event.key !== 'Escape') {
+    const updatePlacement = () => {
+      const trigger = yearTrigger.current;
+      const list = yearList.current;
+      const picker = yearPicker.current;
+
+      if (!trigger || !list || !picker) {
         return;
       }
 
-      event.preventDefault();
-      event.stopPropagation();
-      setYearPickerOpen(false);
-      yearTrigger.current?.focus();
+      const bounds = trigger.getBoundingClientRect();
+      const contentBounds = picker
+        .closest<HTMLElement>('.drawer__content')
+        ?.getBoundingClientRect();
+      const preferredHeight = Math.min(window.innerHeight * 0.4, 320);
+      const dropdownHeight = Math.min(list.scrollHeight, preferredHeight);
+      const drawerSpaceAbove = contentBounds?.height
+        ? bounds.top - contentBounds.top - 8
+        : Number.POSITIVE_INFINITY;
+      const drawerSpaceBelow = contentBounds?.height
+        ? contentBounds.bottom - bounds.bottom - 8
+        : Number.POSITIVE_INFINITY;
+      const spaceAbove = Math.max(
+        0,
+        Math.min(bounds.top - 8, drawerSpaceAbove)
+      );
+      const spaceBelow = Math.max(
+        0,
+        Math.min(window.innerHeight - bounds.bottom - 8, drawerSpaceBelow)
+      );
+      const placement =
+        spaceBelow < dropdownHeight && spaceAbove >= dropdownHeight
+          ? 'top'
+          : 'bottom';
+      const availableSpace = placement === 'top' ? spaceAbove : spaceBelow;
+
+      setYearPickerPlacement(placement);
+      setYearPickerMaxHeight(
+        Math.max(0, Math.min(preferredHeight, availableSpace))
+      );
+      setYearPickerReady(true);
     };
 
-    if (yearPickerOpen) {
-      document.addEventListener('keydown', closeYearPicker);
-    }
+    const closeOnOutsidePointer = (event: globalThis.PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !yearPicker.current?.contains(event.target)
+      ) {
+        setYearPickerOpen(false);
+      }
+    };
 
-    return () => document.removeEventListener('keydown', closeYearPicker);
+    const closeOnOutsideFocus = (event: FocusEvent) => {
+      if (
+        event.target instanceof Node &&
+        !yearPicker.current?.contains(event.target)
+      ) {
+        setYearPickerOpen(false);
+      }
+    };
+
+    const closeOnKeyboard = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        setYearPickerOpen(false);
+        yearTrigger.current?.focus();
+      }
+    };
+
+    yearPicker.current?.scrollIntoView?.({ block: 'nearest' });
+    updatePlacement();
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    document.addEventListener('focusin', closeOnOutsideFocus);
+    document.addEventListener('keydown', closeOnKeyboard);
+    document.addEventListener('scroll', updatePlacement, true);
+    window.addEventListener('resize', updatePlacement);
+
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      document.removeEventListener('focusin', closeOnOutsideFocus);
+      document.removeEventListener('keydown', closeOnKeyboard);
+      document.removeEventListener('scroll', updatePlacement, true);
+      window.removeEventListener('resize', updatePlacement);
+    };
   }, [yearPickerOpen]);
+
+  const toggleYearPicker = () => {
+    setYearPickerReady(false);
+    setYearPickerOpen((open) => !open);
+  };
 
   const footer = (
     <div className="filter-panel__footer">
@@ -191,6 +268,7 @@ export default function FilterPanel({
             </h3>
             {series && <label htmlFor={yearId}>Year</label>}
             <div
+              ref={yearPicker}
               className={`filter-year-picker${series ? '' : ' filter-year-picker--compact'}`}
             >
               <input
@@ -238,45 +316,48 @@ export default function FilterPanel({
                 aria-label="Choose a year"
                 aria-expanded={yearPickerOpen}
                 aria-controls={yearListId}
-                onClick={() => setYearPickerOpen((open) => !open)}
+                onClick={toggleYearPicker}
               >
                 <FaCalendarDays aria-hidden="true" />
               </button>
-              {yearPickerOpen && (
-                <div
-                  ref={yearList}
-                  id={yearListId}
-                  className="filter-year-picker__list"
-                  role="group"
-                  aria-label="Choose a year"
-                >
-                  <div className="filter-year-picker__years">
-                    {years.map((year) => (
-                      <button
-                        type="button"
-                        key={year}
-                        aria-pressed={draft.year === year}
-                        onClick={() => {
-                          update({ year });
-                          setYearPickerOpen(false);
-                          yearInput.current?.focus();
-                        }}
-                      >
-                        {year}
-                      </button>
-                    ))}
-                  </div>
-                  {Number(years[years.length - 1]) > 1874 && (
+              <div
+                ref={yearList}
+                id={yearListId}
+                className="filter-year-picker__list"
+                role="group"
+                aria-label="Choose a year"
+                aria-hidden={!yearPickerOpen}
+                inert={!yearPickerOpen}
+                data-open={yearPickerOpen && yearPickerReady}
+                data-placement={yearPickerPlacement}
+                style={{ maxHeight: yearPickerMaxHeight }}
+              >
+                <div className="filter-year-picker__years">
+                  {years.map((year) => (
                     <button
                       type="button"
-                      className="filter-year-picker__earlier"
-                      onClick={() => setEarlierYearPage((page) => page + 1)}
+                      key={year}
+                      aria-pressed={draft.year === year}
+                      onClick={() => {
+                        update({ year });
+                        setYearPickerOpen(false);
+                        yearInput.current?.focus();
+                      }}
                     >
-                      Earlier years
+                      {year}
                     </button>
-                  )}
+                  ))}
                 </div>
-              )}
+                {Number(years[years.length - 1]) > 1874 && (
+                  <button
+                    type="button"
+                    className="filter-year-picker__earlier"
+                    onClick={() => setEarlierYearPage((page) => page + 1)}
+                  >
+                    Earlier years
+                  </button>
+                )}
+              </div>
             </div>
             {(invalidYear || series) && (
               <p id={`${yearId}-help`}>

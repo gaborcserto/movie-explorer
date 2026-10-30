@@ -474,9 +474,9 @@
   margin: 20px 0 28px;
 
   a {
-    background: #232323;
-    border: 1px solid rgb(255 255 255 / 0.16);
-    border-radius: 4px;
+    background: $grey-3;
+    border-radius: 10px;
+    box-shadow: 0 8px 22px rgb(0 0 0 / 0.22);
     color: $white;
     display: flex;
     flex: 1 1 280px;
@@ -485,13 +485,20 @@
     max-width: calc(50% - 6px);
     min-width: 0;
     overflow-wrap: anywhere;
-    padding: 12px 14px;
+    padding: 13px 16px;
     text-decoration: none;
+    transition:
+      background-color 200ms ease,
+      color 200ms ease;
 
     > span {
+      align-items: center;
       color: $red-1;
+      display: flex;
       font-size: 12px;
-      letter-spacing: 0.04em;
+      font-weight: 700;
+      gap: 8px;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
@@ -501,7 +508,7 @@
     }
 
     &:hover {
-      border-color: $red-1;
+      background: rgb(255 255 255 / 0.06);
       color: $white;
     }
 
@@ -519,6 +526,10 @@
   &__next {
     margin-left: auto;
     text-align: right;
+
+    > span {
+      justify-content: flex-end;
+    }
   }
 }
 
@@ -526,6 +537,12 @@
   .series-neighbors a {
     flex-basis: 100%;
     max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .series-neighbors a {
+    transition: none;
   }
 }
 

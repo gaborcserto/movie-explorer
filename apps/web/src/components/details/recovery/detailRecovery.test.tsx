@@ -360,7 +360,7 @@ test('unavailable filmography retains biography and URL controls until local rec
   );
   expect(
     screen.getByRole('combobox', { name: 'Sort filmography' })
-  ).toHaveValue('title');
+  ).toHaveAttribute('data-value', 'title');
   expect(getPerson).toHaveBeenCalledTimes(1);
   expect(getFilmography).toHaveBeenCalledWith(42, expect.any(AbortSignal));
 });
@@ -444,11 +444,10 @@ test.each(['photos', 'posters'] as const)(
       });
     setup('/movie/42');
     await screen.findByRole('heading', { name: 'Partial media' });
+    const activeCategory = section === 'photos' ? 'Backdrops' : 'Posters';
+    await userEvent.click(screen.getByRole('tab', { name: activeCategory }));
     const label = section === 'photos' ? 'backdrops' : 'posters';
     const surviving = section === 'photos' ? 'poster' : 'backdrop';
-    expect(
-      screen.getByRole('button', { name: `View Partial media ${surviving} 1` })
-    ).toBeVisible();
     const retry = screen.getByRole('button', { name: `Retry ${label}` });
     retry.focus();
     fireEvent.click(retry);
@@ -460,9 +459,24 @@ test.each(['photos', 'posters'] as const)(
     await screen.findByRole('button', {
       name: `View Partial media ${label.slice(0, -1)} 1`,
     });
-    expect(
-      screen.getByRole('button', { name: `View Partial media ${surviving} 1` })
-    ).toBeVisible();
+    if (section === 'photos') {
+      await userEvent.click(screen.getByRole('tab', { name: 'Posters' }));
+      expect(
+        screen.getByRole('button', {
+          name: `View Partial media ${surviving} 1`,
+        })
+      ).toBeVisible();
+    } else {
+      await userEvent.click(screen.getByRole('tab', { name: 'Backdrops' }));
+      expect(
+        screen.getByRole('button', {
+          name: `View Partial media ${surviving} 1`,
+        })
+      ).toBeVisible();
+    }
+    await userEvent.click(
+      screen.getByRole('tab', { name: 'Videos & Trailers' })
+    );
     expect(screen.getByRole('button', { name: 'Play Trailer' })).toBeVisible();
     expect(getMovie).toHaveBeenCalledTimes(1);
     expect(getMovieSection).toHaveBeenLastCalledWith(
@@ -501,8 +515,18 @@ test.each(['photo', 'poster', 'video'] as const)(
     const router = setup('/movie/42');
     await screen.findByRole('heading', { name: 'First movie' });
     await userEvent.click(
+      screen.getByRole('tab', { name: 'Videos & Trailers' })
+    );
+    await userEvent.click(
       screen.getByRole('button', { name: 'Show more videos' })
     );
+    if (kind === 'poster') {
+      await userEvent.click(screen.getByRole('tab', { name: 'Posters' }));
+    } else if (kind === 'photo') {
+      await userEvent.click(screen.getByRole('tab', { name: 'Backdrops' }));
+    } else if (kind === 'video') {
+      // Videos are already selected for the Show More interaction above.
+    }
     await userEvent.click(
       await screen.findByRole('button', {
         name: {
@@ -516,6 +540,9 @@ test.each(['photo', 'poster', 'video'] as const)(
     await act(async () => router.navigate('/movie/43'));
     await screen.findByRole('heading', { name: 'Second movie' });
     expect(screen.queryByRole('dialog')).toBeNull();
+    expect(
+      screen.queryByRole('tablist', { name: 'Media categories' })
+    ).toBeNull();
     expect(
       screen.queryByRole('button', { name: /Show more videos/ })
     ).toBeNull();

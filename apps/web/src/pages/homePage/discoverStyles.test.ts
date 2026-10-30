@@ -360,7 +360,7 @@ test('uses the shared card radius without changing Featured or search radii', ()
     declarationsForSelector(searchStylesheet, '.header__search__input')[
       'border-radius'
     ]
-  ).toBe('0.625rem');
+  ).toBe('10px');
   expect(
     declarationsForSelector(searchStylesheet, '.header__search .btn')[
       'border-radius'
@@ -426,4 +426,13 @@ test('keeps Featured controls above the CTA and shares lightbox control styling'
       '(prefers-reduced-motion: reduce)'
     ).transition
   ).toBe('none');
+});
+
+test('shows a visible keyboard focus indicator on the focusable Featured carousel', () => {
+  expect(
+    declarationsForSelector(stylesheet, '.discover-featured:focus-visible')
+  ).toMatchObject({
+    outline: '2px solid #f65261',
+    'outline-offset': '-4px',
+  });
 });

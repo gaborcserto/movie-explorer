@@ -119,6 +119,11 @@
   position: relative;
   border-radius: 1.25rem;
 
+  &:focus-visible {
+    outline: 2px solid $red-1;
+    outline-offset: -4px;
+  }
+
   &__visual {
     aspect-ratio: 16 / 9;
     height: 100%;

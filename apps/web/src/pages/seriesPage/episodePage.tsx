@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa6';
 
 import {
   getEpisode,
@@ -192,7 +193,10 @@ function EpisodeDetails({
                 state={{ season, series }}
                 aria-label={`Previous: ${previous.episodeNumber}. ${previous.title}`}
               >
-                <span>Previous episode</span>
+                <span>
+                  <FaChevronLeft aria-hidden="true" />
+                  Previous Episode
+                </span>
                 <strong>
                   {previous.episodeNumber}. {previous.title}
                 </strong>
@@ -205,7 +209,10 @@ function EpisodeDetails({
                 state={{ season, series }}
                 aria-label={`Next: ${next.episodeNumber}. ${next.title}`}
               >
-                <span>Next episode</span>
+                <span>
+                  Next Episode
+                  <FaChevronRight aria-hidden="true" />
+                </span>
                 <strong>
                   {next.episodeNumber}. {next.title}
                 </strong>
