@@ -34,7 +34,6 @@ import {
   availabilityMap,
   movieSection,
   filmography,
-  optionalText,
 } from './partialValidation';
 import {
   seriesDetails,
@@ -47,6 +46,13 @@ import {
 } from './seriesValidation';
 import combinedFilmography from './filmographyValidation';
 import { searchResponse, searchResult } from './searchValidation';
+import {
+  movieCore,
+  movieList,
+  movieSuggestions,
+  peopleList,
+  personCore,
+} from './movieValidation';
 import request from './apiTransport';
 import { ApiRequestError } from './apiErrors';
 
@@ -143,12 +149,12 @@ export const getMovie = async (
   id: number,
   signal?: AbortSignal
 ): Promise<MovieDetails> => {
-  const body = await request<MovieDetails>(
+  const body = await request<unknown>(
     `${moviesUrl}/${id}`,
     signal ? { signal } : {}
   );
 
-  if (!record(body)) {
+  if (!movieCore(body, id)) {
     throw new ApiRequestError('invalid-response');
   }
   // Optional metadata must not turn an otherwise usable movie into an error.
@@ -168,24 +174,7 @@ export const getMovie = async (
     if (
       !availabilityMap(body.sections, ['credits', 'videos', 'photos']) ||
       (body.sections.posters !== undefined &&
-        !availability(body.sections.posters)) ||
-      body.id !== id ||
-      typeof body.title !== 'string' ||
-      !Array.isArray(body.genres) ||
-      !body.genres.every((genre) => typeof genre === 'string') ||
-      !optionalText(body, [
-        'description',
-        'releaseDate',
-        'posterSrcSet',
-        'posterPreviewUrl',
-        'backdropUrl',
-      ]) ||
-      !['rating', 'runtimeMinutes'].every(
-        (key) =>
-          body[key] === undefined ||
-          (typeof body[key] === 'number' && Number.isFinite(body[key]))
-      ) ||
-      typeof body.posterUrl !== 'string'
+        !availability(body.sections.posters))
     ) {
       throw new ApiRequestError('invalid-response');
     }
@@ -217,6 +206,20 @@ export const getMovie = async (
         }
       }
     });
+  }
+
+  if (
+    !movieSection(body, 'credits') ||
+    ['photos', 'posters', 'videos'].some((section) => {
+      const present =
+        section === 'photos'
+          ? body.backdrops !== undefined || body.photos !== undefined
+          : body[section as 'posters' | 'videos'] !== undefined;
+
+      return present && !movieSection(body, section);
+    })
+  ) {
+    throw new ApiRequestError('invalid-response');
   }
 
   return body;
@@ -268,29 +271,15 @@ export const getPerson = async (
   signal?: AbortSignal,
   includeCombined = false
 ): Promise<PersonDetails> => {
-  const body = await request<PersonDetails>(
+  const body = await request<unknown>(
     `${apiBaseUrl}/api/v1/persons/${id}${includeCombined ? '?include=combinedFilmography' : ''}`,
     signal ? { signal } : {}
   );
 
-  if (!record(body)) {
-    throw new ApiRequestError('invalid-response');
-  }
   if (
-    body.filmographyAvailability !== undefined &&
-    (!availability(body.filmographyAvailability) ||
-      body.id !== id ||
-      typeof body.name !== 'string' ||
-      !optionalText(body, [
-        'biography',
-        'knownForDepartment',
-        'birthday',
-        'deathDate',
-        'placeOfBirth',
-        'profileUrl',
-        'profileSrcSet',
-      ]) ||
-      !filmography(body.filmography))
+    !personCore(body, id) ||
+    (body.filmographyAvailability !== undefined &&
+      !availability(body.filmographyAvailability))
   ) {
     throw new ApiRequestError('invalid-response');
   }
@@ -471,10 +460,16 @@ export const getMovies = async (
 
   const queryString = query.toString();
 
-  return request<MovieListResponse>(
+  const body = await request<unknown>(
     queryString ? `${moviesUrl}?${queryString}` : moviesUrl,
     signal ? { signal } : {}
   );
+
+  if (!movieList(body)) {
+    throw new ApiRequestError('invalid-response');
+  }
+
+  return body;
 };
 
 export const getMovieSuggestions = async (
@@ -483,10 +478,16 @@ export const getMovieSuggestions = async (
 ): Promise<MovieSuggestionsResponse> => {
   const params = new URLSearchParams({ query, limit: '6' });
 
-  return request<MovieSuggestionsResponse>(
+  const body = await request<unknown>(
     `${moviesUrl}/suggestions?${params.toString()}`,
     signal ? { signal } : {}
   );
+
+  if (!movieSuggestions(body)) {
+    throw new ApiRequestError('invalid-response');
+  }
+
+  return body;
 };
 
 export const getSearchSuggestions = async (
@@ -648,7 +649,7 @@ export async function getPopularSeries(
   return body;
 }
 
-export const getPeople = (
+export const getPeople = async (
   query: string,
   page = 1,
   signal?: AbortSignal
@@ -660,10 +661,16 @@ export const getPeople = (
   }
   params.set('page', String(page));
 
-  return request<PersonListResponse>(
+  const body = await request<unknown>(
     `${apiBaseUrl}/api/v1/persons?${params}`,
     signal ? { signal } : {}
   );
+
+  if (!peopleList(body)) {
+    throw new ApiRequestError('invalid-response');
+  }
+
+  return body;
 };
 
 export async function getSeriesCredits(

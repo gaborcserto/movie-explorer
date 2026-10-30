@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import { BadGatewayException, HttpException } from '@nestjs/common';
 
 import type { MovieProvider } from '../movies/movie-provider';
@@ -138,6 +139,7 @@ describe('independent autocomplete groups', () => {
           (_type, index) => !(failures & (1 << index)),
         ),
       );
+      ok(response.groups);
       expect(response.groups.tv).toEqual(
         failures & 2
           ? { status: 'unavailable', retryAfterSeconds: 12 }

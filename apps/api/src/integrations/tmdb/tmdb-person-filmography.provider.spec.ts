@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import { Logger } from '@nestjs/common';
 
 import { TmdbPersonFilmographyProvider } from './tmdb-person-filmography.provider';
@@ -75,13 +76,16 @@ describe('Combined Person filmography', () => {
       }),
     );
     const person = await provider.findPerson(1);
+    ok(person);
     expect(person.filmography).toHaveLength(1);
     expect(person.filmography[0]).not.toHaveProperty('mediaType');
+    ok(person.combinedFilmography);
     expect(
       person.combinedFilmography.entries.map(
         (entry) => `${entry.mediaType}:${entry.id}`,
       ),
     ).toEqual(['movie:7', 'tv:7']);
+
     expect(person.combinedFilmography.entries[1]).toMatchObject({
       firstAirDate: '2021-01-01',
       actingCredits: ['One', 'Two'],
@@ -108,11 +112,14 @@ describe('Combined Person filmography', () => {
       Response.json({ id: 1, name: 'Person', movie_credits: movie }),
     );
     const person = await provider.findPerson(1);
+    ok(person);
     expect(person.name).toBe('Person');
+    ok(person.combinedFilmography);
     expect(person.combinedFilmography.groups).toEqual({
       movie: { status: 'available' },
       tv: { status: 'unavailable' },
     });
+
     expect(person.combinedFilmography.entries).toHaveLength(1);
   });
 
@@ -123,6 +130,7 @@ describe('Combined Person filmography', () => {
         Response.json(type === 'movie' ? movie : tv),
       );
       const result = await provider.findCombined(1, type);
+      ok(result);
       expect(result.groups).toEqual({ [type]: { status: 'available' } });
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock.mock.calls[0][0].pathname).toBe(
@@ -173,8 +181,9 @@ describe('Combined Person filmography', () => {
 
   it('uses one bounded deadline and cleans up a timed out opt-in request', async () => {
     jest.useFakeTimers();
+
     fetchMock.mockImplementationOnce(
-      (_url, init: RequestInit) =>
+      (_url, init: RequestInit & { signal: AbortSignal }) =>
         new Promise((_resolve, reject) =>
           init.signal.addEventListener('abort', () =>
             reject(new Error('aborted')),

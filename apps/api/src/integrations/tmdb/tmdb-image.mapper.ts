@@ -9,7 +9,7 @@ export class TmdbImageMapper {
     this.originalImageBaseUrl = parts.join('/');
   }
 
-  toImageUrl(path: string | null): string {
+  toImageUrl(path: string | null | undefined): string {
     return path ? `${this.imageBaseUrl}${path}` : '';
   }
 
@@ -36,7 +36,8 @@ export class TmdbImageMapper {
     profile_path?: string | null;
   }): CreditPerson {
     return {
-      ...(Number.isSafeInteger(person.id) &&
+      ...(typeof person.id === 'number' &&
+        Number.isSafeInteger(person.id) &&
         person.id > 0 && { id: person.id }),
       name: person.name.trim(),
       ...(person.profile_path && {

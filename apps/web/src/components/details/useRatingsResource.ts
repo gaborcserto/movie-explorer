@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Ratings } from '@movie-explorer/contracts';
+
 import { getRatings } from '../../util/apiUtils';
 
 export default function useRatingsResource(

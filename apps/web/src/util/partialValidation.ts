@@ -106,7 +106,7 @@ export function movieSection(value: unknown, section: string): boolean {
   );
 }
 
-export function filmography(value: unknown): boolean {
+export function filmography(value: unknown, allowUnlinked = false): boolean {
   return (
     Array.isArray(value) &&
     value.every(
@@ -114,7 +114,7 @@ export function filmography(value: unknown): boolean {
         record(item) &&
         typeof item.id === 'number' &&
         Number.isSafeInteger(item.id) &&
-        item.id > 0 &&
+        (item.id > 0 || (allowUnlinked && item.id === 0)) &&
         typeof item.title === 'string' &&
         typeof item.posterUrl === 'string' &&
         strings(item.genres) &&

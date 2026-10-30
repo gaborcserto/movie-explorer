@@ -1,17 +1,15 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 const PANEL_HEIGHT_TRANSITION_MS = 220;
 
 export default function useStablePanelHeight<T extends HTMLElement>(
   activeKey: string
 ) {
-  const panelRef = useRef<T>(null);
+  const [panel, setPanel] = useState<T | null>(null);
   const activeKeyRef = useRef(activeKey);
   const observedHeightRef = useRef<number | undefined>(undefined);
 
   useLayoutEffect(() => {
-    const panel = panelRef.current;
-
     if (!panel) {
       return undefined;
     }
@@ -30,7 +28,7 @@ export default function useStablePanelHeight<T extends HTMLElement>(
     observer.observe(panel);
 
     return () => observer.disconnect();
-  }, []);
+  }, [panel]);
 
   useLayoutEffect(() => {
     if (activeKeyRef.current === activeKey) {
@@ -38,7 +36,6 @@ export default function useStablePanelHeight<T extends HTMLElement>(
     }
 
     activeKeyRef.current = activeKey;
-    const panel = panelRef.current;
 
     if (!panel) {
       return undefined;
@@ -74,8 +71,9 @@ export default function useStablePanelHeight<T extends HTMLElement>(
     return () => {
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timeout);
+      panel.style.minHeight = '';
     };
-  }, [activeKey]);
+  }, [activeKey, panel]);
 
-  return panelRef;
+  return setPanel;
 }

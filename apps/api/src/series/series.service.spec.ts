@@ -6,7 +6,7 @@ import { SeriesService } from './series.service';
 import { minimalSeriesDetails } from '../../test/fixtures/series';
 
 describe('SeriesService', () => {
-  const provider: jest.Mocked<SeriesProvider> = {
+  const provider: jest.Mocked<Required<SeriesProvider>> = {
     findPopular: jest.fn(),
     findOne: jest.fn(),
     findRatings: jest.fn(),

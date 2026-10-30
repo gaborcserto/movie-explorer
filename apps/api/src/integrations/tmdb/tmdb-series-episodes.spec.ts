@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import { Logger } from '@nestjs/common';
 
 import { TmdbSeriesProvider } from './tmdb-series.provider';
@@ -198,6 +199,7 @@ describe('series season/episode transport', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain(
       'append_to_response=credits',
     );
+    ok(result);
     expect(await provider.findEpisodeCredits(1, 0, 3)).toEqual(result.credits);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(true);
@@ -215,14 +217,17 @@ describe('series season/episode transport', () => {
 
     const result = await provider.findEpisode(1, 0, 3);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    ok(result);
     expect(result.credits.cast).toEqual([
       { id: 2, name: 'Actor', characters: ['A'] },
     ]);
+
     expect(result.credits.sections).toEqual({
       cast: { status: 'available' },
       guestStars: { status: 'available' },
       crew: { status: 'available' },
     });
+
     await expect(provider.findEpisodeCredits(1, 0, 3)).resolves.toEqual(
       result.credits,
     );
@@ -243,6 +248,7 @@ describe('series season/episode transport', () => {
         }),
       );
       const result = await provider.findEpisode(1, 0, 3);
+      ok(result);
       expect(result.credits.cast).toEqual([]);
       expect(result.credits.sections.cast.status).toBe('unavailable');
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -291,17 +297,19 @@ describe('series season/episode transport', () => {
 
   it('times out while reading JSON and clears the operation timer', async () => {
     jest.useFakeTimers();
-    fetchMock.mockImplementation((_url: URL, init: RequestInit) =>
-      Promise.resolve({
-        status: 200,
-        ok: true,
-        json: () =>
-          new Promise((_resolve, reject) =>
-            init.signal.addEventListener('abort', () =>
-              reject(new Error('aborted')),
+
+    fetchMock.mockImplementation(
+      (_url: URL, init: RequestInit & { signal: AbortSignal }) =>
+        Promise.resolve({
+          status: 200,
+          ok: true,
+          json: () =>
+            new Promise((_resolve, reject) =>
+              init.signal.addEventListener('abort', () =>
+                reject(new Error('aborted')),
+              ),
             ),
-          ),
-      }),
+        }),
     );
     const assertion = expect(
       provider.findEpisode(1, 0, 3),

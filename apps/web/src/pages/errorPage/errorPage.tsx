@@ -1,7 +1,7 @@
 import './errorPage.scss';
 import { Link } from 'react-router-dom';
 import ErrorPresentation from '../../components/errorPresentation';
-import useDetailPage from '../../components/details/hooks';
+import useDetailPage from '../../hooks/useDetailPage';
 
 function ErrorPage() {
   const mainRef = useDetailPage('Page not found');

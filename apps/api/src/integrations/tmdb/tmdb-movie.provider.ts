@@ -77,6 +77,40 @@ export class TmdbMovieProvider implements MovieProvider {
   public async findAll(query: MovieQueryParams): Promise<MovieListResponse> {
     const page = Number(query.page ?? 1);
     const response = await this.fetchMoviePage(query, page);
+
+    if (
+      !response.results.every((value) => {
+        const movie = detailRecord(value);
+
+        return (
+          movie &&
+          typeof movie.id === 'number' &&
+          Number.isSafeInteger(movie.id) &&
+          movie.id > 0 &&
+          typeof movie.title === 'string' &&
+          Boolean(movie.title.trim()) &&
+          (movie.poster_path === undefined ||
+            movie.poster_path === null ||
+            typeof movie.poster_path === 'string') &&
+          (movie.release_date === undefined ||
+            typeof movie.release_date === 'string') &&
+          (movie.genre_ids === undefined ||
+            (Array.isArray(movie.genre_ids) &&
+              movie.genre_ids.every(
+                (id: unknown) =>
+                  typeof id === 'number' && Number.isSafeInteger(id) && id > 0,
+              ))) &&
+          (movie.vote_average === undefined ||
+            (typeof movie.vote_average === 'number' &&
+              Number.isFinite(movie.vote_average)))
+        );
+      })
+    ) {
+      // Reject the page consistently rather than publish corrupt domain entries.
+      this.logFailure('movie-list', 'invalid-response', 502, 200);
+      throw new BadGatewayException('Movie provider response was invalid');
+    }
+
     const genres = await this.getGenres();
     const requestedGenres = new Set(this.normalizeGenreFilter(query.genre));
     const genreNamesById = new Map(
@@ -151,7 +185,7 @@ export class TmdbMovieProvider implements MovieProvider {
           title,
           release_date: searchText(movie.release_date),
           poster_path: searchText(movie.poster_path)?.startsWith('/')
-            ? searchText(movie.poster_path)
+            ? (searchText(movie.poster_path) ?? null)
             : null,
         }),
       ];
@@ -574,6 +608,16 @@ export class TmdbMovieProvider implements MovieProvider {
     return new Date().toISOString().slice(0, 10);
   }
 
+  private request<T>(
+    path: string,
+    query?: Record<string, string | undefined>,
+    allowNotFound?: false,
+  ): Promise<T>;
+  private request<T>(
+    path: string,
+    query: Record<string, string | undefined>,
+    allowNotFound: true,
+  ): Promise<T | undefined>;
   private async request<T>(
     path: string,
     query: Record<string, string | undefined> = {},

@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import { Logger, ValidationPipe, type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { WatchProviders } from '@movie-explorer/contracts';
@@ -94,7 +95,6 @@ describe.each([
     };
 
     await request(app.getHttpServer()).get(endpoint).expect(200, expected);
-
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
       new URL(
@@ -252,7 +252,6 @@ describe.each([
       await request(app.getHttpServer())
         .get(`/api/v1/${kind}/${invalidId}/watch-providers`)
         .expect(400);
-
       expect(fetchMock).not.toHaveBeenCalled();
     },
   );
@@ -260,17 +259,18 @@ describe.each([
   it('documents the shared DTO with optional logo and watch URL', () => {
     const document = createApiDocument(app);
 
-    expect(
-      document.paths[`/api/v1/${kind}/{id}/watch-providers`].get.responses[
-        '200'
-      ],
-    ).toMatchObject({
+    const operation =
+      document.paths[`/api/v1/${kind}/{id}/watch-providers`].get;
+    ok(operation);
+    expect(operation.responses['200']).toMatchObject({
       content: {
         'application/json': {
           schema: { $ref: '#/components/schemas/WatchProvidersDto' },
         },
       },
     });
+    ok(document.components);
+    ok(document.components.schemas);
     expect(document.components.schemas.WatchProvidersDto).toMatchObject({
       required: ['providers'],
       properties: {
@@ -280,6 +280,7 @@ describe.each([
         },
       },
     });
+
     expect(document.components.schemas.WatchProviderDto).toMatchObject({
       required: ['id', 'name', 'category', 'region'],
       properties: { category: { enum: ['streaming', 'rent', 'buy'] } },

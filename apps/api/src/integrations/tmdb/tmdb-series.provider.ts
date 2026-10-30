@@ -4,7 +4,7 @@ import type { RatingResult, SeriesDetails } from '@movie-explorer/contracts';
 import { TmdbExternalIds } from './tmdb-external-ids';
 import { normalizeTmdbRating } from './tmdb-ratings';
 import { mapWatchProviders } from './tmdb-watch-providers.mapper';
-import type { SeriesListQuery } from '../../series/series-list.dto';
+import type { SeriesProviderQuery } from '../../series/series-provider';
 import { mapSearch, searchPage } from './tmdb-search.mapper';
 import type { SeriesProvider } from '../../series/series-provider';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
@@ -41,7 +41,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
     this.mapper = new TmdbSeriesMapper(config.imageBaseUrl);
   }
 
-  async findPopular(query: SeriesListQuery) {
+  async findPopular(query: SeriesProviderQuery) {
     const sortFields = {
       popularity: 'popularity',
       firstAirDate: 'first_air_date',

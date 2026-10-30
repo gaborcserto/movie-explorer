@@ -36,7 +36,9 @@ describe('TMDB transport validation boundary', () => {
       let signalAbortedDuringValidation: boolean | undefined;
       let timersDuringValidation: number | undefined;
       const validateBody = jest.fn(() => {
-        const init: RequestInit = fetchMock.mock.calls[0][1];
+        const init: RequestInit & { signal: AbortSignal } =
+          fetchMock.mock.calls[0][1];
+
         signalAbortedDuringValidation = init.signal.aborted;
         timersDuringValidation = jest.getTimerCount();
         if (invalid) {
@@ -74,7 +76,9 @@ describe('TMDB transport validation boundary', () => {
       expect(validateBody).toHaveBeenCalledWith(body);
       expect(signalAbortedDuringValidation).toBe(false);
       expect(timersDuringValidation).toBe(1);
-      const init: RequestInit = fetchMock.mock.calls[0][1];
+      const init: RequestInit & { signal: AbortSignal } =
+        fetchMock.mock.calls[0][1];
+
       expect(init.signal.aborted).toBe(true);
       expect(jest.getTimerCount()).toBe(0);
     },

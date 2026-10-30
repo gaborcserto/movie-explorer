@@ -5,7 +5,7 @@ import type {
   WatchProviders,
 } from '@movie-explorer/contracts';
 
-import type { SeriesListQuery } from './series-list.dto';
+import type { SeriesProviderQuery } from './series-provider';
 import { SERIES_PROVIDER, SeriesProvider } from './series-provider';
 import { RatingsService } from '../ratings/ratings.service';
 import { ratingFailureReason } from '../ratings/rating-failure-reason';
@@ -17,7 +17,7 @@ export class SeriesService {
     @Optional() private readonly ratings?: RatingsService,
   ) {}
 
-  findPopular(query: SeriesListQuery) {
+  findPopular(query: SeriesProviderQuery) {
     return this.provider.findPopular(query);
   }
 

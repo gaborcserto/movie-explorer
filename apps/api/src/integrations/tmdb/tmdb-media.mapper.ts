@@ -62,7 +62,8 @@ export class TmdbMediaMapper extends TmdbImageMapper {
             Number.isFinite(image.width) && { width: image.width }),
           ...(image.height > 0 &&
             Number.isFinite(image.height) && { height: image.height }),
-          ...(image.aspect_ratio > 0 &&
+          ...(typeof image.aspect_ratio === 'number' &&
+            image.aspect_ratio > 0 &&
             Number.isFinite(image.aspect_ratio) && {
               aspectRatio: image.aspect_ratio,
             }),

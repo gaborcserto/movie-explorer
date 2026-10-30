@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import {
   BadGatewayException,
   GatewayTimeoutException,
@@ -156,9 +157,13 @@ describe('Unified Search API', () => {
   it('documents the discriminated nested schemas and actual query parameters', () => {
     const doc = createApiDocument(app);
     const operation = doc.paths['/api/v1/search'].get;
+    ok(operation);
+    ok(operation.parameters);
     expect(
       operation.parameters.map((param) => 'name' in param && param.name),
     ).toEqual(expect.arrayContaining(['query', 'type', 'page', 'year']));
+    ok(doc.components);
+    ok(doc.components.schemas);
     const schema = doc.components.schemas.SearchResponseDto;
     expect(schema).toMatchObject({
       properties: {
@@ -170,6 +175,7 @@ describe('Unified Search API', () => {
         },
       },
     });
+    ok(doc.paths['/api/v1/search/suggestions'].get);
     expect(
       doc.paths['/api/v1/search/suggestions'].get.responses['200'],
     ).toBeDefined();

@@ -1,20 +1,18 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import type { SearchResponse, SearchResult } from '@movie-explorer/contracts';
 
-import presentApiError, {
-  isCancelledError,
-} from '../../util/errorPresentation';
+import presentApiError from '../../util/errorPresentation';
 import { getSearchResults, getPopularSeries } from '../../util/apiUtils';
 import SearchResultCard from './searchResultCard';
 import { ResultsSkeleton, CardSkeletons } from '../skeleton';
 import Error from '../../layouts/error';
 import { useResultHistory, useSearchHistory } from './useSearchHistory';
+
+import usePaginatedResults from './hooks/usePaginatedResults';
+
+const resultItems = (response: SearchResponse) => response.results;
+
+const resultKey = (item: SearchResult) => `${item.mediaType}:${item.id}`;
 
 export default function UnifiedList({
   query,
@@ -36,14 +34,15 @@ export default function UnifiedList({
     history?.unified,
     JSON.stringify([query, type, year, rating, sorting, order])
   );
-  const [data, setData] = useState<SearchResponse | undefined>(restored?.data);
-  const [items, setItems] = useState<SearchResult[]>(restored?.items ?? []);
-  const [visible, setVisible] = useState(restored?.visible ?? 10);
-  const [loading, setLoading] = useState(!restored);
-  const [error, setError] = useState<unknown>(null);
-  const [moreError, setMoreError] = useState<unknown>(null);
-  const controller = useRef<AbortController | null>(null);
-  const busy = useRef(false);
+  const fetchPage = useCallback(
+    (page: number, signal: AbortSignal) =>
+      query
+        ? getSearchResults(query, type, page, signal, year)
+        : getPopularSeries(page, { year, rating, sorting, order }, signal),
+    [query, type, year, rating, sorting, order]
+  );
+  const { data, items, visible, setVisible, loading, error, moreError, load } =
+    usePaginatedResults(restored, fetchPage, resultItems, resultKey);
   const countRef = useRef<HTMLParagraphElement>(null);
   const moreRef = useRef<HTMLButtonElement>(null);
   const restoreCountFocus = useRef(false);
@@ -58,69 +57,6 @@ export default function UnifiedList({
       restoreCountFocus.current = false;
     }
   }, [more, loading]);
-
-  const load = useCallback(
-    async (page: number, revealed = 0) => {
-      if (busy.current) {
-        return;
-      }
-      busy.current = true;
-      controller.current?.abort();
-      const request = new AbortController();
-      controller.current = request;
-      setLoading(true);
-      setMoreError(null);
-      try {
-        const response = query
-          ? await getSearchResults(query, type, page, request.signal, year)
-          : await getPopularSeries(
-              page,
-              { year, rating, sorting, order },
-              request.signal
-            );
-
-        if (request.signal.aborted) {
-          return;
-        }
-        setError(null);
-        setData(response);
-        setItems((current) => [
-          ...new Map(
-            [...(page === 1 ? [] : current), ...response.results].map(
-              (item) => [`${item.mediaType}:${item.id}`, item]
-            )
-          ).values(),
-        ]);
-        setVisible(page === 1 ? 10 : revealed + 10);
-      } catch (failure: unknown) {
-        if (request.signal.aborted || isCancelledError(failure)) {
-          return;
-        }
-        if (page === 1) {
-          setError(failure);
-        } else {
-          setMoreError(failure);
-        }
-      } finally {
-        if (!request.signal.aborted) {
-          busy.current = false;
-          setLoading(false);
-        }
-      }
-    },
-    [query, type, year, rating, sorting, order]
-  );
-
-  useEffect(() => {
-    if (!restored) {
-      load(1);
-    }
-
-    return () => {
-      controller.current?.abort();
-      busy.current = false;
-    };
-  }, [query, load, restored]);
 
   useLayoutEffect(() => {
     if (data) {

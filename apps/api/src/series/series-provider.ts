@@ -11,12 +11,18 @@ import type {
   RatingResult,
 } from '@movie-explorer/contracts';
 
-import type { SeriesListQuery } from './series-list.dto';
-
 export const SERIES_PROVIDER = Symbol('SERIES_PROVIDER');
 
+export interface SeriesProviderQuery {
+  page?: number;
+  year?: number;
+  minimumRating?: number;
+  sort: 'popularity' | 'firstAirDate' | 'rating' | 'title';
+  order: 'asc' | 'desc';
+}
+
 export interface SeriesProvider {
-  findPopular(query: SeriesListQuery): Promise<SearchResponse>;
+  findPopular(query: SeriesProviderQuery): Promise<SearchResponse>;
   findImages(id: number): Promise<SeriesImages | undefined>;
   findVideos(id: number): Promise<SeriesVideos | undefined>;
   findCredits(id: number): Promise<SeriesCredits | undefined>;

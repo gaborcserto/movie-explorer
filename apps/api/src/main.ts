@@ -1,10 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
-import { AppModule } from './app.module';
 import { SwaggerModule } from '@nestjs/swagger';
-import { createApiDocument } from './api-document';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
+
+import { AppModule } from './app.module';
+import { createApiDocument } from './api-document';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -24,7 +25,14 @@ async function bootstrap() {
   const document = createApiDocument(app);
   SwaggerModule.setup('api-docs', app, document);
 
-  await app.listen(process.env.PORT ?? 4000, process.env.HOST);
+  const port = process.env.PORT ?? 4000;
+  const host = process.env.HOST;
+
+  if (host !== undefined) {
+    await app.listen(port, host);
+  } else {
+    await app.listen(port);
+  }
 
   const serverUrl = new URL(await app.getUrl());
   const boundHostname = serverUrl.hostname.replace(/^\[|\]$/gu, '');

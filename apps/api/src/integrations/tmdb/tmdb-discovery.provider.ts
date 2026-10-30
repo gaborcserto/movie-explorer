@@ -16,6 +16,30 @@ import { TmdbTransport } from './tmdb.transport';
 import { mapSearch, searchPage } from './tmdb-search.mapper';
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
+const SEARCH_CACHE_CAPACITY = 100;
+const PROVIDER_CACHE_CAPACITY = 32;
+
+// Opportunistic expiry and FIFO eviction bound retention without background timers.
+function pruneCache<T extends { expiresAt: number }>(
+  cache: Map<string, T>,
+  capacity: number,
+) {
+  const now = Date.now();
+
+  for (const [key, entry] of cache) {
+    if (entry.expiresAt <= now) {
+      cache.delete(key);
+    }
+  }
+
+  while (cache.size > capacity) {
+    const oldest = cache.keys().next().value;
+
+    if (oldest !== undefined) {
+      cache.delete(oldest);
+    }
+  }
+}
 
 @Injectable()
 export class TmdbDiscoveryProvider {
@@ -50,6 +74,7 @@ export class TmdbDiscoveryProvider {
   async findStreamingProviders(
     region: string,
   ): Promise<StreamingProviderInfo[]> {
+    pruneCache(this.providerCache, PROVIDER_CACHE_CAPACITY);
     const cached = this.providerCache.get(region);
 
     if (cached && cached.expiresAt > Date.now()) {
@@ -71,6 +96,7 @@ export class TmdbDiscoveryProvider {
         providers,
         expiresAt: Date.now() + CACHE_TTL_MS,
       });
+      pruneCache(this.providerCache, PROVIDER_CACHE_CAPACITY);
 
       return providers;
     } finally {
@@ -128,6 +154,7 @@ export class TmdbDiscoveryProvider {
     key: string,
     load: () => Promise<SearchResponse>,
   ): Promise<SearchResponse> {
+    pruneCache(this.cache, SEARCH_CACHE_CAPACITY);
     const cached = this.cache.get(key);
 
     if (cached && cached.expiresAt > Date.now()) {
@@ -149,6 +176,7 @@ export class TmdbDiscoveryProvider {
         response,
         expiresAt: Date.now() + CACHE_TTL_MS,
       });
+      pruneCache(this.cache, SEARCH_CACHE_CAPACITY);
 
       return response;
     } finally {

@@ -43,6 +43,7 @@ export class TmdbSeriesMediaMapper {
         return [];
       }
 
+      const id = seriesText(row.id);
       const language: string | null | undefined =
         typeof row.iso_639_1 === 'string'
           ? row.iso_639_1
@@ -57,7 +58,7 @@ export class TmdbSeriesMediaMapper {
           site,
           type: seriesText(row.type) ?? '',
           official: row.official === true,
-          ...(seriesText(row.id) && { id: seriesText(row.id) }),
+          ...(id && { id }),
           ...(typeof language === 'string' || language === null
             ? { iso_639_1: language }
             : {}),

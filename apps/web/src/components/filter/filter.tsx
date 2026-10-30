@@ -33,13 +33,17 @@ export default function Filter() {
         );
 
   const closePanel = useCallback(() => {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
       setOpenAt(null);
-    else setClosing(true);
+    } else {
+      setClosing(true);
+    }
   }, []);
 
   useEffect(() => {
-    if (!closing) return undefined;
+    if (!closing) {
+      return undefined;
+    }
 
     const timeout = window.setTimeout(() => {
       setOpenAt(null);
@@ -52,8 +56,9 @@ export default function Filter() {
   useEffect(() => {
     const normalized = normalizeFilters(params, isSearch);
 
-    if (normalized.toString() !== params.toString())
+    if (normalized.toString() !== params.toString()) {
       setParams(normalized, { replace: true });
+    }
   }, [params, isSearch, setParams]);
 
   useEffect(() => {
@@ -77,8 +82,9 @@ export default function Filter() {
           aria-expanded={open}
           aria-haspopup="dialog"
           onClick={() => {
-            if (open) closePanel();
-            else {
+            if (open) {
+              closePanel();
+            } else {
               setClosing(false);
               setOpenAt(location.key);
             }
@@ -116,7 +122,9 @@ export default function Filter() {
               );
 
               closePanel();
-              if (next.toString() !== params.toString()) setParams(next);
+              if (next.toString() !== params.toString()) {
+                setParams(next);
+              }
             }}
           />
         )}

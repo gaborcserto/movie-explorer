@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import {
   BadGatewayException,
   GatewayTimeoutException,
@@ -21,7 +22,7 @@ import { DISCOVERY_PROVIDER } from '../src/discovery/discovery.tokens';
 
 describe('Series details API (e2e)', () => {
   let app: INestApplication;
-  const provider: jest.Mocked<SeriesProvider> = {
+  const provider: jest.Mocked<Required<SeriesProvider>> = {
     findPopular: jest.fn(),
     findOne: jest.fn(),
     findCredits: jest.fn(),
@@ -63,6 +64,7 @@ describe('Series details API (e2e)', () => {
       order: 'asc',
     });
     const document = createApiDocument(app);
+    ok(document.paths['/api/v1/series'].get);
     expect(document.paths['/api/v1/series'].get.responses['200']).toMatchObject(
       {
         content: {
@@ -72,6 +74,8 @@ describe('Series details API (e2e)', () => {
         },
       },
     );
+    ok(document.components);
+    ok(document.components.schemas);
     expect(document.components.schemas.EpisodeSummaryDto).toMatchObject({
       properties: { stillSrcSet: { type: 'string' } },
     });
@@ -155,9 +159,12 @@ describe('Series details API (e2e)', () => {
       .get('/api/v1/series/1399/credits')
       .expect(404);
     const document = createApiDocument(app);
+    ok(document.paths['/api/v1/series/{id}/credits'].get);
     expect(
       document.paths['/api/v1/series/{id}/credits'].get.responses['200'],
     ).toBeDefined();
+    ok(document.components);
+    ok(document.components.schemas);
     expect(document.components.schemas.SeriesCharacterDto).toMatchObject({
       properties: { episodeCount: { nullable: true } },
     });
@@ -192,10 +199,10 @@ describe('Series details API (e2e)', () => {
       await request(app.getHttpServer())
         .get(`/api/v1/series/1/${section}`)
         .expect(404);
-      expect(
-        createApiDocument(app).paths[`/api/v1/series/{id}/${section}`].get
-          .responses['200'],
-      ).toBeDefined();
+      const operation =
+        createApiDocument(app).paths[`/api/v1/series/{id}/${section}`].get;
+      ok(operation);
+      expect(operation.responses['200']).toBeDefined();
     },
   );
 
@@ -371,6 +378,7 @@ describe('Series details API (e2e)', () => {
       document.paths[
         '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}'
       ].get;
+    ok(season);
     expect(season.parameters).toContainEqual(
       expect.objectContaining({
         name: 'seasonNumber',
@@ -380,6 +388,7 @@ describe('Series details API (e2e)', () => {
         }),
       }),
     );
+    ok(episode);
     expect(episode.parameters).toContainEqual(
       expect.objectContaining({
         name: 'episodeNumber',
@@ -389,6 +398,7 @@ describe('Series details API (e2e)', () => {
         }),
       }),
     );
+
     expect(Object.keys(episode.responses).sort()).toEqual([
       '200',
       '400',
@@ -397,6 +407,8 @@ describe('Series details API (e2e)', () => {
       '502',
       '504',
     ]);
+    ok(document.components);
+    ok(document.components.schemas);
     expect(document.components.schemas.SeasonDetailsDto).toMatchObject({
       properties: {
         episodes: {
@@ -405,12 +417,14 @@ describe('Series details API (e2e)', () => {
         },
       },
     });
+
     expect(document.components.schemas.EpisodeSummaryDto).toMatchObject({
       properties: {
         runtimeMinutes: { nullable: true },
         voteCount: { nullable: true, minimum: 0 },
       },
     });
+
     expect(document.components.schemas.EpisodeCreditsDto).toBeDefined();
     expect(document.components.schemas.EpisodeCreditSectionsDto).toBeDefined();
   });
@@ -534,6 +548,7 @@ describe('Series details API (e2e)', () => {
       new DocumentBuilder().setTitle('Movie Explorer').setVersion('1').build(),
     );
     const operation = document.paths['/api/v1/series/{id}'].get;
+    ok(operation);
     expect(Object.keys(operation.responses).sort()).toEqual([
       '200',
       '400',
@@ -542,6 +557,7 @@ describe('Series details API (e2e)', () => {
       '502',
       '504',
     ]);
+
     expect(operation.parameters).toContainEqual(
       expect.objectContaining({
         name: 'id',
@@ -552,7 +568,9 @@ describe('Series details API (e2e)', () => {
         },
       }),
     );
+    ok(document.components);
     const schemas = document.components.schemas;
+    ok(schemas);
     expect(schemas.SeriesDetailsDto).toMatchObject({
       required: Object.keys(minimalSeriesDetails),
       properties: {
@@ -569,6 +587,7 @@ describe('Series details API (e2e)', () => {
         },
       },
     });
+
     expect(schemas.SeasonSummaryDto).toMatchObject({
       properties: {
         seasonNumber: { minimum: 0 },

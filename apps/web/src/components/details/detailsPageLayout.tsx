@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import useDetailPage from './hooks';
+import useDetailPage from '../../hooks/useDetailPage';
 import './details.scss';
 import './media/media.scss';
 

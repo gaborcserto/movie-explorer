@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import { HttpException, Logger } from '@nestjs/common';
 import { TmdbMovieProvider } from './tmdb-movie.provider';
 import { TmdbMovieMapper } from './tmdb-movie.mapper';
@@ -374,6 +375,8 @@ describe('partial detail recovery', () => {
 
         expect(recovered).toStrictEqual(expected);
         expect(full).toMatchObject(expected);
+        ok(full);
+        ok(full.sections);
         expect(full.sections[section]).toEqual({ status: 'available' });
         expect(fetchMock).toHaveBeenCalledTimes(2);
         if (empty) {

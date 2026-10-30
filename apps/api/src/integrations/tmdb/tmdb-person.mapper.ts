@@ -59,13 +59,15 @@ export class TmdbPersonMapper {
   ): PersonDetails['filmography'] {
     const movies = new Map<number, PersonFilmographyEntry>();
     const addCredit = (value: unknown, acting: boolean) => {
+      const title = isRecord(value) ? text(value.title) : undefined;
+
       if (
         !isRecord(value) ||
         value.adult === true ||
         typeof value.id !== 'number' ||
         !Number.isSafeInteger(value.id) ||
         value.id <= 0 ||
-        !text(value.title)
+        !title
       ) {
         return;
       }
@@ -77,7 +79,7 @@ export class TmdbPersonMapper {
           ...this.movieMapper.toMovieSummary(
             {
               id: value.id,
-              title: text(value.title),
+              title,
               release_date: text(value.release_date),
               poster_path: text(value.poster_path) ?? null,
             },

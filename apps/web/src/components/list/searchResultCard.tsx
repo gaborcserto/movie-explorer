@@ -1,6 +1,6 @@
 import type { SearchResult } from '@movie-explorer/contracts';
 
-import Card from '../card/card';
+import Card from '../card';
 import { mediaPath } from '../../util/seriesRoutes';
 
 const typeLabels = { movie: 'Movie', tv: 'Series', person: 'Person' };

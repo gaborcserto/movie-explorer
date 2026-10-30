@@ -55,11 +55,12 @@ export class TmdbPersonFilmographyProvider implements PersonFilmographyProvider 
       return undefined;
     }
 
-    if (!isTmdbPersonProfile(body)) {
+    const source = seriesRecord(body);
+
+    if (!isTmdbPersonProfile(body) || !source) {
       throw new BadGatewayException('Invalid person response');
     }
 
-    const source = seriesRecord(body);
     const combinedFilmography: CombinedFilmography = {
       entries: [],
       groups: {},

@@ -2,9 +2,13 @@ import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsNumber, IsOptional, Max, Min } from 'class-validator';
 import { ApiPropertyOptional, PickType } from '@nestjs/swagger';
 
+import type { SeriesProviderQuery } from './series-provider';
 import { GetPeopleQuery } from '../persons/people.dto';
 
-export class SeriesListQuery extends PickType(GetPeopleQuery, ['page']) {
+export class SeriesListQuery
+  extends PickType(GetPeopleQuery, ['page'])
+  implements SeriesProviderQuery
+{
   @ApiPropertyOptional({ minimum: 1874, maximum: 9999 })
   @IsOptional()
   @Type(() => Number)

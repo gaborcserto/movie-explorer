@@ -5,6 +5,7 @@ import type {
 
 import {
   getMovie,
+  getPerson,
   getMovieSection,
   getMovies,
   getMovieSuggestions,
@@ -581,5 +582,72 @@ describe('API functions', () => {
 
     expect(isNotFoundError(error)).toBe(false);
     expect(isNotFoundError(new Error('boom'))).toBe(false);
+  });
+});
+
+test.each([
+  {},
+  { id: -1 },
+  { title: null },
+  { genres: [1] },
+  { posterUrl: null },
+])(
+  'rejects malformed legacy movie cores without availability metadata: %j',
+  async (invalid) => {
+    fetchMock.mockResolvedValueOnce(
+      response({
+        ...mockMovieData,
+        ...invalid,
+        ...(Object.keys(invalid).length ? {} : { id: undefined }),
+      })
+    );
+    await expect(getMovie(1234)).rejects.toMatchObject({
+      category: 'invalid-response',
+    });
+  }
+);
+
+test.each([{ name: null }, { id: 2 }, { filmography: [{}] }])(
+  'rejects malformed legacy person cores: %j',
+  async (invalid) => {
+    fetchMock.mockResolvedValueOnce(
+      response({ id: 1, name: 'Person', filmography: [], ...invalid })
+    );
+    await expect(getPerson(1)).rejects.toMatchObject({
+      category: 'invalid-response',
+    });
+  }
+);
+
+test('accepts a minimal legacy person without optional fields or availability', async () => {
+  const person = { id: 1, name: 'Person', filmography: [] };
+  fetchMock.mockResolvedValueOnce(response(person));
+  await expect(getPerson(1)).resolves.toEqual(person);
+});
+
+test.each([
+  { movies: [{}], page: 1, totalPages: 1, totalResults: 1 },
+  { movies: [], page: 0, totalPages: 0, totalResults: 0 },
+  { movies: [], page: 1, totalPages: '1', totalResults: 0 },
+])('rejects malformed movie pages: %j', async (body) => {
+  fetchMock.mockResolvedValueOnce(response(body));
+  await expect(getMovies({})).rejects.toMatchObject({
+    category: 'invalid-response',
+  });
+});
+
+test('rejects malformed people and movie suggestion entries', async () => {
+  fetchMock.mockResolvedValueOnce(
+    response({ people: [{ id: 1 }], page: 1, totalPages: 1, totalResults: 1 })
+  );
+  await expect(getPeople('')).rejects.toMatchObject({
+    category: 'invalid-response',
+  });
+
+  fetchMock.mockResolvedValueOnce(
+    response({ suggestions: [{ id: 1, title: 'Movie', releaseYear: '2024' }] })
+  );
+  await expect(getMovieSuggestions('Movie')).rejects.toMatchObject({
+    category: 'invalid-response',
   });
 });

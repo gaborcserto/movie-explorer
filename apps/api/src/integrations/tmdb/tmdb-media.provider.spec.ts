@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import { Logger } from '@nestjs/common';
 import { TmdbMovieProvider } from './tmdb-movie.provider';
 
@@ -98,8 +99,10 @@ describe('movie media coverage', () => {
       }),
     );
     const result = await new TmdbMovieProvider(config).findOne(movie.id);
+    ok(result);
     expect(result.backdrops).toHaveLength(14);
     expect(result.posters).toHaveLength(9);
+    ok(result.backdrops);
     expect(result.backdrops[0]).toEqual({
       filePath: '/backdrop-0.jpg',
       width: 1920,
@@ -109,16 +112,21 @@ describe('movie media coverage', () => {
       thumbnailUrl: 'https://image.tmdb.org/t/p/w500/backdrop-0.jpg',
       fullUrl: 'https://image.tmdb.org/t/p/original/backdrop-0.jpg',
     });
+
+    ok(result.posters);
     expect(result.posters[0]).toMatchObject({
       filePath: '/poster-0.jpg',
       language: 'hu',
       width: 1000,
       height: 1500,
     });
+
     expect(result.videos).toHaveLength(10);
+    ok(result.videos);
     expect(result.videos.slice(0, 8).map((v) => v.type)).toEqual(
       results.map((v) => v.type),
     );
+
     expect(result.videos[0]).toMatchObject({
       id: 'video-0',
       key: 'dQw4w9WgXc0',
@@ -127,6 +135,7 @@ describe('movie media coverage', () => {
       language: 'hu',
       name: 'Official trailer',
     });
+
     expect(result.videos[8].url).toBe('https://vimeo.com/12345');
     expect(result.videos[9]).toMatchObject({ site: 'Unknown', url: '' });
     expect(result.photos).toBeUndefined();
@@ -175,13 +184,17 @@ describe('movie media coverage', () => {
         }),
       );
       const result = await new TmdbMovieProvider(config).findOne(movie.id);
+      ok(result);
       expect(result.title).toBe(movie.title);
+      ok(result.sections);
       expect(
         result.sections[category === 'backdrops' ? 'photos' : 'posters'],
       ).toEqual({ status: 'unavailable' });
+
       expect(
         result[category === 'backdrops' ? 'posters' : 'backdrops'],
       ).toHaveLength(1);
+
       expect(result.videos).toHaveLength(1);
       expect(fetchMock).toHaveBeenCalledTimes(1);
     },
@@ -213,6 +226,8 @@ describe('movie media coverage', () => {
       },
     });
     const missing = await provider.findOne(movie.id);
+    ok(missing);
+    ok(missing.sections);
     expect(missing.sections.posters).toEqual({ status: 'unavailable' });
     expect(missing.backdrops).toHaveLength(1);
     expect(missing.posters).toBeUndefined();
@@ -225,6 +240,8 @@ describe('movie media coverage', () => {
   ])('isolates unexpected video responses: %j', async (videos) => {
     fetchMock.mockResolvedValue(Response.json({ ...movie, videos }));
     const result = await new TmdbMovieProvider(config).findOne(movie.id);
+    ok(result);
+    ok(result.sections);
     expect(result.sections.videos).toEqual({ status: 'unavailable' });
     expect(result.backdrops).toHaveLength(1);
     expect(result.posters).toHaveLength(1);

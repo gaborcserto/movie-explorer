@@ -44,6 +44,36 @@ describe('TmdbMovieProvider', () => {
     jest.useRealTimers();
   });
 
+  it.each([
+    null,
+    { id: 0 },
+    { title: null },
+    { genre_ids: null },
+    { genre_ids: ['18'] },
+    { poster_path: {} },
+    { release_date: 2024 },
+    { vote_average: '8' },
+  ])(
+    'rejects malformed movie list entries consistently: %j',
+    async (invalid) => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({
+          page: 1,
+          total_pages: 1,
+          total_results: 1,
+          results: [
+            invalid === null ? null : { ...movieListItem(1, []), ...invalid },
+          ],
+        }),
+      );
+      const provider = new TmdbMovieProvider(config);
+
+      await expect(provider.findAll({})).rejects.toThrow(
+        'Movie provider response was invalid',
+      );
+    },
+  );
+
   it('retrieves only core rating metadata and normalizes vote count', async () => {
     fetchMock.mockResolvedValue(
       Response.json({

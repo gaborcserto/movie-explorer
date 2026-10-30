@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   BadGatewayException,
@@ -28,7 +29,7 @@ const movies = [
   },
 ];
 
-const movieProvider: jest.Mocked<MovieProvider> = {
+const movieProvider: jest.Mocked<Required<MovieProvider>> = {
   findAll: jest.fn(),
   findOne: jest.fn(),
   findSuggestions: jest.fn(),
@@ -74,11 +75,14 @@ describe('AppController (e2e)', () => {
       .get('/api/v1/movies/269149/ratings')
       .expect(200, ratings);
     const document = createApiDocument(app);
+    ok(document.paths['/api/v1/movies/{id}/ratings'].get);
     const successResponse =
       document.paths['/api/v1/movies/{id}/ratings'].get.responses['200'];
     expect(JSON.stringify(successResponse)).toContain(
       '#/components/schemas/RatingsDto',
     );
+    ok(document.components);
+    ok(document.components.schemas);
     expect(document.components.schemas.AvailableRatingDto).toBeDefined();
     expect(document.components.schemas.MissingRatingDto).toBeDefined();
     expect(document.components.schemas.UnavailableRatingDto).toBeDefined();
@@ -169,7 +173,11 @@ describe('AppController (e2e)', () => {
       '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}/credits',
     ];
     expect(Object.keys(document.paths).sort()).toEqual(expectedPaths.sort());
-    const operations = Object.values(document.paths).map((item) => item.get);
+    const operations = Object.values(document.paths).map((item) => {
+      ok(item.get);
+
+      return item.get;
+    });
 
     for (const operation of operations) {
       expect(operation).toBeDefined();
@@ -177,16 +185,20 @@ describe('AppController (e2e)', () => {
       expect(operation.operationId).toBeTruthy();
       expect(operation.operationId).not.toMatch(/Tv|legacy/);
     }
+
     const ids = operations.map((operation) => operation.operationId);
     expect(new Set(ids).size).toBe(ids.length);
     expect(new Set(operations.flatMap((operation) => operation.tags))).toEqual(
       new Set(['Discover', 'Movies', 'Series', 'Persons', 'Search', 'Ratings']),
     );
+    ok(document.components);
+    ok(document.components.schemas);
     expect(
       Object.keys(document.components.schemas).filter((name) =>
         name.startsWith('Tv'),
       ),
     ).toEqual([]);
+    ok(document.paths['/api/v1/series/{id}'].get);
     expect(document.paths['/api/v1/series/{id}'].get.operationId).toBe(
       'SeriesController_getSeries',
     );
@@ -296,7 +308,6 @@ describe('AppController (e2e)', () => {
       await request(app.getHttpServer())
         .get('/api/v1/persons/' + id)
         .expect(200);
-
       expect(movieProvider.findOne).toHaveBeenCalledWith(Number(id));
       expect(movieProvider.findPerson).toHaveBeenCalledWith(Number(id));
     },
@@ -537,6 +548,8 @@ describe('AppController (e2e)', () => {
         .expect(result);
       expect(movieProvider.findPeople).toHaveBeenCalledWith('', page);
       const document = createApiDocument(app);
+      ok(document.components);
+      ok(document.components.schemas);
       expect(document.components.schemas.PersonListResponseDto).toBeDefined();
     },
   );
@@ -663,6 +676,8 @@ describe('AppController (e2e)', () => {
       new DocumentBuilder().setTitle('Test API').setVersion('1').build(),
     );
     const operation = document.paths['/api/v1/persons/{id}'].get;
+
+    ok(operation);
     expect(Object.keys(operation.responses)).toEqual([
       '200',
       '400',
@@ -671,6 +686,7 @@ describe('AppController (e2e)', () => {
       '502',
       '504',
     ]);
+
     expect(operation.parameters).toContainEqual(
       expect.objectContaining({
         name: 'id',
@@ -682,7 +698,9 @@ describe('AppController (e2e)', () => {
         },
       }),
     );
+    ok(document.components);
     const schemas = document.components.schemas;
+    ok(schemas);
     expect(schemas.PersonDetailsDto).toMatchObject({
       required: ['id', 'name', 'filmography'],
       properties: {
@@ -693,6 +711,7 @@ describe('AppController (e2e)', () => {
         birthday: { type: 'string', format: 'date' },
       },
     });
+
     expect(schemas.PersonFilmographyEntryDto).toMatchObject({
       properties: {
         actingCredits: { type: 'array', items: { type: 'string' } },
@@ -702,9 +721,11 @@ describe('AppController (e2e)', () => {
         },
       },
     });
+
     expect(schemas.PersonCrewCreditDto).toMatchObject({
       properties: { department: { type: 'string' }, job: { type: 'string' } },
     });
+
     expect(schemas.MovieDetails).toMatchObject({
       properties: {
         originalTitle: { type: 'string' },
@@ -722,6 +743,7 @@ describe('AppController (e2e)', () => {
         },
       },
     });
+
     expect(schemas.MovieCastMemberDto).toMatchObject({
       properties: {
         id: { type: 'integer' },
@@ -730,6 +752,7 @@ describe('AppController (e2e)', () => {
         profileSrcSet: { type: 'string' },
       },
     });
+
     expect(schemas.MovieDirectorDto).toMatchObject({
       properties: {
         id: { type: 'integer' },
@@ -830,7 +853,6 @@ describe('AppController (e2e)', () => {
       .get('/api/v1/movies')
       .query({ sort: 'popularity', sortOrder: 'asc' })
       .expect(200);
-
     expect(movieProvider.findAll).toHaveBeenLastCalledWith(
       expect.objectContaining({
         sort: 'popularity',

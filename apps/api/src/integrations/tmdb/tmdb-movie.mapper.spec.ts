@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import { TmdbMovieMapper } from './tmdb-movie.mapper';
 
 const mapper = new TmdbMovieMapper('https://image.tmdb.org/t/p/w500');
@@ -150,11 +151,13 @@ describe('TmdbMovieMapper', () => {
       },
     });
     expect(result.castMembers).toHaveLength(8);
+    ok(result.castMembers);
     expect(result.castMembers[0]).toMatchObject({
       id: 10,
       name: 'Actor',
       character: 'Hero / Narrator',
     });
+
     expect(result.castMembers.map((member) => member.id)).toEqual([
       10,
       20,
@@ -217,6 +220,7 @@ describe('TmdbMovieMapper', () => {
       'Seventh',
     ]);
     expect(result.castMembers).toHaveLength(7);
+    ok(result.castMembers);
     expect(result.castMembers[0]).toEqual({ id: 10, name: 'Same Name' });
     expect(result.castMembers[1]).toEqual({ id: 11, name: 'Same Name' });
     expect(result.castMembers[2]).toEqual({ name: 'No ID' });

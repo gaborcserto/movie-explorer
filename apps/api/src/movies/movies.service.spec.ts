@@ -32,7 +32,7 @@ const movieDetails: MovieDetails = {
 
 describe('MoviesService', () => {
   let service: MoviesService;
-  let movieProvider: jest.Mocked<MovieProvider>;
+  let movieProvider: jest.Mocked<Required<MovieProvider>>;
 
   beforeEach(() => {
     movieProvider = {
@@ -60,7 +60,6 @@ describe('MoviesService', () => {
     movieProvider.findAll.mockResolvedValue(moviesResponse);
 
     await expect(service.findAll(query)).resolves.toBe(moviesResponse);
-
     expect(movieProvider.findAll).toHaveBeenCalledWith(query);
   });
 
@@ -68,7 +67,6 @@ describe('MoviesService', () => {
     movieProvider.findOne.mockResolvedValue(movieDetails);
 
     await expect(service.findOne(1)).resolves.toBe(movieDetails);
-
     expect(movieProvider.findOne).toHaveBeenCalledWith(1);
   });
 

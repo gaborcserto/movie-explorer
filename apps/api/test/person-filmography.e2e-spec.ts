@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import {
   BadGatewayException,
   INestApplication,
@@ -130,22 +131,28 @@ describe('Person combined filmography API', () => {
 
   it('documents opt-in, scoped availability, discriminated entries and nullable participation counts', () => {
     const doc = createApiDocument(app);
+    ok(doc.paths['/api/v1/persons/{id}'].get);
     expect(doc.paths['/api/v1/persons/{id}'].get.parameters).toEqual(
       expect.arrayContaining([expect.objectContaining({ name: 'include' })]),
     );
+    ok(doc.paths['/api/v1/persons/{id}/combined-filmography'].get);
     expect(
       doc.paths['/api/v1/persons/{id}/combined-filmography'].get.parameters,
     ).toEqual(
       expect.arrayContaining([expect.objectContaining({ name: 'mediaType' })]),
     );
+    ok(doc.components);
+    ok(doc.components.schemas);
     expect(doc.components.schemas.CombinedFilmographyDto).toMatchObject({
       properties: {
         entries: { items: { discriminator: { propertyName: 'mediaType' } } },
       },
     });
+
     expect(doc.components.schemas.PersonActingRoleDto).toMatchObject({
       properties: { episodeCount: { nullable: true } },
     });
+
     expect(doc.components.schemas.PersonSeriesCreditDto).toMatchObject({
       properties: { firstAirDate: { nullable: true } },
     });

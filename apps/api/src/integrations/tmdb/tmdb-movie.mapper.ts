@@ -195,7 +195,11 @@ export class TmdbMovieMapper {
         if (credit.job !== 'Director' || !credit.name.trim()) {
           return false;
         }
-        if (!Number.isSafeInteger(credit.id) || credit.id <= 0) {
+        if (
+          typeof credit.id !== 'number' ||
+          !Number.isSafeInteger(credit.id) ||
+          credit.id <= 0
+        ) {
           return true;
         }
         if (directorIds.has(credit.id)) {
@@ -219,7 +223,12 @@ export class TmdbMovieMapper {
     orderedCast.forEach((credit) => {
       const character = credit.character?.trim();
 
-      if (!Number.isSafeInteger(credit.id) || credit.id <= 0 || !character) {
+      if (
+        typeof credit.id !== 'number' ||
+        !Number.isSafeInteger(credit.id) ||
+        credit.id <= 0 ||
+        !character
+      ) {
         return;
       }
 
@@ -229,7 +238,11 @@ export class TmdbMovieMapper {
     });
     const castMembers = orderedCast
       .filter((credit) => {
-        if (!Number.isSafeInteger(credit.id) || credit.id <= 0) {
+        if (
+          typeof credit.id !== 'number' ||
+          !Number.isSafeInteger(credit.id) ||
+          credit.id <= 0
+        ) {
           return true;
         }
         if (castIds.has(credit.id)) {
@@ -243,7 +256,7 @@ export class TmdbMovieMapper {
       .map((credit) => ({
         ...this.toPersonReference(credit),
         character:
-          (charactersByPerson.has(credit.id)
+          (typeof credit.id === 'number' && charactersByPerson.has(credit.id)
             ? [...(charactersByPerson.get(credit.id) ?? [])].join(' / ')
             : credit.character?.trim()) || undefined,
       }));
@@ -283,7 +296,9 @@ export class TmdbMovieMapper {
       } else {
         const member = { ...person, roles: [credit.job] };
         people.push(member);
-        if (person.id) byId.set(person.id, member);
+        if (person.id) {
+          byId.set(person.id, member);
+        }
       }
     });
 
@@ -296,9 +311,10 @@ export class TmdbMovieMapper {
       'id' | 'title' | 'release_date' | 'poster_path'
     >,
   ): MovieSuggestion {
-    const releaseYear = /^\d{4}/.test(movie.release_date)
-      ? Number(movie.release_date.slice(0, 4))
-      : undefined;
+    const releaseYear =
+      movie.release_date && /^\d{4}/.test(movie.release_date)
+        ? Number(movie.release_date.slice(0, 4))
+        : undefined;
     const posterUrl = movie.poster_path
       ? `${this.imageBaseUrl.replace(/\/w\d+$/, '/w92')}${movie.poster_path}`
       : undefined;
@@ -339,7 +355,7 @@ export class TmdbMovieMapper {
     return this.images.toPosterSrcSet(path);
   }
 
-  private toImageUrl(path: string | null): string {
+  private toImageUrl(path: string | null | undefined): string {
     return this.images.toImageUrl(path);
   }
 

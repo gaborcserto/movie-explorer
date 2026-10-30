@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import { Logger } from '@nestjs/common';
 
 import { TmdbSeriesProvider } from './tmdb-series.provider';
@@ -159,6 +160,8 @@ describe('TmdbSeriesProvider', () => {
       accept: 'application/json',
       Authorization: 'Bearer test-token',
     });
+
+    ok(init.signal);
     expect(init.signal.aborted).toBe(true);
   });
 
@@ -185,6 +188,7 @@ describe('TmdbSeriesProvider', () => {
     );
     const details = await provider.findOne(1);
     fetchMock.mockResolvedValueOnce(Response.json(aggregate));
+    ok(details);
     await expect(provider.findCredits(1)).resolves.toEqual(details.credits);
     expect(fetchMock.mock.calls[1][0].pathname).toBe(
       '/3/tv/1/aggregate_credits',
@@ -220,6 +224,7 @@ describe('TmdbSeriesProvider', () => {
         section === 'images'
           ? await provider.findImages(1)
           : await provider.findVideos(1);
+      ok(details);
       expect(recovered).toEqual(details[section]);
       expect(
         fetchMock.mock.calls[1][0].searchParams.get('include_image_language'),
@@ -251,7 +256,7 @@ describe('TmdbSeriesProvider', () => {
       await expect(provider[method](1)).rejects.toMatchObject({ status: 502 });
       jest.useFakeTimers();
       fetchMock.mockImplementationOnce(
-        (_url, init: RequestInit) =>
+        (_url, init: RequestInit & { signal: AbortSignal }) =>
           new Promise((_resolve, reject) => {
             init.signal.addEventListener('abort', () =>
               reject(new Error('aborted')),
@@ -279,8 +284,12 @@ describe('TmdbSeriesProvider', () => {
       }),
     );
     const result = await provider.findOne(1);
+    ok(result);
+    ok(result.credits);
     expect(result.credits.sections.cast.status).toBe('available');
+    ok(result.images);
     expect(result.images.sections.posters.status).toBe('available');
+    ok(result.videos);
     expect(result.videos.availability.status).toBe('available');
     fetchMock.mockResolvedValueOnce(
       Response.json({
@@ -292,8 +301,12 @@ describe('TmdbSeriesProvider', () => {
       }),
     );
     const invalid = await provider.findOne(1);
+    ok(invalid);
+    ok(invalid.credits);
     expect(invalid.credits.sections.cast.status).toBe('unavailable');
+    ok(invalid.images);
     expect(invalid.images.sections.posters.status).toBe('unavailable');
+    ok(invalid.videos);
     expect(invalid.videos.availability.status).toBe('unavailable');
   });
 
@@ -367,19 +380,21 @@ describe('TmdbSeriesProvider', () => {
     'enforces the deadline through fetch and JSON read (body: %s)',
     async (bodyRead) => {
       jest.useFakeTimers();
-      fetchMock.mockImplementation((_url: URL, init: RequestInit) => {
-        const pending = new Promise<never>((_resolve, reject) => {
-          init.signal.addEventListener(
-            'abort',
-            () => reject(init.signal.reason),
-            { once: true },
-          );
-        });
+      fetchMock.mockImplementation(
+        (_url: URL, init: RequestInit & { signal: AbortSignal }) => {
+          const pending = new Promise<never>((_resolve, reject) => {
+            init.signal.addEventListener(
+              'abort',
+              () => reject(init.signal.reason),
+              { once: true },
+            );
+          });
 
-        return bodyRead
-          ? Promise.resolve({ ok: true, status: 200, json: () => pending })
-          : pending;
-      });
+          return bodyRead
+            ? Promise.resolve({ ok: true, status: 200, json: () => pending })
+            : pending;
+        },
+      );
       const result = provider.findOne(1);
       const assertion = expect(result).rejects.toMatchObject({
         status: 504,

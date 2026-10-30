@@ -28,6 +28,88 @@ describe('TmdbDiscoveryProvider', () => {
     jest.restoreAllMocks();
   });
 
+  it('expires unused search entries and deduplicates concurrent refetches', async () => {
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1000);
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(
+        Response.json({
+          page: 1,
+          total_pages: 1,
+          total_results: 0,
+          results: [],
+        }),
+      ),
+    );
+    await provider.find('popular-movies');
+    await provider.find('popular-series');
+    expect(provider['cache'].size).toBe(2);
+
+    now.mockReturnValue(1000 + 5 * 60 * 1000);
+    const [first, second] = await Promise.all([
+      provider.find('popular-movies'),
+      provider.find('popular-movies'),
+    ]);
+    expect(first).toBe(second);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(provider['cache'].size).toBe(1);
+  });
+
+  it('evicts the oldest search page at capacity while retaining recent pages', async () => {
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve(
+        Response.json({
+          page: Number(new URL(url).searchParams.get('page')),
+          total_pages: 500,
+          total_results: 0,
+          results: [],
+        }),
+      ),
+    );
+
+    for (let page = 1; page <= 101; page += 1) {
+      await provider.find('popular-movies', page);
+    }
+    expect(provider['cache'].size).toBe(100);
+    await provider.find('popular-movies', 101);
+    expect(fetchMock).toHaveBeenCalledTimes(101);
+
+    await provider.find('popular-movies', 1);
+    expect(fetchMock).toHaveBeenCalledTimes(102);
+    expect(provider['cache'].size).toBe(100);
+  });
+
+  it('bounds regional catalogs, deduplicates refetches and removes expired regions', async () => {
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1000);
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(
+        Response.json({
+          results: [{ provider_id: 8, provider_name: 'Netflix' }],
+        }),
+      ),
+    );
+
+    for (let index = 0; index < 33; index += 1) {
+      await provider.findStreamingProviders(String(index));
+    }
+    expect(provider['providerCache'].size).toBe(32);
+    await provider.findStreamingProviders('32');
+    expect(fetchMock).toHaveBeenCalledTimes(66);
+
+    await Promise.all([
+      provider.findStreamingProviders('0'),
+      provider.findStreamingProviders('0'),
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(68);
+
+    now.mockReturnValue(1000 + 5 * 60 * 1000);
+    await Promise.all([
+      provider.findStreamingProviders('0'),
+      provider.findStreamingProviders('0'),
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(70);
+    expect(provider['providerCache'].size).toBe(1);
+  });
+
   it('maps trending movie and series records with backdrop URLs and caches the feed', async () => {
     fetchMock.mockResolvedValue(
       Response.json({

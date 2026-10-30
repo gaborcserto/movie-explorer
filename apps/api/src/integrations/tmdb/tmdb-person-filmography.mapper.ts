@@ -72,12 +72,11 @@ export class TmdbPersonFilmographyMapper {
       } else {
         const job = seriesText(row.job);
         const department = seriesText(row.department);
+        const creditId = seriesText(row.credit_id);
         const credit = {
           ...(job && { job }),
           ...(department && { department }),
-          ...(seriesText(row.credit_id) && {
-            creditId: seriesText(row.credit_id),
-          }),
+          ...(creditId && { creditId }),
           episodeCount: seriesCount(row.episode_count),
         };
 

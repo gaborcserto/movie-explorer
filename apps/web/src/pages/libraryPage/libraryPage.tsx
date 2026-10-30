@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useStore } from 'zustand';
 
-import Card from '../../components/card/card';
+import Card from '../../components/card';
 import '../../components/list/list.scss';
 import PrimaryNavigation from '../../components/navigation';
 import useStablePanelHeight from '../../hooks/useStablePanelHeight';

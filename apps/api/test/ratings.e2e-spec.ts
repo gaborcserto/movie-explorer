@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
@@ -71,11 +72,14 @@ describe('Optional IMDb rating API', () => {
 
   it('documents the endpoint and nullable rating', () => {
     const document = createApiDocument(app);
+    ok(document.paths['/api/v1/ratings/{mediaType}/{id}/imdb'].get);
     expect(
       document.paths['/api/v1/ratings/{mediaType}/{id}/imdb'].get.responses[
         '200'
       ],
     ).toBeDefined();
+    ok(document.components);
+    ok(document.components.schemas);
     expect(document.components.schemas.ImdbRatingResponseDto).toMatchObject({
       properties: { imdb: { nullable: true } },
     });

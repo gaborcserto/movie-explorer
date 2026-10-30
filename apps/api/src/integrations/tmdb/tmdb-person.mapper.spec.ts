@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import { TmdbPersonMapper } from './tmdb-person.mapper';
 import type { TmdbPersonDetails } from './tmdb.types';
 
@@ -52,6 +53,7 @@ describe('TmdbPersonMapper', () => {
         images,
       });
       expect(result.profilePhotos).toHaveLength(1);
+      ok(result.profilePhotos);
       expect(result.profilePhotos[0].fullUrl).toContain(
         '/original/primary.jpg',
       );

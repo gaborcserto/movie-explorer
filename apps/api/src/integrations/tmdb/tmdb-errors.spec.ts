@@ -1,3 +1,4 @@
+import { ok } from 'node:assert/strict';
 import { HttpException, Logger } from '@nestjs/common';
 import { TmdbMovieProvider } from './tmdb-movie.provider';
 import { parseRetryAfter } from './retry-after';
@@ -90,6 +91,7 @@ describe('TMDB request failures', () => {
       Authorization: 'Bearer private-token',
     });
     expect(init.signal).toBeInstanceOf(AbortSignal);
+    ok(init.signal);
     expect(init.signal.aborted).toBe(true);
   });
 
@@ -127,7 +129,9 @@ describe('TMDB request failures', () => {
             },
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const init: RequestInit = fetchMock.mock.calls[0][1];
+    const init: RequestInit & { signal: AbortSignal } =
+      fetchMock.mock.calls[0][1];
+
     expect(init.signal.aborted).toBe(true);
     expect(jest.getTimerCount()).toBe(0);
   });
@@ -179,7 +183,7 @@ describe('TMDB request failures', () => {
         kind === 'movie'
           ? { id: 1, title: 'Movie', overview: '', genres: [] }
           : { id: 1, name: 'Person' };
-      let complete: (value: unknown) => void;
+      let complete: ((value: unknown) => void) | undefined;
       const pending = new Promise<unknown>((resolve) => {
         complete = resolve;
       });
@@ -196,8 +200,11 @@ describe('TMDB request failures', () => {
       });
 
       await jest.advanceTimersByTimeAsync(8000);
-      const init: RequestInit = fetchMock.mock.calls[0][1];
+      const init: RequestInit & { signal: AbortSignal } =
+        fetchMock.mock.calls[0][1];
+
       expect(init.signal.aborted).toBe(true);
+      ok(complete);
       complete(stage === 'fetch' ? Response.json(primary) : primary);
 
       await result;
@@ -216,7 +223,7 @@ describe('TMDB request failures', () => {
     'gives the %s fallback a fresh deadline without a third attempt',
     async (kind) => {
       jest.useFakeTimers();
-      let complete: (response: Response) => void;
+      let complete: ((response: Response) => void) | undefined;
       fetchMock
         .mockReturnValueOnce(
           new Promise<Response>((resolve) => {
@@ -224,7 +231,7 @@ describe('TMDB request failures', () => {
           }),
         )
         .mockImplementationOnce(
-          (_url: URL, init: RequestInit) =>
+          (_url: URL, init: RequestInit & { signal: AbortSignal }) =>
             new Promise((_resolve, reject) => {
               init.signal.addEventListener(
                 'abort',
@@ -241,6 +248,7 @@ describe('TMDB request failures', () => {
       });
 
       await jest.advanceTimersByTimeAsync(7999);
+      ok(complete);
       complete(new Response(null, { status: 502 }));
       await jest.advanceTimersByTimeAsync(1);
 
@@ -248,7 +256,9 @@ describe('TMDB request failures', () => {
       const first: RequestInit = fetchMock.mock.calls[0][1];
       const second: RequestInit = fetchMock.mock.calls[1][1];
       expect(first.signal).not.toBe(second.signal);
+      ok(first.signal);
       expect(first.signal.aborted).toBe(true);
+      ok(second.signal);
       expect(second.signal.aborted).toBe(false);
       expect(jest.getTimerCount()).toBe(1);
 
@@ -275,7 +285,7 @@ describe('TMDB request failures', () => {
     );
   });
 
-  it.each(['list', 'search', 'genres', 'people', 'suggestions'])(
+  it.each(['list', 'search', 'genres', 'people', 'suggestions'] as const)(
     'rejects unexpected 404 for %s',
     async (kind) => {
       fetchMock.mockResolvedValue(new Response(null, { status: 404 }));
@@ -363,20 +373,22 @@ describe('TMDB request failures', () => {
     'times out during %s with sanitized diagnostics',
     async (stage) => {
       jest.useFakeTimers();
-      fetchMock.mockImplementation((_url: URL, init: RequestInit) => {
-        const pending = () =>
-          new Promise((_resolve, reject) =>
-            init.signal?.addEventListener(
-              'abort',
-              () => reject(new Error('private error')),
-              { once: true },
-            ),
-          );
+      fetchMock.mockImplementation(
+        (_url: URL, init: RequestInit & { signal: AbortSignal }) => {
+          const pending = () =>
+            new Promise((_resolve, reject) =>
+              init.signal?.addEventListener(
+                'abort',
+                () => reject(new Error('private error')),
+                { once: true },
+              ),
+            );
 
-        return stage === 'fetch'
-          ? pending()
-          : Promise.resolve({ ok: true, status: 200, json: pending });
-      });
+          return stage === 'fetch'
+            ? pending()
+            : Promise.resolve({ ok: true, status: 200, json: pending });
+        },
+      );
       const result = expect(provider.findOne(1)).rejects.toMatchObject({
         status: 504,
         message: 'Movie provider request timed out',
