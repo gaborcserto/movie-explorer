@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, Outlet, RouterProvider } from 'react-router-dom';
 import type { SearchResponse, SearchResult } from '@movie-explorer/contracts';
 
@@ -27,6 +28,7 @@ const page = (current = 1, totalPages = 2, count = 20): SearchResponse => ({
     id: (current - 1) * 20 + index + 1,
     mediaType: 'tv',
     title: `Series ${(current - 1) * 20 + index + 1}`,
+    posterUrl: `/series-${(current - 1) * 20 + index + 1}.jpg`,
     firstAirDate: '2005-02-21',
     rating: 8,
   })),
@@ -73,7 +75,9 @@ beforeEach(() => {
   api.mockResolvedValue(page());
   vi.mocked(getPopularSeries).mockResolvedValue(page());
   vi.mocked(getMovies).mockResolvedValue({
-    movies: [{ id: 1, title: 'Default Movie', posterUrl: '', genres: [] }],
+    movies: [
+      { id: 1, title: 'Default Movie', posterUrl: '/default.jpg', genres: [] },
+    ],
     page: 1,
     totalPages: 1,
     totalResults: 1,
@@ -317,6 +321,95 @@ test('Series discovery omits capped totals while retaining the loaded count', as
   await screen.findByRole('link', { name: 'Series 1' });
   expect(screen.getByText('10 results loaded')).toBeInTheDocument();
   expect(screen.queryByText(/20001 series found/)).toBeNull();
+});
+
+test('filters posterless Series discovery items and continues from the API page cursor', async () => {
+  const user = userEvent.setup();
+  vi.mocked(getPopularSeries)
+    .mockResolvedValueOnce({
+      ...page(1, 2, 2),
+      results: [
+        { id: 1, mediaType: 'tv', title: 'Posterless series', posterUrl: '' },
+        {
+          id: 2,
+          mediaType: 'tv',
+          title: 'Series with poster',
+          posterUrl: '/series.jpg',
+        },
+      ],
+    })
+    .mockResolvedValueOnce({
+      ...page(2, 2, 1),
+      results: [{ id: 3, mediaType: 'tv', title: 'Posterless page two' }],
+    });
+
+  setup('/search?view=tv');
+  const region = await screen.findByRole('region', { name: 'Series results' });
+  expect(
+    within(region).getByRole('link', { name: 'Series with poster' })
+  ).toBeVisible();
+  expect(within(region).queryByText('Posterless series')).toBeNull();
+  expect(within(region).getByText('1 results loaded')).toBeVisible();
+
+  await user.click(within(region).getByRole('button', { name: 'Load more' }));
+  expect(vi.mocked(getPopularSeries).mock.calls.map((call) => call[0])).toEqual(
+    [1, 2]
+  );
+  expect(within(region).getByText('1 results loaded')).toBeVisible();
+  expect(within(region).queryByText('Posterless page two')).toBeNull();
+});
+
+test('keeps posterless Series in query results', async () => {
+  api.mockResolvedValue({
+    ...page(1, 1, 1),
+    results: [
+      {
+        id: 1,
+        mediaType: 'tv',
+        title: 'Posterless search result',
+        posterUrl: '',
+      },
+    ],
+  });
+
+  setup('/search/Story?view=tv');
+
+  expect(
+    await screen.findByRole('link', { name: 'Posterless search result' })
+  ).toBeVisible();
+});
+
+test('restores filtered Series discovery after Back without requesting the page again', async () => {
+  const response = {
+    ...page(1, 1, 2),
+    results: [
+      {
+        id: 1,
+        mediaType: 'tv' as const,
+        title: 'Posterless series',
+        posterUrl: '',
+      },
+      {
+        id: 2,
+        mediaType: 'tv' as const,
+        title: 'Restored series',
+        posterUrl: '/restored.jpg',
+      },
+    ],
+  };
+  vi.mocked(getPopularSeries).mockResolvedValue(response);
+  const router = setup('/search?view=tv');
+
+  await screen.findByRole('link', { name: 'Restored series' });
+  await act(async () => router.navigate('/series/2'));
+  await act(async () => router.navigate(-1));
+
+  const region = await screen.findByRole('region', { name: 'Series results' });
+  expect(
+    within(region).getByRole('link', { name: 'Restored series' })
+  ).toBeVisible();
+  expect(within(region).queryByText('Posterless series')).toBeNull();
+  expect(getPopularSeries).toHaveBeenCalledTimes(1);
 });
 
 test('initial failure is recoverable and an empty successful retry is announced', async () => {

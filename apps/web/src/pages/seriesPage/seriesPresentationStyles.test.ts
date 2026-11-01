@@ -43,14 +43,14 @@ function declarationsForFormattedSelector(
   return values;
 }
 
-test('fills the Series content width with a responsive, clamped Cast grid', () => {
+test('keeps a single Series Cast portrait within the same responsive column as a full grid', () => {
   expect(
     declarationsForSelector(seriesStyles, '.series-credits .cast-grid')
   ).toMatchObject({
     display: 'grid',
     width: '100%',
     margin: '0',
-    'grid-template-columns': expect.stringContaining('12.5% - 8.75px'),
+    'grid-template-columns': expect.stringContaining('auto-fill'),
   });
   expect(
     declarationsForSelector(seriesStyles, '.series-credits .cast-grid')

@@ -57,7 +57,14 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   vi.mocked(getMovies).mockResolvedValue({
-    movies: [{ id: 1, title: 'Movie result', posterUrl: '', genres: [] }],
+    movies: [
+      {
+        id: 1,
+        title: 'Movie result',
+        posterUrl: '/movie-result.jpg',
+        genres: [],
+      },
+    ],
     page: 1,
     totalPages: 1,
     totalResults: 1,

@@ -471,56 +471,57 @@ describe('Series hierarchy', () => {
     setup('/series/1');
     const castTab = await screen.findByRole('tab', { name: 'Cast' });
     const crewTab = screen.getByRole('tab', { name: 'Crew' });
+    const castPanel = screen.getByRole('tabpanel', { name: 'Cast' });
+    const cast = within(castPanel);
     expect(castTab).toHaveAttribute('aria-selected', 'true');
     expect(
       document.querySelector('.series-credits > .tab-panel-stable')
     ).toBeInTheDocument();
     expect(screen.getByRole('tabpanel', { name: 'Cast' })).toBeVisible();
-    expect(screen.getByRole('link', { name: 'Actor 1' })).toBeVisible();
-    expect(
-      within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
-    ).toHaveTextContent('Showing 16 of 40 cast members');
-    expect(screen.getByRole('link', { name: 'Actor 16' })).toBeVisible();
-    expect(screen.queryByRole('link', { name: 'Actor 17' })).toBeNull();
+    expect(cast.getByRole('link', { name: 'Actor 1' })).toBeVisible();
+    expect(cast.getByRole('status')).toHaveTextContent(
+      'Showing 16 of 40 cast members'
+    );
+    expect(cast.getByRole('link', { name: 'Actor 16' })).toBeVisible();
+    expect(cast.queryByRole('link', { name: 'Actor 17' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Writer Producer' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show more cast' }));
-    expect(
-      within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
-    ).toHaveTextContent('Showing 24 of 40 cast members');
-    expect(screen.getByRole('link', { name: 'Actor 24' })).toBeVisible();
-    expect(screen.queryByRole('link', { name: 'Actor 25' })).toBeNull();
+    expect(cast.getByRole('status')).toHaveTextContent(
+      'Showing 24 of 40 cast members'
+    );
+    expect(cast.getByRole('link', { name: 'Actor 24' })).toBeVisible();
+    expect(cast.queryByRole('link', { name: 'Actor 25' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show more cast' }));
-    expect(
-      within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
-    ).toHaveTextContent('Showing 32 of 40 cast members');
-    expect(screen.getByRole('link', { name: 'Actor 32' })).toBeVisible();
-    expect(screen.queryByRole('link', { name: 'Actor 33' })).toBeNull();
+    expect(cast.getByRole('status')).toHaveTextContent(
+      'Showing 32 of 40 cast members'
+    );
+    expect(cast.getByRole('link', { name: 'Actor 32' })).toBeVisible();
+    expect(cast.queryByRole('link', { name: 'Actor 33' })).toBeNull();
 
     castTab.focus();
     await user.keyboard('{ArrowRight}');
     expect(crewTab).toHaveFocus();
     expect(crewTab).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tabpanel', { name: 'Crew' })).toBeVisible();
-    expect(screen.queryByRole('link', { name: 'Writer Producer' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Crew 15' })).toBeNull();
+    const crewPanel = screen.getByRole('tabpanel', { name: 'Crew' });
+    const crew = within(crewPanel);
+    expect(crewPanel).toBeVisible();
+    expect(crew.queryByRole('link', { name: 'Writer Producer' })).toBeNull();
+    expect(crew.queryByRole('link', { name: 'Crew 15' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show more crew' }));
-    expect(screen.getByRole('link', { name: 'Crew 15' })).toBeVisible();
-    expect(
-      within(screen.getByRole('tabpanel', { name: 'Crew' })).getAllByRole(
-        'link',
-        { name: 'Writer Producer' }
-      )
-    ).toHaveLength(2);
+    expect(crew.getByRole('link', { name: 'Crew 15' })).toBeVisible();
+    expect(crew.getAllByRole('link', { name: 'Writer Producer' })).toHaveLength(
+      2
+    );
     expect(screen.getByText('Writer — 8 episodes')).toBeVisible();
     expect(screen.getByText('Producer — 8 episodes')).toBeVisible();
 
     crewTab.focus();
     await user.keyboard('{Home}');
     expect(castTab).toHaveFocus();
-    expect(screen.getByRole('link', { name: 'Actor 32' })).toBeVisible();
+    expect(cast.getByRole('link', { name: 'Actor 32' })).toBeVisible();
     expect(
       screen.getByRole('button', { name: 'Show less cast' })
     ).toBeVisible();
@@ -529,13 +530,13 @@ describe('Series hierarchy', () => {
     expect(
       within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
     ).toHaveTextContent('Showing 16 of 40 cast members');
-    expect(screen.getByRole('link', { name: 'Actor 16' })).toBeVisible();
-    expect(screen.queryByRole('link', { name: 'Actor 17' })).toBeNull();
+    expect(cast.getByRole('link', { name: 'Actor 16' })).toBeVisible();
+    expect(cast.queryByRole('link', { name: 'Actor 17' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show less cast' })).toBeNull();
 
     castTab.focus();
     await user.keyboard('{ArrowRight}');
-    expect(screen.getByRole('link', { name: 'Crew 15' })).toBeVisible();
+    expect(crew.getByRole('link', { name: 'Crew 15' })).toBeVisible();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 

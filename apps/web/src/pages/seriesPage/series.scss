@@ -640,7 +640,7 @@
   display: grid;
   gap: 16px 10px;
   grid-template-columns: repeat(
-    auto-fit,
+    auto-fill,
     minmax(min(100%, max(8.75rem, calc(12.5% - 8.75px))), 1fr)
   );
   margin: 0;

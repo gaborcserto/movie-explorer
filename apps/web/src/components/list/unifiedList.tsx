@@ -10,7 +10,14 @@ import { useResultHistory, useSearchHistory } from './useSearchHistory';
 
 import usePaginatedResults from './hooks/usePaginatedResults';
 
-const resultItems = (response: SearchResponse) => response.results;
+const resultItems = (response: SearchResponse, includePosterless: boolean) =>
+  includePosterless
+    ? response.results
+    : response.results.filter(
+        (item) =>
+          item.mediaType === 'person' ||
+          (typeof item.posterUrl === 'string' && item.posterUrl.trim() !== '')
+      );
 
 const resultKey = (item: SearchResult) => `${item.mediaType}:${item.id}`;
 
@@ -41,8 +48,12 @@ export default function UnifiedList({
         : getPopularSeries(page, { year, rating, sorting, order }, signal),
     [query, type, year, rating, sorting, order]
   );
+  const getItems = useCallback(
+    (response: SearchResponse) => resultItems(response, Boolean(query)),
+    [query]
+  );
   const { data, items, visible, setVisible, loading, error, moreError, load } =
-    usePaginatedResults(restored, fetchPage, resultItems, resultKey);
+    usePaginatedResults(restored, fetchPage, getItems, resultKey);
   const countRef = useRef<HTMLParagraphElement>(null);
   const moreRef = useRef<HTMLButtonElement>(null);
   const restoreCountFocus = useRef(false);

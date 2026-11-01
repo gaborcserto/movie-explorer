@@ -28,6 +28,10 @@ function appendUniqueMovies(
   return [...moviesById.values()];
 }
 
+function hasPoster(movie: MovieSummary) {
+  return typeof movie.posterUrl === 'string' && movie.posterUrl.trim() !== '';
+}
+
 export default function useMovieResults(
   params: Omit<URLParams, 'page'>,
   signature: string,
@@ -86,7 +90,14 @@ export default function useMovieResults(
           setErrorData(null);
           setLoadMoreError(null);
           setMoviesData(response);
-          setMovies(appendUniqueMovies([], response.movies));
+          setMovies(
+            appendUniqueMovies(
+              [],
+              params.search
+                ? response.movies
+                : response.movies.filter(hasPoster)
+            )
+          );
           setVisibleMovieCount(MOVIE_BATCH_SIZE);
         })
         .catch((error: unknown) => {
@@ -173,7 +184,12 @@ export default function useMovieResults(
 
       setLoadMoreError(null);
       setMoviesData(response);
-      setMovies((current) => appendUniqueMovies(current, response.movies));
+      setMovies((current) =>
+        appendUniqueMovies(
+          current,
+          params.search ? response.movies : response.movies.filter(hasPoster)
+        )
+      );
       setVisibleMovieCount(
         (current) => Math.min(current, movies.length) + MOVIE_BATCH_SIZE
       );

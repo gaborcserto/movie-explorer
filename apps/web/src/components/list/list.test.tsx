@@ -43,7 +43,7 @@ const moviePage = (title: string, page = 1): MovieListResponse => ({
   movies: Array.from({ length: 10 }, (_, index) => ({
     id: (page - 1) * 10 + index + 1,
     title: `${title} ${index + 1}`,
-    posterUrl: '',
+    posterUrl: `/movie-${(page - 1) * 10 + index + 1}.jpg`,
     genres: [],
   })),
   totalResults: 30,
@@ -235,7 +235,7 @@ describe('<List />', () => {
         {
           id: 1,
           title: 'Undated Movie',
-          posterUrl: '',
+          posterUrl: '/undated.jpg',
           genres: [],
         },
       ],
@@ -251,13 +251,67 @@ describe('<List />', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  test('filters posterless Movies pages while retaining the provider page cursor', async () => {
+    const user = userEvent.setup();
+    getMovies
+      .mockResolvedValueOnce({
+        movies: [
+          { id: 1, title: 'Posterless', posterUrl: '', genres: [] },
+          { id: 2, title: 'Has poster', posterUrl: '/poster.jpg', genres: [] },
+        ],
+        totalResults: 3,
+        page: 1,
+        totalPages: 2,
+      })
+      .mockResolvedValueOnce({
+        movies: [
+          { id: 3, title: 'Page two posterless', posterUrl: '', genres: [] },
+        ],
+        totalResults: 3,
+        page: 2,
+        totalPages: 2,
+      });
+
+    renderList();
+
+    expect(await screen.findByText('Has poster')).toBeInTheDocument();
+    expect(screen.queryByText('Posterless')).not.toBeInTheDocument();
+    expect(screen.getByText('1 movie loaded')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Load more' }));
+    expect(getMovies).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 2 }),
+      expect.any(AbortSignal)
+    );
+    expect(screen.getByText('1 movie loaded')).toBeInTheDocument();
+    expect(screen.queryByText('Page two posterless')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
+  });
+
+  test('keeps posterless Movies in search results', async () => {
+    getMovies.mockResolvedValue({
+      movies: [
+        { id: 1, title: 'Posterless search match', posterUrl: '', genres: [] },
+      ],
+      totalResults: 1,
+      page: 1,
+      totalPages: 1,
+    });
+
+    renderList('/search/Match');
+
+    expect(
+      await screen.findByText('Posterless search match')
+    ).toBeInTheDocument();
+    expect(screen.getByText('1 movie loaded')).toBeInTheDocument();
+  });
+
   test('shows results in batches of 10 and keeps the final partial batch', async () => {
     const user = userEvent.setup();
     const movieBatch = (start: number, count: number) =>
       Array.from({ length: count }, (_, index) => ({
         id: start + index,
         title: `Movie ${start + index}`,
-        posterUrl: '',
+        posterUrl: `/movie-${start + index}.jpg`,
         genres: [],
       }));
     getMovies
@@ -762,7 +816,7 @@ describe('<List />', () => {
       id: 1,
       title: 'First movie',
       releaseDate: '2020-01-01',
-      posterUrl: '',
+      posterUrl: '/first-movie.jpg',
       genres: ['Drama'],
     };
     const secondMovie = { ...firstMovie, id: 2, title: 'Second movie' };
@@ -799,7 +853,7 @@ describe('<List />', () => {
             id: 1,
             title: 'First movie',
             releaseDate: '2020-01-01',
-            posterUrl: '',
+            posterUrl: '/first-movie.jpg',
             genres: [],
           },
         ],
