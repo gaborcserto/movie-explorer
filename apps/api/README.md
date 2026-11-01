@@ -32,6 +32,7 @@ All routes use the `/api/v1` prefix:
 - Persons and filmographies: `/persons`
 - Unified search and suggestions: `/search`
 - Curated discovery feeds: `/discover/:section`
+- Random title recommendations: `/recommendations/:category` (see [retrieval, cache and failure semantics](../../docs/recommendations.md))
 - IMDb-only ratings: `/ratings`
 
 Swagger documents individual endpoints, parameters, and response schemas. Legacy `/movies` and `/api/v1/tv` route trees are not supported.

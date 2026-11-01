@@ -167,6 +167,7 @@ describe('AppController (e2e)', () => {
       '/api/v1/discover/providers',
       '/api/v1/discover/streaming/{providerId}',
       '/api/v1/ratings/{mediaType}/{id}/imdb',
+      '/api/v1/recommendations/{category}',
       '/api/v1/movies',
       '/api/v1/movies/suggestions',
       '/api/v1/movies/{id}',
@@ -217,6 +218,7 @@ describe('AppController (e2e)', () => {
         'Persons',
         'Search',
         'Ratings',
+        'Recommendations',
       ]),
     );
     ok(document.components);

@@ -9,11 +9,13 @@ import type {
   SearchResponse,
   SearchResult,
   StreamingProviderInfo,
+  RecommendationCategory,
 } from '@movie-explorer/contracts';
 
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbTransport } from './tmdb.transport';
 import { mapSearch, searchPage } from './tmdb-search.mapper';
+import { TmdbRecommendationPools } from './tmdb-recommendation-pools';
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const SEARCH_CACHE_CAPACITY = 100;
@@ -44,6 +46,7 @@ function pruneCache<T extends { expiresAt: number }>(
 @Injectable()
 export class TmdbDiscoveryProvider {
   private readonly transport: TmdbTransport;
+  private readonly recommendationPools: TmdbRecommendationPools;
   private readonly cache = new Map<
     string,
     { expiresAt: number; response: SearchResponse }
@@ -63,6 +66,14 @@ export class TmdbDiscoveryProvider {
       config,
       new Logger(TmdbDiscoveryProvider.name),
     );
+    this.recommendationPools = new TmdbRecommendationPools(
+      this.transport,
+      config,
+    );
+  }
+
+  findRecommendationPool(category: RecommendationCategory) {
+    return this.recommendationPools.find(category);
   }
 
   async find(section: DiscoverySection, page = 1): Promise<SearchResponse> {

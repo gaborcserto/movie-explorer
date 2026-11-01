@@ -4,7 +4,9 @@ import type {
   StreamingProviderInfo,
 } from '@movie-explorer/contracts';
 
-export interface DiscoveryProvider {
+import type { RecommendationProvider } from '../recommendations/recommendation-provider';
+
+export interface DiscoveryProvider extends RecommendationProvider {
   find(section: DiscoverySection, page: number): Promise<SearchResponse>;
   findStreamingProviders(region: string): Promise<StreamingProviderInfo[]>;
   findStreaming(
