@@ -18,7 +18,11 @@ import { TmdbDiscoveryProvider } from '../src/integrations/tmdb/tmdb-discovery.p
 
 describe('Recommendations API', () => {
   let app: INestApplication;
-  const provider = { findRecommendationPool: jest.fn(), find: jest.fn() };
+  const provider = {
+    findRecommendationPool: jest.fn(),
+    findFavoriteSimilar: jest.fn(),
+    find: jest.fn(),
+  };
   const originalFetch = global.fetch;
   const fetchMock = jest.fn();
 
@@ -325,5 +329,150 @@ describe('Recommendations API', () => {
     });
     expect(doc.components.schemas.SearchMovieDto).toBeDefined();
     expect(doc.components.schemas.SearchSeriesDto).toBeDefined();
+  });
+
+  describe('POST personalized', () => {
+    const payload = {
+      mediaType: 'movie',
+      favoriteIds: [1, 2],
+      excludedIds: [1, 2, 3],
+    };
+
+    it.each(['movie', 'tv'])(
+      'returns private %s recommendations with typed identities',
+      async (mediaType) => {
+        provider.findFavoriteSimilar.mockResolvedValue({
+          results: [
+            { id: 10, mediaType, title: 'Similar', posterUrl: '/poster.jpg' },
+          ],
+          availability: 'available',
+        });
+        await request(app.getHttpServer())
+          .post('/api/v1/recommendations/personalized')
+          .send({ ...payload, mediaType })
+          .expect(200)
+          .expect('Cache-Control', 'private, no-store')
+          .expect(({ body }) => {
+            expect(body.source).toBe('favorites');
+            expect(body.results[0]).toMatchObject({ id: 10, mediaType });
+          });
+        expect(fetchMock).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each([
+      {},
+      { mediaType: 'person' },
+      { mediaType: 'series' },
+      { favoriteIds: [1, 1] },
+      { favoriteIds: [0] },
+      { favoriteIds: [-1] },
+      { favoriteIds: [1.2] },
+      { favoriteIds: ['1'] },
+      { favoriteIds: [Number.MAX_SAFE_INTEGER + 1] },
+      { favoriteIds: [null] },
+      { favoriteIds: null },
+      { favoriteIds: [1, 2, 3, 4] },
+      { excludedIds: [1, 1] },
+      { excludedIds: [-1] },
+      { excludedIds: '1' },
+      { excludedIds: Array.from({ length: 1001 }, (_, i) => i + 1) },
+      { unrelatedLibrary: { title: 'Private snapshot' } },
+    ])(
+      'rejects invalid or oversized preferences before upstream work: %j',
+      async (override) => {
+        const invalid = Object.keys(override).length
+          ? { ...payload, ...override }
+          : {};
+        await request(app.getHttpServer())
+          .post('/api/v1/recommendations/personalized')
+          .send(invalid)
+          .expect(400);
+        expect(provider.findFavoriteSimilar).not.toHaveBeenCalled();
+        expect(provider.findRecommendationPool).not.toHaveBeenCalled();
+      },
+    );
+
+    it('accepts empty Favorites and maximum exclusion count without Similar calls', async () => {
+      await request(app.getHttpServer())
+        .post('/api/v1/recommendations/personalized')
+        .send({
+          mediaType: 'tv',
+          favoriteIds: [],
+          excludedIds: Array.from({ length: 1000 }, (_, i) => i + 1),
+        })
+        .expect(200);
+      expect(provider.findFavoriteSimilar).not.toHaveBeenCalled();
+      expect(provider.findRecommendationPool).toHaveBeenCalledWith(
+        'popular-series',
+      );
+    });
+
+    it('rejects preference query strings', async () => {
+      await request(app.getHttpServer())
+        .post('/api/v1/recommendations/personalized?favoriteIds=1')
+        .send(payload)
+        .expect(400);
+      expect(provider.findFavoriteSimilar).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      new BadGatewayException(),
+      new GatewayTimeoutException(),
+      new HttpException({ retryAfter: 30 }, 429),
+    ])('preserves complete upstream errors: %s', async (failure) => {
+      provider.findFavoriteSimilar.mockRejectedValue(failure);
+      provider.findRecommendationPool.mockRejectedValue(failure);
+      const result = await request(app.getHttpServer())
+        .post('/api/v1/recommendations/personalized')
+        .send(payload)
+        .expect(failure.getStatus());
+
+      if (failure.getStatus() === 429) {
+        expect(result.headers['retry-after']).toBe('30');
+      }
+    });
+
+    it('documents bounded payload, discriminated summaries, availability, source and errors', () => {
+      const doc = createApiDocument(app);
+      const operation = doc.paths['/api/v1/recommendations/personalized'].post;
+      ok(operation);
+      expect(Object.keys(operation.responses).sort()).toEqual([
+        '200',
+        '400',
+        '404',
+        '429',
+        '502',
+        '504',
+      ]);
+      expect(operation.requestBody).toMatchObject({
+        content: {
+          'application/json': {
+            schema: {
+              $ref: '#/components/schemas/PersonalizedRecommendationBody',
+            },
+          },
+        },
+      });
+      expect(
+        doc.components?.schemas?.PersonalizedRecommendationBody,
+      ).toMatchObject({
+        required: ['mediaType', 'favoriteIds', 'excludedIds'],
+        properties: {
+          favoriteIds: { maxItems: 3, uniqueItems: true },
+          excludedIds: { maxItems: 1000, uniqueItems: true },
+          mediaType: { enum: ['movie', 'tv'] },
+        },
+      });
+      expect(
+        doc.components?.schemas?.PersonalizedRecommendationResponseDto,
+      ).toMatchObject({
+        properties: {
+          source: { enum: ['favorites', 'mixed', 'popular'] },
+          results: { maxItems: 10 },
+          availability: { enum: ['available', 'partial'] },
+        },
+      });
+    });
   });
 });

@@ -7,7 +7,10 @@ import type {
 import { RecommendationsService } from './recommendations.service';
 
 describe('RecommendationsService', () => {
-  const provider = { findRecommendationPool: jest.fn() };
+  const provider = {
+    findRecommendationPool: jest.fn(),
+    findFavoriteSimilar: jest.fn(),
+  };
   const service = new RecommendationsService(provider);
 
   beforeEach(() => jest.resetAllMocks());

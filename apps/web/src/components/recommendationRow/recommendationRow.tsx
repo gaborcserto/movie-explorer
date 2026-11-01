@@ -27,7 +27,12 @@ function RecommendationRowContent({ title, source, home }: Props) {
     data?.results.filter((item) => {
       const key = `${item.mediaType}:${item.id}`;
 
-      if (!item.posterUrl?.trim() || item.id === source.id || seen.has(key)) {
+      if (
+        !item.posterUrl?.trim() ||
+        item.id === source.id ||
+        seen.has(key) ||
+        source.preferences?.excludedIds.includes(item.id)
+      ) {
         return false;
       }
       seen.add(key);
@@ -158,6 +163,12 @@ function RecommendationRowContent({ title, source, home }: Props) {
           </p>
           {home && controls}
         </div>
+        {home && data && 'source' in data && data.source !== 'popular' && (
+          <p className="discover-row__message">
+            Based on your Favorites
+            {data.source === 'mixed' ? ', with Popular titles' : ''}.
+          </p>
+        )}
         {partial && (
           <p className="discover-row__message">
             Some recommendations are unavailable.
@@ -217,8 +228,9 @@ function RecommendationRowContent({ title, source, home }: Props) {
 
 export default function RecommendationRow(props: Props) {
   const { source } = props;
-  const key =
-    source.category ?? `${source.resource}:${source.id}:${source.kind}`;
+  const key = source.category
+    ? `${source.category}:${source.libraryKey ?? ''}`
+    : `${source.resource}:${source.id}:${source.kind}`;
 
   return <RecommendationRowContent key={key} {...props} />;
 }

@@ -30,3 +30,19 @@ export interface RecommendationResponse {
   /** Valid unique candidates, at most 100; fewer candidates are normal. */
   candidateCount: number;
 }
+
+/** IDs belong only to mediaType. No library snapshots or preference metadata. */
+export interface PersonalizedRecommendationRequest {
+  mediaType: 'movie' | 'tv';
+  /** At most three distinct seeds, selected deterministically by the client. */
+  favoriteIds: number[];
+  /** At most 1000 distinct Favorites/Watched IDs; seeds are excluded implicitly. */
+  excludedIds: number[];
+}
+
+export interface PersonalizedRecommendationResponse extends RelatedTitlesResponse {
+  /** Partial includes failed or malformed Similar/Popular sources. */
+  availability: 'available' | 'partial';
+  mediaType: 'movie' | 'tv';
+  source: 'favorites' | 'mixed' | 'popular';
+}

@@ -169,6 +169,7 @@ describe('AppController (e2e)', () => {
       '/api/v1/discover/streaming/{providerId}',
       '/api/v1/ratings/{mediaType}/{id}/imdb',
       '/api/v1/recommendations/{category}',
+      '/api/v1/recommendations/personalized',
       '/api/v1/movies',
       '/api/v1/movies/suggestions',
       '/api/v1/movies/{id}',
@@ -200,9 +201,10 @@ describe('AppController (e2e)', () => {
     ];
     expect(Object.keys(document.paths).sort()).toEqual(expectedPaths.sort());
     const operations = Object.values(document.paths).map((item) => {
-      ok(item.get);
+      const operation = item.get ?? item.post;
+      ok(operation);
 
-      return item.get;
+      return operation;
     });
 
     for (const operation of operations) {

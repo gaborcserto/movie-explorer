@@ -1,4 +1,5 @@
 import type {
+  PersonalizedRecommendationResponse,
   RecommendationCategory,
   RecommendationResponse,
   RelatedTitlesResponse,
@@ -36,5 +37,20 @@ export function recommendationResponse(
     Number.isSafeInteger(value.candidateCount) &&
     Number(value.candidateCount) >= value.results.length &&
     Number(value.candidateCount) <= 100
+  );
+}
+
+export function personalizedRecommendationResponse(
+  value: unknown,
+  mediaType: 'movie' | 'tv'
+): value is PersonalizedRecommendationResponse {
+  return (
+    relatedTitlesResponse(value, mediaType) &&
+    record(value) &&
+    value.mediaType === mediaType &&
+    ['favorites', 'mixed', 'popular'].includes(String(value.source)) &&
+    value.results.every((title) => Boolean(title.posterUrl?.trim())) &&
+    new Set(value.results.map((title) => title.id)).size ===
+      value.results.length
   );
 }

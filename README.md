@@ -14,7 +14,7 @@ Movie Explorer is a React and NestJS app for browsing movies, series, and people
 - Search movies, series, and people with keyboard-accessible autocomplete.
 - Browse and filter results, with shareable search and detail routes.
 - Explore movie and series details, cast, photos, videos, watch providers, and optional IMDb ratings.
-- Browse horizontal homepage recommendations and related titles after movie/series Media.
+- Browse Favorites-based homepage recommendations with independent Popular fallback for Movies/Series, and Similar titles after detail-page Media.
 - View person profiles and filmographies, plus season and episode details.
 - Use the responsive photo viewer with zoom, pan, and fullscreen controls.
 

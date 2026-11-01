@@ -1,9 +1,10 @@
 # Recommendations
 
 `GET /api/v1/recommendations/:category` returns a new random selection from a
-cached candidate pool. It is independent of the existing Discovery browsing
-feeds. The homepage presents these selections in four horizontal rows. Results
-are not personalized.
+cached candidate pool. It is independent of Discovery browsing feeds. The homepage
+has one Recommendations section with Movies/Series tabs (Movies by default),
+one horizontal carousel, and Favorites-based personalization when possible.
+The four public GET categories remain available with their original behavior.
 
 | Category | Source | Title mediaType |
 | --- | --- | --- |
@@ -70,7 +71,7 @@ failed, partial and settled promises do not leak into later retries.
 Each request samples up to ten distinct titles using Fisherâ€“Yates without
 replacement on a copy of the pool. Sampling does not change cached ordering or
 refetch pages. Empty and undersized pools work naturally. Separate selections
-may overlap or even match; there is no cross-category exclusion or seed API.
+may overlap or even match; public GET categories have no preference payload or cross-category exclusion.
 Random sampled responses send `Cache-Control: no-store`, so browser/CDN caching
 does not freeze a selection. Any future CDN pool caching should use an explicitly
 deterministic resource and a separately reviewed cache policy.
@@ -143,7 +144,8 @@ appear in the application response.
 Homepage has one **Recommendations** section after Movies, Series and Streaming,
 with a compass icon and **Movies** / **Series** tabs using the existing homepage
 header styles. Movies is selected by default. Exactly one horizontal row is
-visible, backed by `popular-movies` or `popular-series`; Top Rated stays available
+visible, personalized from Favorites where possible with `popular-movies` or
+`popular-series` fallback; Top Rated stays available
 in the API for future consumers. Tabs support Left/Right, Home/End and native
 keyboard activation with a single tab stop. Panels mount on first visit and remain
 hidden when inactive, retaining results, pending/error state and scroll position.
@@ -171,6 +173,107 @@ error. Source-keyed rows and AbortSignal checks prevent stale results after rout
 changes. Native touch/trackpad overflow and keyboard-accessible buttons and card
 links preserve navigation. Reduced-motion preferences disable smooth arrow scroll and control transitions.
 
-REC-03 through REC-07 cover these consumers, documentation and tests. REC-08
-refresh controls, cross-carousel duplicate suppression, personalization and
-additional infrastructure remain deferred.
+REC-08 adds Favorites-based personalization as described below. Refresh controls,
+cross-carousel duplicate suppression, advanced discovery and additional
+infrastructure remain deferred.
+
+
+## REC-08: Favorites-based homepage recommendations
+
+`POST /api/v1/recommendations/personalized` accepts only:
+
+```json
+{ "mediaType": "movie", "favoriteIds": [12, 98, 400], "excludedIds": [12, 98, 400, 22] }
+```
+
+- `mediaType` is `movie` or `tv`; IDs belong only to that media type.
+- `favoriteIds` contains zero to three distinct positive safe integers.
+- `excludedIds` contains zero to 1,000 distinct positive safe integers for Favorites
+  and Watched. Seeds are excluded implicitly. Watchlist is eligible and never a seed.
+- Missing arrays, duplicate/invalid IDs, oversized arrays, unknown body fields and
+  all query parameters return 400. No library snapshots, titles, user identities,
+  cookies or localStorage objects are sent. Payload size also inherits the server's
+  standard JSON body limit. Preferences are neither persisted nor logged.
+
+The response reuses application-owned card summaries:
+
+```json
+{
+  "mediaType": "movie",
+  "results": [{ "mediaType": "movie", "id": 50, "title": "Example", "posterUrl": "https://example.com/poster.jpg" }],
+  "availability": "available",
+  "source": "favorites"
+}
+```
+
+`source` is `favorites` (all returned titles are personalized), `mixed` (personalized
+plus Popular fill), or `popular` (Popular only). `partial` availability means any
+attempted Similar or Popular source failed or returned malformed entries, even
+when ten cards can be returned. Successful empty/exhausted pools may return fewer
+than ten, including zero. When upstream failures leave no eligible results, the
+original classified 404/429/502/504 error is preserved; there is no empty-success
+substitution. The existing GET routes and detail Similar behavior are unchanged.
+The POST response uses `Cache-Control: private, no-store` and the browser requests
+`cache: no-store`. There is no shared final-response cache.
+
+### Selection, ranking and bounds
+
+For each media type independently, sort all local Favorites by numeric ID. Choose
+up to three spread-out entries: indices `floor(i * (n - 1) / (k - 1))`, where
+`k = min(3, n)`; for one Favorite use index zero. This is deterministic, independent
+of insertion/arrival order, spans the collection and avoids relying on the newest
+Favorite. The API processes at most three seeds, sorted before retrieval.
+
+Each seed uses the same integration-private first-page Similar mapper as the
+Movie/Series providers. It returns at most ten application summaries per seed;
+no extra Recommendations calls are justified for this first version. At most
+30 personalized candidates are examined. Exclude seed/Favorites/Watched IDs,
+wrong media types, invalid IDs/titles and missing/blank posters. Deduplicate each
+seed before counting overlap. Rank by descending number of distinct seeds,
+ascending mean source position, then ascending numeric ID. Mean source position
+also interleaves equal-overlap candidates across seeds where possible; no result
+wins because its network response finished first.
+
+If fewer than ten survive, obtain the selected media type's existing Popular
+pool once, apply the same eligibility rules and deduplicate against personalized
+titles. Sample without replacement with the existing Fisher-Yates function and
+append only the remaining slots. There is no refill loop or extra Popular page.
+A failed seed does not discard other seeds; a failed fallback preserves usable
+personalized results. Partial data is never cached as a complete result.
+
+Per request: at most three concurrent Similar calls (one page each), then at most
+five Popular calls (page 1 followed by up to four parallel pages). Maximum eight
+TMDB requests, peak concurrency four, no automatic retries. Similar has a 6-second
+ceiling, or the configured TMDB deadline if lower. Default cold execution is
+bounded by 6 + 2 * 8 = 22 seconds plus processing; warm Popular fallback is cheaper.
+The existing 25-second homepage browser deadline and 12-second global deadline
+are unchanged. Elevated server deadlines/cold starts can still exceed the browser
+budget. Cancellation releases browser work and prevents obsolete UI writes;
+existing shared, timeout-bounded Popular work may continue to warm the cache.
+
+The four-category Popular cache remains unchanged: 30-minute TTL, four-entry
+capacity, concurrent-load deduplication, no partial/error caching. No per-title
+Similar cache was added: bounded first-page calls keep this phase small and avoid
+another cache/privacy/cancellation ownership layer. Repeated explicit retries
+can therefore repeat seed calls. Lambda memory is instance-local and disposable;
+no infrastructure, credentials, packaging or cloud resources change.
+
+### Frontend state and large libraries
+
+Homepage selectors derive sorted ID signatures per media type from the existing
+Zustand library. Watchlist-only and title/poster snapshot edits do not invalidate
+recommendations. Favorite or Watched membership changes replace only the affected
+row, cancel old work and clear obsolete data/errors. Visited tabs remain mounted;
+unchanged results and scroll position survive tab switches without refetching.
+The homepage subscribes to library-key/clear storage events and rehydrates through
+the existing validated persist middleware, with listener cleanup on unmount.
+
+A completely empty preference set retains the existing GET flow. Watched-only
+preferences use POST with no seeds for filtered Popular. Removing the final
+Favorite restores Popular (using POST while Watched exclusions remain).
+For libraries over 1,000 excluded IDs, the request sends only the first 1,000
+sorted IDs; seeds are always excluded implicitly. The browser filters returned
+cards against the complete local exclusion set. This may show fewer than ten
+cards without further refills; it never exposes an excluded title. The complete
+local library remains in the browser. The carousel, Streaming presentation,
+detail Similar sections, card actions and routing are preserved.

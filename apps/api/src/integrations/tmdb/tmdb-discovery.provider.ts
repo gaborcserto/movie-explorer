@@ -16,6 +16,7 @@ import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbTransport } from './tmdb.transport';
 import { mapSearch, searchPage } from './tmdb-search.mapper';
 import { TmdbRecommendationPools } from './tmdb-recommendation-pools';
+import { findRelatedTitles } from './tmdb-related-titles';
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const SEARCH_CACHE_CAPACITY = 100;
@@ -74,6 +75,18 @@ export class TmdbDiscoveryProvider {
 
   findRecommendationPool(category: RecommendationCategory) {
     return this.recommendationPools.find(category);
+  }
+
+  findFavoriteSimilar(mediaType: 'movie' | 'tv', id: number) {
+    // Same provider mapper as detail Similar; a tighter budget leaves fallback time.
+    return findRelatedTitles(
+      this.transport,
+      this.config.imageBaseUrl,
+      mediaType,
+      id,
+      'similar',
+      6000,
+    );
   }
 
   async find(section: DiscoverySection, page = 1): Promise<SearchResponse> {

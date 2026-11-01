@@ -76,6 +76,8 @@ export type {
 } from './ratings';
 export type { DiscoverySection, StreamingProviderInfo } from './discovery';
 export type {
+  PersonalizedRecommendationRequest,
+  PersonalizedRecommendationResponse,
   RelatedTitleKind,
   RelatedTitlesResponse,
   RecommendationCategory,

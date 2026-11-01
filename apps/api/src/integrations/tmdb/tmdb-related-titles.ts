@@ -14,12 +14,14 @@ export async function findRelatedTitles(
   mediaType: 'movie' | 'tv',
   id: number,
   kind: RelatedTitleKind,
+  timeoutMs?: number,
 ): Promise<RelatedTitlesResponse> {
   const body = await transport.request({
     path: `/${mediaType}/${id}/${kind}`,
     operation: `${mediaType}-${kind}`,
     query: { page: '1' },
     allowNotFound: true,
+    timeoutMs,
     validateBody: (value) => {
       if (searchPage(value).page !== 1) {
         throw new Error('Unexpected related titles page');

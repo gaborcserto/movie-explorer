@@ -1,6 +1,7 @@
 import type { RecommendationCategory } from '@movie-explorer/contracts';
 
 import {
+  getPersonalizedRecommendations,
   getRecommendations,
   getRelatedTitles,
   getMovie,
@@ -174,4 +175,73 @@ it('preserves safe rate-limit retry guidance', async () => {
     category: 'rate-limited',
     retryAfterSeconds: 3,
   });
+});
+
+const preferences = {
+  mediaType: 'movie' as const,
+  favoriteIds: [1, 2, 3],
+  excludedIds: [1, 2, 3],
+};
+const personalized = {
+  mediaType: 'movie',
+  source: 'mixed',
+  results: [title],
+  availability: 'partial',
+};
+
+it('posts only bounded typed IDs privately with the existing recommendation deadline', async () => {
+  fetchMock.mockResolvedValue(Response.json(personalized));
+  const input = {
+    ...preferences,
+    excludedIds: Array.from({ length: 1100 }, (_, i) => i + 1),
+  };
+  await expect(getPersonalizedRecommendations(input)).resolves.toEqual(
+    personalized
+  );
+  const [url, init] = fetchMock.mock.calls[0];
+  expect(String(url)).toMatch(/\/api\/v1\/recommendations\/personalized$/);
+  expect(init).toMatchObject({
+    method: 'POST',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  expect(JSON.parse(String(init?.body))).toEqual({
+    ...preferences,
+    excludedIds: input.excludedIds.slice(0, 1000),
+  });
+});
+
+it.each([
+  null,
+  { ...personalized, mediaType: 'tv' },
+  { ...personalized, source: 'unknown' },
+  { ...personalized, results: [title, title] },
+  { ...personalized, results: [{ ...title, posterUrl: '' }] },
+  { ...personalized, results: [{ ...title, mediaType: 'tv' }] },
+  { ...personalized, results: Array(11).fill(title) },
+])('rejects malformed personalized responses: %j', async (value) => {
+  fetchMock.mockResolvedValue(Response.json(value));
+  await expect(
+    getPersonalizedRecommendations(preferences)
+  ).rejects.toMatchObject({ category: 'invalid-response' });
+});
+
+it('forwards active personalized cancellation without changing the global timeout', async () => {
+  const controller = new AbortController();
+  fetchMock.mockImplementation(
+    (_url, init) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () =>
+          reject(new DOMException('Abort', 'AbortError'))
+        );
+      })
+  );
+  const pending = getPersonalizedRecommendations(
+    preferences,
+    controller.signal
+  );
+  controller.abort();
+  await expect(pending).rejects.toMatchObject({ category: 'cancelled' });
+  expect(API_REQUEST_TIMEOUT_MS).toBe(12_000);
+  expect(RECOMMENDATION_REQUEST_TIMEOUT_MS).toBe(25_000);
 });

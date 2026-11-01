@@ -1,23 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
 import type {
+  PersonalizedRecommendationRequest,
+  PersonalizedRecommendationResponse,
   RecommendationCategory,
   RelatedTitleKind,
   RelatedTitlesResponse,
 } from '@movie-explorer/contracts';
 
-import { getRecommendations, getRelatedTitles } from '../../util/apiUtils';
+import {
+  getPersonalizedRecommendations,
+  getRecommendations,
+  getRelatedTitles,
+} from '../../util/apiUtils';
 import { ApiRequestError } from '../../util/apiErrors';
 import { isCancelledError } from '../../util/errorPresentation';
 
 export type RecommendationSource =
   | {
       category: RecommendationCategory;
+      preferences?: PersonalizedRecommendationRequest;
+      libraryKey?: string;
       resource?: never;
       id?: never;
       kind?: never;
     }
   | {
       category?: never;
+      preferences?: never;
+      libraryKey?: never;
       resource: 'movies' | 'series';
       id: number;
       kind: RelatedTitleKind;
@@ -26,12 +36,14 @@ export type RecommendationSource =
 export default function useRecommendationResource(
   source: RecommendationSource
 ) {
-  const { category, resource, id, kind } = source;
+  const { category, resource, id, kind, preferences } = source;
   const containerRef = useRef<HTMLElement>(null);
   const [enabled, setEnabled] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [pending, setPending] = useState(true);
-  const [data, setData] = useState<RelatedTitlesResponse>();
+  const [data, setData] = useState<
+    RelatedTitlesResponse | PersonalizedRecommendationResponse
+  >();
   const [error, setError] = useState<unknown>();
   const [delay, setDelay] = useState(0);
 
@@ -74,9 +86,23 @@ export default function useRecommendationResource(
       }
 
       try {
-        const result = category
-          ? await getRecommendations(category, controller.signal)
-          : await getRelatedTitles(resource, id, kind, controller.signal);
+        let result: RelatedTitlesResponse | PersonalizedRecommendationResponse;
+
+        if (preferences) {
+          result = await getPersonalizedRecommendations(
+            preferences,
+            controller.signal
+          );
+        } else if (category) {
+          result = await getRecommendations(category, controller.signal);
+        } else {
+          result = await getRelatedTitles(
+            resource,
+            id,
+            kind,
+            controller.signal
+          );
+        }
 
         if (!controller.signal.aborted) {
           setData(result);
@@ -98,7 +124,7 @@ export default function useRecommendationResource(
     });
 
     return () => controller.abort();
-  }, [category, resource, id, kind, enabled, attempt]);
+  }, [category, resource, id, kind, enabled, attempt, preferences]);
 
   useEffect(() => {
     if (!delay) {

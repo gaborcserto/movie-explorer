@@ -34,6 +34,7 @@ All routes use the `/api/v1` prefix:
 - Persons and filmographies: `/persons`
 - Unified search and suggestions: `/search`
 - Curated discovery feeds: `/discover/:section`
+- Favorites-based recommendations: `POST /recommendations/personalized` with bounded typed seed/exclusion IDs (see [privacy, ranking and limits](../../docs/recommendations.md)).
 - Random title recommendations: `/recommendations/:category` (see [retrieval, cache and failure semantics](../../docs/recommendations.md))
 - IMDb-only ratings: `/ratings`
 

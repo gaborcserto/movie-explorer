@@ -13,6 +13,7 @@ type TmdbRequestOptions = {
   query?: Record<string, string | undefined>;
   allowNotFound?: boolean;
   operation: string;
+  timeoutMs?: number;
   validateBody: (body: unknown) => void;
 };
 
@@ -29,6 +30,7 @@ export class TmdbTransport {
     allowNotFound = false,
     operation,
     validateBody,
+    timeoutMs,
   }: TmdbRequestOptions): Promise<unknown> {
     const url = new URL(`${this.config.apiBaseUrl}${path}`);
     url.searchParams.set('language', this.config.language);
@@ -46,7 +48,7 @@ export class TmdbTransport {
     const controller = new AbortController();
     const timer = setTimeout(
       () => controller.abort(),
-      this.config.requestTimeoutMs ?? 8000,
+      Math.min(timeoutMs ?? Infinity, this.config.requestTimeoutMs ?? 8000),
     );
     let upstreamStatus: number | undefined;
 

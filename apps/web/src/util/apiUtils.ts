@@ -1,4 +1,6 @@
 import type {
+  PersonalizedRecommendationRequest,
+  PersonalizedRecommendationResponse,
   RecommendationCategory,
   RecommendationResponse,
   RelatedTitleKind,
@@ -59,6 +61,7 @@ import {
 } from './movieValidation';
 import request from './apiTransport';
 import {
+  personalizedRecommendationResponse,
   recommendationResponse,
   relatedTitlesResponse,
 } from './recommendationValidation';
@@ -837,4 +840,32 @@ export async function getRelatedTitles(
   }
 
   return body;
+}
+
+export async function getPersonalizedRecommendations(
+  preferences: PersonalizedRecommendationRequest,
+  signal?: AbortSignal
+): Promise<PersonalizedRecommendationResponse> {
+  return scheduleRecommendation(async () => {
+    const body = await request<unknown>(
+      `${apiBaseUrl}/api/v1/recommendations/personalized`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...preferences,
+          excludedIds: preferences.excludedIds.slice(0, 1000),
+        }),
+        signal,
+        cache: 'no-store',
+      },
+      RECOMMENDATION_REQUEST_TIMEOUT_MS
+    );
+
+    if (!personalizedRecommendationResponse(body, preferences.mediaType)) {
+      throw new ApiRequestError('invalid-response');
+    }
+
+    return body;
+  }, signal);
 }
