@@ -32,6 +32,7 @@ import {
   MoviesResponse,
 } from './movies.dto';
 import { WatchProvidersDto } from './watch-providers.dto';
+import { RelatedTitlesResponseDto } from '../recommendations/related-titles.dto';
 import { RatingsDto } from '../ratings/ratings.dto';
 
 @ApiTags('Movies')
@@ -115,6 +116,38 @@ export class MoviesController {
     }
 
     return providers;
+  }
+
+  @Get(':id/similar')
+  @ApiOperation({
+    summary: 'Get similar movies',
+    description:
+      'Up to ten ranked titles from one source page. Current title and duplicates excluded; malformed entries produce explicit partial availability. No pagination or pool sampling.',
+  })
+  @ApiParam({
+    name: 'id',
+    schema: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  })
+  @ApiOkResponse({ type: RelatedTitlesResponseDto })
+  @ApiNotFoundResponse({ description: 'Title not found' })
+  getSimilar(@Param() params: DetailIdParams) {
+    return this.moviesService.findRelated(params.id, 'similar');
+  }
+
+  @Get(':id/recommendations')
+  @ApiOperation({
+    summary: 'Get recommended movies',
+    description:
+      'Up to ten ranked titles from one source page. Current title and duplicates excluded; malformed entries produce explicit partial availability. No pagination or pool sampling.',
+  })
+  @ApiParam({
+    name: 'id',
+    schema: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  })
+  @ApiOkResponse({ type: RelatedTitlesResponseDto })
+  @ApiNotFoundResponse({ description: 'Title not found' })
+  getRecommended(@Param() params: DetailIdParams) {
+    return this.moviesService.findRelated(params.id, 'recommendations');
   }
 
   @Get(':id/ratings')

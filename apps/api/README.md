@@ -29,6 +29,8 @@ All routes use the `/api/v1` prefix:
 
 - Movies: `/movies`
 - Series, seasons, and episodes: `/series`
+- Similar and recommended titles: `/movies/:id/similar`, `/movies/:id/recommendations`,
+  `/series/:id/similar`, `/series/:id/recommendations` (see [availability and errors](../../docs/recommendations.md))
 - Persons and filmographies: `/persons`
 - Unified search and suggestions: `/search`
 - Curated discovery feeds: `/discover/:section`

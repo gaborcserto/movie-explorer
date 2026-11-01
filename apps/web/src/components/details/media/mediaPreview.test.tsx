@@ -1,8 +1,15 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { MovieDetails } from '@movie-explorer/contracts';
+import * as apiUtils from '../../../util/apiUtils';
 import PhotoPreview from './photoPreview';
 import { DetailsLowerContent } from '../detailsContent';
+
+// Media tests isolate the independently tested optional recommendation requests.
+vi.spyOn(apiUtils, 'getRelatedTitles').mockResolvedValue({
+  results: [],
+  availability: 'available',
+});
 
 const photos = Array.from({ length: 25 }, (_, index) => ({
   thumbnailUrl: `/thumb-${index}.jpg`,

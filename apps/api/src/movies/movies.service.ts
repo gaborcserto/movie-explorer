@@ -1,5 +1,6 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import type {
+  RelatedTitleKind,
   MovieDetails,
   WatchProviders,
   MovieListResponse,
@@ -20,6 +21,10 @@ export class MoviesService {
     private readonly movieProvider: MovieProvider,
     @Optional() private readonly ratings?: RatingsService,
   ) {}
+
+  findRelated(id: number, kind: RelatedTitleKind) {
+    return this.movieProvider.findRelated(id, kind);
+  }
 
   public findAll(query: MovieQueryParams): Promise<MovieListResponse> {
     return this.movieProvider.findAll(query);

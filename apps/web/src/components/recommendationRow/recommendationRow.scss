@@ -1,0 +1,111 @@
+@use '../../assets/scss' as *;
+
+.recommendation-row {
+  --recommendation-gap: 32px;
+
+  margin-top: 32px;
+
+  &__controls {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 12px;
+  }
+
+  &__viewport {
+    // Half a gap leaves hover/focus room without exposing the next card.
+    --recommendation-inset: calc(var(--recommendation-gap) / 2);
+
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--recommendation-inset);
+    scrollbar-width: none;
+
+    // Keep scaled cards, poster shadows and focus rings inside the scrollport.
+    // Matching negative margins preserve the card track width and section rhythm.
+    padding: 32px var(--recommendation-inset) 48px;
+    margin: -32px calc(-1 * var(--recommendation-inset)) -48px;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $red-1;
+      outline-offset: 2px;
+    }
+  }
+
+  .list__items {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: var(--recommendation-gap);
+    width: 100%;
+  }
+
+  // Flex overflow does not carry the scrollport's trailing padding past the track.
+  .list__items:after {
+    content: '';
+    flex: 0 0 var(--recommendation-inset);
+    margin-left: calc(-1 * var(--recommendation-gap));
+  }
+
+  .list__items > * {
+    scroll-snap-align: start;
+    flex: 0 0 calc((100% - 4 * var(--recommendation-gap)) / 5);
+  }
+
+  &--home {
+    margin-top: 0;
+  }
+
+  // The compensated scrollport extends behind the preceding feedback/controls.
+  .details-section__heading,
+  .list__summary {
+    position: relative;
+    z-index: 4;
+  }
+
+  &__status {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  @media (width <= 1023.98px) {
+    --recommendation-gap: 20px;
+
+    &__viewport {
+      // Stay within the existing narrow-screen page gutters.
+      --recommendation-inset: 16px;
+    }
+
+    .list__items > * {
+      flex-basis: calc((100% - var(--recommendation-gap)) / 2);
+    }
+  }
+
+  @media (width <= 767.98px) {
+    --recommendation-gap: 16px;
+
+    .list__items > * {
+      flex-basis: 100%;
+    }
+  }
+}
+
+.home-recommendations {
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recommendation-row__controls > .lightbox-control {
+    transition: none;
+
+    &:hover:not(:disabled),
+    &:active:not(:disabled) {
+      transform: none;
+    }
+  }
+}

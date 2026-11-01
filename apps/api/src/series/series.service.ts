@@ -1,5 +1,6 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import type {
+  RelatedTitleKind,
   Ratings,
   SeriesDetails,
   WatchProviders,
@@ -16,6 +17,10 @@ export class SeriesService {
     @Inject(SERIES_PROVIDER) private readonly provider: SeriesProvider,
     @Optional() private readonly ratings?: RatingsService,
   ) {}
+
+  findRelated(id: number, kind: RelatedTitleKind) {
+    return this.provider.findRelated(id, kind);
+  }
 
   findPopular(query: SeriesProviderQuery) {
     return this.provider.findPopular(query);

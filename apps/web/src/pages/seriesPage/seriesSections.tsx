@@ -6,6 +6,7 @@ import type {
   SectionAvailability,
 } from '@movie-explorer/contracts';
 
+import DetailRecommendations from '../../components/detailRecommendations';
 import CastPreview from '../../components/details/credits';
 import useCrewPreview from '../../components/details/credits/useCrewPreview';
 import DetailsTabs from '../../components/details/detailsTabs';
@@ -276,6 +277,7 @@ export default function SeriesSections({
           />
         }
       />
+      <DetailRecommendations resource="series" id={series.id} />
     </div>
   );
 }

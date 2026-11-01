@@ -37,6 +37,7 @@ describe('MoviesService', () => {
   beforeEach(() => {
     movieProvider = {
       findAll: jest.fn(),
+      findRelated: jest.fn(),
       findSuggestions: jest.fn(),
       findOne: jest.fn(),
       findRatings: jest.fn(),

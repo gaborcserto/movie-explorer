@@ -7,6 +7,7 @@ import type {
 import { FaClapperboard, FaPlay, FaTv } from 'react-icons/fa6';
 
 import FeaturedHero from './featuredHero';
+import HomeRecommendations from './homeRecommendations';
 import DiscoverRow from './discoverSection';
 import {
   useDiscoverSection,
@@ -333,6 +334,7 @@ export default function DiscoverPage() {
               </>
             )}
         </section>
+        <HomeRecommendations />
       </div>
     </div>
   );

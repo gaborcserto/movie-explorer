@@ -20,6 +20,8 @@ import {
 import DiscoverPage from './discover';
 
 vi.mock('../../util/apiUtils');
+// Recommendation composition has its own integration coverage.
+vi.mock('./homeRecommendations', () => ({ default: () => null }));
 
 const emptyResponse: SearchResponse = {
   results: [],

@@ -6,6 +6,7 @@ import { PersonsService } from './persons.service';
 describe('PersonsService', () => {
   const provider: jest.Mocked<MovieProvider> = {
     findAll: jest.fn(),
+    findRelated: jest.fn(),
     findOne: jest.fn(),
     findSuggestions: jest.fn(),
     findPerson: jest.fn(),

@@ -1,4 +1,6 @@
 import type {
+  RelatedTitleKind,
+  RelatedTitlesResponse,
   SeriesDetails,
   SearchResponse,
   SeasonDetails,
@@ -22,6 +24,10 @@ export interface SeriesProviderQuery {
 }
 
 export interface SeriesProvider {
+  findRelated(
+    id: number,
+    kind: RelatedTitleKind,
+  ): Promise<RelatedTitlesResponse>;
   findPopular(query: SeriesProviderQuery): Promise<SearchResponse>;
   findImages(id: number): Promise<SeriesImages | undefined>;
   findVideos(id: number): Promise<SeriesVideos | undefined>;

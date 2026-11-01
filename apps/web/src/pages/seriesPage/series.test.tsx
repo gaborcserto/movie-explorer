@@ -40,6 +40,11 @@ vi.mock('../../components/search/headerSearch', () => ({
   default: () => null,
 }));
 
+// Keep hierarchy request-count assertions scoped to seasons, episodes and media.
+vi.spyOn(apiUtils, 'getRelatedTitles').mockResolvedValue({
+  results: [],
+  availability: 'available',
+});
 vi.spyOn(apiUtils, 'getWatchProviders').mockResolvedValue({ providers: [] });
 vi.spyOn(apiUtils, 'getRatings').mockResolvedValue({
   tmdb: { status: 'available', score: 8.5, voteCount: 200 },

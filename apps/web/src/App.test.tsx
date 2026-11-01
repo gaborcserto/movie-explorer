@@ -136,7 +136,7 @@ describe('<App />', () => {
       ).map((link) => link.textContent)
     ).toEqual(['Home', 'Movies', 'Series', 'Library']);
     expect(
-      await screen.findByRole('heading', { name: 'Movies' })
+      await screen.findByRole('heading', { name: 'Movies', level: 2 })
     ).toBeInTheDocument();
     const homeLink = screen.getByRole('link', { name: 'Home' });
     expect(homeLink).toHaveAttribute('href', '/');
@@ -158,7 +158,7 @@ describe('<App />', () => {
 
     expect(await screen.findByText('Sample Movie')).toBeInTheDocument();
     expect(
-      screen.queryByRole('heading', { name: 'Movies' })
+      screen.queryByRole('heading', { name: 'Movies', level: 2 })
     ).not.toBeInTheDocument();
 
     unmount();
@@ -173,7 +173,7 @@ describe('<App />', () => {
     ).toBeInTheDocument();
     expect(getPeople).toHaveBeenCalledWith('', 1, expect.any(AbortSignal));
     expect(
-      screen.queryByRole('heading', { name: 'Movies' })
+      screen.queryByRole('heading', { name: 'Movies', level: 2 })
     ).not.toBeInTheDocument();
   });
 
@@ -184,14 +184,14 @@ describe('<App />', () => {
     await user.click(screen.getByRole('link', { name: 'Movies' }));
     expect(await screen.findByText('Sample Movie')).toBeInTheDocument();
     expect(
-      screen.queryByRole('heading', { name: 'Movies' })
+      screen.queryByRole('heading', { name: 'Movies', level: 2 })
     ).not.toBeInTheDocument();
 
     const homeLink = screen.getByRole('link', { name: 'Home' });
     expect(homeLink).toHaveAttribute('href', '/');
     await user.click(homeLink);
     expect(
-      await screen.findByRole('heading', { name: 'Movies' })
+      await screen.findByRole('heading', { name: 'Movies', level: 2 })
     ).toBeInTheDocument();
     expect(screen.queryByText('Sample Movie')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Back' }));

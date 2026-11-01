@@ -12,6 +12,15 @@ export type RecommendationTitle = Extract<
   { mediaType: 'movie' | 'tv' }
 >;
 
+export type RelatedTitleKind = 'similar' | 'recommendations';
+
+/** Ranked first-page titles; independent of the homepage candidate pools. */
+export interface RelatedTitlesResponse {
+  results: RecommendationTitle[];
+  /** Partial means malformed source entries were omitted. Empty can be available. */
+  availability: 'available' | 'partial';
+}
+
 export interface RecommendationResponse {
   category: RecommendationCategory;
   /** Up to ten unique titles sampled from the first five source pages. */

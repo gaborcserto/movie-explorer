@@ -24,6 +24,7 @@ describe('Series details API (e2e)', () => {
   let app: INestApplication;
   const provider: jest.Mocked<Required<SeriesProvider>> = {
     findPopular: jest.fn(),
+    findRelated: jest.fn(),
     findOne: jest.fn(),
     findCredits: jest.fn(),
     findImages: jest.fn(),
@@ -534,10 +535,16 @@ describe('Series details API (e2e)', () => {
       .expect('Retry-After', '30');
   });
 
-  it.each(['/api/v1/series/1/recommendations'])(
-    'does not expose deferred route %s',
-    async (path) => {
-      await request(app.getHttpServer()).get(path).expect(404);
+  it.each(['similar', 'recommendations'] as const)(
+    'serves optional %s independently of core details',
+    async (kind) => {
+      const result = { results: [], availability: 'available' as const };
+      provider.findRelated.mockResolvedValue(result);
+
+      await request(app.getHttpServer())
+        .get(`/api/v1/series/1/${kind}`)
+        .expect(200, result);
+      expect(provider.findRelated).toHaveBeenCalledWith(1, kind);
       expect(provider.findOne).not.toHaveBeenCalled();
     },
   );

@@ -32,6 +32,7 @@ const movies = [
 
 const movieProvider: jest.Mocked<Required<MovieProvider>> = {
   findAll: jest.fn(),
+  findRelated: jest.fn(),
   findOne: jest.fn(),
   findSuggestions: jest.fn(),
   findPerson: jest.fn(),
@@ -173,6 +174,8 @@ describe('AppController (e2e)', () => {
       '/api/v1/movies/{id}',
       '/api/v1/movies/{id}/watch-providers',
       '/api/v1/movies/{id}/ratings',
+      '/api/v1/movies/{id}/similar',
+      '/api/v1/movies/{id}/recommendations',
       ...['credits', 'photos', 'posters', 'videos'].map(
         (section) => '/api/v1/movies/{id}/' + section,
       ),
@@ -189,6 +192,8 @@ describe('AppController (e2e)', () => {
       '/api/v1/series/{id}/videos',
       '/api/v1/series/{id}/watch-providers',
       '/api/v1/series/{id}/ratings',
+      '/api/v1/series/{id}/similar',
+      '/api/v1/series/{id}/recommendations',
       '/api/v1/series/{id}/seasons/{seasonNumber}',
       '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}',
       '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}/credits',

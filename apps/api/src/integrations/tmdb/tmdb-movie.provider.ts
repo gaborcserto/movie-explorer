@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type {
   MovieDetails,
+  RelatedTitleKind,
   MovieSection,
   MovieSectionResponse,
   SectionAvailability,
@@ -18,6 +19,7 @@ import type {
   RatingResult,
 } from '@movie-explorer/contracts';
 
+import { findRelatedTitles } from './tmdb-related-titles';
 import { TmdbExternalIds } from './tmdb-external-ids';
 import { normalizeTmdbRating } from './tmdb-ratings';
 import type { MovieProvider } from '../../movies/movie-provider';
@@ -72,6 +74,16 @@ export class TmdbMovieProvider implements MovieProvider {
     this.config = config;
     this.mapper = new TmdbMovieMapper(config.imageBaseUrl);
     this.transport = new TmdbTransport(config, this.logger);
+  }
+
+  findRelated(id: number, kind: RelatedTitleKind) {
+    return findRelatedTitles(
+      this.transport,
+      this.config.imageBaseUrl,
+      'movie',
+      id,
+      kind,
+    );
   }
 
   public async findAll(query: MovieQueryParams): Promise<MovieListResponse> {

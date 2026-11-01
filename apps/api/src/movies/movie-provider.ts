@@ -1,4 +1,6 @@
 import type {
+  RelatedTitleKind,
+  RelatedTitlesResponse,
   MovieDetails,
   WatchProviders,
   MovieSection,
@@ -12,6 +14,10 @@ import type {
 } from '@movie-explorer/contracts';
 
 export interface MovieProvider {
+  findRelated(
+    id: number,
+    kind: RelatedTitleKind,
+  ): Promise<RelatedTitlesResponse>;
   findMovieSection(
     id: number,
     section: MovieSection,

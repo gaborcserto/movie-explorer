@@ -8,6 +8,7 @@ import type {
 } from '@movie-explorer/contracts';
 
 import DetailsRatings from './ratings';
+import DetailRecommendations from '../detailRecommendations';
 import { SectionRecovery } from './recovery';
 import { MediaSection } from './media';
 import HeroImage from '../heroImage';
@@ -401,6 +402,7 @@ export function DetailsLowerContent({
           />
         }
       />
+      <DetailRecommendations resource="movies" id={movieData.id} />
     </DetailsLowerLayout>
   );
 }

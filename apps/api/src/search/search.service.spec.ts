@@ -7,6 +7,7 @@ import { SearchService } from './search.service';
 describe('independent autocomplete groups', () => {
   const provider: jest.Mocked<MovieProvider> = {
     findAll: jest.fn(),
+    findRelated: jest.fn(),
     findOne: jest.fn(),
     findPerson: jest.fn(),
     findPeople: jest.fn(),

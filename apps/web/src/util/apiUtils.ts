@@ -1,4 +1,8 @@
 import type {
+  RecommendationCategory,
+  RecommendationResponse,
+  RelatedTitleKind,
+  RelatedTitlesResponse,
   CombinedFilmography,
   FilmographyMediaType,
   MovieDetails,
@@ -54,6 +58,11 @@ import {
   personCore,
 } from './movieValidation';
 import request from './apiTransport';
+import {
+  recommendationResponse,
+  relatedTitlesResponse,
+} from './recommendationValidation';
+import scheduleRecommendation from './recommendationRequests';
 import { ApiRequestError } from './apiErrors';
 
 export { ApiRequestError };
@@ -788,4 +797,44 @@ export async function getRatings(
   }
 
   return { tmdb: body.tmdb, imdb: body.imdb };
+}
+
+// A cold pool takes two default eight-second upstream rounds, plus cold start.
+export const RECOMMENDATION_REQUEST_TIMEOUT_MS = 25_000;
+
+export async function getRecommendations(
+  category: RecommendationCategory,
+  signal?: AbortSignal
+): Promise<RecommendationResponse> {
+  return scheduleRecommendation(async () => {
+    const body = await request<unknown>(
+      `${apiBaseUrl}/api/v1/recommendations/${category}`,
+      { signal },
+      RECOMMENDATION_REQUEST_TIMEOUT_MS
+    );
+
+    if (!recommendationResponse(body, category)) {
+      throw new ApiRequestError('invalid-response');
+    }
+
+    return body;
+  }, signal);
+}
+
+export async function getRelatedTitles(
+  resource: 'movies' | 'series',
+  id: number,
+  kind: RelatedTitleKind,
+  signal?: AbortSignal
+): Promise<RelatedTitlesResponse> {
+  const body = await request<unknown>(
+    `${apiBaseUrl}/api/v1/${resource}/${id}/${kind}`,
+    { signal }
+  );
+
+  if (!relatedTitlesResponse(body, resource === 'movies' ? 'movie' : 'tv')) {
+    throw new ApiRequestError('invalid-response');
+  }
+
+  return body;
 }

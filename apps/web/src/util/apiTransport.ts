@@ -4,7 +4,11 @@ import {
   classifyHttpStatus,
 } from './apiErrors';
 
-async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
+async function request<T>(
+  url: string,
+  init: RequestInit = {},
+  timeoutMs = API_REQUEST_TIMEOUT_MS
+): Promise<T> {
   const controller = new AbortController();
   const callerSignal = init.signal;
   const cancel = () => {
@@ -23,7 +27,7 @@ async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
     if (!controller.signal.aborted) {
       controller.abort('timeout');
     }
-  }, API_REQUEST_TIMEOUT_MS);
+  }, timeoutMs);
   let status: number | undefined;
 
   try {

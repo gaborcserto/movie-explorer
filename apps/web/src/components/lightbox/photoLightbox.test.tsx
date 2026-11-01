@@ -196,7 +196,7 @@ describe('photo lightbox', () => {
     }
     render(<CachedPhoto />);
     expect(screen.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(within(screen.getByRole('dialog')).queryByRole('status')).toBeNull();
   });
 
   it('uses accessible icons for lightbox actions and keeps the zoom percentage visible', async () => {
@@ -383,16 +383,18 @@ describe('photo lightbox', () => {
 
   it('loads only the selected original and handles image errors and navigation recovery', async () => {
     const { user, image } = await open();
-    expect(screen.getByRole('status')).toHaveTextContent('Loading photo');
+    expect(
+      within(screen.getByRole('dialog')).getByRole('status')
+    ).toHaveTextContent('Loading photo');
     expect(screen.getByRole('button', { name: 'Zoom in' })).toBeDisabled();
     expect(document.querySelector('img[src="/original2.jpg"]')).toBeNull();
     fireEvent.error(image);
     expect(screen.getByRole('alert')).toHaveTextContent('Unable to load photo');
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(within(screen.getByRole('dialog')).queryByRole('status')).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Next photo' }));
     expect(screen.queryByRole('alert')).toBeNull();
     load(within(screen.getByRole('dialog')).getByRole('img', { hidden: true }));
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(within(screen.getByRole('dialog')).queryByRole('status')).toBeNull();
     expect(screen.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
   });
 

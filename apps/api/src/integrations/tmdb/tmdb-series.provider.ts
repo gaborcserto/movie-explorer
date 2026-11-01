@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { RatingResult, SeriesDetails } from '@movie-explorer/contracts';
+import type {
+  RatingResult,
+  RelatedTitleKind,
+  SeriesDetails,
+} from '@movie-explorer/contracts';
 
+import { findRelatedTitles } from './tmdb-related-titles';
 import { TmdbExternalIds } from './tmdb-external-ids';
 import { normalizeTmdbRating } from './tmdb-ratings';
 import { mapWatchProviders } from './tmdb-watch-providers.mapper';
@@ -39,6 +44,10 @@ export class TmdbSeriesProvider implements SeriesProvider {
       new Logger(TmdbSeriesProvider.name),
     );
     this.mapper = new TmdbSeriesMapper(config.imageBaseUrl);
+  }
+
+  findRelated(id: number, kind: RelatedTitleKind) {
+    return findRelatedTitles(this.transport, this.imageBaseUrl, 'tv', id, kind);
   }
 
   async findPopular(query: SeriesProviderQuery) {
