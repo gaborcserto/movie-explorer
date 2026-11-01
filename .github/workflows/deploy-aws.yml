@@ -1,0 +1,129 @@
+name: Deploy AWS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aws-production
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    if: github.ref == 'refs/heads/main' && vars.AWS_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm audit --omit=dev
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run coverage
+      - run: npm run build
+      - run: npm run test:e2e
+      - run: npm run aws:package
+      - run: npm run aws:test
+      - run: npm run aws:synth
+      - run: git diff --check
+
+  deploy:
+    needs: quality
+    if: github.ref == 'refs/heads/main' && vars.AWS_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: aws-production
+      url: ${{ steps.outputs.outputs.site }}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'eu-central-1' }}
+      AWS_CREDENTIALS_SECRET: ${{ vars.AWS_CREDENTIALS_SECRET || 'movie-explorer/provider-credentials' }}
+      AWS_SITE_DOMAIN: ${{ vars.AWS_SITE_DOMAIN }}
+      AWS_CERTIFICATE_ARN: ${{ vars.AWS_CERTIFICATE_ARN }}
+      AWS_ALARM_EMAIL: ${{ vars.AWS_ALARM_EMAIL }}
+      AWS_RELEASE_ID: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Check required configuration
+        env:
+          ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          ALARM_EMAIL: ${{ vars.AWS_ALARM_EMAIL }}
+        run: |
+          test -n "$ROLE_ARN" || { echo '::error::AWS_DEPLOY_ROLE_ARN is required'; exit 1; }
+          test -n "$ALARM_EMAIL" || { echo '::error::AWS_ALARM_EMAIL is required'; exit 1; }
+      - run: npm ci
+      - run: npm run build
+      - run: npm run aws:package
+      - run: npm run aws:test
+      - run: npm run aws:synth
+      - name: Authenticate with OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: movie-explorer-${{ github.run_id }}
+      - name: Deploy infrastructure
+        working-directory: infrastructure/aws
+        run: npm run cdk -- deploy MovieExplorer --require-approval never --outputs-file .artifacts/outputs.json
+      - name: Read deployment outputs
+        id: outputs
+        working-directory: infrastructure/aws
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const output = JSON.parse(fs.readFileSync('.artifacts/outputs.json')).MovieExplorer;
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `bucket=${output.BucketName}\ndistribution=${output.DistributionId}\nsite=${output.SiteUrl}\n`);
+          NODE
+      - name: Build frontend for the canonical public origin
+        env:
+          VITE_API_BASE_URL: ''
+          VITE_SITE_URL: ${{ steps.outputs.outputs.site }}
+        run: npm run build --workspace @movie-explorer/web
+      - name: Upload hashed assets before HTML
+        env:
+          BUCKET: ${{ steps.outputs.outputs.bucket }}
+        run: |
+          aws s3 sync apps/web/dist/assets "s3://$BUCKET/assets" --cache-control 'public,max-age=31536000,immutable' --only-show-errors
+          aws s3 sync apps/web/dist "s3://$BUCKET" --exclude 'assets/*' --cache-control 'no-cache' --only-show-errors
+      - name: Invalidate mutable documents
+        env:
+          DISTRIBUTION: ${{ steps.outputs.outputs.distribution }}
+        run: aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION" --paths '/index.html' '/robots.txt' '/sitemap.xml'
+      - name: Public health smoke check
+        env:
+          SITE: ${{ steps.outputs.outputs.site }}
+        run: curl --fail --retry 5 --retry-delay 5 "$SITE/api/health"
+      - name: Save release artifacts for rollback
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: aws-release-${{ github.sha }}
+          retention-days: 30
+          include-hidden-files: true
+          path: |
+            infrastructure/aws/.artifacts/backend.zip
+            infrastructure/aws/.artifacts/outputs.json
+            infrastructure/aws/cdk.out/
+            apps/web/dist/
+      - name: Deployment result
+        if: always()
+        env:
+          RESULT: ${{ job.status }}
+          SITE: ${{ steps.outputs.outputs.site }}
+        run: |
+          echo "Deployment: $RESULT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Public origin: $SITE" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,25 @@
+{
+  "name": "@movie-explorer/aws",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "npm run typecheck && vp fmt -c ../../apps/api/.oxfmtrc.json --check *.ts scripts/*.cjs test/*.cjs edge/*.js",
+    "test": "npm run build && node --test test/*.test.cjs",
+    "test:coverage": "npm run build && node --test --experimental-test-coverage test/*.test.cjs",
+    "synth": "npm run build && cdk synth MovieExplorer --no-lookups",
+    "package:lambda": "node scripts/package-lambda.cjs",
+    "test:package": "node --test test/package.smoke.cjs",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "aws-cdk": "2.1147.0",
+    "aws-cdk-lib": "2.275.0",
+    "constructs": "10.8.1",
+    "typescript": "^5.9.3",
+    "vite-plus": "1.3.0",
+    "yazl": "^3.3.1"
+  }
+}

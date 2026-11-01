@@ -58,4 +58,11 @@ The API end-to-end suite uses a mocked provider and does not require TMDB creden
 
 - [Frontend](apps/web/README.md)
 - [Backend API](apps/api/README.md)
-- [Deployment baseline and SEO delivery limitations](docs/deployment.md)
+- [AWS serverless deployment, OIDC setup, costs and SEO limitations](docs/deployment.md)
+
+The AWS foundation uses private S3/CloudFront and an HTTP API/Lambda backend.
+After the production build, run `npm run aws:package`, `npm run aws:test` and
+`npm run aws:synth` for credential-free artifact and infrastructure checks.
+Deployment is manual, disabled by default, and requires separately authorized
+AWS bootstrap and a protected GitHub environment. No cloud resources are created
+by the local checks.

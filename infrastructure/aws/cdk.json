@@ -1,0 +1,7 @@
+{
+  "app": "node dist/app.js",
+  "versionReporting": false,
+  "context": {
+    "@aws-cdk/aws-lambda:useCdkManagedLogGroup": false
+  }
+}

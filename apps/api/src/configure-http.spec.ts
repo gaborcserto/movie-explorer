@@ -39,6 +39,15 @@ describe('production HTTP configuration', () => {
     await request(app.getHttpServer()).get('/api-docs-json').expect(404);
   });
 
+  it('serves the public API health alias without upstream requests', async () => {
+    await createApp({ NODE_ENV: 'production' });
+    const response = await request(app.getHttpServer())
+      .get('/api/health')
+      .expect(200);
+    expect(response.body).toEqual({ status: 'ok' });
+    expect(response.headers['x-robots-tag']).toBe('noindex');
+  });
+
   it('retains explicit Swagger access for development', async () => {
     await createApp({ SWAGGER_ENABLED: 'true' });
     await request(app.getHttpServer()).get('/api-docs').expect(200);

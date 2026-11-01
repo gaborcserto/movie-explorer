@@ -59,6 +59,15 @@ describe('AppController (e2e)', () => {
     expect(movieProvider.findAll).not.toHaveBeenCalled();
   });
 
+  it('serves the CloudFront health alias without invoking upstream providers', async () => {
+    await request(app.getHttpServer())
+      .get('/api/health')
+      .expect('X-Content-Type-Options', 'nosniff')
+      .expect('X-Robots-Tag', 'noindex')
+      .expect(200, { status: 'ok' });
+    expect(movieProvider.findAll).not.toHaveBeenCalled();
+  });
+
   it.each([
     '',
     '/1',
