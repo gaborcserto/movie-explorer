@@ -57,8 +57,6 @@ The API end-to-end suite uses a mocked provider and does not require TMDB creden
 
 ## Documentation
 
-- [Frontend](apps/web/README.md)
-- [Backend API](apps/api/README.md)
 - [Recommendation API, candidate caching and data ownership](docs/recommendations.md)
 - [AWS serverless deployment, OIDC setup, costs and SEO limitations](docs/deployment.md)
 

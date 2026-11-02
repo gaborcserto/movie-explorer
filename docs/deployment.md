@@ -4,6 +4,12 @@ This repository builds a static React SPA and a separate NestJS HTTP API.
 The AWS foundation below is verified locally. No resources have been provisioned
 and no live deployment, IAM authorization or public-origin checks have occurred.
 
+AWS-08 reviewed the foundation against Favorites-based recommendations on
+2026-11-02. Account-specific onboarding and detailed cost assumptions remain in
+local operator notes. See the [operations guide](deployment/AWS_OPERATIONS.md)
+for public deployment checks, smoke tests and recovery procedures. No cloud
+activity is authorized by this local review.
+
 ## Build and runtime
 
 Use Node.js 24 and npm 11.6.2, matching CI and the root package manager setting.
@@ -65,6 +71,33 @@ Set API variables at runtime through the host's secret/environment mechanism:
 Do not copy local `.env` files into release artifacts. The API supports local
 environment files for development; injected process variables take precedence.
 Keep the configured external API origins trusted and HTTPS in production.
+
+### First AWS environment checklist
+
+The existing stack fixes the production listener/security settings and injects
+only provider secrets; arbitrary shell environment values are not automatically
+copied into Lambda. Verify this checklist against the synthesized template:
+
+| Setting | Intended value/source |
+| --- | --- |
+| `NODE_ENV`, `HOST`, `PORT` | Stack: `production`, `0.0.0.0`, `8080` |
+| `CORS_ORIGINS`, `SWAGGER_ENABLED` | Stack: empty, `false`; browser API calls are same-origin |
+| `VITE_API_BASE_URL` | Empty during production build; do not copy the localhost development example |
+| `VITE_SITE_URL` | Actual HTTPS SiteUrl output, set before frontend build |
+| `VITE_SOCIAL_IMAGE_URL` | Omit until an approved public image exists |
+| `TMDB_ACCESS_TOKEN` | Existing regional secret JSON key: `<server-only TMDB read token>` |
+| `OMDB_API_KEY` | Same secret JSON key: `<server-only OMDb key>` or empty string |
+| TMDB URLs / locale / timeout | Existing API defaults: HTTPS provider/image origins, `en-US`, no region filter, `8000ms` |
+| OMDb URL / deadline | Existing HTTPS default; fixed `3000ms`, unavailable ratings when key absent |
+| `AWS_LAMBDA_EXEC_WRAPPER`, adapter port/readiness | Stack: `/opt/bootstrap`, `8080`, `/health`, healthy `200`, async init |
+| `AWS_REGION`, `AWS_CREDENTIALS_SECRET`, `AWS_ALARM_EMAIL` | Operator configuration for CDK/workflow, not frontend build secrets |
+| `AWS_RELEASE_ID` | Unique reviewed release identifier (workflow: commit SHA); refreshes secret injection on redeploy |
+
+The Lambda environment does not currently expose TMDB locale/timeout overrides
+through CDK configuration. Defaults fit the reviewed budget; a future change
+must explicitly update the stack and tests. Credentials never enter `VITE_*`.
+Do not dump the resolved Lambda environment, log secret values, or enable Swagger
+publicly to troubleshoot. Health validates the listener, not provider credentials.
 
 ## Routing and connectivity
 
@@ -276,177 +309,51 @@ old deployments; deleting a stack alone does not stop all retained storage costs
 
 ### Low-traffic cost scenario
 
-Pricing reviewed 2026-11-01. Illustrative monthly usage: 100,000 CloudFront requests,
-1 GB delivery, 10,000 API requests, average Lambda duration 1 second at 512 MiB,
-0.1 GB logs, less than 1 GB total S3/CDK storage, three standard alarms and one
-provider secret. Budget approximately $0.50-2/month under these assumptions,
-excluding taxes, account-wide competing usage and unusual deployment churn.
-The $0-5 objective is not a guarantee.
-
-- [CloudFront pricing/FAQ](https://aws.amazon.com/cloudfront/faqs/): pay-as-you-go
-  monthly allowance is 1 TB delivery and 10 million requests across the account;
-  this is distinct from flat-rate plans. Two Function invocations per HTML
-  request and invalidations are additional usage dimensions. No paid plan is selected.
-- [HTTP API pricing](https://aws.amazon.com/api-gateway/pricing/): approximately
-  $0.01 for 10,000 calls at the first-tier $1/million rate before applicable benefits.
-- [Lambda pricing](https://aws.amazon.com/lambda/pricing/): 5,000 GB-seconds and
-  10,000 requests are small at on-demand ARM rates (roughly $0.07 compute before
-  benefits). The published free allowance includes 1 million requests and
-  400,000 GB-seconds, subject to account eligibility and aggregate use.
-- [S3](https://aws.amazon.com/s3/pricing/) storage, PUT/GET operations and retained
-  versions are usage-based. Origin transfers to CloudFront avoid ordinary internet
-  transfer billing. Frequent releases and accumulated unused hashes add cost.
-- [CloudWatch](https://aws.amazon.com/cloudwatch/pricing/) logs and alarms can
-  exceed compute costs at low traffic. Three standard alarms are about $0.30/month
-  before applicable free allowances; log ingestion/storage varies by region.
-- [Secrets Manager](https://aws.amazon.com/secrets-manager/pricing/) adds roughly
-  $0.40/secret/month plus API usage; this predictable charge avoids runtime SDK
-  lookups and a new secret-loader bootstrap. Standard SSM parameters can be cheaper,
-  but adopting them would require a separately tested secure runtime loading path.
-- [Free Tier](https://aws.amazon.com/free/) benefits depend on account creation
-  date and plan. New-account credits are temporary; do not assume the older
-  service-specific 12-month benefits apply to every account. Recalculate in the
-  selected region's pricing calculator before authorization.
-
-Sustained bots, slow upstreams/cold starts, API bursts, exhausted shared Free Tier,
-large responses/downloads, verbose logs and retained storage can exceed $5.
-There are no enforceable CloudFront spend/traffic ceilings in this foundation.
+The 2026-11-02 Frankfurt estimates use $1.20/million HTTP API requests,
+$0.0000133334/GB-second for ARM Lambda and $0.63/GB for standard log ingestion,
+before benefits. Nearly idle/light portfolio gross scenarios are approximately
+$0.74/$1.15 per month; moderate accidental traffic can exceed $5. Account-wide
+allowances and credits can reduce actual bills, but are not guaranteed. These
+estimates include storage, requests, logs, SNS, alarms, Secrets Manager, retained
+assets and spikes. Confirm current account/plan eligibility and prices before
+authorizing resources; there is no automatic shutdown or paid CDN plan. Detailed
+assumptions and price sources remain in local cost-planning notes.
 
 ## Manual AWS setup and deployment
 
-Everything in this section is a future operator procedure. Do not run it as part
-of offline repository preparation. Use MFA/SSO administrator sessions; no long-lived
-AWS access keys belong in GitHub. Keep bootstrap and routine deployment separate.
+Account-specific onboarding, billing preparation, OIDC, CDK bootstrap and
+cleanup steps are kept in local operator notes. Before deployment, select and
+verify the intended account and region, review quotas and current pricing, and
+configure billing alerts. Keep provider credentials in Secrets Manager and
+long-lived AWS access keys out of GitHub. Bootstrap, resource creation,
+deployment, rollback and deletion each require separate authorization; never
+accept the CDK default `AdministratorAccess` execution policy.
 
-1. Choose the account and region, review prices/quotas, configure billing alerts,
-   and create the provider secret securely. Confirm TMDB/OMDb usage permissions.
-2. Add or reuse the IAM OIDC provider `https://token.actions.githubusercontent.com`
-   with audience `sts.amazonaws.com`. Do not create a duplicate provider.
-3. Review and manually install `infrastructure/aws/bootstrap.cfn.json` as an
-   administrator stack named `MovieExplorerBootstrapAccess` with
-   `CAPABILITY_NAMED_IAM`. Set DeployRegion and CredentialsSecretName. Leave
-   DistributionId as NOT_CONFIGURED for the initial installation. No credentials
-   or account identifiers are stored in this template.
-4. Use its ExecutionPolicyArn output with the installed CDK CLI:
+The existing workflow is a manual `workflow_dispatch` on protected `main`,
+opt-in through `AWS_DEPLOY_ENABLED`, and uses GitHub OIDC with a protected
+`aws-production` environment. Its quality job has no AWS token permission; the
+deployment job uses short-lived credentials after review. The workflow cannot
+create or verify environment reviewers and branch protections. The OIDC trust
+must use audience `sts.amazonaws.com` and subject
+`repo:gaborcserto/movie-explorer:environment:aws-production`; environment branch
+restrictions and the workflow's main-branch checks are both required. Keep
+`AWS_DEPLOY_ENABLED` false until those protections and the account-specific
+deployment diff have been reviewed. See the [operations guide](deployment/AWS_OPERATIONS.md)
+for release gates, public smoke checks, recovery, rollback and retained-resource
+cleanup. These controls bound access and capacity; they do not guarantee zero
+spend or stop all abuse.
 
-   ```sh
-   npm run cdk --workspace @movie-explorer/aws -- bootstrap aws://ACCOUNT/REGION --cloudformation-execution-policies EXECUTION_POLICY_ARN
-   ```
-
-   Replace placeholders locally. Do not accept the CDK default AdministratorAccess
-   execution policy. This creates billable-capable bootstrap resources and must
-   be separately authorized. Review bootstrap retention and lifecycle settings.
-5. Run the local quality gates, then `npm run aws:package`, `npm run aws:test` and
-   `npm run aws:synth`. Inspect `cdk.out/MovieExplorer.template.json` and the ZIP.
-   Set AWS_REGION, AWS_CREDENTIALS_SECRET and AWS_ALARM_EMAIL for the intended
-   account. After authorization, perform the first application deployment using
-   the administrator session (the GitHub role cannot yet invalidate a distribution):
-
-   ```sh
-   npm run cdk --workspace @movie-explorer/aws -- deploy MovieExplorer --outputs-file .artifacts/outputs.json
-   ```
-
-6. Read the actual SiteUrl, BucketName and DistributionId outputs. Build the
-   frontend with VITE_SITE_URL=SiteUrl and VITE_API_BASE_URL empty, upload hashed
-   assets first and mutable files second using the workflow's exact upload commands,
-   and invalidate `/index.html`, `/robots.txt`, `/sitemap.xml`. Never use public-read
-   ACLs or `sync --delete` during release. Confirm the SNS email subscription.
-7. Update the administrator access stack's DistributionId parameter with the real
-   output, retaining all other parameter values. This scopes routine invalidation
-   permission to the application distribution.
-8. Configure GitHub environment `aws-production`: required reviewers, prevent
-   self-review and deployment branches restricted to protected main. Protect the
-   workflow and infrastructure with repository review rules. Confirm the repository
-   plan supports environment protection; configure an equivalent external approval
-   gate before enabling if it does not. The YAML alone cannot create that protection.
-9. Set repository variable AWS_DEPLOY_ENABLED=true only after authorization and
-   environment protection are complete. Dispatch Deploy AWS explicitly from main.
-
-The OIDC trust subject is exactly
-`repo:gaborcserto/movie-explorer:environment:aws-production`, with audience
-`sts.amazonaws.com`, following [GitHub's AWS OIDC guidance](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws).
-Environment subjects do not include a branch, so environment branch restrictions
-and workflow main checks are both required. Pull requests never trigger deployment.
-
-### IAM review boundaries
-
-The routine GitHub role can assume only this region/account's CDK deploy and file
-publishing roles, read this stack/bootstrap version, upload/read the frontend bucket,
-and invalidate the one configured distribution. It cannot read provider secrets,
-change IAM or bootstrap the account directly. The separate CloudFormation execution
-policy creates the application resources. IAM creation/pass-role is limited to the
-named runtime role with a log-only permission boundary; that policy cannot remove
-the boundary or alter its managed policy.
-
-Some infrastructure creation cannot be scoped to a resource ID that does not yet
-exist. CloudFront create actions require `*`; its subsequent operations and
-regional HTTP API operations use service-resource patterns. CloudWatch Logs
-delivery setup and group discovery require explicit control-plane actions on
-`*`, restricted to DeployRegion. Review these exceptions and use a dedicated
-portfolio account if other workloads exist. The administrator policies are
-source-reviewed templates, not a claim of live IAM authorization testing. Do not
-silently expand them to AdministratorAccess if an AWS authorization check fails.
-
-### GitHub variables and secrets
-
-| Variable | Value |
-| --- | --- |
-| AWS_DEPLOY_ENABLED | Absent/false by default; true only after authorization |
-| AWS_DEPLOY_ROLE_ARN | DeploymentRoleArn output from administrator access stack |
-| AWS_REGION | Default eu-central-1 |
-| AWS_CREDENTIALS_SECRET | Existing secret name, default movie-explorer/provider-credentials |
-| AWS_ALARM_EMAIL | Required by workflow; confirm the SNS subscription |
-| AWS_SITE_DOMAIN | Optional future hostname, paired with certificate ARN |
-| AWS_CERTIFICATE_ARN | Existing validated ACM certificate in us-east-1 |
-
-No GitHub credential secrets are required. TMDB/OMDb values stay in AWS Secrets
-Manager. AWS account/role identifiers are operator configuration, never committed.
-The workflow obtains short-lived OIDC credentials only after offline build and
-package checks. Required quality gates run in a separate job with no OIDC permission.
-
-### Subsequent deployments, rollback and cleanup
-
-Dispatch Deploy AWS from main. It reruns application gates, audit, package tests
-and synthesis before protected-environment deployment. CloudFormation changes the
-backend, the frontend rebuild uses the actual public origin, hashed assets upload
-before HTML, mutable files revalidate, and health is checked with retries. A failure
-is visible in the job summary/logs; deployments are serialized and never canceled
-mid-update. Existing CI and CodeQL gates remain intact.
-
-The workflow retains the ZIP, cloud assembly, outputs and exact web build for 30
-days. Preserve the previous successful artifact before an update. For rollback,
-use an authorized operator session to deploy the previous cloud assembly with
-`cdk --app PATH_TO_SAVED_CDK_OUT deploy MovieExplorer` (through the installed CDK
-workspace command). Restore the corresponding web artifact, uploading hashes
-before mutable files, then invalidate the three document paths and smoke-test.
-If assets expired, the saved cloud assembly/ZIP must be re-published from the
-artifact. Do not mix a previous HTML document with a different release's hashes.
-CloudFormation automatically rolls back failed infrastructure updates; it cannot
-undo a partially completed S3 upload. A missing 30-day artifact requires rebuilding
-the known revision in a separate checkout and reviewing changes; never rewrite
-repository history for rollback.
-
-After deployment, check `/api/health`, direct movie/series/person/season/episode
-links, search/autocomplete, filtering, history, library controls, galleries,
-recovery, headers, real static errors, API JSON errors, robots and sitemap. Verify
-cache headers and raw HTML social metadata at the final HTTPS origin. Confirm
-alert delivery and provider quotas. Local synthesis cannot verify any of these
-live service behaviors.
-
-For removal, disable workflow authorization, review retained artifacts, and run
-an explicitly authorized `cdk destroy MovieExplorer`. The retained private bucket
-and logs, provider secret, access stack and CDKToolkit resources remain. Empty and
-remove storage only after rollback/data-retention requirements end; remove access
-roles and OIDC provider only if not shared. Check billing for retained resources.
-
-For a future domain, obtain and validate an ACM certificate in us-east-1 manually,
-configure AWS_SITE_DOMAIN/AWS_CERTIFICATE_ARN together, redeploy and point DNS to
-CloudFront. No Route 53 hosted zone, purchased domain or certificate is created by
-this code. Rebuild with the canonical HTTPS origin; decide apex/www redirects and
-validate robots/canonicals/sitemap at that origin. CloudFront's default hostname
-requires no domain purchase.
-
+For a custom domain, obtain and validate an ACM certificate in `us-east-1`, set
+`AWS_SITE_DOMAIN` and `AWS_CERTIFICATE_ARN` together, then redeploy and point DNS
+to CloudFront. The stack creates no Route 53 zone, domain purchase or certificate.
+Rebuild with the canonical HTTPS origin and verify canonical URLs, robots and
+sitemap at that origin. The CloudFront default hostname requires no domain.
 ## Dependency security status
+
+Rechecked on 2026-11-02 for AWS-08: the full audit remains 44 affected development
+packages (3 low, 41 moderate); `npm audit --omit=dev` reports zero. No dependency
+changes, forced upgrades or finding suppressions were needed. The classifications
+below remain applicable; the artifact production install is checked separately.
 
 As of 2026-11-01, the original full audit reported 54 affected packages (3 low,
 47 moderate, 3 high, 1 critical); production reported four (two high, two moderate).

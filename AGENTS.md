@@ -173,8 +173,12 @@ architecture, setup, environment variables, scripts, testing, API usage, and
 development workflow. Do not leave generated framework README content as the
 primary project documentation; use comments for important reasoning rather
 than restating code.
-Keep internal audit reports, phase plans, and development notes in
-`.notes/`, not in the repository root.
+Keep public, maintained technical documentation in `docs/`. Keep internal
+account setup, personal cost planning, temporary research, audits, and agent
+checkpoints in `.notes/`. Stable deployment architecture and operations may
+remain public when they contain no sensitive configuration. Avoid duplicate
+documentation and broken references; do not publish local-only files merely to
+make links work.
 
 Inspect only files relevant to the requested change before expanding scope,
 and avoid reading generated output, caches, dependencies, or unrelated files

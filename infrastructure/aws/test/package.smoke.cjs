@@ -14,23 +14,34 @@ let isolatedArtifact;
 
 // Fetch blocks some valid ephemeral ports (for example SIP ports on Windows).
 // Native HTTP tests the listener without browser-specific blocked-port rules.
-function get(url) {
+function get(url, body) {
   return new Promise((resolve, reject) => {
-    http
-      .get(url, (response) => {
-        const chunks = [];
-        response.on('data', (chunk) => chunks.push(chunk));
-        response.on('end', () =>
-          resolve(
-            new Response(Buffer.concat(chunks), {
-              status: response.statusCode,
-              headers: response.headers,
-            }),
-          ),
-        );
-        response.on('error', reject);
-      })
+    const outgoing = http
+      .request(
+        url,
+        {
+          method: body === undefined ? 'GET' : 'POST',
+          headers: {
+            'content-type': 'application/json',
+            origin: 'https://foreign.invalid',
+          },
+        },
+        (response) => {
+          const chunks = [];
+          response.on('data', (chunk) => chunks.push(chunk));
+          response.on('end', () =>
+            resolve(
+              new Response(Buffer.concat(chunks), {
+                status: response.statusCode,
+                headers: response.headers,
+              }),
+            ),
+          );
+          response.on('error', reject);
+        },
+      )
       .on('error', reject);
+    outgoing.end(body === undefined ? undefined : JSON.stringify(body));
   });
 }
 
@@ -137,6 +148,7 @@ test(
         assert.deepEqual(await response.json(), { status: 'ok' });
         assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
         assert.equal(response.headers.get('x-powered-by'), null);
+        assert.equal(response.headers.get('access-control-allow-origin'), null);
       }
 
       for (const route of ['/api-docs', '/api-docs-json', '/api/missing']) {
@@ -151,6 +163,46 @@ test(
         (await failure.text()).includes('offline-smoke-placeholder'),
         false,
       );
+      assert.equal(output.includes('offline-smoke-placeholder'), false);
+
+      const preferences = {
+        mediaType: 'movie',
+        favoriteIds: [1],
+        excludedIds: [],
+      };
+      const personalized = await get(
+        `${base}/api/v1/recommendations/personalized`,
+        preferences,
+      );
+      assert.equal(personalized.status, 502);
+      assert.equal(
+        personalized.headers.get('cache-control'),
+        'private, no-store',
+      );
+      assert.equal(
+        (await personalized.text()).includes('offline-smoke-placeholder'),
+        false,
+      );
+
+      for (const invalidBody of [
+        { ...preferences, favoriteIds: [1, 2, 3, 4] },
+        {
+          ...preferences,
+          excludedIds: Array.from({ length: 1001 }, (_, index) => index + 1),
+        },
+        { ...preferences, token: 'unexpected-field' },
+        { ...preferences, mediaType: 'person' },
+      ]) {
+        assert.equal(
+          (
+            await get(
+              `${base}/api/v1/recommendations/personalized`,
+              invalidBody,
+            )
+          ).status,
+          400,
+        );
+      }
       assert.equal(output.includes('offline-smoke-placeholder'), false);
       assert.equal(
         fs.readFileSync(path.join(artifact, 'run.sh'), 'utf8').includes('\r'),

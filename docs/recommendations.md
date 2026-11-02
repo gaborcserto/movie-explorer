@@ -36,7 +36,7 @@ parameters, availability and 400/429/502/504 responses.
 
 ## Retrieval and failures
 
-The provider requests page 1, then pages 2â€“5 concurrently where page one's
+The provider requests page 1, then pages 2–5 concurrently where page one's
 `totalPages` permits. It preserves source rank before sampling, validates page
 envelopes/identity, skips invalid or adult rows through the existing mapper,
 deduplicates by identity and retains at most 100 candidates. It never fetches
@@ -68,7 +68,7 @@ without background timers. Idle expired entries can remain until next activity,
 within the same four-entry limit. Concurrent same-category loads share a promise;
 failed, partial and settled promises do not leak into later retries.
 
-Each request samples up to ten distinct titles using Fisherâ€“Yates without
+Each request samples up to ten distinct titles using Fisher–Yates without
 replacement on a copy of the pool. Sampling does not change cached ordering or
 refetch pages. Empty and undersized pools work naturally. Separate selections
 may overlap or even match; public GET categories have no preference payload or cross-category exclusion.
@@ -250,6 +250,25 @@ The existing 25-second homepage browser deadline and 12-second global deadline
 are unchanged. Elevated server deadlines/cold starts can still exceed the browser
 budget. Cancellation releases browser work and prevents obsolete UI writes;
 existing shared, timeout-bounded Popular work may continue to warm the cache.
+
+AWS-08 verifies this sequencing through service, transport, mapper and cache
+with deterministic fake-time tests. Responses just below each default deadline
+take 21,970ms for cold personalized fallback (15,980ms without seeds). These
+numbers are simulated upstream budgets, not measured Lambda latency. The 25s
+deadline has about 3s headroom under these assumptions; retain it pending actual
+AWS cold/warm measurements. Initialization, queueing and internet latency can
+consume that headroom. No global deadline increase is justified by local tests.
+
+Concurrency bounds above are **per request**. Concurrent local callers can
+overlap Similar calls (two three-seed requests reach six); same-media Popular
+loads share one five-page operation, while Movie and Series pools are separate.
+There is no process-wide TMDB semaphore or cross-Lambda cache. The deployment
+uses API stage throttling and five reserved Lambda executions to bound capacity.
+Uncached partial pools recover on the next request, so explicit retries or
+independent callers can repeat work during outages. There is no automatic retry
+loop: mounted tab retention, the two-slot browser scheduler, shared in-flight
+pools and manual rate-limit-aware retry prevent ordinary tab-switch storms.
+These controls do not provide a public-API billing cap or stop determined abuse.
 
 The four-category Popular cache remains unchanged: 30-minute TTL, four-entry
 capacity, concurrent-load deduplication, no partial/error caching. No per-title
