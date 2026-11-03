@@ -410,6 +410,23 @@ describe('Series hierarchy', () => {
 
   it('renders accessible Cast and Crew tabs and keeps each preview mounted', async () => {
     const user = userEvent.setup();
+    const castObservers: {
+      callback: ResizeObserverCallback;
+      observed: Set<Element>;
+    }[] = [];
+    const CastResizeObserverMock = function CastResizeObserverMock(
+      this: object,
+      callback: ResizeObserverCallback
+    ) {
+      const observed = new Set<Element>();
+      castObservers.push({ callback, observed });
+      Object.assign(this, {
+        observe: (element: Element) => observed.add(element),
+        disconnect: () => observed.clear(),
+        unobserve: (element: Element) => observed.delete(element),
+      });
+    };
+    vi.stubGlobal('ResizeObserver', CastResizeObserverMock);
     fetchMock.mockResolvedValue(
       Response.json({
         ...series,
@@ -484,26 +501,55 @@ describe('Series hierarchy', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('tabpanel', { name: 'Cast' })).toBeVisible();
     expect(cast.getByRole('link', { name: 'Actor 1' })).toBeVisible();
+    const castScroll = cast.getByRole('region', { name: 'cast members' });
+    const castObserver = castObservers.find(({ observed }) =>
+      observed.has(castScroll)
+    );
+    expect(castObserver).toBeDefined();
+    act(() =>
+      castObserver?.callback(
+        [{ contentRect: { width: 900 } } as ResizeObserverEntry],
+        {} as ResizeObserver
+      )
+    );
+    expect(cast.getByRole('status')).toHaveTextContent(
+      'Showing 12 of 40 cast members'
+    );
+    act(() =>
+      castObserver?.callback(
+        [{ contentRect: { width: 1300 } } as ResizeObserverEntry],
+        {} as ResizeObserver
+      )
+    );
     expect(cast.getByRole('status')).toHaveTextContent(
       'Showing 16 of 40 cast members'
     );
-    expect(cast.getByRole('link', { name: 'Actor 16' })).toBeVisible();
-    expect(cast.queryByRole('link', { name: 'Actor 17' })).toBeNull();
+    act(() =>
+      castObserver?.callback(
+        [{ contentRect: { width: 800 } } as ResizeObserverEntry],
+        {} as ResizeObserver
+      )
+    );
+    expect(cast.getByRole('status')).toHaveTextContent(
+      'Showing 14 of 40 cast members'
+    );
+    expect(cast.getByRole('link', { name: 'Actor 14' })).toBeVisible();
+    expect(cast.queryByRole('link', { name: 'Actor 15' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Writer Producer' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show more cast' }));
     expect(cast.getByRole('status')).toHaveTextContent(
-      'Showing 24 of 40 cast members'
+      'Showing 22 of 40 cast members'
     );
-    expect(cast.getByRole('link', { name: 'Actor 24' })).toBeVisible();
-    expect(cast.queryByRole('link', { name: 'Actor 25' })).toBeNull();
+    expect(cast.getByRole('link', { name: 'Actor 22' })).toBeVisible();
+    expect(cast.queryByRole('link', { name: 'Actor 23' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show more cast' }));
     expect(cast.getByRole('status')).toHaveTextContent(
-      'Showing 32 of 40 cast members'
+      'Showing 30 of 40 cast members'
     );
-    expect(cast.getByRole('link', { name: 'Actor 32' })).toBeVisible();
-    expect(cast.queryByRole('link', { name: 'Actor 33' })).toBeNull();
+    expect(cast.getByRole('link', { name: 'Actor 30' })).toBeVisible();
+    expect(cast.queryByRole('link', { name: 'Actor 31' })).toBeNull();
 
     castTab.focus();
     await user.keyboard('{ArrowRight}');
@@ -526,7 +572,7 @@ describe('Series hierarchy', () => {
     crewTab.focus();
     await user.keyboard('{Home}');
     expect(castTab).toHaveFocus();
-    expect(cast.getByRole('link', { name: 'Actor 32' })).toBeVisible();
+    expect(cast.getByRole('link', { name: 'Actor 30' })).toBeVisible();
     expect(
       screen.getByRole('button', { name: 'Show less cast' })
     ).toBeVisible();
@@ -534,9 +580,9 @@ describe('Series hierarchy', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show less cast' }));
     expect(
       within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
-    ).toHaveTextContent('Showing 16 of 40 cast members');
-    expect(cast.getByRole('link', { name: 'Actor 16' })).toBeVisible();
-    expect(cast.queryByRole('link', { name: 'Actor 17' })).toBeNull();
+    ).toHaveTextContent('Showing 14 of 40 cast members');
+    expect(cast.getByRole('link', { name: 'Actor 14' })).toBeVisible();
+    expect(cast.queryByRole('link', { name: 'Actor 15' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show less cast' })).toBeNull();
 
     castTab.focus();
@@ -611,7 +657,7 @@ describe('Series hierarchy', () => {
       })
     );
     setup('/series/1');
-    await screen.findByText('Showing 16 of 19 cast members');
+    await screen.findByText('Showing 14 of 19 cast members');
     await user.click(screen.getByRole('button', { name: 'Show more cast' }));
     expect(
       await screen.findByText('Showing 19 of 19 cast members')

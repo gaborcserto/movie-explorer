@@ -636,45 +636,6 @@
   display: none;
 }
 
-.series-credits .cast-grid {
-  display: grid;
-  gap: 16px 10px;
-  grid-template-columns: repeat(
-    auto-fill,
-    minmax(min(100%, max(8.75rem, calc(12.5% - 8.75px))), 1fr)
-  );
-  margin: 0;
-  overflow: visible;
-  padding: 0;
-  scroll-snap-type: none;
-  width: 100%;
-}
-
-.series-credits .cast-member {
-  flex: initial;
-}
-
-.series-credits .cast-member__image {
-  max-width: none;
-}
-
-.series-credits .cast-member h3 {
-  font-size: 14px;
-}
-
-.series-credits .cast-member p {
-  display: -webkit-box;
-  overflow: hidden;
-  overflow-wrap: anywhere;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  color: rgb(255 255 255 / 0.62);
-  font-size: 12px;
-  line-height: 1.35;
-  margin-top: 4px;
-}
-
 .season-tabs {
   display: flex;
   gap: 20px;

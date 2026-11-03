@@ -24,6 +24,22 @@ const declarations = (selector: string) =>
 const declarationsForMedia = (selector: string, query: string) =>
   findDeclarationsForMedia(stylesheet, selector, query);
 
+function declarationsForContainer(selector: string, query: string) {
+  let gridTemplateColumns: string | undefined;
+  stylesheet.walkAtRules('container', (container) => {
+    if (container.params !== query) {
+      return;
+    }
+    container.walkRules(selector, (rule) => {
+      rule.walkDecls('grid-template-columns', (declaration) => {
+        gridTemplateColumns = declaration.value;
+      });
+    });
+  });
+
+  return gridTemplateColumns;
+}
+
 test('keeps all card names coral and role labels muted without changing typography', () => {
   expect(declarations('.cast-member h3')).toMatchObject({
     color: '#f65261',
@@ -59,49 +75,51 @@ test('keeps all card names coral and role labels muted without changing typograp
   ).toBe('0 16px 30px rgba(0, 0, 0, 0.32)');
 });
 
-test('uses five desktop columns, four tablet columns and horizontal Cast scrolling on mobile', () => {
-  const mediaRules: Array<{ query: string; display?: string }> = [];
-  stylesheet.walkAtRules('media', (media) => {
-    if (!media.params.includes('max-width')) {
-      return;
-    }
-    media.walkRules('.cast-grid', (rule) => {
-      mediaRules.push({
-        query: media.params,
-        display: rule.nodes
-          ?.filter((node) => node.type === 'decl' && node.prop === 'display')
-          .map((node) => (node.type === 'decl' ? node.value : ''))
-          .at(-1),
-      });
-    });
-  });
-
-  expect(mediaRules.map(({ query }) => query)).toEqual([
-    '(max-width: 991.98px)',
-    '(max-width: 767.98px)',
-  ]);
-  expect(mediaRules[1].display).toBe('flex');
+test('fills the desktop Cast grid and preserves the mobile/tablet scroller', () => {
   expect(declarations('.cast-grid')).toMatchObject({
     display: 'grid',
     'grid-template-columns': 'repeat(5, minmax(0, 1fr))',
+    gap: '20px 12px',
   });
-  expect(
-    declarationsForMedia('.cast-grid', '(max-width: 991.98px)')
-  ).toMatchObject({
-    'grid-template-columns': 'repeat(4, minmax(0, 1fr))',
+  expect(declarations('.cast-member')).toMatchObject({
+    'min-width': '0',
   });
+  expect(declarations('.cast-scroll')).toMatchObject({
+    'box-sizing': 'border-box',
+    'container-type': 'inline-size',
+    'max-width': '100%',
+    'min-width': '0',
+    width: '100%',
+  });
+  expect(declarationsForContainer('.cast-grid', '(min-width: 850px)')).toBe(
+    'repeat(6, minmax(0, 1fr))'
+  );
+  expect(declarationsForContainer('.cast-grid', '(min-width: 1250px)')).toBe(
+    'repeat(8, minmax(0, 1fr))'
+  );
   expect(
-    declarationsForMedia('.cast-grid', '(max-width: 767.98px)')
+    declarationsForMedia('.cast-scroll', '(width <= 1023.98px)')
   ).toMatchObject({
-    display: 'flex',
     'overflow-x': 'auto',
     'overscroll-behavior-x': 'contain',
-    'scroll-snap-type': 'x proximity',
+    'scroll-snap-type': 'x mandatory',
     'scrollbar-width': 'none',
   });
   expect(
-    declarationsForMedia('.cast-member', '(max-width: 767.98px)')
-  ).toMatchObject({ flex: '0 0 148px', 'scroll-snap-align': 'start' });
+    declarationsForMedia('.cast-grid', '(width <= 1023.98px)')
+  ).toMatchObject({ display: 'flex', width: '100%', gap: '16px' });
+  expect(
+    declarationsForMedia('.cast-member', '(width <= 1023.98px)')
+  ).toMatchObject({
+    flex: '0 0 calc((100% - 48px) / 4)',
+    'scroll-snap-align': 'start',
+  });
+  expect(
+    declarationsForMedia('.cast-grid', '(width <= 767.98px)')
+  ).toMatchObject({ gap: '12px' });
+  expect(
+    declarationsForMedia('.cast-member', '(width <= 767.98px)')['flex-basis']
+  ).toBe('calc((100% - 12px) / 2)');
   expect(declarations('.cast-member')).toMatchObject({ 'min-width': '0' });
   expect(declarations('.cast-member__image')).toMatchObject({
     'aspect-ratio': '2/3',
@@ -181,10 +199,11 @@ test('uses a larger desktop Cast column and a responsive Crew sidebar', () => {
     'repeat(5, minmax(0, 1fr))'
   );
   expect(
-    declarationsForMedia('.cast-grid', '(max-width: 991.98px)')[
-      'grid-template-columns'
-    ]
-  ).toBe('repeat(4, minmax(0, 1fr))');
+    declarationsForMedia('.cast-grid', '(width <= 1023.98px)')
+  ).toMatchObject({ display: 'flex', width: '100%' });
+  expect(declarations('.cast-member__link:focus-visible').outline).toBe(
+    '2px solid #f65261'
+  );
 });
 
 test('uses compact Crew name grids, neutral links and visible focus', () => {

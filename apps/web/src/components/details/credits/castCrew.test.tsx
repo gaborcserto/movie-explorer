@@ -1,10 +1,12 @@
 import { RouterProvider } from 'react-router/dom';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, MemoryRouter } from 'react-router';
+import { vi } from 'vitest';
 import type { MovieDetails } from '@movie-explorer/contracts';
 
 import DetailsContent, { DetailsLowerContent } from '../detailsContent';
+import CastPreview from './castPreview';
 
 const base: MovieDetails = {
   id: 1,
@@ -51,7 +53,7 @@ test('shows ten actors, appends ten per click then a partial batch without dupli
   const user = userEvent.setup();
   setup();
   const first = cast().getByRole('link', { name: 'Actor 1' });
-  expect(cast().getAllByRole('article')).toHaveLength(10);
+  expect(cast().getAllByRole('listitem')).toHaveLength(10);
   expect(cast().queryByText('Story')).toBeNull();
   expect(cast().queryByText('Director Two')).toBeNull();
   expect(cast().getByText('Character 1')).toBeVisible();
@@ -59,14 +61,14 @@ test('shows ten actors, appends ten per click then a partial batch without dupli
   const more = cast().getByRole('button', { name: 'Show more cast' });
   expect(
     more.closest('.credit-preview-controls')?.previousElementSibling
-  ).toHaveClass('cast-grid');
+  ).toHaveClass('cast-scroll');
   more.focus();
   await user.keyboard('{Enter}');
-  expect(cast().getAllByRole('article')).toHaveLength(20);
+  expect(cast().getAllByRole('listitem')).toHaveLength(20);
   expect(more).toHaveFocus();
   expect(cast().getByRole('link', { name: 'Actor 1' })).toBe(first);
   await user.keyboard('{Enter}');
-  expect(cast().getAllByRole('article')).toHaveLength(25);
+  expect(cast().getAllByRole('listitem')).toHaveLength(25);
   expect(cast().getByRole('status')).toHaveTextContent('Showing 25 of 25');
   expect(cast().getByRole('status')).toHaveFocus();
   expect(cast().queryByRole('button', { name: 'Show more cast' })).toBeNull();
@@ -79,9 +81,81 @@ test('shows ten actors, appends ten per click then a partial batch without dupli
   ).toEqual(actors.map((person) => `/person/${person.id}`));
   less.focus();
   await user.keyboard(' ');
-  expect(cast().getAllByRole('article')).toHaveLength(10);
+  expect(cast().getAllByRole('listitem')).toHaveLength(10);
   expect(cast().getByRole('status')).toHaveFocus();
   expect(cast().queryByRole('button', { name: 'Show less cast' })).toBeNull();
+});
+
+test('exposes Cast as a labeled list and keeps its person links keyboard accessible', async () => {
+  const user = userEvent.setup();
+  setup();
+  const viewport = screen.getByRole('region', {
+    name: 'cast members',
+  });
+  const list = cast().getByRole('list');
+
+  expect(viewport).toBeInTheDocument();
+  expect(list).toHaveClass('cast-grid');
+  expect(within(list).getAllByRole('listitem')).toHaveLength(10);
+  const first = within(list).getByRole('link', { name: 'Actor 1' });
+  first.focus();
+  await user.keyboard('{Tab}');
+  expect(within(list).getByRole('link', { name: 'Actor 2' })).toHaveFocus();
+});
+
+test('uses measured Series Cast widths for complete preview rows and preserves expansion', async () => {
+  let resizeCast: (width: number) => void = () => {};
+  class ResizeObserverMock {
+    constructor(private readonly callback: ResizeObserverCallback) {}
+
+    observe() {
+      resizeCast = (width) =>
+        this.callback(
+          [{ contentRect: { width } } as ResizeObserverEntry],
+          this as unknown as ResizeObserver
+        );
+    }
+
+    disconnect = vi.fn();
+  }
+  vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+  const user = userEvent.setup();
+  const { unmount } = render(
+    <MemoryRouter>
+      <CastPreview
+        members={actors.map((actor) => ({
+          ...actor,
+          key: `series-${actor.id}`,
+          roles: [actor.character],
+          profileUrl: '',
+        }))}
+        initialVisibleCount={14}
+        batchSize={8}
+        responsiveInitialCounts={{
+          tabletAndMobile: 14,
+          desktop: 12,
+          wideDesktop: 16,
+        }}
+      />
+    </MemoryRouter>
+  );
+
+  act(() => resizeCast(900));
+  expect(screen.getByRole('status')).toHaveTextContent('Showing 12 of 25');
+  act(() => resizeCast(1300));
+  expect(screen.getByRole('status')).toHaveTextContent('Showing 16 of 25');
+
+  await user.click(screen.getByRole('button', { name: 'Show more cast' }));
+  expect(screen.getByRole('status')).toHaveTextContent('Showing 24 of 25');
+  act(() => resizeCast(900));
+  expect(screen.getByRole('status')).toHaveTextContent('Showing 20 of 25');
+  await user.click(screen.getByRole('button', { name: 'Show less cast' }));
+  expect(screen.getByRole('status')).toHaveTextContent('Showing 12 of 25');
+  act(() => resizeCast(800));
+  expect(screen.getByRole('status')).toHaveTextContent('Showing 14 of 25');
+
+  unmount();
+  vi.unstubAllGlobals();
 });
 
 test('shows Cast and Crew side by side with independent expansion state', async () => {
@@ -118,7 +192,7 @@ test('resets expansion for a new movie and retains it when optional credits reco
       <DetailsLowerContent movieData={{ ...movie, description: 'Recovered' }} />
     </MemoryRouter>
   );
-  expect(cast().getAllByRole('article')).toHaveLength(20);
+  expect(cast().getAllByRole('listitem')).toHaveLength(20);
   rerender(
     <MemoryRouter>
       <DetailsLowerContent
@@ -133,7 +207,7 @@ test('resets expansion for a new movie and retains it when optional credits reco
       />
     </MemoryRouter>
   );
-  expect(cast().getAllByRole('article')).toHaveLength(10);
+  expect(cast().getAllByRole('listitem')).toHaveLength(10);
   expect(cast().queryByRole('link', { name: 'Actor 1' })).toBeNull();
   expect(cast().getByRole('status')).toHaveTextContent('Showing 10 of 25');
 });
@@ -151,7 +225,7 @@ test('merges duplicate actor IDs and characters without merging crew roles or di
   };
   const original = JSON.stringify(input);
   setup(input);
-  expect(cast().getAllByRole('article')).toHaveLength(3);
+  expect(cast().getAllByRole('listitem')).toHaveLength(3);
   expect(cast().getAllByRole('link')).toHaveLength(2);
   expect(cast().getByText('Hero · Narrator')).toBeVisible();
   expect(cast().queryByText('Producer')).toBeNull();

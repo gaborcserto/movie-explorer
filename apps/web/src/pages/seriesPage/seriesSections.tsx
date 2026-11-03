@@ -15,6 +15,12 @@ import { SectionRecovery } from '../../components/details/recovery';
 import useStablePanelHeight from '../../hooks/useStablePanelHeight';
 import { getSeriesCredits } from '../../util/apiUtils';
 
+const SERIES_CAST_INITIAL_COUNTS = {
+  tabletAndMobile: 14,
+  desktop: 12,
+  wideDesktop: 16,
+};
+
 const unavailable: SectionAvailability = { status: 'unavailable' };
 
 function episodeLabel(count: number | null) {
@@ -162,8 +168,9 @@ export default function SeriesSections({
             {credits?.cast.length ? (
               <CastPreview
                 key={series.id}
-                initialVisibleCount={16}
+                initialVisibleCount={14}
                 batchSize={8}
+                responsiveInitialCounts={SERIES_CAST_INITIAL_COUNTS}
                 members={credits.cast.map((person, index) => ({
                   ...person,
                   key: `tv-${series.id}-${person.id ?? index}`,

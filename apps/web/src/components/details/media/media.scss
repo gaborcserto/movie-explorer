@@ -30,7 +30,7 @@
 
 .cast-grid {
   display: grid;
-  gap: 20px 10px;
+  gap: 20px 12px;
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
@@ -131,6 +131,30 @@
   }
 }
 
+.cast-member > div {
+  min-width: 0;
+}
+
+.cast-scroll {
+  box-sizing: border-box;
+  container-type: inline-size;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+@container (min-width: 850px) {
+  .cast-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 1250px) {
+  .cast-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
 .crew-group .person-credit-link {
   color: rgb(255 255 255 / 0.72);
   text-decoration: none;
@@ -162,7 +186,6 @@
   overflow: hidden;
   transition: box-shadow 0.24s ease;
   width: 100%;
-  max-width: 180px;
 
   &__img {
     border-radius: 10px;
@@ -227,6 +250,12 @@
   font-size: 13px;
   line-height: 1.35;
   margin-top: 4px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .media-section {
@@ -689,41 +718,54 @@
   .cast-crew-layout {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+@media (width <= 1023.98px) {
+  .cast-scroll {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding-block: 8px 12px;
+    scroll-padding-inline: 0;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
 
   .cast-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px 12px;
+    display: flex;
+    box-sizing: border-box;
+    flex: 0 0 100%;
+    flex-flow: row nowrap;
+    gap: 16px;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .cast-member {
+    flex: 0 0 calc((100% - 48px) / 4);
+    max-width: none;
+    scroll-snap-align: start;
   }
 
   .cast-member__image {
     max-width: none;
   }
-}
-
-@include media-size(md-down) {
-  .cast-grid {
-    display: flex;
-    gap: 16px;
-    margin-inline: -5px;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    padding: 8px 5px 12px;
-    scroll-padding-inline: 5px;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-  }
-
-  .cast-grid::-webkit-scrollbar {
-    display: none;
-  }
-
-  .cast-member {
-    flex: 0 0 148px;
-    scroll-snap-align: start;
-  }
 
   .cast-member__link:focus-visible {
     outline-offset: -2px;
+  }
+}
+
+@media (width <= 767.98px) {
+  .cast-grid {
+    gap: 12px;
+  }
+
+  .cast-member {
+    flex-basis: calc((100% - 12px) / 2);
   }
 }
 

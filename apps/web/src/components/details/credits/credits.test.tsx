@@ -119,7 +119,7 @@ test.each([undefined, 0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])(
     expect(crewGroup('Directors').getByText('Unlinked Director')).toBeVisible();
     expect(cards().getByText('Unlinked Actor')).toBeVisible();
     expect(screen.queryByRole('link')).toBeNull();
-    expect(cards().getAllByRole('article')).toHaveLength(1);
+    expect(cards().getAllByRole('listitem')).toHaveLength(1);
     expect(cards().queryByRole('link')).toBeNull();
   }
 );
@@ -135,7 +135,7 @@ test.each([undefined, []])(
       castMembers: empty,
     });
     expect(screen.queryByText('Director A, Director B')).toBeNull();
-    expect(cards().getAllByRole('article')).toHaveLength(2);
+    expect(cards().getAllByRole('listitem')).toHaveLength(2);
     expect(
       cards()
         .getAllByRole('heading', { level: 3 })
@@ -152,7 +152,7 @@ test('preserves unmatched legacy cast names in partial structured responses with
     cast: ['Same', 'Same', 'Legacy Only'],
     castMembers: [{ id: 1, name: 'Same' }],
   });
-  expect(cards().getAllByRole('article')).toHaveLength(3);
+  expect(cards().getAllByRole('listitem')).toHaveLength(3);
   expect(
     cards()
       .getAllByRole('link')

@@ -43,24 +43,16 @@ function declarationsForFormattedSelector(
   return values;
 }
 
-test('keeps a single Series Cast portrait within the same responsive column as a full grid', () => {
+test('uses the shared Movie Cast scroller styles on Series details', () => {
   expect(
     declarationsForSelector(seriesStyles, '.series-credits .cast-grid')
+  ).toEqual({});
+  expect(
+    declarationsForFormattedSelector(mediaStyles, '.cast-scroll')
   ).toMatchObject({
-    display: 'grid',
-    width: '100%',
-    margin: '0',
-    'grid-template-columns': expect.stringContaining('auto-fill'),
+    'overflow-x': 'auto',
+    'scroll-snap-type': 'x mandatory',
   });
-  expect(
-    declarationsForSelector(seriesStyles, '.series-credits .cast-grid')
-  ).not.toHaveProperty('max-width');
-  expect(
-    declarationsForSelector(seriesStyles, '.series-credits .cast-grid')
-  ).not.toHaveProperty('margin-inline');
-  expect(
-    declarationsForSelector(seriesStyles, '.series-credits .cast-member__image')
-  ).toMatchObject({ 'max-width': 'none' });
   expect(
     declarationsForSelector(seriesStyles, '.series-season-poster')[
       'border-radius'
@@ -73,11 +65,15 @@ test('keeps a single Series Cast portrait within the same responsive column as a
   ).toBe('10px');
   expect(
     declarationsForSelector(seriesStyles, '.series-credits .cast-member p')
-  ).toMatchObject({
+  ).toEqual({});
+  expect(declarationsForSelector(mediaStyles, '.cast-member p')).toMatchObject({
     '-webkit-line-clamp': '2',
     'line-clamp': '2',
     overflow: 'hidden',
   });
+  expect(
+    declarationsForSelector(seriesStyles, '.series-credits .cast-member h3')
+  ).toEqual({});
 });
 
 test('styles Series creator links without an underline and keeps hover and focus states', () => {
