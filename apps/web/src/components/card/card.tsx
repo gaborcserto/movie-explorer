@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import type { MovieSummary } from '@movie-explorer/contracts';
 
 import MovieImage from '../utility/customImage';

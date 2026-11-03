@@ -2,7 +2,7 @@ import { ok } from 'node:assert/strict';
 import { Logger, ValidationPipe, type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { WatchProviders } from '@movie-explorer/contracts';
-import * as request from 'supertest';
+import request from 'supertest';
 
 import { createApiDocument } from '../src/api-document';
 import { TmdbMovieProvider } from '../src/integrations/tmdb/tmdb-movie.provider';

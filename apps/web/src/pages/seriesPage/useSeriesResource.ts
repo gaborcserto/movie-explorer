@@ -9,6 +9,21 @@ export default function useSeriesResource<T>(
   const [error, setError] = useState<unknown>();
   const [pending, setPending] = useState(enabled && !initial);
   const [attempt, setAttempt] = useState(0);
+  const [identity, setIdentity] = useState({ load, enabled, initial });
+
+  // The loader identifies the selected series/season. Reset before children
+  // commit so they never observe the previous selection's data or error.
+  if (
+    identity.load !== load ||
+    identity.enabled !== enabled ||
+    identity.initial !== initial
+  ) {
+    setIdentity({ load, enabled, initial });
+    setData(initial);
+    setError(undefined);
+    setPending(enabled && !initial);
+    setAttempt(0);
+  }
 
   useEffect(() => {
     if (!enabled || (initial && attempt === 0)) {
@@ -16,7 +31,6 @@ export default function useSeriesResource<T>(
     }
 
     const controller = new AbortController();
-    setPending(true);
 
     load(controller.signal)
       .then((result) => {
@@ -44,6 +58,9 @@ export default function useSeriesResource<T>(
     setData,
     error,
     pending,
-    retry: () => setAttempt((value) => value + 1),
+    retry: () => {
+      setPending(enabled);
+      setAttempt((value) => value + 1);
+    },
   };
 }

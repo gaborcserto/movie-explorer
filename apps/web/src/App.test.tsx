@@ -1,6 +1,11 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
+import {
+  BrowserRouter,
+  MemoryRouter,
+  useLocation,
+  useNavigate,
+} from 'react-router';
 import type {
   MovieDetails,
   MovieListResponse,
@@ -295,6 +300,60 @@ describe('<App />', () => {
       '/series/42?view=details#episode'
     );
   });
+
+  test.each([
+    ['/tv/42', '/series/42', 'Series page'],
+    ['/tv/42/seasons/3', '/series/42/seasons/3', 'Season page'],
+    [
+      '/tv/42/seasons/3/episodes/7',
+      '/series/42/seasons/3/episodes/7',
+      'Episode page',
+    ],
+  ])(
+    'BrowserRouter preserves direct entry, replacement and history for %s',
+    async (legacyPath, seriesPath, heading) => {
+      const user = userEvent.setup();
+      window.history.replaceState(null, '', `${legacyPath}?view=details#media`);
+      const initialHistoryLength = window.history.length;
+      const { unmount } = render(
+        <BrowserRouter>
+          <RouteLocation />
+          <App />
+        </BrowserRouter>
+      );
+
+      try {
+        expect(
+          await screen.findByRole('heading', { name: heading })
+        ).toBeVisible();
+        expect(
+          window.location.pathname +
+            window.location.search +
+            window.location.hash
+        ).toBe(`${seriesPath}?view=details#media`);
+        expect(window.history.length).toBe(initialHistoryLength);
+
+        await user.click(screen.getByRole('link', { name: 'MovieExplorer' }));
+        expect(window.location.pathname).toBe('/');
+        expect(window.history.length).toBe(initialHistoryLength + 1);
+
+        await user.click(screen.getByRole('button', { name: 'Back' }));
+        await waitFor(() => expect(window.location.pathname).toBe(seriesPath));
+        expect(
+          await screen.findByRole('heading', { name: heading })
+        ).toBeVisible();
+        expect(window.location.search + window.location.hash).toBe(
+          '?view=details#media'
+        );
+
+        await user.click(screen.getByRole('button', { name: 'Forward' }));
+        await waitFor(() => expect(window.location.pathname).toBe('/'));
+      } finally {
+        unmount();
+        window.history.replaceState(null, '', '/');
+      }
+    }
+  );
 
   test('displays the 404 error page for non-existent routes', async () => {
     renderApp('/non-existent-route');

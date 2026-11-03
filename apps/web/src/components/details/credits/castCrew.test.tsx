@@ -1,10 +1,7 @@
+import { RouterProvider } from 'react-router/dom';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {
-  createMemoryRouter,
-  MemoryRouter,
-  RouterProvider,
-} from 'react-router-dom';
+import { createMemoryRouter, MemoryRouter } from 'react-router';
 import type { MovieDetails } from '@movie-explorer/contracts';
 
 import DetailsContent, { DetailsLowerContent } from '../detailsContent';

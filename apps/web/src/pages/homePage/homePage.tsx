@@ -1,4 +1,4 @@
-import { useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useParams, useSearchParams } from 'react-router';
 
 import SearchResults from '../../components/list/searchResults';
 import Details from '../../components/details';

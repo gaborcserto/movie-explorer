@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import { useStore } from 'zustand';
 
 import Card from '../../components/card';

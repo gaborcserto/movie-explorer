@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router';
 import ErrorPresentation from '../../errorPresentation';
 import { useSearchHistory } from '../../list/useSearchHistory';
 
@@ -30,9 +30,11 @@ export default function DetailError({
 
   const locked = useRef(false);
 
-  if (!pending) {
-    locked.current = false;
-  }
+  useLayoutEffect(() => {
+    if (!pending) {
+      locked.current = false;
+    }
+  });
 
   return (
     <>

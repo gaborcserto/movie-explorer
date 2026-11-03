@@ -1,7 +1,7 @@
 import './filter.scss';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useParams, useSearchParams } from 'react-router';
 import { FaSliders } from 'react-icons/fa6';
 
 import { normalizeFilters, readFilters, writeFilters } from './filterState';
@@ -61,12 +61,10 @@ export default function Filter() {
     }
   }, [params, isSearch, setParams]);
 
-  useEffect(() => {
-    if (openAt !== null && openAt !== location.key) {
-      setOpenAt(null);
-      setClosing(false);
-    }
-  }, [location.key, openAt]);
+  if (openAt !== null && openAt !== location.key) {
+    setOpenAt(null);
+    setClosing(false);
+  }
 
   return (
     <section

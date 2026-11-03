@@ -71,6 +71,7 @@ export default function usePaginatedResults<Response, Item>(
 
   useEffect(() => {
     if (!restored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Start the cancellable initial request only when history has no restored snapshot.
       load(1);
     }
 

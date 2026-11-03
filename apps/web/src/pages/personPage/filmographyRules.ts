@@ -7,7 +7,8 @@ import type {
 } from '@movie-explorer/contracts';
 
 export type FilmographyEntry =
-  PersonFilmographyEntry | CombinedFilmographyEntry;
+  | PersonFilmographyEntry
+  | CombinedFilmographyEntry;
 
 export function filmographyIdentity(entry: FilmographyEntry) {
   return `${'mediaType' in entry ? entry.mediaType : 'movie'}:${entry.id}`;

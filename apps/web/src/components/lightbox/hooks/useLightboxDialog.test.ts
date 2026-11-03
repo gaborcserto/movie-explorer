@@ -21,6 +21,61 @@ describe('useLightboxDialog', () => {
     vi.restoreAllMocks();
   });
 
+  it('uses the latest committed callbacks without resetting dialog focus', () => {
+    const { root, closeButton, lastButton } = createDialog();
+    const initial = {
+      onClose: vi.fn(),
+      onEscapeFullscreen: vi.fn(),
+      onFullscreenChange: vi.fn(),
+      onFullscreenError: vi.fn(),
+    };
+    const updated = {
+      onClose: vi.fn(),
+      onEscapeFullscreen: vi.fn(),
+      onFullscreenChange: vi.fn(),
+      onFullscreenError: vi.fn(),
+    };
+    const options = {
+      root: { current: root },
+      closeButton: { current: closeButton },
+      photosLength: 2,
+      setIndex: vi.fn(),
+    };
+    const { rerender, unmount } = renderHook(
+      (callbacks) => useLightboxDialog({ ...options, ...callbacks }),
+      { initialProps: initial }
+    );
+
+    lastButton.focus();
+    rerender(updated);
+    expect(lastButton).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent(document, new Event('fullscreenchange'));
+    fireEvent(document, new Event('fullscreenerror'));
+    expect(updated.onClose).toHaveBeenCalledTimes(1);
+    expect(updated.onFullscreenChange).toHaveBeenCalledWith(false);
+    expect(updated.onFullscreenError).toHaveBeenCalledTimes(1);
+    expect(initial.onClose).not.toHaveBeenCalled();
+    expect(initial.onFullscreenChange).not.toHaveBeenCalled();
+    expect(initial.onFullscreenError).not.toHaveBeenCalled();
+
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      value: root,
+    });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(updated.onEscapeFullscreen).toHaveBeenCalledTimes(1);
+    expect(initial.onEscapeFullscreen).not.toHaveBeenCalled();
+
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      value: null,
+    });
+    unmount();
+    root.remove();
+  });
+
   it('focuses the close button, contains focus, traps tab, and restores prior state on unmount', () => {
     const previousFocus = document.createElement('button');
     const background = document.createElement('div');

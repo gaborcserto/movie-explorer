@@ -20,11 +20,12 @@ Movie Explorer is a React and NestJS app for browsing movies, series, and people
 
 ## Tech stack
 
-- React 19, TypeScript, React Router, and SCSS
+- React 19, TypeScript 6, React Router, and SCSS
 - NestJS 11, TMDB and optional OMDb integrations
 - npm Workspaces and Vite+ task orchestration
 - Vitest and React Testing Library; Jest for the API
-- Oxlint, ESLint, Stylelint, and TypeScript checks; Oxfmt formats API files
+- Oxlint, ESLint, Stylelint, and TypeScript checks; Vite+/Oxfmt formats web
+  and API files with workspace-specific options
 
 ## Getting started
 
@@ -55,6 +56,24 @@ npm run test:e2e
 
 The API end-to-end suite uses a mocked provider and does not require TMDB credentials.
 
+Frontend `lint` runs Oxlint, ESLint 9 Flat Config, TypeScript, an independent
+Oxfmt check, and Stylelint for SCSS. Run individual checks with
+`npm run <script> --workspace @movie-explorer/web`: `lint:oxlint`,
+`lint:eslint`, `typecheck`, `format:check`, or `lint:styles`.
+Use `format` to apply Oxfmt or `lint:fix` to apply the available lint and
+formatting fixes, then rerun `lint`. CI runs the same combined lint task through
+Vite+. The staged-file hook also formats web source and styles independently.
+
+ESLint owns React, Hooks, accessibility, import boundaries and type-aware checks;
+Oxlint owns the explicitly configured core and TypeScript syntax checks.
+The API retains its separate
+ESLint 8 configuration.
+
+Type checking and declaration generation use TypeScript 6.0.3. Frontend
+typechecks include both application source and the Vite configuration project.
+Native Vite+ type-aware checking is available, but does not replace these
+compiler checks or declaration builds.
+
 ## Documentation
 
 - [Recommendation API, candidate caching and data ownership](docs/recommendations.md)
@@ -63,6 +82,8 @@ The API end-to-end suite uses a mocked provider and does not require TMDB creden
 The AWS foundation uses private S3/CloudFront and an HTTP API/Lambda backend.
 After the production build, run `npm run aws:package`, `npm run aws:test` and
 `npm run aws:synth` for credential-free artifact and infrastructure checks.
+These commands use the Vite+ task graph, reusing unchanged prerequisite builds.
+Packaging, artifact smoke tests and synthesis always execute.
 Deployment is manual, disabled by default, and requires separately authorized
 AWS bootstrap and a protected GitHub environment. No cloud resources are created
 by the local checks.

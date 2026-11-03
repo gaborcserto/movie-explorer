@@ -15,7 +15,12 @@ test('supports page-specific metadata styling and semantic values', () => {
     <DetailsMetadata
       className="person-profile__metadata"
       entries={[
-        ['Birthday', <time dateTime="2000-01-02">2000-01-02</time>],
+        [
+          'Birthday',
+          <time key="birthday" dateTime="2000-01-02">
+            2000-01-02
+          </time>,
+        ],
         ['Age', 0],
       ]}
     />

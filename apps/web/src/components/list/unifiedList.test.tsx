@@ -1,6 +1,7 @@
+import { RouterProvider } from 'react-router/dom';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createMemoryRouter, Outlet, RouterProvider } from 'react-router-dom';
+import { createMemoryRouter, Outlet } from 'react-router';
 import type { SearchResponse, SearchResult } from '@movie-explorer/contracts';
 
 import SearchResults from './searchResults';

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import type { CombinedFilmography } from '@movie-explorer/contracts';
 
 import AnimatedSelect from '../../components/animatedSelect';

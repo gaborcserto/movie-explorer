@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa6';
 
 import {

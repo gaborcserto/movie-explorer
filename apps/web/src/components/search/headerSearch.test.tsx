@@ -1,6 +1,7 @@
+import { RouterProvider } from 'react-router/dom';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { createMemoryRouter } from 'react-router';
 import Details from '../details';
 import PersonPage from '../../pages/personPage/personPage';
 import Header from '../../layouts/header';

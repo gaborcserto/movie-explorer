@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import './list.scss';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router';
 import { FaXmark } from 'react-icons/fa6';
 
 import presentApiError from '../../util/errorPresentation';

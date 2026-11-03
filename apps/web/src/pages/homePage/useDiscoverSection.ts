@@ -212,6 +212,7 @@ export function useDiscoverSection(
 
   useEffect(() => {
     const controller = new AbortController();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Switch the keyed feed/cache and cancel pagination before starting the next request.
     setStateKey(key);
     loadingMoreRef.current = false;
     moreController.current?.abort();
@@ -393,7 +394,6 @@ export function useStreamingProviderCatalog() {
   useEffect(() => {
     const controller = new AbortController();
 
-    setState({ status: 'loading' });
     getStreamingProviders('HU', controller.signal)
       .then((providers) => {
         if (!controller.signal.aborted) {
@@ -410,6 +410,7 @@ export function useStreamingProviderCatalog() {
   }, [attempt]);
 
   const retry = useCallback(() => {
+    setState({ status: 'loading' });
     setAttempt((current) => current + 1);
   }, []);
 

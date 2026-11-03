@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import type { SeriesDetails } from '@movie-explorer/contracts';
 
 import MovieImage from '../../components/utility/customImage';

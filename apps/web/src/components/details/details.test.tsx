@@ -7,7 +7,7 @@ import {
   within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, useParams as originalUseParams } from 'react-router-dom';
+import { MemoryRouter, useParams as originalUseParams } from 'react-router';
 import type { MovieDetails } from '@movie-explorer/contracts';
 
 import Details from './details';
@@ -40,10 +40,8 @@ const mockData: MovieDetails = {
 };
 
 vi.mock('../../util/apiUtils');
-vi.mock('react-router-dom', async () => ({
-  ...(await vi.importActual<typeof import('react-router-dom')>(
-    'react-router-dom'
-  )),
+vi.mock('react-router', async () => ({
+  ...(await vi.importActual<typeof import('react-router')>('react-router')),
   useParams: vi.fn(),
   useNavigate: vi.fn(() => vi.fn()),
   Link: vi.fn(() => null),

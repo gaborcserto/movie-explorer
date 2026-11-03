@@ -11,7 +11,7 @@ export default function HeaderSearch() {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const autocomplete = useAutocomplete('', expanded);
+  const { containerRef, ...autocomplete } = useAutocomplete('', expanded);
 
   useEffect(() => {
     if (expanded) inputRef.current?.focus();
@@ -34,7 +34,7 @@ export default function HeaderSearch() {
 
   return (
     <div
-      ref={autocomplete.containerRef}
+      ref={containerRef}
       className="detail-search"
       onBlur={autocomplete.onBlur}
     >

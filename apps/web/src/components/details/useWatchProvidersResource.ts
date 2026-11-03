@@ -14,8 +14,16 @@ export default function useWatchProvidersResource(
     providers: WatchProvider[];
   }>();
   const [errorKey, setErrorKey] = useState<string>();
-  const [pendingKey, setPendingKey] = useState<string>();
+  const [pendingKey, setPendingKey] = useState<string | undefined>(
+    enabled ? key : undefined
+  );
   const [attempt, setAttempt] = useState(0);
+  const [identity, setIdentity] = useState({ key, enabled });
+
+  if (identity.key !== key || identity.enabled !== enabled) {
+    setIdentity({ key, enabled });
+    setPendingKey(enabled ? key : undefined);
+  }
 
   useEffect(() => {
     if (!enabled) {
@@ -23,7 +31,6 @@ export default function useWatchProvidersResource(
     }
 
     const controller = new AbortController();
-    setPendingKey(key);
 
     getWatchProviders(kind, id, controller.signal)
       .then((response) => {

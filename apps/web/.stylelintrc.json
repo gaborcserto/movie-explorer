@@ -1,12 +1,9 @@
 {
   "extends": [
-    "stylelint-prettier/recommended",
     "stylelint-config-standard-scss"
   ],
   "ignoreFiles": ["**/*.html", "**/*.js", "**/*.ts"],
-  "plugins": ["stylelint-prettier"],
   "rules": {
-    "prettier/prettier": true,
     "alpha-value-notation": "number",
     "at-rule-no-unknown": null,
     "font-family-no-missing-generic-family-keyword": null,

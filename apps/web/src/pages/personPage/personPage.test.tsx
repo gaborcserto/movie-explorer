@@ -1,3 +1,4 @@
+import { RouterProvider } from 'react-router/dom';
 import {
   act,
   fireEvent,
@@ -7,7 +8,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { createMemoryRouter } from 'react-router';
 import type { PersonDetails } from '@movie-explorer/contracts';
 import App from '../../App';
 import { getPerson } from '../../util/apiUtils';

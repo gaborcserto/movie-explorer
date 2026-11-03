@@ -9,7 +9,7 @@ import {
 } from '@testing-library/react';
 import type { MovieListResponse } from '@movie-explorer/contracts';
 import userEvent from '@testing-library/user-event';
-import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Link, MemoryRouter, Route, Routes } from 'react-router';
 
 import List from './list';
 import { getMovies as originalGetMovies } from '../../util/apiUtils';

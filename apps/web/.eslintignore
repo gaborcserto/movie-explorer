@@ -1,7 +1,0 @@
-*.scss
-*.svg
-*.json
-node_modules
-.idea
-setupTests.ts
-__mocks__

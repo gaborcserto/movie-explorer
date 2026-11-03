@@ -1,5 +1,5 @@
 import { act, render, fireEvent, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import Search from './search';
 import { getSearchSuggestions as originalGetMovieSuggestions } from '../../util/apiUtils';
 

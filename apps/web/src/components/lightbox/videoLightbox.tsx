@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FaChevronLeft, FaChevronRight, FaXmark } from 'react-icons/fa6';
 import type { MovieVideo } from '@movie-explorer/contracts';
@@ -19,8 +19,7 @@ export default function VideoLightbox({
   const [index, setIndex] = useState(initialIndex);
   const root = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
-  const close = useRef(onClose);
-  close.current = onClose;
+  const close = useEffectEvent(onClose);
   const video = videos[index];
 
   useEffect(() => {
@@ -49,7 +48,7 @@ export default function VideoLightbox({
 
       if (key === 'Escape') {
         event.preventDefault();
-        close.current();
+        close();
 
         return;
       }

@@ -5,7 +5,7 @@ import {
   useLocation,
   useParams,
   useSearchParams,
-} from 'react-router-dom';
+} from 'react-router';
 import Filter from '../filter';
 import PrimaryNavigation from '../navigation';
 import { normalizeSearchFilters, readSearchView } from '../filter/filterState';

@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import useAutocomplete from './useAutocomplete';
 import Suggestions from './suggestions';
@@ -6,7 +6,7 @@ import './search.scss';
 
 function Search() {
   const { searchQuery } = useParams();
-  const autocomplete = useAutocomplete(searchQuery);
+  const { containerRef, ...autocomplete } = useAutocomplete(searchQuery);
 
   return (
     <header className="header page-hero" data-testid="search-component">
@@ -22,10 +22,7 @@ function Search() {
           }}
           onBlur={autocomplete.onBlur}
         >
-          <div
-            ref={autocomplete.containerRef}
-            className="header__search__combobox"
-          >
+          <div ref={containerRef} className="header__search__combobox">
             <label className="visually-hidden" htmlFor="movie-search">
               Search movies, series and people
             </label>

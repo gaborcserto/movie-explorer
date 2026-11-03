@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 
 interface LightboxDialogOptions {
@@ -22,15 +22,10 @@ export default function useLightboxDialog({
   onFullscreenChange,
   onFullscreenError,
 }: LightboxDialogOptions) {
-  const close = useRef(onClose);
-  const escapeFullscreen = useRef(onEscapeFullscreen);
-  const fullscreenChange = useRef(onFullscreenChange);
-  const fullscreenError = useRef(onFullscreenError);
-
-  close.current = onClose;
-  escapeFullscreen.current = onEscapeFullscreen;
-  fullscreenChange.current = onFullscreenChange;
-  fullscreenError.current = onFullscreenError;
+  const close = useEffectEvent(onClose);
+  const escapeFullscreen = useEffectEvent(onEscapeFullscreen);
+  const fullscreenChange = useEffectEvent(onFullscreenChange);
+  const fullscreenError = useEffectEvent(onFullscreenError);
 
   useEffect(() => {
     const dialog = root.current;
@@ -60,9 +55,9 @@ export default function useLightboxDialog({
       if (event.key === 'Escape') {
         event.preventDefault();
         if (document.fullscreenElement === dialog) {
-          escapeFullscreen.current();
+          escapeFullscreen();
         } else {
-          close.current();
+          close();
         }
       }
 
@@ -102,9 +97,9 @@ export default function useLightboxDialog({
     };
 
     const changed = () =>
-      fullscreenChange.current(document.fullscreenElement === dialog);
+      fullscreenChange(document.fullscreenElement === dialog);
 
-    const failed = () => fullscreenError.current();
+    const failed = () => fullscreenError();
 
     document.addEventListener('keydown', keydown);
     document.addEventListener('focusin', focusInside);

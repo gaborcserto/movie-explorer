@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import type { RefObject } from 'react';
 
 export default function useDrawerDialog({
@@ -8,7 +8,7 @@ export default function useDrawerDialog({
   panel: RefObject<HTMLElement | null>;
   onClose: () => void;
 }) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = panel.current;
 
     if (!element) {

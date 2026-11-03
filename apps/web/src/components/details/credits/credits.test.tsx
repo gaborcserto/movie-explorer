@@ -1,10 +1,7 @@
+import { RouterProvider } from 'react-router/dom';
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {
-  createMemoryRouter,
-  MemoryRouter,
-  RouterProvider,
-} from 'react-router-dom';
+import { createMemoryRouter, MemoryRouter } from 'react-router';
 import type { MovieDetails, PersonDetails } from '@movie-explorer/contracts';
 import DetailsContent, { DetailsLowerContent } from '../detailsContent';
 import App from '../../../App';

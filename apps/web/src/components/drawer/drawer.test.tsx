@@ -1,11 +1,41 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useLayoutEffect } from 'react';
 
 import Drawer from '.';
 
 afterEach(() => {
   cleanup();
   document.body.style.overflow = '';
+});
+
+test('restores page interaction before the closing commit can paint', () => {
+  const trigger = document.createElement('button');
+  document.body.append(trigger);
+  trigger.focus();
+  document.body.style.overflow = 'scroll';
+  const observeClosedPage = vi.fn();
+  const onClose = vi.fn();
+
+  function Host({ open }: { open: boolean }) {
+    useLayoutEffect(() => {
+      if (!open) {
+        observeClosedPage(document.body.style.overflow, document.activeElement);
+      }
+    }, [open]);
+
+    return open ? (
+      <Drawer open title="Example drawer" onClose={onClose}>
+        Content
+      </Drawer>
+    ) : null;
+  }
+
+  const { rerender } = render(<Host open />);
+  expect(document.body.style.overflow).toBe('hidden');
+  rerender(<Host open={false} />);
+  expect(observeClosedPage).toHaveBeenCalledWith('scroll', trigger);
+  trigger.remove();
 });
 
 test('renders drawer regions and controls its exit state', () => {

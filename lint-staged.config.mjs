@@ -8,27 +8,32 @@ const runWorkspaceCommands = (workspace, files) => {
   const lintFiles = relativeFiles.filter(
     (file) =>
       /\.(js|jsx|ts|tsx)$/.test(file) &&
-      (file.startsWith(`src${path.sep}`) ||
-        (workspace === 'api' && file.startsWith(`test${path.sep}`))) &&
-      path.basename(file) !== 'setupTests.ts' &&
-      !file.split(path.sep).includes('__mocks__'),
+      (workspace === 'web' ||
+        ((file.startsWith(`src${path.sep}`) ||
+          file.startsWith(`test${path.sep}`)) &&
+          path.basename(file) !== 'setupTests.ts' &&
+          !file.split(path.sep).includes('__mocks__'))),
   );
   const commands = [];
+  const oxlintFiles = lintFiles.filter(
+    (file) => workspace === 'api' || file.startsWith(`src${path.sep}`),
+  );
+
+  if (oxlintFiles.length > 0) {
+    const quotedOxlintFiles = oxlintFiles.map(quote).join(' ');
+    commands.push(
+      `vp lint -c .oxlintrc.json --max-warnings=0 ${quotedOxlintFiles}`,
+    );
+  }
 
   if (lintFiles.length > 0) {
     const quotedLintFiles = lintFiles.map(quote).join(' ');
-    commands.push(
-      `vp lint -c .oxlintrc.json --max-warnings=0 ${quotedLintFiles}`,
-      `eslint --max-warnings=0 ${quotedLintFiles}`,
-    );
+    commands.push(`eslint --max-warnings=0 ${quotedLintFiles}`);
   }
 
   if (relativeFiles.length > 0) {
     const quotedFiles = relativeFiles.map(quote).join(' ');
-    const formatter = workspace === 'web'
-      ? 'prettier --write'
-      : 'vp fmt -c .oxfmtrc.json --write';
-    commands.push(`${formatter} ${quotedFiles}`);
+    commands.push(`vp fmt -c .oxfmtrc.json --write ${quotedFiles}`);
   }
 
   return commands.map(
@@ -46,6 +51,9 @@ export default {
     const workspaceRoot = path.resolve('apps/web');
     const relativeFiles = files.map((file) => path.relative(workspaceRoot, file));
     const quotedFiles = relativeFiles.map(quote).join(' ');
-    return [`npm exec --workspace @movie-explorer/web -- stylelint ${quotedFiles}`];
+    return [
+      `npm exec --workspace @movie-explorer/web -- vp fmt -c .oxfmtrc.json --write ${quotedFiles}`,
+      `npm exec --workspace @movie-explorer/web -- stylelint ${quotedFiles}`,
+    ];
   },
 };

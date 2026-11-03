@@ -1,7 +1,8 @@
+import { RouterProvider } from 'react-router/dom';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { FaClapperboard, FaTv, FaUsers } from 'react-icons/fa6';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { createMemoryRouter, Outlet, RouterProvider } from 'react-router-dom';
+import { createMemoryRouter, Outlet } from 'react-router';
 import type {
   MovieListResponse,
   PersonListResponse,

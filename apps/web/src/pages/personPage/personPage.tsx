@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import type { PersonDetails } from '@movie-explorer/contracts';
 
 import {
@@ -164,7 +164,7 @@ function PersonDetailsPage({ id }: { id: string }) {
 
   const [state, setState] = useState<PersonState>({ status: 'loading' });
   const [requestError, setRequestError] = useState<unknown>(null);
-  const [pending, setPending] = useState(false);
+  const [pending, setPending] = useState(validId);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -173,7 +173,6 @@ function PersonDetailsPage({ id }: { id: string }) {
     }
 
     const controller = new AbortController();
-    setPending(true);
     let current = true;
 
     getPerson(personId, controller.signal, true)

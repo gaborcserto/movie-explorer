@@ -1,5 +1,5 @@
 {
-  "plugins": [],
+  "plugins": ["typescript"],
   "categories": {
     "correctness": "off"
   },
@@ -25,6 +25,13 @@
     "use-isnan": "error",
     "no-case-declarations": "error",
     "no-empty-pattern": "error",
-    "no-useless-catch": "error"
+    "no-useless-catch": "error",
+    "no-constant-binary-expression": "error",
+    "no-unused-labels": "error",
+    "no-self-assign": ["error", { "props": true }],
+    "typescript/no-explicit-any": "error",
+    "typescript/no-duplicate-enum-values": "error",
+    "typescript/no-extra-non-null-assertion": "error",
+    "typescript/no-unnecessary-type-constraint": "error"
   }
 }

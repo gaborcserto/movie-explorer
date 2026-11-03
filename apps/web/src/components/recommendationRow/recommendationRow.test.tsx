@@ -3,12 +3,13 @@ import {
   act,
   fireEvent,
   render,
+  renderHook,
   screen,
   waitFor,
   within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import type {
   RecommendationTitle,
   RelatedTitlesResponse,
@@ -19,6 +20,7 @@ import HomeRecommendations from '../../pages/homePage/homeRecommendations';
 import DetailRecommendations from '../detailRecommendations';
 import { getRecommendations, getRelatedTitles } from '../../util/apiUtils';
 import { ApiRequestError } from '../../util/apiErrors';
+import useRecommendationResource from './useRecommendationResource';
 
 vi.mock('../../util/apiUtils', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../util/apiUtils')>()),
@@ -50,6 +52,48 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+it('ignores late request failures after the hook source changes', async () => {
+  vi.stubGlobal('IntersectionObserver', undefined);
+  type Response = Awaited<ReturnType<typeof getRecommendations>>;
+  let rejectFirst!: (reason: Error) => void;
+  let resolveSecond!: (value: Response) => void;
+  const first = new Promise<Response>((_resolve, reject) => {
+    rejectFirst = reject;
+  });
+  const second = new Promise<Response>((resolve) => {
+    resolveSecond = resolve;
+  });
+  vi.mocked(getRecommendations)
+    .mockReturnValueOnce(first)
+    .mockReturnValueOnce(second);
+  const { result, rerender } = renderHook(
+    ({ category }: { category: Response['category'] }) =>
+      useRecommendationResource({ category }),
+    { initialProps: { category: 'popular-movies' } }
+  );
+  await waitFor(() => expect(getRecommendations).toHaveBeenCalledTimes(1));
+
+  rerender({ category: 'popular-series' });
+  expect(result.current.data).toBeUndefined();
+  expect(result.current.pending).toBe(true);
+  expect(vi.mocked(getRecommendations).mock.calls[0][1]?.aborted).toBe(true);
+  await waitFor(() => expect(getRecommendations).toHaveBeenCalledTimes(2));
+
+  const response: Response = {
+    ...empty,
+    category: 'popular-series',
+    candidateCount: 0,
+  };
+  await act(async () => resolveSecond(response));
+  expect(result.current.data).toBe(response);
+  expect(result.current.pending).toBe(false);
+
+  await act(async () => rejectFirst(new Error('obsolete')));
+  expect(result.current.data).toBe(response);
+  expect(result.current.error).toBeUndefined();
+  expect(result.current.pending).toBe(false);
 });
 
 it('keeps partial Series results and retry independent from pending Movies', async () => {

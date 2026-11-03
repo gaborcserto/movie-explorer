@@ -52,7 +52,7 @@ function isSupportedVideo(entry: {
   return entry.videoId !== undefined;
 }
 
-export default function VideoPreview({ videos, title, resetKey }: Props) {
+function VideoPreviewContent({ videos, title }: Omit<Props, 'resetKey'>) {
   const gridId = useId();
   const [visibleVideoCount, setVisibleVideoCount] = useState(4);
   const [selectedVideo, setSelectedVideo] = useState<number | null>(null);
@@ -61,12 +61,6 @@ export default function VideoPreview({ videos, title, resetKey }: Props) {
   const rememberLastVideo = (element: HTMLElement | null) => {
     lastVideoRef.current = element;
   };
-
-  useEffect(() => {
-    setVisibleVideoCount(4);
-    setSelectedVideo(null);
-    focusLastVideo.current = false;
-  }, [resetKey]);
 
   useEffect(() => {
     if (!focusLastVideo.current) {
@@ -192,4 +186,8 @@ export default function VideoPreview({ videos, title, resetKey }: Props) {
       )}
     </>
   );
+}
+
+export default function VideoPreview({ resetKey, ...props }: Props) {
+  return <VideoPreviewContent key={resetKey} {...props} />;
 }

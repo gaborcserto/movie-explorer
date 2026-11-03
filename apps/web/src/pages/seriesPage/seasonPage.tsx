@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router';
 
 import { getSeason, getSeries } from '../../util/apiUtils';
 import { seriesPath } from '../../util/seriesRoutes';

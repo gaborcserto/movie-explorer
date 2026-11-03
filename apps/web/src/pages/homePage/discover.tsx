@@ -114,7 +114,7 @@ function selectProviderFromKeyboard(
 export default function DiscoverPage() {
   const [movieTab, setMovieTab] = useState<CategoryTab>('Trending');
   const [seriesTab, setSeriesTab] = useState<CategoryTab>('Trending');
-  const [selectedProviderId, setSelectedProviderId] = useState<number | null>(
+  const [requestedProviderId, setSelectedProviderId] = useState<number | null>(
     null
   );
   const providerTabsRef = useRef<HTMLDivElement>(null);
@@ -127,14 +127,11 @@ export default function DiscoverPage() {
     [providerCatalog.state]
   );
 
-  useEffect(() => {
-    if (
-      availableProviders.length > 0 &&
-      !availableProviders.some((provider) => provider.id === selectedProviderId)
-    ) {
-      setSelectedProviderId(availableProviders[0].id);
-    }
-  }, [availableProviders, selectedProviderId]);
+  const selectedProvider =
+    availableProviders.find(
+      (provider) => provider.id === requestedProviderId
+    ) ?? availableProviders[0];
+  const selectedProviderId = selectedProvider?.id ?? null;
 
   useEffect(() => {
     const providerTabs = providerTabsRef.current;
@@ -166,9 +163,6 @@ export default function DiscoverPage() {
     seriesSections[seriesTab],
     undefined,
     'tv'
-  );
-  const selectedProvider = availableProviders.find(
-    (provider) => provider.id === selectedProviderId
   );
   const streamingProviderSelection = useMemo(
     () =>

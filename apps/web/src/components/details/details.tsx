@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './details.scss';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import type { MovieDetails, MovieSection } from '@movie-explorer/contracts';
 import DetailsPageLayout, { DetailsLowerLayout } from './detailsPageLayout';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
@@ -23,13 +23,15 @@ import { EntityMetadata } from '../routeMetadata';
 type DetailsState = 'loading' | 'success' | 'not-found' | 'error';
 
 function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
-  const [detailsState, setDetailsState] = useState<DetailsState>('loading');
-  const [requestError, setRequestError] = useState<unknown>(null);
-  const [pending, setPending] = useState(false);
-  const [attempt, setAttempt] = useState(0);
-
   const movieId = parseDetailId(movieIdStr);
   const validId = Number.isSafeInteger(movieId);
+  const [detailsState, setDetailsState] = useState<DetailsState>(
+    validId ? 'loading' : 'not-found'
+  );
+  const [requestError, setRequestError] = useState<unknown>(null);
+  const [pending, setPending] = useState(validId);
+  const [attempt, setAttempt] = useState(0);
+
   const ratingResource = useRatingsResource('movie', movieId, validId);
 
   const [movieData, setMovieData] = useState<MovieDetails | null>(null);
@@ -44,13 +46,10 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
     let current = true;
 
     if (!validId) {
-      setDetailsState('not-found');
-
       return undefined;
     }
 
     const controller = new AbortController();
-    setPending(true);
 
     getMovie(movieId, controller.signal)
       .then((movie) => {

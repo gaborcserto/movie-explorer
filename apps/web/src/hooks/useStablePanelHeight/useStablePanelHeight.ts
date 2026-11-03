@@ -30,6 +30,7 @@ export default function useStablePanelHeight<T extends HTMLElement>(
     return () => observer.disconnect();
   }, [panel]);
 
+  // eslint-disable-next-line react-hooks/immutability -- This state value is a callback-ref DOM node; the layout effect intentionally animates its style, not React-owned data.
   useLayoutEffect(() => {
     if (activeKeyRef.current === activeKey) {
       return undefined;
@@ -46,6 +47,7 @@ export default function useStablePanelHeight<T extends HTMLElement>(
       typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    // eslint-disable-next-line react-hooks/immutability -- Imperative DOM measurement/animation is the purpose of this layout effect.
     panel.style.minHeight = '';
     const nextHeight = panel.getBoundingClientRect().height;
 

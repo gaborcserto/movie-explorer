@@ -6,7 +6,7 @@ import {
   INestApplication,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 import type { RecommendationCategory } from '@movie-explorer/contracts';
 
 import { DiscoveryModule } from '../src/discovery/discovery.module';

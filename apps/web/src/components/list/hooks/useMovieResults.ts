@@ -125,6 +125,7 @@ export default function useMovieResults(
 
   useEffect(() => {
     if (!restored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Start the cancellable initial request only when history has no restored snapshot.
       loadInitialMovies();
     } else {
       requestControllerRef.current = new AbortController();

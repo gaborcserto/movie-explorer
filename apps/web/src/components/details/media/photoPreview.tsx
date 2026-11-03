@@ -18,13 +18,12 @@ const PHOTO_BATCH_SIZES = {
   photos: 10,
 } as const;
 
-export default function PhotoPreview({
+function PhotoPreviewContent({
   photos,
   title,
   portrait,
   category,
-  resetKey,
-}: Props) {
+}: Omit<Props, 'resetKey'>) {
   const [selected, setSelected] = useState<number | null>(null);
   const lastPhotoRef = useRef<HTMLButtonElement>(null);
   const focusLastPhoto = useRef(false);
@@ -45,12 +44,6 @@ export default function PhotoPreview({
   const batchSize = PHOTO_BATCH_SIZES[plural];
   const [visibleCount, setVisibleCount] = useState<number>(batchSize);
   const visiblePhotos = available.slice(0, visibleCount);
-
-  useEffect(() => {
-    setVisibleCount(batchSize);
-    setSelected(null);
-    focusLastPhoto.current = false;
-  }, [batchSize, resetKey]);
 
   useEffect(() => {
     if (!focusLastPhoto.current) {
@@ -117,5 +110,15 @@ export default function PhotoPreview({
         />
       )}
     </>
+  );
+}
+
+export default function PhotoPreview({ resetKey, category, ...props }: Props) {
+  return (
+    <PhotoPreviewContent
+      key={`${resetKey ?? ''}:${category ?? 'photos'}`}
+      category={category}
+      {...props}
+    />
   );
 }

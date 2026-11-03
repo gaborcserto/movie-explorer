@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router';
 import { FaFilm, FaTv, FaUsers } from 'react-icons/fa6';
 import type { SearchMediaType } from '@movie-explorer/contracts';
 

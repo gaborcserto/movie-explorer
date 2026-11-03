@@ -4,7 +4,9 @@ import './suggestions.scss';
 
 const groupLabels = { movie: 'Movies', tv: 'Series', person: 'People' };
 
-type Props = { autocomplete: ReturnType<typeof useAutocomplete> };
+type Props = {
+  autocomplete: Omit<ReturnType<typeof useAutocomplete>, 'containerRef'>;
+};
 
 export default function Suggestions({ autocomplete }: Props) {
   return (

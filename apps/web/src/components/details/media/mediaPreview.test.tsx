@@ -28,6 +28,28 @@ const videos = Array.from({ length: 8 }, (_, index) => ({
   url: `https://www.youtube.com/watch?v=dQw4w9WgXc${index}`,
 }));
 
+test('keeps the photo viewer for same-identity updates and closes it on navigation', async () => {
+  const user = userEvent.setup();
+  const { rerender } = render(
+    <PhotoPreview photos={photos} title="First" resetKey={1} />
+  );
+  const trigger = screen.getByRole('button', { name: 'View First photo 1' });
+  await user.click(trigger);
+
+  rerender(<PhotoPreview photos={[...photos]} title="Updated" resetKey={1} />);
+  expect(screen.getByRole('dialog')).toBeVisible();
+  await user.keyboard('{Escape}');
+  expect(trigger).toHaveFocus();
+
+  await user.click(trigger);
+  rerender(<PhotoPreview photos={photos} title="Next" resetKey={2} />);
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(document.body.style.overflow).toBe('');
+  expect(
+    screen.getAllByRole('button', { name: /View Next photo/ })
+  ).toHaveLength(10);
+});
+
 test.each([0, 2, 6, 8, 10, 25])(
   'shows the photo count and bounded preview for %i items',
   (count) => {

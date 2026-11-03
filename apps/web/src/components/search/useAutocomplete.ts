@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 import type { SearchSuggestion } from '@movie-explorer/contracts';
 import { isCancelledError } from '../../util/errorPresentation';
 import { getSearchSuggestions } from '../../util/apiUtils';
@@ -19,6 +19,10 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
   const listId = useId();
   const navigate = useNavigate();
   const location = useLocation();
+  const [identity, setIdentity] = useState({
+    committedQuery,
+    locationKey: location.key,
+  });
 
   const dismiss = () => {
     generation.current += 1;
@@ -29,16 +33,18 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
     setFailed(false);
   };
 
-  useEffect(() => {
+  if (
+    identity.committedQuery !== committedQuery ||
+    identity.locationKey !== location.key
+  ) {
+    setIdentity({ committedQuery, locationKey: location.key });
     setQuery(committedQuery);
-    generation.current += 1;
-    controllerRef.current?.abort();
     setSuggestions([]);
     setOpen(false);
     setActive(-1);
     setMessage('');
     setFailed(false);
-  }, [committedQuery, location.key]);
+  }
 
   useEffect(() => {
     generation.current += 1;
@@ -104,7 +110,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [query, committedQuery, enabled]);
+  }, [query, committedQuery, enabled, location.key]);
 
   useEffect(() => {
     const outside = (event: MouseEvent) => {

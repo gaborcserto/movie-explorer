@@ -21,14 +21,15 @@
     "typecheck": "vp run -r task:typecheck",
     "test:e2e": "vp run @movie-explorer/api#task:e2e",
     "prepare": "husky",
-    "aws:package": "npm run build --workspace @movie-explorer/contracts && npm run build --workspace @movie-explorer/api && npm run package:lambda --workspace @movie-explorer/aws",
-    "aws:synth": "npm run synth --workspace @movie-explorer/aws",
-    "aws:test": "npm test --workspace @movie-explorer/aws && npm run test:package --workspace @movie-explorer/aws"
+    "aws:package": "vp run @movie-explorer/aws#task:package",
+    "aws:synth": "vp run @movie-explorer/aws#task:synth",
+    "aws:test": "vp run @movie-explorer/aws#task:package-test"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
     "eslint-plugin-oxlint": "1.88.0",
+    "typescript": "6.0.3",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "vite-plus": "1.3.0",

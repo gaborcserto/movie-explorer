@@ -46,6 +46,28 @@ export default function useRecommendationResource(
   >();
   const [error, setError] = useState<unknown>();
   const [delay, setDelay] = useState(0);
+  const [identity, setIdentity] = useState({
+    category,
+    resource,
+    id,
+    kind,
+    preferences,
+  });
+
+  if (
+    identity.category !== category ||
+    identity.resource !== resource ||
+    identity.id !== id ||
+    identity.kind !== kind ||
+    identity.preferences !== preferences
+  ) {
+    setIdentity({ category, resource, id, kind, preferences });
+    setData(undefined);
+    setError(undefined);
+    setPending(true);
+    setDelay(0);
+    setAttempt(0);
+  }
 
   useEffect(() => {
     const element = containerRef.current;
@@ -76,8 +98,6 @@ export default function useRecommendationResource(
     }
 
     const controller = new AbortController();
-    setPending(true);
-    setError(undefined);
 
     // StrictMode cleanup can cancel before starting an unnecessary request.
     Promise.resolve().then(async () => {
@@ -138,6 +158,8 @@ export default function useRecommendationResource(
 
   const retry = () => {
     if (!pending && !delay) {
+      setPending(true);
+      setError(undefined);
       setAttempt((value) => value + 1);
     }
   };

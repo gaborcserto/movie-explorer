@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 
 const CREW_BATCH_SIZE = 12;
 
@@ -9,13 +9,17 @@ export default function useCrewPreview<T>(
   showAll = false
 ) {
   const [limit, setLimit] = useState(CREW_BATCH_SIZE);
+  const [entity, setEntity] = useState(resetKey);
   const groupId = useId();
   const countRef = useRef<HTMLParagraphElement>(null);
 
   const visibleLimit = showAll ? people.length : limit;
   const visible = people.slice(0, visibleLimit);
 
-  useEffect(() => setLimit(CREW_BATCH_SIZE), [resetKey]);
+  if (entity !== resetKey) {
+    setEntity(resetKey);
+    setLimit(CREW_BATCH_SIZE);
+  }
 
   const hasMore = visible.length < people.length;
 
