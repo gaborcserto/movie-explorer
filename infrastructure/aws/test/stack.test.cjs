@@ -14,6 +14,52 @@ function stack(options = {}) {
   });
 }
 
+test('observes CSP compatibility without enforcing an unverified policy', () => {
+  const template = Template.fromStack(stack());
+  const policies = template.findResources(
+    'AWS::CloudFront::ResponseHeadersPolicy',
+  );
+  const configurations = Object.values(policies).map(
+    (policy) => policy.Properties.ResponseHeadersPolicyConfig,
+  );
+  const headers = configurations.flatMap(
+    (config) => config.CustomHeadersConfig?.Items ?? [],
+  );
+  const csp = headers.find(
+    (header) => header.Header === 'Content-Security-Policy-Report-Only',
+  );
+  assert.equal(csp.Override, true);
+  const directives = new Map(
+    csp.Value.split('; ').map((directive) => {
+      const [name, ...sources] = directive.split(' ');
+
+      return [name, sources];
+    }),
+  );
+  assert.deepEqual(directives.get('script-src'), ["'self'"]);
+  assert.deepEqual(directives.get('connect-src'), ["'self'"]);
+  assert.deepEqual(directives.get('object-src'), ["'none'"]);
+  assert.ok(
+    directives.get('style-src').includes('https://fonts.googleapis.com'),
+  );
+  assert.ok(directives.get('style-src').includes("'unsafe-inline'"));
+  assert.ok(directives.get('font-src').includes('https://fonts.gstatic.com'));
+  assert.ok(directives.get('img-src').includes('https://image.tmdb.org'));
+  assert.ok(directives.get('img-src').includes('https://img.youtube.com'));
+  assert.deepEqual(directives.get('frame-src'), [
+    'https://www.youtube-nocookie.com',
+  ]);
+  assert.equal(
+    headers.some((header) => header.Header === 'Content-Security-Policy'),
+    false,
+  );
+  assert.ok(
+    configurations.every(
+      (config) => !config.SecurityHeadersConfig?.ContentSecurityPolicy,
+    ),
+  );
+});
+
 test('defines private retained S3 with OAC and distribution-scoped access', () => {
   const template = Template.fromStack(stack());
   template.hasResource('AWS::S3::Bucket', {

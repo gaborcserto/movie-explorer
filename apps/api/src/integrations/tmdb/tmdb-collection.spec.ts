@@ -211,7 +211,7 @@ describe('TMDB movie collections', () => {
     const assertion = expect(load).rejects.toBeInstanceOf(
       GatewayTimeoutException,
     );
-    await jest.advanceTimersByTimeAsync(8000);
+    await jest.advanceTimersByTimeAsync(3000);
     await assertion;
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });

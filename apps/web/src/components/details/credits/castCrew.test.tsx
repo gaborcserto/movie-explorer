@@ -134,7 +134,7 @@ test('uses measured Series Cast widths for complete preview rows and preserves e
         responsiveInitialCounts={{
           tabletAndMobile: 14,
           desktop: 12,
-          wideDesktop: 16,
+          wideDesktop: 12,
         }}
       />
     </MemoryRouter>
@@ -143,10 +143,10 @@ test('uses measured Series Cast widths for complete preview rows and preserves e
   act(() => resizeCast(900));
   expect(screen.getByRole('status')).toHaveTextContent('Showing 12 of 25');
   act(() => resizeCast(1300));
-  expect(screen.getByRole('status')).toHaveTextContent('Showing 16 of 25');
+  expect(screen.getByRole('status')).toHaveTextContent('Showing 12 of 25');
 
   await user.click(screen.getByRole('button', { name: 'Show more cast' }));
-  expect(screen.getByRole('status')).toHaveTextContent('Showing 24 of 25');
+  expect(screen.getByRole('status')).toHaveTextContent('Showing 20 of 25');
   act(() => resizeCast(900));
   expect(screen.getByRole('status')).toHaveTextContent('Showing 20 of 25');
   await user.click(screen.getByRole('button', { name: 'Show less cast' }));

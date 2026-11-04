@@ -20,7 +20,7 @@ import type {
 } from '@movie-explorer/contracts';
 
 import { findRelatedTitles } from './tmdb-related-titles';
-import { findMovieCollection } from './tmdb-collection';
+import { TmdbCollections } from './tmdb-collection';
 import { TmdbExternalIds } from './tmdb-external-ids';
 import { normalizeTmdbRating } from './tmdb-ratings';
 import type { MovieProvider } from '../../movies/movie-provider';
@@ -62,6 +62,7 @@ export class TmdbMovieProvider implements MovieProvider {
   private readonly config: TmdbConfig;
   private readonly mapper: TmdbMovieMapper;
   private readonly transport: TmdbTransport;
+  private readonly collections: TmdbCollections;
   private readonly genreCache = new Map<
     string,
     { genres: TmdbGenre[]; expiresAt: number }
@@ -75,6 +76,7 @@ export class TmdbMovieProvider implements MovieProvider {
     this.config = config;
     this.mapper = new TmdbMovieMapper(config.imageBaseUrl);
     this.transport = new TmdbTransport(config, this.logger);
+    this.collections = new TmdbCollections(this.transport, config.imageBaseUrl);
   }
 
   findRelated(id: number, kind: RelatedTitleKind) {
@@ -88,7 +90,7 @@ export class TmdbMovieProvider implements MovieProvider {
   }
 
   findCollection(id: number) {
-    return findMovieCollection(this.transport, this.config.imageBaseUrl, id);
+    return this.collections.find(id);
   }
 
   public async findAll(query: MovieQueryParams): Promise<MovieListResponse> {
@@ -262,6 +264,10 @@ export class TmdbMovieProvider implements MovieProvider {
 
     if ('imdb_id' in movie) {
       this.externalIds?.remember('movie', id, movie.imdb_id);
+    }
+
+    if ('belongs_to_collection' in movie) {
+      this.collections.remember(id, movie.belongs_to_collection);
     }
 
     let details: MovieDetails;

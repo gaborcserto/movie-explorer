@@ -101,6 +101,32 @@ publicly to troubleshoot. Health validates the listener, not provider credential
 
 ## Routing and connectivity
 
+### CSP observation before enforcement
+
+The CloudFront response policy defines `Content-Security-Policy-Report-Only`
+in source. It does not block content and has not been deployed or browser-validated
+as part of the remediation. There is no report collector: use browser DevTools
+console/network diagnostics for initial validation; do not invent a report URL.
+
+The candidate allows same-origin scripts/API, TMDB images, YouTube thumbnails,
+Google Fonts CSS/fonts, and youtube-nocookie embedded players. Inline styles are
+allowed because React uses style attributes. External navigation links do not
+require a fetch-origin allowance. API-side TMDB/OMDb requests are unaffected.
+Custom `VITE_API_BASE_URL` or provider image origins need an explicit reviewed
+allowance before enforcement; avoid broad `https:` or wildcard allowances.
+
+Before enabling enforcement, test a production build through a local host that
+adds this report-only header (Vite preview alone does not add CloudFront headers).
+Inspect Home, search, movie, series, season, episode, person and populated Library;
+exercise responsive images, progressive previews, photo zoom/fullscreen, video
+playback and navigation, errors/retries, Favorites/Watched and all font weights.
+Inspect runtime JSON-LD insertion and any inline-script reports; resolve them
+without adding `unsafe-eval` or blanket inline-script permission. Repeat with
+the actual same-origin production topology and any approved origin overrides.
+Record CSP violations, resource failures, keyboard behavior and visual comparison.
+Only a separately verified change may add an enforcing CSP. Existing HSTS,
+nosniff, frame denial and referrer headers remain independent controls.
+
 Serve existing static assets, `robots.txt` and `sitemap.xml` as real files before
 SPA fallback. Unknown asset paths must return 404, not the HTML document.
 Deep links such as `/movie/27205`, `/series/1396/seasons/1` and `/person/6193`

@@ -522,7 +522,7 @@ describe('Series hierarchy', () => {
       )
     );
     expect(cast.getByRole('status')).toHaveTextContent(
-      'Showing 16 of 40 cast members'
+      'Showing 12 of 40 cast members'
     );
     act(() =>
       castObserver?.callback(

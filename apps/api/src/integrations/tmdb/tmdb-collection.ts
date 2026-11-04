@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { GatewayTimeoutException, NotFoundException } from '@nestjs/common';
 import type { MovieCollectionResponse } from '@movie-explorer/contracts';
 
 import { mapSearch, searchRecord, searchText } from './tmdb-search.mapper';
@@ -18,64 +18,215 @@ function collectionId(value: unknown): number | undefined {
     : undefined;
 }
 
-export async function findMovieCollection(
-  transport: TmdbTransport,
-  imageBaseUrl: string,
-  movieId: number,
-): Promise<MovieCollectionResponse> {
-  const movie = await transport.request({
-    path: `/movie/${movieId}`,
-    operation: 'movie-collection-reference',
-    allowNotFound: true,
-    validateBody: (value) => {
-      const details = record(value);
+const COLLECTION_TTL_MS = 30 * 60 * 1000;
+const COLLECTION_CAPACITY = 100;
+const REFERENCE_CAPACITY = 500;
+const ENRICHMENT_BUDGET_MS = 3000;
 
-      if (!details || details.id !== movieId) {
-        throw new Error('Invalid movie identity');
-      }
-      if (
-        details.belongs_to_collection != null &&
-        !collectionId(details.belongs_to_collection)
-      ) {
-        throw new Error('Invalid collection reference');
-      }
-    },
-  });
+type CollectionReference = { id: number; name?: string } | null;
+type Cached<T> = { value: T; expiresAt: number };
 
-  if (movie === undefined) {
-    throw new NotFoundException('Movie not found');
+function cacheValue<T>(
+  cache: Map<number, Cached<T>>,
+  id: number,
+  value: T,
+  capacity: number,
+) {
+  for (const [key, entry] of cache) {
+    if (entry.expiresAt <= Date.now()) {
+      cache.delete(key);
+    }
+  }
+  cache.delete(id);
+
+  if (cache.size >= capacity) {
+    cache.delete(cache.keys().next().value ?? id);
+  }
+  cache.set(id, { value, expiresAt: Date.now() + COLLECTION_TTL_MS });
+}
+
+// Each provider owns one fixed-locale instance; no cache crosses configuration boundaries.
+export class TmdbCollections {
+  private readonly references = new Map<number, Cached<CollectionReference>>();
+  private readonly collections = new Map<
+    number,
+    Cached<MovieCollectionResponse>
+  >();
+  private readonly requests = new Map<
+    number,
+    Promise<MovieCollectionResponse>
+  >();
+  private readonly collectionRequests = new Map<
+    number,
+    Promise<MovieCollectionResponse>
+  >();
+
+  constructor(
+    private readonly transport: TmdbTransport,
+    private readonly imageBaseUrl: string,
+  ) {}
+
+  remember(movieId: number, value: unknown) {
+    const id = collectionId(value);
+
+    // Omitted/malformed optional detail metadata must not invalidate primary details
+    // or suppress a later authoritative reference lookup.
+    if (value !== null && id === undefined) {
+      return;
+    }
+
+    const reference =
+      id === undefined ? null : { id, name: searchText(record(value)?.name) };
+    cacheValue(this.references, movieId, reference, REFERENCE_CAPACITY);
   }
 
-  const reference = record(record(movie)?.belongs_to_collection);
-  const id = collectionId(reference);
+  find(movieId: number): Promise<MovieCollectionResponse> {
+    const pending = this.requests.get(movieId);
 
-  if (id === undefined) {
-    return { collection: null, results: [], availability: 'available' };
+    if (pending) {
+      return pending;
+    }
+
+    const deadline = Date.now() + ENRICHMENT_BUDGET_MS;
+    const request = this.load(movieId, deadline).finally(() =>
+      this.requests.delete(movieId),
+    );
+    this.requests.set(movieId, request);
+
+    return request;
   }
 
-  const body = await transport.request({
-    path: `/collection/${id}`,
-    operation: 'movie-collection',
-    validateBody: (value) => {
-      const collection = record(value);
+  private remaining(deadline: number) {
+    const remaining = deadline - Date.now();
 
-      if (
-        !collection ||
-        collection.id !== id ||
-        !Array.isArray(collection.parts)
-      ) {
-        throw new Error('Invalid collection');
+    if (remaining <= 0) {
+      throw new GatewayTimeoutException('Movie provider request timed out');
+    }
+
+    return remaining;
+  }
+
+  private async load(
+    movieId: number,
+    deadline: number,
+  ): Promise<MovieCollectionResponse> {
+    let reference = this.references.get(movieId);
+
+    if (!reference || reference.expiresAt <= Date.now()) {
+      await this.lookupReference(movieId, deadline);
+      reference = this.references.get(movieId);
+    }
+
+    const memberOf = reference?.value;
+
+    if (!memberOf) {
+      return { collection: null, results: [], availability: 'available' };
+    }
+
+    const cached = this.collections.get(memberOf.id);
+    let collection: MovieCollectionResponse;
+
+    if (cached && cached.expiresAt > Date.now()) {
+      collection = cached.value;
+    } else {
+      let pending = this.collectionRequests.get(memberOf.id);
+
+      if (!pending) {
+        pending = this.lookupCollection(memberOf.id, deadline).finally(() =>
+          this.collectionRequests.delete(memberOf.id),
+        );
+        this.collectionRequests.set(memberOf.id, pending);
       }
-    },
-  });
 
-  return mapMovieCollection(
-    body,
-    id,
-    movieId,
-    imageBaseUrl,
-    searchText(reference?.name),
-  );
+      // A shared collection request may belong to a caller with a later deadline.
+      // Bound this wait too; do not abort a request still needed by another caller.
+      let timer: ReturnType<typeof setTimeout> | undefined;
+
+      try {
+        collection = await Promise.race([
+          pending,
+          new Promise<never>((_resolve, reject) => {
+            timer = setTimeout(
+              () =>
+                reject(
+                  new GatewayTimeoutException(
+                    'Movie provider request timed out',
+                  ),
+                ),
+              this.remaining(deadline),
+            );
+          }),
+        ]);
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    return {
+      ...collection,
+      collection: collection.collection && {
+        ...collection.collection,
+        name: collection.collection.name ?? memberOf.name,
+      },
+      results: collection.results.filter((movie) => movie.id !== movieId),
+    };
+  }
+
+  private async lookupReference(movieId: number, deadline: number) {
+    const movie = await this.transport.request({
+      path: `/movie/${movieId}`,
+      operation: 'movie-collection-reference',
+      allowNotFound: true,
+      timeoutMs: this.remaining(deadline),
+      validateBody: (value) => {
+        const details = record(value);
+
+        if (!details || details.id !== movieId) {
+          throw new Error('Invalid movie identity');
+        }
+        if (
+          details.belongs_to_collection != null &&
+          !collectionId(details.belongs_to_collection)
+        ) {
+          throw new Error('Invalid collection reference');
+        }
+      },
+    });
+
+    if (movie === undefined) {
+      throw new NotFoundException('Movie not found');
+    }
+
+    this.remember(movieId, record(movie)?.belongs_to_collection ?? null);
+  }
+
+  private async lookupCollection(id: number, deadline: number) {
+    const body = await this.transport.request({
+      path: `/collection/${id}`,
+      operation: 'movie-collection',
+      timeoutMs: this.remaining(deadline),
+      validateBody: (value) => {
+        const collection = record(value);
+
+        if (
+          !collection ||
+          collection.id !== id ||
+          !Array.isArray(collection.parts)
+        ) {
+          throw new Error('Invalid collection');
+        }
+      },
+    });
+
+    // Cache all members so another movie in the same collection can reuse them.
+    const result = mapMovieCollection(body, id, 0, this.imageBaseUrl);
+
+    if (result.availability === 'available') {
+      cacheValue(this.collections, id, result, COLLECTION_CAPACITY);
+    }
+
+    return result;
+  }
 }
 
 export function mapMovieCollection(

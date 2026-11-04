@@ -176,6 +176,29 @@ export class MovieExplorerStack extends Stack {
       this,
       'SecurityHeaders',
       {
+        // Observe compatibility before enforcing. React uses inline style attributes;
+        // provider image overrides require a separately reviewed origin allowance.
+        customHeadersBehavior: {
+          customHeaders: [
+            {
+              header: 'Content-Security-Policy-Report-Only',
+              value: [
+                "default-src 'self'",
+                "base-uri 'self'",
+                "object-src 'none'",
+                "script-src 'self'",
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+                "font-src 'self' https://fonts.gstatic.com",
+                "img-src 'self' data: blob: https://image.tmdb.org https://img.youtube.com",
+                "connect-src 'self'",
+                'frame-src https://www.youtube-nocookie.com',
+                "form-action 'self'",
+                "frame-ancestors 'none'",
+              ].join('; '),
+              override: true,
+            },
+          ],
+        },
         securityHeadersBehavior: {
           strictTransportSecurity: {
             accessControlMaxAge: Duration.days(365),

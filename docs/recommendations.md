@@ -115,10 +115,34 @@ TanStack Query, dependencies, or cloud infrastructure were introduced.
 These routes use the existing Movies and Series resource groups. IDs must be
 positive decimal safe integers; invalid IDs return 400 before provider work.
 Series integration uses TMDB's `tv` path internally. There are no new `/api/v1/tv`
-aliases. Each route retrieves only page 1 in the configured language, preserves
-source ranking, excludes adult entries and the current title, deduplicates by
-identity, and returns at most ten titles. No extra pages, title lookups, homepage
-pool sampling, or additional provider requests fill gaps.
+aliases. Related-title sources retrieve only page 1 in the configured language,
+exclude adult entries and the current title, and preserve source ranking. Movie
+Similar merges chronological Collection members, Recommendations and Similar,
+deduplicating by movie ID and limiting to ten only after merging. Other related
+routes retain their single-source behavior. No extra pages or per-result detail
+lookups fill gaps.
+
+Movie details remember validated collection membership (including confirmed
+absence) inside the fixed-locale provider instance. Collection enrichment reuses
+that reference instead of repeating `/movie/:id`; standalone requests look it up
+when unknown. References and complete mapped collections have a 30-minute TTL,
+FIFO limits of 500 references / 100 collections, and in-flight coalescing for
+identical movie and collection requests. All members are cached so different
+movies in the same collection share the fetch while excluding their own ID.
+Language, region, API origin and image configuration cannot cross provider
+instances. Failed/partial collections are not cached; successful references may
+still be reused on retry. Cold starts and separate Lambda environments do not
+share caches.
+
+The complete collection reference-plus-members lookup has a **3-second budget**;
+each fetch also respects the configured shorter TMDB transport timeout. Joining
+a shared collection request respects the caller's remaining budget without
+cancelling another caller's request. A slow/failed collection leaves successful
+Recommendations/Similar results available with `availability: "partial"`.
+This budget applies to collection enrichment, not to the independent related
+sources' existing transport deadlines. No automatic retries or separate Collection
+UI section are added. Primary details that arrive after an independent cold
+collection lookup starts cannot retroactively remove that already-issued request.
 
 ```json
 {
@@ -133,11 +157,13 @@ Missing images remain valid optional metadata. An available empty source returns
 200 with an empty array. Malformed entries are omitted with `partial` availability
 if any valid source titles remain; wholly malformed entries or an invalid page
 envelope return 502. Intentional adult/current/duplicate exclusions do not make a
-valid response partial. A source 404 returns 404; connection/authentication/5xx
+valid response partial. On single-source routes, a source 404 returns 404; connection/authentication/5xx
 failures return sanitized 502, rate limits return 429 with safe `Retry-After`,
 and provider deadlines return 504. Swagger documents those responses and the
 existing movie/series summary schemas. Credentials and raw provider shapes never
-appear in the application response.
+appear in the application response. Merged Movie Similar can retain other sources
+with partial availability when one source fails; it preserves the Similar failure
+when no usable titles remain and that source rejected.
 
 ## Presentation and recovery
 
