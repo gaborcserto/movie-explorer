@@ -1,6 +1,8 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import type {
   RelatedTitleKind,
+  RelatedTitlesResponse,
+  RecommendationTitle,
   MovieDetails,
   WatchProviders,
   MovieListResponse,
@@ -22,8 +24,50 @@ export class MoviesService {
     @Optional() private readonly ratings?: RatingsService,
   ) {}
 
-  findRelated(id: number, kind: RelatedTitleKind) {
-    return this.movieProvider.findRelated(id, kind);
+  async findRelated(
+    id: number,
+    kind: RelatedTitleKind,
+  ): Promise<RelatedTitlesResponse> {
+    if (kind !== 'similar') {
+      return this.movieProvider.findRelated(id, kind);
+    }
+
+    const [collection, recommended, similar] = await Promise.allSettled([
+      this.movieProvider.findCollection(id),
+      this.movieProvider.findRelated(id, 'recommendations'),
+      this.movieProvider.findRelated(id, 'similar'),
+    ]);
+    const results = new Map<number, RecommendationTitle>();
+    const sources = [collection, recommended, similar];
+
+    for (const source of sources) {
+      if (source.status === 'fulfilled') {
+        for (const movie of source.value.results) {
+          if (movie.id !== id && !results.has(movie.id)) {
+            results.set(movie.id, movie);
+          }
+        }
+      }
+    }
+
+    if (!results.size && similar.status === 'rejected') {
+      throw similar.reason;
+    }
+
+    return {
+      results: [...results.values()].slice(0, 10),
+      availability: sources.some(
+        (source) =>
+          source.status === 'rejected' ||
+          source.value.availability === 'partial',
+      )
+        ? 'partial'
+        : 'available',
+    };
+  }
+
+  findCollection(id: number) {
+    return this.movieProvider.findCollection(id);
   }
 
   public findAll(query: MovieQueryParams): Promise<MovieListResponse> {

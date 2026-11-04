@@ -1,9 +1,7 @@
 import type { MouseEvent } from 'react';
 import {
-  FaBookmark,
   FaCircleCheck,
   FaHeart,
-  FaRegBookmark,
   FaRegCircleCheck,
   FaRegHeart,
 } from 'react-icons/fa6';
@@ -32,13 +30,6 @@ interface ActionDefinition {
 
 const actions: ActionDefinition[] = [
   {
-    collection: 'watchlist',
-    inactiveIcon: FaRegBookmark,
-    activeIcon: FaBookmark,
-    addLabel: 'Add to Watchlist',
-    removeLabel: 'Remove from Watchlist',
-  },
-  {
     collection: 'watched',
     inactiveIcon: FaRegCircleCheck,
     activeIcon: FaCircleCheck,
@@ -55,7 +46,6 @@ const actions: ActionDefinition[] = [
 ];
 
 const actionLabels: Record<LibraryCollection, string> = {
-  watchlist: 'Watchlist',
   watched: 'Watched',
   favorites: 'Favorites',
 };
@@ -101,10 +91,6 @@ export default function PersonalLibraryActions({
           firstAirDate: firstAirDate ?? (year ? `${year}` : undefined),
         };
   const toggle = useLibraryStore((state) => state.toggle);
-  const isWatchlisted = useStore(
-    useLibraryStore,
-    selectLibraryMembership(key, 'watchlist')
-  );
   const isWatched = useStore(
     useLibraryStore,
     selectLibraryMembership(key, 'watched')
@@ -113,7 +99,7 @@ export default function PersonalLibraryActions({
     useLibraryStore,
     selectLibraryMembership(key, 'favorites')
   );
-  const memberships = [isWatchlisted, isWatched, isFavorite];
+  const memberships = [isWatched, isFavorite];
 
   const handleToggle = (
     event: MouseEvent<HTMLButtonElement>,

@@ -14,14 +14,11 @@ import type { LibraryCollection } from '../../features/library/libraryStore';
 import './libraryPage.scss';
 
 const collections: { id: LibraryCollection; label: string }[] = [
-  { id: 'watchlist', label: 'Watchlist' },
-  { id: 'watched', label: 'Watched' },
   { id: 'favorites', label: 'Favorites' },
+  { id: 'watched', label: 'Watched' },
 ];
 
 const emptyMessages: Record<LibraryCollection, string> = {
-  watchlist:
-    'Your Watchlist is empty. Add movies and series to keep them here.',
   watched: 'You have not marked any movies or series as watched yet.',
   favorites: 'Your Favorites collection is empty.',
 };
@@ -36,7 +33,7 @@ export default function LibraryPage() {
   const requestedCollection = searchParams.get('collection');
   const activeCollection = isCollection(requestedCollection)
     ? requestedCollection
-    : 'watchlist';
+    : 'favorites';
   const collectionPanelRef =
     useStablePanelHeight<HTMLDivElement>(activeCollection);
   const items = useStore(

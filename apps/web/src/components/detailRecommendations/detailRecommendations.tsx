@@ -7,11 +7,10 @@ export default function DetailRecommendations({
   resource: 'movies' | 'series';
   id: number;
 }) {
-  const label = resource === 'movies' ? 'Movies' : 'Series';
-
   return (
     <RecommendationRow
-      title={`Similar ${label}`}
+      title={resource === 'movies' ? 'Similar Movies' : 'Similar Series'}
+      allowMissingPosters={resource === 'movies'}
       source={{ resource, id, kind: 'similar' }}
     />
   );

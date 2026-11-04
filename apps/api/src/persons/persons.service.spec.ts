@@ -7,6 +7,7 @@ describe('PersonsService', () => {
   const provider: jest.Mocked<MovieProvider> = {
     findAll: jest.fn(),
     findRelated: jest.fn(),
+    findCollection: jest.fn(),
     findOne: jest.fn(),
     findSuggestions: jest.fn(),
     findPerson: jest.fn(),

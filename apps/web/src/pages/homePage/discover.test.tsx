@@ -121,7 +121,7 @@ describe('Discover page', () => {
     expect(screen.getByRole('heading', { name: 'Movies' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Series' })).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Add to Watchlist Trending Feature' })
+      screen.getByRole('button', { name: 'Add to Favorites Trending Feature' })
     ).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: 'Movies' }).querySelector('svg')

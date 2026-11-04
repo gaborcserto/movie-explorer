@@ -95,7 +95,7 @@ test('fills the desktop Cast grid and preserves the mobile/tablet scroller', () 
     'repeat(6, minmax(0, 1fr))'
   );
   expect(declarationsForContainer('.cast-grid', '(min-width: 1250px)')).toBe(
-    'repeat(8, minmax(0, 1fr))'
+    'repeat(6, minmax(0, 1fr))'
   );
   expect(
     declarationsForMedia('.cast-scroll', '(width <= 1023.98px)')

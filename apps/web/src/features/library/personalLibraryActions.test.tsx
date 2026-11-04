@@ -19,9 +19,6 @@ test('renders independently toggleable accessible controls and synchronizes with
     />
   );
 
-  const watchlist = screen.getByRole('button', {
-    name: 'Add to Watchlist Interstellar',
-  });
   const watched = screen.getByRole('button', {
     name: 'Mark as Watched Interstellar',
   });
@@ -29,21 +26,32 @@ test('renders independently toggleable accessible controls and synchronizes with
     name: 'Add to Favorites Interstellar',
   });
 
-  expect(watchlist).toHaveAttribute('aria-pressed', 'false');
   expect(watched).toHaveAttribute('aria-pressed', 'false');
   expect(favorites).toHaveAttribute('aria-pressed', 'false');
 
-  fireEvent.click(watchlist);
+  fireEvent.click(favorites);
 
   expect(
-    screen.getByRole('button', { name: 'Remove from Watchlist Interstellar' })
+    screen.getByRole('button', { name: 'Remove from Favorites Interstellar' })
   ).toHaveAttribute('aria-pressed', 'true');
   expect(
     screen.getByRole('button', { name: 'Mark as Watched Interstellar' })
   ).toHaveAttribute('aria-pressed', 'false');
   expect(
-    useLibraryStore.getState().has(mediaKey('movie', 17), 'watchlist')
+    useLibraryStore.getState().has(mediaKey('movie', 17), 'favorites')
   ).toBe(true);
+
+  fireEvent.click(watched);
+  expect(
+    screen.getByRole('button', { name: 'Mark as Not Watched Interstellar' })
+  ).toHaveAttribute('aria-pressed', 'true');
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Remove from Favorites Interstellar' })
+  );
+  expect(
+    screen.getByRole('button', { name: 'Mark as Not Watched Interstellar' })
+  ).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.queryByRole('button', { name: /Watchlist/ })).toBeNull();
 });
 
 test('keeps movie and TV items with the same TMDB ID independent', () => {
@@ -76,18 +84,17 @@ test('shows text labels for expanded actions while compact card actions stay ico
     />
   );
 
-  expect(screen.getByText('Watchlist')).toBeVisible();
   expect(screen.getByText('Watched')).toBeVisible();
   expect(screen.getByText('Favorites')).toBeVisible();
   expect(
-    screen.getByRole('button', { name: 'Add to Watchlist Dune' })
+    screen.getByRole('button', { name: 'Add to Favorites Dune' })
   ).toHaveAttribute('aria-pressed', 'false');
 
   rerender(<PersonalLibraryActions mediaType="movie" id={18} title="Dune" />);
 
-  expect(screen.queryByText('Watchlist')).not.toBeInTheDocument();
+  expect(screen.queryByText('Favorites')).not.toBeInTheDocument();
   expect(
-    screen.getByRole('button', { name: 'Add to Watchlist Dune' })
+    screen.getByRole('button', { name: 'Add to Favorites Dune' })
   ).toBeInTheDocument();
 });
 
@@ -100,10 +107,9 @@ test('supports native keyboard activation for the action buttons', async () => {
   await user.keyboard('{Enter}');
 
   expect(
-    screen.getByRole('button', { name: 'Remove from Watchlist Arrival' })
+    screen.getByRole('button', { name: 'Mark as Not Watched Arrival' })
   ).toHaveAttribute('aria-pressed', 'true');
 
-  await user.tab();
   await user.tab();
   await user.keyboard(' ');
 

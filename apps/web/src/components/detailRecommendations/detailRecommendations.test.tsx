@@ -14,6 +14,7 @@ vi.mock('../../util/apiUtils', async (importOriginal) => ({
   getRatings: vi.fn(),
   getWatchProviders: vi.fn(),
   getRelatedTitles: vi.fn(),
+  getMovieCollection: vi.fn(),
   getDiscoverySection: vi.fn(),
   getStreamingProviders: vi.fn(),
   getStreamingProviderSection: vi.fn(),
@@ -64,6 +65,11 @@ const series: SeriesDetails = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(api.getMovieCollection).mockResolvedValue({
+    collection: null,
+    results: [],
+    availability: 'available',
+  });
   vi.mocked(api.getMovie).mockResolvedValue(movie);
   vi.mocked(api.getSeries).mockResolvedValue(series);
   vi.mocked(api.getRatings).mockResolvedValue({

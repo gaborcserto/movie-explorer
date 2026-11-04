@@ -46,6 +46,14 @@ beforeEach(() => {
 });
 
 describe('Personal Library page', () => {
+  it('opens legacy Watchlist URLs in Favorites without a Watchlist navigation entry', () => {
+    renderLibrary('/library?collection=watchlist');
+    expect(screen.getByRole('link', { name: /Favorites/ })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+    expect(screen.queryByRole('link', { name: /Watchlist/ })).toBeNull();
+  });
   it('reuses the primary navigation with Library active and working browse links', async () => {
     const user = userEvent.setup();
     renderLibrary();
@@ -82,7 +90,7 @@ describe('Personal Library page', () => {
     );
   });
 
-  it('defaults to Watchlist and reflects collection counts and membership changes', async () => {
+  it('defaults to Favorites and reflects collection counts and membership changes', async () => {
     useLibraryStore.getState().add(
       {
         mediaType: 'movie',
@@ -91,7 +99,7 @@ describe('Personal Library page', () => {
         posterUrl: '/film.jpg',
         releaseDate: '2021-04-02',
       },
-      'watchlist'
+      'favorites'
     );
     useLibraryStore.getState().add(
       {
@@ -101,7 +109,7 @@ describe('Personal Library page', () => {
         posterUrl: null,
         firstAirDate: null,
       },
-      'watchlist'
+      'favorites'
     );
 
     const user = userEvent.setup();
@@ -121,7 +129,7 @@ describe('Personal Library page', () => {
     ).toBeVisible();
 
     expect(
-      screen.getByRole('link', { name: /Watchlist \(2\)/ })
+      screen.getByRole('link', { name: /Favorites \(2\)/ })
     ).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('img', { name: 'Saved film' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Saved film' })).toHaveAttribute(
@@ -135,12 +143,12 @@ describe('Personal Library page', () => {
     expect(screen.getByText('2021')).toBeInTheDocument();
 
     await user.click(
-      screen.getByRole('button', { name: 'Remove from Watchlist Saved film' })
+      screen.getByRole('button', { name: 'Remove from Favorites Saved film' })
     );
 
     expect(screen.queryByRole('link', { name: 'Saved film' })).toBeNull();
-    expect(useLibraryStore.getState().has('movie:11', 'watchlist')).toBe(false);
-    expect(screen.getByRole('link', { name: /Watchlist \(1\)/ })).toHaveFocus();
+    expect(useLibraryStore.getState().has('movie:11', 'favorites')).toBe(false);
+    expect(screen.getByRole('link', { name: /Favorites \(1\)/ })).toHaveFocus();
   });
 
   it('switches collections through the URL and supports Back and Forward', async () => {
@@ -148,7 +156,7 @@ describe('Personal Library page', () => {
       .getState()
       .add(
         { mediaType: 'movie', id: 7, title: 'Favorite', releaseDate: '2020' },
-        'favorites'
+        'watched'
       );
     const user = userEvent.setup();
     renderLibrary('/library?collection=invalid');
@@ -156,16 +164,18 @@ describe('Personal Library page', () => {
       document.querySelector('.library-page__collection-panel')
     ).toHaveClass('tab-panel-stable');
 
-    expect(screen.getByRole('link', { name: /Watchlist/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Favorites/ })).toHaveAttribute(
       'aria-current',
       'page'
     );
-    expect(screen.getByText(/Watchlist is empty/)).toBeInTheDocument();
-    await user.click(screen.getByRole('link', { name: /Favorites/ }));
+    expect(
+      screen.getByText(/Favorites collection is empty/)
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('link', { name: /Watched/ }));
     expect(screen.getByLabelText('Current route')).toHaveTextContent(
-      'collection=favorites'
+      'collection=watched'
     );
-    expect(screen.getByRole('link', { name: /Favorites/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Watched/ })).toHaveAttribute(
       'aria-current',
       'page'
     );
@@ -175,12 +185,12 @@ describe('Personal Library page', () => {
     );
 
     await user.click(screen.getByRole('button', { name: 'Back' }));
-    expect(screen.getByRole('link', { name: /Watchlist/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Favorites/ })).toHaveAttribute(
       'aria-current',
       'page'
     );
     await user.click(screen.getByRole('button', { name: 'Forward' }));
-    expect(screen.getByRole('link', { name: /Favorites/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Watched/ })).toHaveAttribute(
       'aria-current',
       'page'
     );

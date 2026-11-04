@@ -38,6 +38,7 @@ describe('MoviesService', () => {
     movieProvider = {
       findAll: jest.fn(),
       findRelated: jest.fn(),
+      findCollection: jest.fn(),
       findSuggestions: jest.fn(),
       findOne: jest.fn(),
       findRatings: jest.fn(),
@@ -48,6 +49,88 @@ describe('MoviesService', () => {
       findWatchProviders: jest.fn(),
     };
     service = new MoviesService(movieProvider);
+  });
+
+  const title = (id: number) => ({
+    mediaType: 'movie' as const,
+    id,
+    title: `Movie ${id}`,
+  });
+
+  it('merges chronological collection members before recommended and similar titles', async () => {
+    movieProvider.findCollection.mockResolvedValue({
+      collection: { id: 10 },
+      availability: 'available',
+      results: [
+        { ...title(2), releaseDate: '2000-01-01' },
+        { ...title(3), releaseDate: '2010-01-01' },
+      ],
+    });
+    movieProvider.findRelated.mockImplementation(async (_id, kind) => ({
+      availability: 'available',
+      results:
+        kind === 'recommendations'
+          ? [title(3), title(4), title(1)]
+          : [title(2), title(5), title(4)],
+    }));
+
+    const result = await service.findRelated(1, 'similar');
+
+    expect(result.results.map(({ id }) => id)).toEqual([2, 3, 4, 5]);
+    expect(result.availability).toBe('available');
+  });
+
+  it.each([null, { id: 10 }])(
+    'preserves recommendations for an empty collection %j',
+    async (collection) => {
+      movieProvider.findCollection.mockResolvedValue({
+        collection,
+        results: [],
+        availability: 'available',
+      });
+      movieProvider.findRelated.mockResolvedValue({
+        results: [title(2)],
+        availability: 'available',
+      });
+
+      await expect(service.findRelated(1, 'similar')).resolves.toEqual({
+        results: [title(2)],
+        availability: 'available',
+      });
+    },
+  );
+
+  it('falls back on collection failure and limits only after merging', async () => {
+    movieProvider.findCollection.mockRejectedValue(new BadGatewayException());
+    movieProvider.findRelated.mockResolvedValue({
+      results: [title(2)],
+      availability: 'available',
+    });
+
+    await expect(service.findRelated(1, 'similar')).resolves.toEqual({
+      results: [title(2)],
+      availability: 'partial',
+    });
+
+    movieProvider.findCollection.mockResolvedValue({
+      collection: { id: 10 },
+      results: Array.from({ length: 15 }, (_, i) => title(i + 20)),
+      availability: 'available',
+    });
+    const result = await service.findRelated(1, 'similar');
+
+    expect(result.results.map(({ id }) => id)).toEqual(
+      Array.from({ length: 10 }, (_, i) => i + 20),
+    );
+  });
+
+  it('keeps direct recommendations independent of collections', async () => {
+    movieProvider.findRelated.mockResolvedValue({
+      results: [],
+      availability: 'available',
+    });
+    await service.findRelated(1, 'recommendations');
+    expect(movieProvider.findCollection).not.toHaveBeenCalled();
   });
 
   it('returns movies from the configured provider using query filters', async () => {

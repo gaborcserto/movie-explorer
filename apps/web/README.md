@@ -9,6 +9,13 @@ React 19, TypeScript, and Vite frontend for Movie Explorer.
 - `/movie/:movieId` (movie details)
 - `/series/:id`, `/series/:id/seasons/:seasonNumber`, and `/series/:id/seasons/:seasonNumber/episodes/:episodeNumber` (series, season, and episode details)
 - `/person/:id` (person details and filmography)
+- `/library` (Favorites by default), `/library?collection=favorites`, and `/library?collection=watched`
+
+Favorites and Watched are independent guest-only states for movies and series,
+persisted in localStorage. Legacy Watchlist entries migrate into Favorites.
+See [Library persistence](../../docs/library.md). Movie details also show
+**Similar Movies** with collection members first, followed by Recommendations
+and Similar titles; see [Collections](../../docs/recommendations.md#movie-collections).
 
 ## Development
 

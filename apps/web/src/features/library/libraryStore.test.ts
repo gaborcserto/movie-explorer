@@ -31,11 +31,11 @@ describe('Personal Library store', () => {
   it('starts empty and exposes stable collection selectors', async () => {
     const store = await loadStore();
     const state = store.useLibraryStore.getState();
-    const selectWatchlist = store.selectLibraryCollection('watchlist');
+    const selectFavorites = store.selectLibraryCollection('favorites');
 
     expect(state.items).toEqual({});
-    expect(selectWatchlist(state)).toEqual([]);
-    expect(store.selectLibraryCollection('watchlist')).toBe(selectWatchlist);
+    expect(selectFavorites(state)).toEqual([]);
+    expect(store.selectLibraryCollection('favorites')).toBe(selectFavorites);
   });
 
   it('adds, removes and toggles collection membership independently', async () => {
@@ -43,26 +43,27 @@ describe('Personal Library store', () => {
 
     const key = 'movie:42';
 
-    expect(useLibraryStore.getState().add(movie, 'watchlist')).toBe(true);
     expect(useLibraryStore.getState().add(movie, 'favorites')).toBe(true);
-    expect(useLibraryStore.getState().has(key, 'watchlist')).toBe(true);
     expect(useLibraryStore.getState().has(key, 'favorites')).toBe(true);
-    expect(useLibraryStore.getState().remove(key, 'favorites')).toBe(true);
-    expect(useLibraryStore.getState().has(key, 'watchlist')).toBe(true);
+    expect(useLibraryStore.getState().has(key, 'watched')).toBe(false);
 
     expect(useLibraryStore.getState().toggle(movie, 'watched')).toBe(true);
     expect(useLibraryStore.getState().has(key, 'watched')).toBe(true);
-    expect(useLibraryStore.getState().has(key, 'watchlist')).toBe(true);
+    expect(useLibraryStore.getState().has(key, 'favorites')).toBe(true);
     expect(useLibraryStore.getState().toggle(movie, 'watched')).toBe(true);
     expect(useLibraryStore.getState().has(key, 'watched')).toBe(false);
+    expect(useLibraryStore.getState().remove(key, 'favorites')).toBe(true);
+    expect(useLibraryStore.getState().has(key, 'favorites')).toBe(false);
+    expect(useLibraryStore.getState().add(movie, 'watched')).toBe(true);
+    expect(useLibraryStore.getState().has(key, 'favorites')).toBe(false);
   });
 
   it('removes the record after the final collection is cleared', async () => {
     const { useLibraryStore } = await loadStore();
 
-    useLibraryStore.getState().add(movie, 'watchlist');
+    useLibraryStore.getState().add(movie, 'favorites');
 
-    expect(useLibraryStore.getState().remove('movie:42', 'watchlist')).toBe(
+    expect(useLibraryStore.getState().remove('movie:42', 'favorites')).toBe(
       true
     );
     expect(useLibraryStore.getState().items).toEqual({});
@@ -71,7 +72,7 @@ describe('Personal Library store', () => {
   it('keeps movie and TV records with the same TMDB ID separate', async () => {
     const { useLibraryStore } = await loadStore();
 
-    useLibraryStore.getState().add(movie, 'watchlist');
+    useLibraryStore.getState().add(movie, 'watched');
     useLibraryStore.getState().add(series, 'favorites');
 
     expect(Object.keys(useLibraryStore.getState().items)).toEqual([
@@ -87,9 +88,9 @@ describe('Personal Library store', () => {
 
     const invalidMedia = { ...movie, id: 0 } as unknown as typeof movie;
 
-    const invalidCollection = 'queue' as 'watchlist';
+    const invalidCollection = 'queue' as 'favorites';
 
-    expect(useLibraryStore.getState().add(invalidMedia, 'watchlist')).toBe(
+    expect(useLibraryStore.getState().add(invalidMedia, 'favorites')).toBe(
       false
     );
     expect(useLibraryStore.getState().add(movie, invalidCollection)).toBe(
@@ -98,10 +99,10 @@ describe('Personal Library store', () => {
     expect(
       useLibraryStore.getState().remove('movie:42', invalidCollection)
     ).toBe(false);
-    expect(useLibraryStore.getState().remove('movie:042', 'watchlist')).toBe(
+    expect(useLibraryStore.getState().remove('movie:042', 'favorites')).toBe(
       false
     );
-    expect(useLibraryStore.getState().has('__proto__', 'watchlist')).toBe(
+    expect(useLibraryStore.getState().has('__proto__', 'favorites')).toBe(
       false
     );
     expect(useLibraryStore.getState().items).toEqual({});
@@ -118,7 +119,7 @@ describe('Personal Library store', () => {
       'favorites'
     );
 
-    useLibraryStore.getState().add(movie, 'watchlist');
+    useLibraryStore.getState().add(movie, 'watched');
 
     expect(notifications).toHaveBeenCalledTimes(1);
     expect(selectMovieFavorite(useLibraryStore.getState())).toBe(false);
@@ -129,9 +130,104 @@ describe('Personal Library store', () => {
 });
 
 describe('Personal Library persistence', () => {
+  it('merges legacy saved titles into Favorites, preserves Watched and retains the original payload', async () => {
+    const key = 'movie-explorer.personal-library';
+    const legacy = JSON.stringify({
+      version: 1,
+      state: {
+        items: {
+          'movie:42': {
+            ...movie,
+            collections: { watchlist: true, favorites: true, watched: true },
+          },
+          'tv:42': {
+            ...series,
+            collections: { watchlist: true, favorites: false, watched: false },
+          },
+          'movie:43': {
+            ...movie,
+            id: 43,
+            collections: { watchlist: false, favorites: false, watched: true },
+          },
+          invalid: {
+            unexpected: 'Preserve even unknown legacy data in backup',
+          },
+        },
+      },
+    });
+    localStorage.setItem(key, legacy);
+
+    const first = await loadStore();
+    expect(
+      first.useLibraryStore.getState().items['movie:42'].collections
+    ).toEqual({ favorites: true, watched: true });
+    expect(first.useLibraryStore.getState().items['tv:42'].collections).toEqual(
+      { favorites: true, watched: false }
+    );
+    expect(
+      first.useLibraryStore.getState().items['movie:43'].collections
+    ).toEqual({ favorites: false, watched: true });
+    expect(Object.keys(first.useLibraryStore.getState().items)).toHaveLength(3);
+    expect(localStorage.getItem(`${key}.v1-backup`)).toBe(legacy);
+    const migrated = localStorage.getItem(key);
+    expect(JSON.parse(migrated ?? '{}').version).toBe(2);
+    expect(migrated).not.toContain('watchlist');
+
+    const second = await loadStore();
+    expect(second.useLibraryStore.getState().items).toEqual(
+      first.useLibraryStore.getState().items
+    );
+    expect(localStorage.getItem(key)).toBe(migrated);
+    expect(localStorage.getItem(`${key}.v1-backup`)).toBe(legacy);
+
+    second.useLibraryStore.getState().remove('tv:42', 'favorites');
+    const third = await loadStore();
+    expect(third.useLibraryStore.getState().has('tv:42', 'favorites')).toBe(
+      false
+    );
+    expect(third.useLibraryStore.getState().has('movie:42', 'watched')).toBe(
+      true
+    );
+  });
+
+  it('keeps the original v1 data when the migration backup cannot be written', async () => {
+    const key = 'movie-explorer.personal-library';
+    const original = JSON.stringify({
+      version: 1,
+      state: {
+        items: {
+          'movie:42': {
+            ...movie,
+            collections: { watchlist: true, favorites: false, watched: true },
+          },
+        },
+      },
+    });
+    localStorage.setItem(key, original);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+
+    const { useLibraryStore } = await loadStore();
+    expect(useLibraryStore.getState().has('movie:42', 'favorites')).toBe(true);
+    expect(useLibraryStore.getState().has('movie:42', 'watched')).toBe(true);
+    useLibraryStore.getState().remove('movie:42', 'favorites');
+    expect(localStorage.getItem(key)).toBe(original);
+    expect(useLibraryStore.getState().persistenceWarning).toMatch(
+      /original data is preserved/i
+    );
+  });
+
+  it('prevents duplicate entries when the same Favorite is saved repeatedly', async () => {
+    const { useLibraryStore } = await loadStore();
+    useLibraryStore.getState().add(movie, 'favorites');
+    useLibraryStore.getState().add(movie, 'favorites');
+    expect(Object.keys(useLibraryStore.getState().items)).toEqual(['movie:42']);
+  });
+
   it('writes only minimal state and rehydrates synchronously', async () => {
     const first = await loadStore();
-    first.useLibraryStore.getState().add(movie, 'watchlist');
+    first.useLibraryStore.getState().add(movie, 'favorites');
 
     const raw = localStorage.getItem(first.LIBRARY_STORAGE_KEY);
 
@@ -140,7 +236,7 @@ describe('Personal Library persistence', () => {
     expect(raw).not.toContain('genres');
 
     const second = await loadStore();
-    expect(second.useLibraryStore.getState().has('movie:42', 'watchlist')).toBe(
+    expect(second.useLibraryStore.getState().has('movie:42', 'favorites')).toBe(
       true
     );
     expect(second.useLibraryStore.getState().items['movie:42']).toMatchObject({
@@ -213,12 +309,12 @@ describe('Personal Library persistence', () => {
     localStorage.setItem('movie-explorer.personal-library', payload);
 
     const { useLibraryStore } = await loadStore();
-    useLibraryStore.getState().add(movie, 'watchlist');
+    useLibraryStore.getState().add(movie, 'favorites');
 
     expect(localStorage.getItem('movie-explorer.personal-library')).toBe(
       payload
     );
-    expect(useLibraryStore.getState().has('movie:42', 'watchlist')).toBe(true);
+    expect(useLibraryStore.getState().has('movie:42', 'favorites')).toBe(true);
     expect(String(useLibraryStore.getState().persistenceWarning)).toMatch(
       /newer app/i
     );
@@ -230,10 +326,10 @@ describe('Personal Library persistence', () => {
     });
 
     const unavailable = await loadStore();
-    unavailable.useLibraryStore.getState().add(movie, 'watchlist');
+    unavailable.useLibraryStore.getState().add(movie, 'favorites');
 
     expect(
-      unavailable.useLibraryStore.getState().has('movie:42', 'watchlist')
+      unavailable.useLibraryStore.getState().has('movie:42', 'favorites')
     ).toBe(true);
 
     vi.restoreAllMocks();
@@ -263,13 +359,13 @@ describe('Personal Library snapshots', () => {
       title: 'No poster or year',
     };
 
-    useLibraryStore.getState().add(noOptionalMetadata, 'watchlist');
+    useLibraryStore.getState().add(noOptionalMetadata, 'favorites');
 
     expect(useLibraryStore.getState().items['tv:77']).toEqual({
       mediaType: 'tv',
       id: 77,
       title: 'No poster or year',
-      collections: { watchlist: true, watched: false, favorites: false },
+      collections: { watched: false, favorites: true },
     });
   });
 
@@ -290,7 +386,7 @@ describe('Personal Library snapshots', () => {
       title: 'Fresh Movie Title',
       posterUrl: '/fresh.jpg',
       year: 2025,
-      collections: { watchlist: false, watched: true, favorites: true },
+      collections: { watched: true, favorites: true },
     });
     expect(
       useLibraryStore.getState().updateSnapshot({ ...series, id: 88 })

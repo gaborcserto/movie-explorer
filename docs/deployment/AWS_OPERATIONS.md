@@ -55,11 +55,13 @@ dumps. The first live checks remain outstanding after AWS-08.
    `/api/v1/...` route must return JSON 404, never SPA HTML. Missing assets retain
    an origin error (private S3 commonly 403), never index.html.
 3. Load Home, Movies, Series, Search, Movie Details, Series Details and deep links
-   directly. Test filters/history, Favorites, Watched and Watchlist persistence.
+   directly. Test filters/history, independent Favorites/Watched persistence and
+   legacy Watchlist-to-Favorites migration. Check movie Collections and Similar
+   deduplication where TMDB provides a collection.
    Check desktop/tablet/mobile widths without redesigning the existing UI.
 4. Recommendations: empty Favorites → Popular, one/multiple Movie Favorites,
    multiple Series Favorites and mixed types → independent typed suggestions.
-   Favorites/Watched are excluded; Watchlist remains eligible. Switch tabs
+   Favorites/Watched are excluded; migrated saved titles are Favorites. Switch tabs
    repeatedly and verify retained results/scroll with no repeated fetches.
    Test empty/partial/outage and recovery in a controlled staging fixture rather
    than intentionally disrupting production provider credentials.

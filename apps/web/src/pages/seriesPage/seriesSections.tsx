@@ -18,7 +18,7 @@ import { getSeriesCredits } from '../../util/apiUtils';
 const SERIES_CAST_INITIAL_COUNTS = {
   tabletAndMobile: 14,
   desktop: 12,
-  wideDesktop: 16,
+  wideDesktop: 12,
 };
 
 const unavailable: SectionAvailability = { status: 'unavailable' };

@@ -21,7 +21,7 @@ import { HttpErrorFilter } from '../src/http-error.filter';
 
 describe('Related titles HTTP routes', () => {
   let app: INestApplication;
-  const movie = { findRelated: jest.fn() };
+  const movie = { findRelated: jest.fn(), findCollection: jest.fn() };
   const series = { findRelated: jest.fn() };
 
   beforeAll(async () => {
@@ -45,9 +45,45 @@ describe('Related titles HTTP routes', () => {
     await app.init();
   });
 
-  beforeEach(() => jest.resetAllMocks());
+  beforeEach(() => {
+    jest.resetAllMocks();
+    movie.findCollection.mockResolvedValue({
+      collection: null,
+      results: [],
+      availability: 'available',
+    });
+  });
   afterAll(async () => {
     await app.close();
+  });
+
+  it('serves collection, recommended and similar movies through the existing Similar route', async () => {
+    const title = (id: number) => ({
+      mediaType: 'movie',
+      id,
+      title: `Movie ${id}`,
+    });
+    movie.findCollection.mockResolvedValue({
+      collection: { id: 10 },
+      results: [title(2), title(3)],
+      availability: 'available',
+    });
+    movie.findRelated.mockImplementation(async (_id, kind) => ({
+      results:
+        kind === 'recommendations'
+          ? [title(3), title(4), title(1)]
+          : [title(5), title(4)],
+      availability: 'available',
+    }));
+
+    await request(app.getHttpServer())
+      .get('/api/v1/movies/1/similar')
+      .expect(200, {
+        results: [2, 3, 4, 5].map(title),
+        availability: 'available',
+      });
+    expect(movie.findCollection).toHaveBeenCalledTimes(1);
+    expect(movie.findRelated).toHaveBeenCalledTimes(2);
   });
 
   describe.each(['movies', 'series'])('%s', (resource) => {

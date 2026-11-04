@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type {
+  MovieCollectionResponse,
   PersonalizedRecommendationRequest,
   PersonalizedRecommendationResponse,
   RecommendationCategory,
@@ -11,6 +12,7 @@ import {
   getPersonalizedRecommendations,
   getRecommendations,
   getRelatedTitles,
+  getMovieCollection,
 } from '../../util/apiUtils';
 import { ApiRequestError } from '../../util/apiErrors';
 import { isCancelledError } from '../../util/errorPresentation';
@@ -30,7 +32,7 @@ export type RecommendationSource =
       libraryKey?: never;
       resource: 'movies' | 'series';
       id: number;
-      kind: RelatedTitleKind;
+      kind: RelatedTitleKind | 'collection';
     };
 
 export default function useRecommendationResource(
@@ -42,7 +44,9 @@ export default function useRecommendationResource(
   const [attempt, setAttempt] = useState(0);
   const [pending, setPending] = useState(true);
   const [data, setData] = useState<
-    RelatedTitlesResponse | PersonalizedRecommendationResponse
+    | RelatedTitlesResponse
+    | PersonalizedRecommendationResponse
+    | MovieCollectionResponse
   >();
   const [error, setError] = useState<unknown>();
   const [delay, setDelay] = useState(0);
@@ -106,7 +110,10 @@ export default function useRecommendationResource(
       }
 
       try {
-        let result: RelatedTitlesResponse | PersonalizedRecommendationResponse;
+        let result:
+          | RelatedTitlesResponse
+          | PersonalizedRecommendationResponse
+          | MovieCollectionResponse;
 
         if (preferences) {
           result = await getPersonalizedRecommendations(
@@ -115,6 +122,8 @@ export default function useRecommendationResource(
           );
         } else if (category) {
           result = await getRecommendations(category, controller.signal);
+        } else if (kind === 'collection') {
+          result = await getMovieCollection(id, controller.signal);
         } else {
           result = await getRelatedTitles(
             resource,

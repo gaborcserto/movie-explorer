@@ -1655,7 +1655,7 @@ describe('Series hierarchy', () => {
     });
     const firstAired = screen.getByText('2025');
     const actions = screen.getByRole('button', {
-      name: 'Add to Watchlist The Journey',
+      name: 'Remove from Favorites The Journey',
     });
     expect(actions.closest('.personal-library-actions')).toHaveClass(
       'personal-library-actions--expanded'

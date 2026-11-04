@@ -112,7 +112,7 @@ it('shows one compass heading and lazily retains Movies/Series results and scrol
   expect(screen.getByRole('link', { name: 'popular-series' })).toBe(series);
   expect(seriesViewport.scrollLeft).toBe(75);
   expect(
-    screen.getAllByRole('button', { name: /Add to Watchlist/ })
+    screen.getAllByRole('button', { name: /Add to Favorites/ })
   ).toHaveLength(1);
   expect(
     vi.mocked(getRecommendations).mock.calls.map(([category]) => category)
@@ -285,15 +285,9 @@ it('personalizes Series independently and both types when both have Favorites', 
   expect(getPersonalizedRecommendations).toHaveBeenCalledTimes(2);
 });
 
-it('responds to card Favorites and Watched actions but does not use Watchlist as a seed', async () => {
+it('responds to card Favorites and Watched actions', async () => {
   renderHome();
   await screen.findByRole('link', { name: 'popular-movies' });
-  await userEvent.click(
-    screen.getByRole('button', { name: /Add to Watchlist/ })
-  );
-  expect(getRecommendations).toHaveBeenCalledTimes(1);
-  expect(getPersonalizedRecommendations).not.toHaveBeenCalled();
-
   await userEvent.click(
     screen.getByRole('button', { name: /Add to Favorites/ })
   );
@@ -325,13 +319,10 @@ it('restores Popular after removing the final Favorite without a reload', async 
   expect(screen.queryByText('Based on your Favorites.')).toBeNull();
 });
 
-it('uses filtered Popular for a Watched-only library and keeps Watchlist eligible', async () => {
+it('uses filtered Popular for a Watched-only library', async () => {
   useLibraryStore
     .getState()
     .add({ mediaType: 'movie', id: 1, title: 'Watched' }, 'watched');
-  useLibraryStore
-    .getState()
-    .add({ mediaType: 'movie', id: 10, title: 'Watchlist' }, 'watchlist');
   renderHome();
   await screen.findByRole('link', { name: 'Personalized movie' });
   expect(vi.mocked(getPersonalizedRecommendations).mock.calls[0][0]).toEqual({
@@ -435,6 +426,56 @@ it('retains partial results during independent retry and leaves the other tab in
   expect(getPersonalizedRecommendations).toHaveBeenCalledTimes(2);
 });
 
+it('uses migrated Watchlist titles as Favorites seeds while preserving Watched exclusions', async () => {
+  localStorage.setItem(
+    LIBRARY_STORAGE_KEY,
+    JSON.stringify({
+      version: 1,
+      state: {
+        items: {
+          'movie:1': {
+            id: 1,
+            mediaType: 'movie',
+            title: 'Legacy saved movie',
+            collections: { watchlist: true, favorites: false, watched: false },
+          },
+          'movie:2': {
+            id: 2,
+            mediaType: 'movie',
+            title: 'Already watched',
+            collections: { watchlist: false, favorites: false, watched: true },
+          },
+          'tv:1': {
+            id: 1,
+            mediaType: 'tv',
+            title: 'Legacy saved series',
+            collections: { watchlist: true, favorites: false, watched: false },
+          },
+        },
+      },
+    })
+  );
+  await act(async () => {
+    await useLibraryStore.persist.rehydrate();
+  });
+  renderHome();
+  await screen.findByRole('link', { name: 'Personalized movie' });
+  expect(vi.mocked(getPersonalizedRecommendations).mock.calls[0][0]).toEqual({
+    mediaType: 'movie',
+    favoriteIds: [1],
+    excludedIds: [1, 2],
+  });
+  await userEvent.click(
+    recommendationTabs().getByRole('tab', { name: 'Series' })
+  );
+  await screen.findByRole('link', { name: 'Personalized tv' });
+  expect(vi.mocked(getPersonalizedRecommendations).mock.calls[1][0]).toEqual({
+    mediaType: 'tv',
+    favoriteIds: [1],
+    excludedIds: [1],
+  });
+});
+
 it('rehydrates cross-tab storage changes and invalidates only the affected media type', async () => {
   renderHome();
   await screen.findByRole('link', { name: 'popular-movies' });
@@ -442,11 +483,11 @@ it('rehydrates cross-tab storage changes and invalidates only the affected media
     id: 1,
     mediaType: 'movie',
     title: 'External Favorite',
-    collections: { favorites: true, watched: false, watchlist: false },
+    collections: { favorites: true, watched: false },
   };
   localStorage.setItem(
     LIBRARY_STORAGE_KEY,
-    JSON.stringify({ version: 1, state: { items: { 'movie:1': item } } })
+    JSON.stringify({ version: 2, state: { items: { 'movie:1': item } } })
   );
   act(() => {
     window.dispatchEvent(

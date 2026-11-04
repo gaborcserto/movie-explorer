@@ -34,6 +34,7 @@ import {
 import { WatchProvidersDto } from './watch-providers.dto';
 import { RelatedTitlesResponseDto } from '../recommendations/related-titles.dto';
 import { RatingsDto } from '../ratings/ratings.dto';
+import { MovieCollectionResponseDto } from './movie-collection.dto';
 
 @ApiTags('Movies')
 @ApiBadRequestResponse({
@@ -118,11 +119,27 @@ export class MoviesController {
     return providers;
   }
 
+  @Get(':id/collection')
+  @ApiOperation({
+    summary: 'Get other movies in this movie’s collection',
+    description:
+      'Independent optional collection lookup in the configured content language. No membership returns an empty result. Collection failures do not affect primary details or recommendations.',
+  })
+  @ApiParam({
+    name: 'id',
+    schema: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+  })
+  @ApiOkResponse({ type: MovieCollectionResponseDto })
+  @ApiNotFoundResponse({ description: 'Movie not found' })
+  getCollection(@Param() params: DetailIdParams) {
+    return this.moviesService.findCollection(params.id);
+  }
+
   @Get(':id/similar')
   @ApiOperation({
     summary: 'Get similar movies',
     description:
-      'Up to ten ranked titles from one source page. Current title and duplicates excluded; malformed entries produce explicit partial availability. No pagination or pool sampling.',
+      'Up to ten titles: chronological collection members, then Recommendations, then Similar, each from its first page. Current title and duplicates excluded; malformed entries produce explicit partial availability. No pagination or pool sampling.',
   })
   @ApiParam({
     name: 'id',

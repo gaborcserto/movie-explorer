@@ -8,6 +8,7 @@ describe('independent autocomplete groups', () => {
   const provider: jest.Mocked<MovieProvider> = {
     findAll: jest.fn(),
     findRelated: jest.fn(),
+    findCollection: jest.fn(),
     findOne: jest.fn(),
     findPerson: jest.fn(),
     findPeople: jest.fn(),

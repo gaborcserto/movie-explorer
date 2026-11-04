@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type { StateStorage } from 'zustand/middleware';
 
 export type LibraryMediaType = 'movie' | 'tv';
-export type LibraryCollection = 'watchlist' | 'watched' | 'favorites';
+export type LibraryCollection = 'watched' | 'favorites';
 
 export type LibraryMedia = {
   mediaType: LibraryMediaType;
@@ -38,9 +38,9 @@ interface LibraryState extends PersistedLibrary {
 }
 
 export const LIBRARY_STORAGE_KEY = 'movie-explorer.personal-library';
-export const LIBRARY_STORAGE_VERSION = 1;
+export const LIBRARY_STORAGE_VERSION = 2;
 
-const collections: LibraryCollection[] = ['watchlist', 'watched', 'favorites'];
+const collections: LibraryCollection[] = ['watched', 'favorites'];
 const mediaTypes: LibraryMediaType[] = ['movie', 'tv'];
 let writesBlocked = false;
 let warning: string | null = null;
@@ -130,7 +130,11 @@ function toItem(media: LibraryMedia): Omit<LibraryItem, 'collections'> {
   };
 }
 
-function isValidStoredItem(value: unknown, key: string): value is LibraryItem {
+function isValidStoredItem(
+  value: unknown,
+  key: string,
+  legacy: boolean
+): value is LibraryItem & { collections: { watchlist?: boolean } } {
   if (!isRecord(value) || !isMediaType(value.mediaType)) {
     return false;
   }
@@ -152,18 +156,26 @@ function isValidStoredItem(value: unknown, key: string): value is LibraryItem {
         value.year <= 9999));
 
   const flags = value.collections;
+  const storedCollections = legacy
+    ? [...collections, 'watchlist']
+    : collections;
 
   const validFlags =
     isRecord(flags) &&
     Object.keys(flags).every((collection) =>
-      collections.includes(collection as LibraryCollection)
+      storedCollections.includes(collection)
     ) &&
-    collections.every((collection) => typeof flags[collection] === 'boolean');
+    storedCollections.every(
+      (collection) => typeof flags[collection] === 'boolean'
+    );
 
   return identityMatches && validSnapshot && validFlags;
 }
 
-function readItems(value: unknown): Record<string, LibraryItem> {
+function readItems(
+  value: unknown,
+  legacy = false
+): Record<string, LibraryItem> {
   if (!isRecord(value) || !isRecord(value.items)) {
     return {};
   }
@@ -171,8 +183,16 @@ function readItems(value: unknown): Record<string, LibraryItem> {
   const items: Record<string, LibraryItem> = {};
 
   Object.entries(value.items).forEach(([key, item]) => {
-    if (isValidStoredItem(item, key)) {
-      items[key] = item;
+    if (isValidStoredItem(item, key, legacy)) {
+      items[key] = {
+        ...item,
+        collections: {
+          favorites:
+            item.collections.favorites ||
+            (legacy && item.collections.watchlist === true),
+          watched: item.collections.watched,
+        },
+      };
     }
   });
 
@@ -198,7 +218,7 @@ const safeStateStorage: StateStorage = {
         return null;
       }
 
-      if (parsed.version !== LIBRARY_STORAGE_VERSION) {
+      if (parsed.version !== 1 && parsed.version !== LIBRARY_STORAGE_VERSION) {
         writesBlocked = true;
         reportWarning(
           parsed.version > LIBRARY_STORAGE_VERSION
@@ -206,9 +226,28 @@ const safeStateStorage: StateStorage = {
             : 'Personal Library data uses an unsupported version. It is preserved, but changes may not survive a reload.'
         );
       } else {
+        writesBlocked = false;
+        // Keep the original payload, including unrecognized records, before v2 writes.
+        // A failed backup leaves migration usable in memory without overwriting v1.
+        if (
+          parsed.version === 1 &&
+          globalThis.localStorage.getItem(`${name}.v1-backup`) === null
+        ) {
+          try {
+            globalThis.localStorage.setItem(`${name}.v1-backup`, raw);
+          } catch {
+            writesBlocked = true;
+            reportWarning(
+              'Personal Library migration could not be saved. Your original data is preserved; changes may not survive a reload.'
+            );
+          }
+        }
         const storedState = isRecord(parsed.state) ? parsed.state : undefined;
-        lastItemsSignature = JSON.stringify(storedState?.items ?? {});
-        reportWarning(null);
+        lastItemsSignature =
+          parsed.version === 1 ? '' : JSON.stringify(storedState?.items ?? {});
+        if (!writesBlocked) {
+          reportWarning(null);
+        }
       }
 
       return raw;
@@ -282,7 +321,6 @@ export const useLibraryStore = create<LibraryState>()(
               collections: current
                 ? { ...current.collections, [collection]: true }
                 : {
-                    watchlist: collection === 'watchlist',
                     watched: collection === 'watched',
                     favorites: collection === 'favorites',
                   },
@@ -379,6 +417,9 @@ export const useLibraryStore = create<LibraryState>()(
         items: readItems(persisted),
       }),
       migrate: (persisted, version) => {
+        if (version === 1) {
+          return { items: readItems(persisted, true) };
+        }
         if (version !== LIBRARY_STORAGE_VERSION) {
           reportWarning(
             version > LIBRARY_STORAGE_VERSION

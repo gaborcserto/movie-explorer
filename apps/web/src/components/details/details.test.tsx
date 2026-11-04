@@ -91,9 +91,9 @@ describe('<Details />', () => {
 
     expect(
       await screen.findByRole('button', {
-        name: 'Add to Watchlist Sample Movie',
+        name: 'Remove from Favorites Sample Movie',
       })
-    ).toHaveAttribute('aria-pressed', 'false');
+    ).toHaveAttribute('aria-pressed', 'true');
     expect(
       screen.getByRole('button', { name: 'Mark as Not Watched Sample Movie' })
     ).toHaveAttribute('aria-pressed', 'true');
@@ -102,7 +102,7 @@ describe('<Details />', () => {
         title: 'Sample Movie',
         posterUrl: '/sample.jpg',
         year: 2021,
-        collections: { watched: true, favorites: true, watchlist: false },
+        collections: { watched: true, favorites: true },
       })
     );
   });
@@ -208,7 +208,7 @@ describe('<Details />', () => {
     expect(screen.getByRole('heading', { name: 'Overview' })).toBeVisible();
     const movieTitle = screen.getByRole('heading', { name: mockData.title });
     const actions = screen.getByRole('button', {
-      name: 'Add to Watchlist Sample Movie',
+      name: 'Add to Favorites Sample Movie',
     });
     const firstFact = screen.getByText('2021');
     const overview = screen.getByRole('heading', { name: 'Overview' });

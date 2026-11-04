@@ -15,6 +15,8 @@ Movie Explorer is a React and NestJS app for browsing movies, series, and people
 - Browse and filter results, with shareable search and detail routes.
 - Explore movie and series details, cast, photos, videos, watch providers, and optional IMDb ratings.
 - Browse Favorites-based homepage recommendations with independent Popular fallback for Movies/Series, and Similar titles after detail-page Media.
+- Save movies and series independently in Favorites and Watched in the guest Personal Library.
+- Explore other movies in a TMDB collection on movie details, with collection duplicates removed from Similar titles.
 - View person profiles and filmographies, plus season and episode details.
 - Use the responsive photo viewer with zoom, pan, and fullscreen controls.
 
@@ -77,6 +79,7 @@ compiler checks or declaration builds.
 ## Documentation
 
 - [Recommendation API, candidate caching and data ownership](docs/recommendations.md)
+- [Personal Library persistence and legacy saved-title migration](docs/library.md)
 - [AWS serverless deployment, OIDC setup, costs and SEO limitations](docs/deployment.md)
 
 The AWS foundation uses private S3/CloudFront and an HTTP API/Lambda backend.

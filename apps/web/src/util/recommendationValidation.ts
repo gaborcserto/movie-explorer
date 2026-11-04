@@ -1,4 +1,5 @@
 import type {
+  MovieCollectionResponse,
   PersonalizedRecommendationResponse,
   RecommendationCategory,
   RecommendationResponse,
@@ -7,6 +8,41 @@ import type {
 
 import { record } from './partialValidation';
 import { searchResult } from './searchValidation';
+
+export function movieCollectionResponse(
+  value: unknown,
+  movieId: number
+): value is MovieCollectionResponse {
+  if (
+    !record(value) ||
+    !['available', 'partial'].includes(String(value.availability)) ||
+    !Array.isArray(value.results) ||
+    !value.results.every(
+      (item) =>
+        searchResult(item) && item.mediaType === 'movie' && item.id !== movieId
+    ) ||
+    new Set(value.results.map((item) => item.id)).size !== value.results.length
+  ) {
+    return false;
+  }
+
+  if (value.collection === null) {
+    return value.results.length === 0;
+  }
+
+  const { collection } = value;
+
+  return (
+    record(collection) &&
+    typeof collection.id === 'number' &&
+    Number.isSafeInteger(collection.id) &&
+    collection.id > 0 &&
+    ['name', 'posterUrl', 'backdropUrl'].every(
+      (key) =>
+        collection[key] === undefined || typeof collection[key] === 'string'
+    )
+  );
+}
 
 export function relatedTitlesResponse(
   value: unknown,

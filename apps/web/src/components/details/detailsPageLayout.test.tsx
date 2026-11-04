@@ -40,7 +40,7 @@ test('preserves the Movie hero, title, rating, overview and lower-content struct
     'movie-details__title'
   );
   const actions = screen.getByRole('button', {
-    name: 'Add to Watchlist Movie reference',
+    name: 'Add to Favorites Movie reference',
   });
   expect(actions.closest('.personal-library-actions')).toHaveClass(
     'personal-library-actions--expanded'

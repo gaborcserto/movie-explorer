@@ -312,7 +312,15 @@ export function DetailsLowerContent({
               />
               {movieData.sections?.credits.status === 'available' &&
                 cast.length === 0 && <p>No cast available.</p>}
-              <CastPreview key={movieData.id} members={cast} />
+              <CastPreview
+                key={movieData.id}
+                members={cast}
+                responsiveInitialCounts={{
+                  tabletAndMobile: 10,
+                  desktop: 12,
+                  wideDesktop: 12,
+                }}
+              />
             </section>
           )}
 

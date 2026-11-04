@@ -28,6 +28,7 @@ The example file lists the optional TMDB base URL, image URL, language, region, 
 All routes use the `/api/v1` prefix:
 
 - Movies: `/movies`
+- Movie collections: `/movies/:id/collection` (normalized collection metadata and other movies, independent of detail/recommendation failures; see [Collections](../../docs/recommendations.md#movie-collections))
 - Series, seasons, and episodes: `/series`
 - Similar and recommended titles: `/movies/:id/similar`, `/movies/:id/recommendations`,
   `/series/:id/similar`, `/series/:id/recommendations` (see [availability and errors](../../docs/recommendations.md))

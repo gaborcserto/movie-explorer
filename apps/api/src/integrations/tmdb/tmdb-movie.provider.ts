@@ -20,6 +20,7 @@ import type {
 } from '@movie-explorer/contracts';
 
 import { findRelatedTitles } from './tmdb-related-titles';
+import { findMovieCollection } from './tmdb-collection';
 import { TmdbExternalIds } from './tmdb-external-ids';
 import { normalizeTmdbRating } from './tmdb-ratings';
 import type { MovieProvider } from '../../movies/movie-provider';
@@ -84,6 +85,10 @@ export class TmdbMovieProvider implements MovieProvider {
       id,
       kind,
     );
+  }
+
+  findCollection(id: number) {
+    return findMovieCollection(this.transport, this.config.imageBaseUrl, id);
   }
 
   public async findAll(query: MovieQueryParams): Promise<MovieListResponse> {

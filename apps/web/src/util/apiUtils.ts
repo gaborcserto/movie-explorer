@@ -1,4 +1,5 @@
 import type {
+  MovieCollectionResponse,
   PersonalizedRecommendationRequest,
   PersonalizedRecommendationResponse,
   RecommendationCategory,
@@ -64,6 +65,7 @@ import {
   personalizedRecommendationResponse,
   recommendationResponse,
   relatedTitlesResponse,
+  movieCollectionResponse,
 } from './recommendationValidation';
 import scheduleRecommendation from './recommendationRequests';
 import { ApiRequestError } from './apiErrors';
@@ -832,10 +834,31 @@ export async function getRelatedTitles(
 ): Promise<RelatedTitlesResponse> {
   const body = await request<unknown>(
     `${apiBaseUrl}/api/v1/${resource}/${id}/${kind}`,
-    { signal }
+    { signal },
+    resource === 'movies' && kind === 'similar'
+      ? RECOMMENDATION_REQUEST_TIMEOUT_MS
+      : undefined
   );
 
   if (!relatedTitlesResponse(body, resource === 'movies' ? 'movie' : 'tv')) {
+    throw new ApiRequestError('invalid-response');
+  }
+
+  return body;
+}
+
+export async function getMovieCollection(
+  id: number,
+  signal?: AbortSignal
+): Promise<MovieCollectionResponse> {
+  // Membership and collection details require two sequential provider requests.
+  const body = await request<unknown>(
+    `${moviesUrl}/${id}/collection`,
+    { signal },
+    RECOMMENDATION_REQUEST_TIMEOUT_MS
+  );
+
+  if (!movieCollectionResponse(body, id)) {
     throw new ApiRequestError('invalid-response');
   }
 

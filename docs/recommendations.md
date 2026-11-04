@@ -189,7 +189,7 @@ infrastructure remain deferred.
 - `mediaType` is `movie` or `tv`; IDs belong only to that media type.
 - `favoriteIds` contains zero to three distinct positive safe integers.
 - `excludedIds` contains zero to 1,000 distinct positive safe integers for Favorites
-  and Watched. Seeds are excluded implicitly. Watchlist is eligible and never a seed.
+  and Watched. Seeds are excluded implicitly. Legacy Watchlist entries migrate to Favorites.
 - Missing arrays, duplicate/invalid IDs, oversized arrays, unknown body fields and
   all query parameters return 400. No library snapshots, titles, user identities,
   cookies or localStorage objects are sent. Payload size also inherits the server's
@@ -280,7 +280,7 @@ no infrastructure, credentials, packaging or cloud resources change.
 ### Frontend state and large libraries
 
 Homepage selectors derive sorted ID signatures per media type from the existing
-Zustand library. Watchlist-only and title/poster snapshot edits do not invalidate
+Zustand library. Title/poster snapshot edits do not invalidate
 recommendations. Favorite or Watched membership changes replace only the affected
 row, cancel old work and clear obsolete data/errors. Visited tabs remain mounted;
 unchanged results and scroll position survive tab switches without refetching.
@@ -296,3 +296,50 @@ cards against the complete local exclusion set. This may show fewer than ten
 cards without further refills; it never exposes an excluded title. The complete
 local library remains in the browser. The carousel, Streaming presentation,
 detail Similar sections, card actions and routing are preserved.
+
+## Movie Collections
+
+`GET /api/v1/movies/:id/collection` reads movie membership through
+[`belongs_to_collection`](https://developer.themoviedb.org/reference/movie-details)
+and then the [collection details endpoint](https://developer.themoviedb.org/reference/collection-details).
+Both requests use the existing server-configured content language and transport;
+there is no client language override, new credential, cache or franchise database.
+
+The application-owned `MovieCollectionResponse` contains `collection` (nullable
+metadata with ID and optional name/poster/backdrop URLs), `results` (movie cards
+only), and `availability` (`available` / `partial`). No membership returns
+`{ collection: null, results: [], availability: "available" }`. A valid empty
+collection retains metadata with empty results. Unusable parts are skipped and
+reported as partial; adult filtering is intentional, not partial. Missing images,
+names and dates are valid. The localized collection name falls back to the name
+in movie membership when necessary. No extra localization requests are made.
+
+Results exclude the current movie, deduplicate by movie ID, sort by full release
+date ascending, and place unknown/invalid dates last. Equal or absent dates use
+numeric ID as a deterministic tie-breaker. Collections are not truncated to the
+ten-title recommendation limit. Images use the existing configured image base.
+Provider fields and access tokens never cross the application boundary.
+
+Positive decimal safe-integer movie IDs use the existing DTO validation. A
+confirmed missing movie returns 404. A stale collection reference, invalid
+envelope or provider failure returns 502; rate limits preserve 429/Retry-After,
+and transport deadlines return 504. These optional requests cannot fail primary
+movie details. Two sequential default eight-second calls fit within the existing
+25-second recommendation request deadline, reused only for this new API client
+method; the global 12-second deadline remains unchanged. Elevated configured
+timeouts can exceed that budget. No automatic retry or new collection cache is
+introduced; manual retries repeat membership and collection retrieval.
+
+Movie details show one **Similar Movies** carousel. The backend composes collection
+members (chronological, undated last), Recommendations, then Similar, excludes the
+current movie and deduplicates by ID before applying the ten-title limit. Collection
+retrieval failures preserve usable recommendations with partial availability. The
+browser makes one Similar request using the existing 25-second recommendation
+deadline; Series and Favorites use their existing paths. No separate collection
+section or browser collection request remains. The collection endpoint stays available.
+
+TMDB collections are not comprehensive franchises. The Hobbit and The Lord of
+the Rings, or Fantastic Beasts and Harry Potter, can have separate collections;
+Star Wars grouping depends on TMDB. Universe-wide discovery is a possible future
+enhancement, not part of this implementation. Homepage Favorites personalization,
+candidate caching, Series and Person behavior remain unchanged.

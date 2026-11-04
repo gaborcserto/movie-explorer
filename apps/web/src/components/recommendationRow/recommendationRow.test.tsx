@@ -18,7 +18,11 @@ import type {
 import RecommendationRow from '.';
 import HomeRecommendations from '../../pages/homePage/homeRecommendations';
 import DetailRecommendations from '../detailRecommendations';
-import { getRecommendations, getRelatedTitles } from '../../util/apiUtils';
+import {
+  getRecommendations,
+  getRelatedTitles,
+  getMovieCollection,
+} from '../../util/apiUtils';
 import { ApiRequestError } from '../../util/apiErrors';
 import useRecommendationResource from './useRecommendationResource';
 
@@ -26,6 +30,7 @@ vi.mock('../../util/apiUtils', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../util/apiUtils')>()),
   getRecommendations: vi.fn(),
   getRelatedTitles: vi.fn(),
+  getMovieCollection: vi.fn(),
 }));
 
 const title = (
@@ -43,6 +48,11 @@ const wrap = (node: React.ReactNode) => <MemoryRouter>{node}</MemoryRouter>;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(getMovieCollection).mockResolvedValue({
+    collection: null,
+    results: [],
+    availability: 'available',
+  });
   vi.mocked(getRecommendations).mockImplementation(async (category) => ({
     ...empty,
     category,
@@ -157,7 +167,7 @@ it('keeps partial Series results and retry independent from pending Movies', asy
 });
 
 it.each(['movies', 'series'] as const)(
-  'excludes current %s, duplicate identities and blank/missing posters without refilling',
+  'excludes current %s and duplicates, retaining movie poster fallbacks without refilling',
   async (resource) => {
     const type = resource === 'movies' ? 'movie' : 'tv';
     vi.mocked(getRelatedTitles).mockResolvedValue({
@@ -182,7 +192,7 @@ it.each(['movies', 'series'] as const)(
     );
     expect(
       within(section).getAllByRole('link', { name: /Title/ })
-    ).toHaveLength(1);
+    ).toHaveLength(resource === 'movies' ? 3 : 1);
     expect(within(section).getByAltText('Title 2')).toHaveAttribute(
       'loading',
       'lazy'

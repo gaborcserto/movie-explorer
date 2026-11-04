@@ -4,6 +4,7 @@ import {
   getPersonalizedRecommendations,
   getRecommendations,
   getRelatedTitles,
+  getMovieCollection,
   getMovie,
   API_REQUEST_TIMEOUT_MS,
   RECOMMENDATION_REQUEST_TIMEOUT_MS,
@@ -22,6 +23,59 @@ const body = {
   availability: 'available',
   candidateCount: 100,
 };
+
+it('validates normalized movie collections without imposing the ten-recommendation limit', async () => {
+  const result = {
+    collection: { id: 10, name: 'Collection' },
+    availability: 'partial',
+    results: Array.from({ length: 15 }, (_, i) => ({
+      ...title,
+      id: i + 2,
+      posterUrl: undefined,
+    })),
+  };
+  fetchMock.mockResolvedValue(Response.json(result));
+  await expect(getMovieCollection(1)).resolves.toEqual(
+    JSON.parse(JSON.stringify(result))
+  );
+  expect(String(fetchMock.mock.calls[0][0])).toContain(
+    '/api/v1/movies/1/collection'
+  );
+});
+
+it.each([
+  null,
+  { collection: null, results: [title], availability: 'available' },
+  { collection: { id: 0 }, results: [], availability: 'available' },
+  { collection: { id: 10, name: 12 }, results: [], availability: 'available' },
+  {
+    collection: { id: 10 },
+    results: [title, title],
+    availability: 'available',
+  },
+  {
+    collection: { id: 10 },
+    results: [{ ...title, id: 1 }],
+    availability: 'available',
+  },
+  {
+    collection: { id: 10 },
+    results: [{ ...title, mediaType: 'tv' }],
+    availability: 'available',
+  },
+  { collection: { id: 10 }, results: [], availability: 'unavailable' },
+])('rejects malformed collection contract %j', async (value) => {
+  fetchMock.mockResolvedValue(Response.json(value));
+  await expect(getMovieCollection(1)).rejects.toMatchObject({
+    category: 'invalid-response',
+  });
+});
+
+it('accepts absent movie membership as an empty collection', async () => {
+  const result = { collection: null, results: [], availability: 'available' };
+  fetchMock.mockResolvedValue(Response.json(result));
+  await expect(getMovieCollection(1)).resolves.toEqual(result);
+});
 
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);

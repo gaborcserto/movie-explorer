@@ -1,4 +1,5 @@
-import { useId, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import type { MovieCollectionResponse } from '@movie-explorer/contracts';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa6';
 
 import SearchResultCard from '../list/searchResultCard';
@@ -14,22 +15,35 @@ interface Props {
   title: string;
   source: RecommendationSource;
   home?: boolean;
+  allowMissingPosters?: boolean;
+  excludedMovieIds?: number[];
+  onCollectionLoaded?: (data: MovieCollectionResponse) => void;
 }
 
-function RecommendationRowContent({ title, source, home }: Props) {
+function RecommendationRowContent({
+  title,
+  source,
+  home,
+  allowMissingPosters,
+  excludedMovieIds,
+  onCollectionLoaded,
+}: Props) {
   const headingId = useId();
   const { containerRef, data, error, pending, retry, delay } =
     useRecommendationResource(source);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ start: true, end: true });
+  const isCollection = source.kind === 'collection';
+  const collection = data && 'collection' in data ? data.collection : undefined;
   const seen = new Set<string>();
   const results =
     data?.results.filter((item) => {
       const key = `${item.mediaType}:${item.id}`;
 
       if (
-        !item.posterUrl?.trim() ||
+        (!isCollection && !allowMissingPosters && !item.posterUrl?.trim()) ||
         item.id === source.id ||
+        (item.mediaType === 'movie' && excludedMovieIds?.includes(item.id)) ||
         seen.has(key) ||
         source.preferences?.excludedIds.includes(item.id)
       ) {
@@ -39,6 +53,12 @@ function RecommendationRowContent({ title, source, home }: Props) {
 
       return true;
     }) ?? [];
+
+  useEffect(() => {
+    if (data && 'collection' in data) {
+      onCollectionLoaded?.(data);
+    }
+  }, [data, onCollectionLoaded]);
 
   const measure = () => {
     const viewport = viewportRef.current;
@@ -75,7 +95,7 @@ function RecommendationRowContent({ title, source, home }: Props) {
       observer?.disconnect();
       window.removeEventListener('resize', measure);
     };
-  }, [data]);
+  }, [data, excludedMovieIds]);
 
   const scroll = (direction: number) => {
     const viewport = viewportRef.current;
@@ -110,6 +130,10 @@ function RecommendationRowContent({ title, source, home }: Props) {
   };
   const partial = data?.availability === 'partial';
   const feedback = error ? presentApiError(error)?.description : undefined;
+
+  if (isCollection && data && !results.length) {
+    return null;
+  }
 
   const controls = results.length > 0 && (
     <div className="recommendation-row__controls">
@@ -155,6 +179,9 @@ function RecommendationRowContent({ title, source, home }: Props) {
         </div>
       )}
       <div aria-live="polite" className="list__summary">
+        {isCollection && collection?.name && (
+          <p className="discover-row__message">{collection.name}</p>
+        )}
         <div className={home ? 'recommendation-row__status' : undefined}>
           <p className="list__loaded" role="status">
             {pending && !data
@@ -171,7 +198,9 @@ function RecommendationRowContent({ title, source, home }: Props) {
         )}
         {partial && (
           <p className="discover-row__message">
-            Some recommendations are unavailable.
+            {isCollection
+              ? 'Some collection movies are unavailable.'
+              : 'Some recommendations are unavailable.'}
           </p>
         )}
         {feedback && (
@@ -179,7 +208,7 @@ function RecommendationRowContent({ title, source, home }: Props) {
             {feedback}
           </p>
         )}
-        {!pending && data && !results.length && (
+        {!isCollection && !pending && data && !results.length && (
           <p className="discover-row__message" role="status">
             {data.results.length
               ? 'No recommendations with posters are available right now.'

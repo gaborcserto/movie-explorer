@@ -1,4 +1,5 @@
 import type {
+  MovieCollectionResponse,
   RelatedTitleKind,
   RelatedTitlesResponse,
   MovieDetails,
@@ -14,6 +15,7 @@ import type {
 } from '@movie-explorer/contracts';
 
 export interface MovieProvider {
+  findCollection(id: number): Promise<MovieCollectionResponse>;
   findRelated(
     id: number,
     kind: RelatedTitleKind,
