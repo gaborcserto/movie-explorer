@@ -1,6 +1,6 @@
 import { BadGatewayException } from '@nestjs/common';
 
-import { TmdbTransport } from './tmdb.transport';
+import { TmdbTransport, tmdbFailure } from './tmdb.transport';
 
 describe('TMDB transport validation boundary', () => {
   const originalFetch = global.fetch;
@@ -83,4 +83,25 @@ describe('TMDB transport validation boundary', () => {
       expect(jest.getTimerCount()).toBe(0);
     },
   );
+});
+
+describe('TMDB internal failure classification', () => {
+  it('classifies causes independently of public wording', () => {
+    expect(
+      tmdbFailure(
+        new BadGatewayException('New wording', { cause: 'request-failed' }),
+      ),
+    ).toBe('request-failed');
+    expect(
+      tmdbFailure(
+        new BadGatewayException('New wording', { cause: 'invalid-response' }),
+      ),
+    ).toBe('invalid-response');
+    expect(
+      tmdbFailure(new BadGatewayException('Movie provider request failed')),
+    ).toBeUndefined();
+    expect(
+      tmdbFailure(new Error('Movie provider request failed')),
+    ).toBeUndefined();
+  });
 });

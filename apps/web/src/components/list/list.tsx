@@ -10,29 +10,26 @@ import { ResultsSkeleton, CardSkeletons } from '../skeleton';
 import { defaultSortOrder, sortParams } from '../../util/apiUtils';
 import { movieHistorySignature, useSearchHistory } from './useSearchHistory';
 import useMovieResults from './hooks/useMovieResults';
+import { readFilters } from '../filter/filterState';
 
 function List() {
   const history = useSearchHistory();
   const { searchQuery } = useParams();
   const [searchParams] = useSearchParams();
   const signature = movieHistorySignature(searchQuery, searchParams);
-  const filterParam = searchParams.getAll('filter').join(',');
+  const filters = readFilters(searchParams, Boolean(searchQuery));
+  const filterValue = filters.filter.join(',');
+
   const filter = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          filterParam
-            .split(',')
-            .map((genre) => genre.trim())
-            .filter(Boolean)
-        )
-      ),
-    [filterParam]
+    () => (filterValue ? filterValue.split(',') : []),
+    [filterValue]
   );
-  const releaseYear = searchParams.get('year');
-  const minimumRating = searchParams.get('rating');
-  const sort = searchParams.get('sorting');
-  const sortOrder = searchParams.get('order');
+  const {
+    year: releaseYear,
+    rating: minimumRating,
+    sorting: sort,
+    order: sortOrder,
+  } = filters;
   const [, setSearchParams] = useSearchParams();
 
   const params = useMemo(
@@ -41,8 +38,8 @@ function List() {
       sortOrder: searchQuery ? null : sortOrder,
       search: searchQuery,
       genres: filter.length > 1 ? filter : (filter[0] ?? null),
-      releaseYear,
-      minimumRating,
+      releaseYear: releaseYear || null,
+      minimumRating: minimumRating || null,
     }),
     [sort, sortOrder, searchQuery, filter, releaseYear, minimumRating]
   );

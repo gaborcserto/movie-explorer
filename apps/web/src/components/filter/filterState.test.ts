@@ -1,3 +1,4 @@
+import { movieHistorySignature } from '../list/useSearchHistory';
 import {
   normalizeSearchFilters,
   readFilters,
@@ -95,4 +96,20 @@ test('normalizes invalid sorting and order to the default sort and order', () =>
 
   expect(filters.sorting).toBe('popularity');
   expect(filters.order).toBe('desc');
+});
+
+test('movie history uses canonical repeated filters and ignores invalid URL values', () => {
+  expect(
+    movieHistorySignature(
+      'query',
+      new URLSearchParams('filter=Drama&filter=crime,drama&year=bad&rating=no')
+    )
+  ).toBe(
+    movieHistorySignature('query', new URLSearchParams('filter=crime,drama'))
+  );
+  expect(
+    movieHistorySignature(undefined, new URLSearchParams('filter=crime'))
+  ).not.toBe(
+    movieHistorySignature(undefined, new URLSearchParams('filter=drama'))
+  );
 });

@@ -1,9 +1,4 @@
-import {
-  BadGatewayException,
-  HttpException,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
 import type {
   MovieDetails,
   RelatedTitleKind,
@@ -27,7 +22,7 @@ import type { MovieProvider } from '../../movies/movie-provider';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbMovieMapper } from './tmdb-movie.mapper';
 import { mapMovieSection } from './tmdb-movie-section.mapper';
-import { TmdbTransport } from './tmdb.transport';
+import { TmdbTransport, tmdbFailure } from './tmdb.transport';
 import {
   mapPeople,
   searchPage,
@@ -52,6 +47,33 @@ function detailRecord(value: unknown): Record<string, unknown> | undefined {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : undefined;
+}
+
+function validateDetailBody(body: unknown): void {
+  if (!detailRecord(body)) {
+    throw new Error();
+  }
+}
+
+function validateGenres(body: unknown): void {
+  validateDetailBody(body);
+  const record = detailRecord(body);
+
+  if (
+    !record ||
+    !Array.isArray(record.genres) ||
+    !record.genres.every((genre: unknown) => {
+      const value = detailRecord(genre);
+
+      return (
+        value &&
+        Number.isSafeInteger(value.id) &&
+        typeof value.name === 'string'
+      );
+    })
+  ) {
+    throw new Error();
+  }
 }
 
 const GENRE_CACHE_TTL_MS = 60 * 60 * 1000;
@@ -166,6 +188,8 @@ export class TmdbMovieProvider implements MovieProvider {
   public async findPeople(query: string, page: number) {
     const response = await this.request<unknown>(
       query.trim() ? '/search/person' : '/person/popular',
+      'people-list',
+      searchPage,
       {
         ...(query.trim() && { query: query.trim() }),
         include_adult: 'false',
@@ -180,11 +204,16 @@ export class TmdbMovieProvider implements MovieProvider {
     query: string,
     limit: number,
   ): Promise<MovieSuggestionsResponse> {
-    const response = await this.request<unknown>('/search/movie', {
-      query: query.trim(),
-      include_adult: 'false',
-      page: '1',
-    });
+    const response = await this.request<unknown>(
+      '/search/movie',
+      'movie-suggestions',
+      searchPage,
+      {
+        query: query.trim(),
+        include_adult: 'false',
+        page: '1',
+      },
+    );
 
     const suggestions = searchPage(response).results.flatMap((value) => {
       const movie = searchRecord(value);
@@ -219,27 +248,37 @@ export class TmdbMovieProvider implements MovieProvider {
 
   // Successful appends stay a single request. Only an atomic transport/upstream
   // failure needs a profile-only fallback; there are no retry loops.
-  private async detailRequest<T>(path: string, query: Record<string, string>) {
+  private async detailRequest<T>(
+    path: string,
+    operation: string,
+    query: Record<string, string>,
+  ) {
     try {
-      return await this.request<T>(path, query, true);
+      return await this.request<T>(
+        path,
+        operation,
+        validateDetailBody,
+        query,
+        true,
+      );
     } catch (error) {
-      if (
-        !(error instanceof HttpException) ||
-        error.getStatus() !== 502 ||
-        error.message === 'Movie provider response was invalid'
-      ) {
+      if (tmdbFailure(error) !== 'request-failed') {
         throw error;
       }
 
-      return this.request<T>(path, {}, true);
+      return this.request<T>(path, operation, validateDetailBody, {}, true);
     }
   }
 
   public async findOne(id: number): Promise<MovieDetails | undefined> {
-    const movie = await this.detailRequest<TmdbMovieDetails>(`/movie/${id}`, {
-      append_to_response: 'credits,images,videos',
-      ...this.mediaLanguages(),
-    });
+    const movie = await this.detailRequest<TmdbMovieDetails>(
+      `/movie/${id}`,
+      'movie-detail',
+      {
+        append_to_response: 'credits,images,videos',
+        ...this.mediaLanguages(),
+      },
+    );
 
     if (!movie) {
       return undefined;
@@ -368,6 +407,8 @@ export class TmdbMovieProvider implements MovieProvider {
       section === 'photos' || section === 'posters' ? 'images' : section;
     const value = await this.request<unknown>(
       `/movie/${id}/${source}`,
+      'movie-detail',
+      validateDetailBody,
       source === 'images' || section === 'videos' ? this.mediaLanguages() : {},
       true,
     );
@@ -393,9 +434,13 @@ export class TmdbMovieProvider implements MovieProvider {
   }
 
   public async findPerson(id: number): Promise<PersonDetails | undefined> {
-    const person = await this.detailRequest<unknown>(`/person/${id}`, {
-      append_to_response: 'movie_credits,images',
-    });
+    const person = await this.detailRequest<unknown>(
+      `/person/${id}`,
+      'person-detail',
+      {
+        append_to_response: 'movie_credits,images',
+      },
+    );
 
     if (person === undefined) {
       return undefined;
@@ -439,6 +484,8 @@ export class TmdbMovieProvider implements MovieProvider {
   public async findFilmography(id: number) {
     const value = await this.request<unknown>(
       `/person/${id}/movie_credits`,
+      'person-detail',
+      validateDetailBody,
       {},
       true,
     );
@@ -458,6 +505,8 @@ export class TmdbMovieProvider implements MovieProvider {
     if (query.search) {
       return this.request<TmdbPagedResponse<TmdbMovieListItem>>(
         '/search/movie',
+        'movie-list',
+        searchPage,
         {
           query: query.search,
           include_adult: 'false',
@@ -488,6 +537,8 @@ export class TmdbMovieProvider implements MovieProvider {
 
       return this.request<TmdbPagedResponse<TmdbMovieListItem>>(
         '/discover/movie',
+        'movie-list',
+        searchPage,
         {
           include_adult: 'false',
           include_video: 'false',
@@ -509,6 +560,8 @@ export class TmdbMovieProvider implements MovieProvider {
 
     return this.request<TmdbPagedResponse<TmdbMovieListItem>>(
       '/movie/popular',
+      'movie-list',
+      searchPage,
       { page: String(page) },
     );
   }
@@ -529,6 +582,8 @@ export class TmdbMovieProvider implements MovieProvider {
 
     const request = this.request<TmdbGenreListResponse>(
       '/genre/movie/list',
+      'movie-genres',
+      validateGenres,
     ).then((response) => {
       this.genreCache.set(key, {
         genres: response.genres,
@@ -633,58 +688,31 @@ export class TmdbMovieProvider implements MovieProvider {
 
   private request<T>(
     path: string,
+    operation: string,
+    validateBody: (body: unknown) => void,
     query?: Record<string, string | undefined>,
     allowNotFound?: false,
   ): Promise<T>;
   private request<T>(
     path: string,
+    operation: string,
+    validateBody: (body: unknown) => void,
     query: Record<string, string | undefined>,
     allowNotFound: true,
   ): Promise<T | undefined>;
   private async request<T>(
     path: string,
+    operation: string,
+    validateBody: (body: unknown) => void,
     query: Record<string, string | undefined> = {},
     allowNotFound = false,
   ): Promise<T | undefined> {
-    const operation = allowNotFound
-      ? path.startsWith('/person/')
-        ? 'person-detail'
-        : 'movie-detail'
-      : path;
-
     return (await this.transport.request({
       path,
       query,
       allowNotFound,
       operation,
-      // Validate before transport cleanup to preserve abort and error ordering.
-      validateBody: (body) => {
-        if (!body || typeof body !== 'object' || Array.isArray(body)) {
-          throw new Error();
-        }
-
-        if (!allowNotFound) {
-          if (path === '/genre/movie/list') {
-            if (
-              !('genres' in body) ||
-              !Array.isArray(body.genres) ||
-              !body.genres.every(
-                (genre: unknown) =>
-                  genre &&
-                  typeof genre === 'object' &&
-                  'id' in genre &&
-                  Number.isSafeInteger(genre.id) &&
-                  'name' in genre &&
-                  typeof genre.name === 'string',
-              )
-            ) {
-              throw new Error();
-            }
-          } else {
-            searchPage(body);
-          }
-        }
-      },
+      validateBody,
     })) as T | undefined;
   }
 

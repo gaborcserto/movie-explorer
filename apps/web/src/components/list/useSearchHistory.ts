@@ -16,6 +16,8 @@ import type {
   SearchResult,
 } from '@movie-explorer/contracts';
 
+import { readFilters } from '../filter/filterState';
+
 export type MovieSnapshot = {
   data: MovieListResponse;
   items: MovieSummary[];
@@ -63,13 +65,7 @@ export const useSearchHistory = () => useContext(SearchHistory);
 export const movieHistorySignature = (
   query: string | undefined,
   params: URLSearchParams
-) =>
-  JSON.stringify([
-    query,
-    ...['filter', 'year', 'rating', 'sorting', 'order'].map((key) =>
-      params.get(key)
-    ),
-  ]);
+) => JSON.stringify([query, readFilters(params, Boolean(query))]);
 
 export function useResultHistory<T>(
   cache: Map<string, T> | undefined,

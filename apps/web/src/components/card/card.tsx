@@ -39,23 +39,6 @@ function Card({
     searchParams.size ? `?${searchParams.toString()}` : ''
   }`;
 
-  const genreLinks = genres.map((genre, index) => (
-    <Fragment key={genre}>
-      {index > 0 && ', '}
-      <span>
-        <Link
-          to={`?${new URLSearchParams({
-            ...Object.fromEntries(searchParams),
-            filter: genre.toLowerCase(),
-          }).toString()}`}
-          className="card__type__link"
-        >
-          {genre}
-        </Link>
-      </span>
-    </Fragment>
-  ));
-
   return (
     <article className="card">
       <Link
@@ -96,7 +79,24 @@ function Card({
           <p
             className={`card__type${genreNavigation ? '' : ' card__type--static'}`}
           >
-            {genreNavigation ? genreLinks : genres.join(', ')}
+            {genreNavigation
+              ? genres.map((genre, index) => (
+                  <Fragment key={genre}>
+                    {index > 0 && ', '}
+                    <span>
+                      <Link
+                        to={`?${new URLSearchParams({
+                          ...Object.fromEntries(searchParams),
+                          filter: genre.toLowerCase(),
+                        }).toString()}`}
+                        className="card__type__link"
+                      >
+                        {genre}
+                      </Link>
+                    </span>
+                  </Fragment>
+                ))
+              : genres.join(', ')}
           </p>
           {subtitle && <p className="card__subtitle">{subtitle}</p>}
         </div>

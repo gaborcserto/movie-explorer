@@ -8,6 +8,21 @@ import {
 import { parseRetryAfter } from './retry-after';
 import type { TmdbConfig } from './tmdb.config';
 
+// A private cause keeps recovery policy independent of public error wording.
+export type TmdbFailure = 'invalid-response' | 'request-failed';
+
+export function tmdbFailure(error: unknown): TmdbFailure | undefined {
+  if (!(error instanceof BadGatewayException)) {
+    return undefined;
+  }
+
+  const cause: unknown = error.cause;
+
+  return cause === 'invalid-response' || cause === 'request-failed'
+    ? cause
+    : undefined;
+}
+
 type TmdbRequestOptions = {
   path: string;
   query?: Record<string, string | undefined>;
@@ -82,7 +97,10 @@ export class TmdbTransport {
             429,
           );
         }
-        throw new BadGatewayException('Movie provider request failed');
+        throw new BadGatewayException('Movie provider request failed', {
+          cause: 'request-failed',
+          description: 'Bad Gateway',
+        });
       }
       try {
         const body: unknown = await response.json();
@@ -95,7 +113,10 @@ export class TmdbTransport {
         if (controller.signal.aborted) {
           throw controller.signal.reason;
         }
-        throw new BadGatewayException('Movie provider response was invalid');
+        throw new BadGatewayException('Movie provider response was invalid', {
+          cause: 'invalid-response',
+          description: 'Bad Gateway',
+        });
       }
     } catch (error: unknown) {
       if (controller.signal.aborted) {
@@ -105,7 +126,7 @@ export class TmdbTransport {
       if (error instanceof HttpException) {
         this.logFailure(
           operation,
-          error.message === 'Movie provider response was invalid'
+          tmdbFailure(error) === 'invalid-response'
             ? 'invalid-response'
             : 'http',
           error.getStatus(),
@@ -114,7 +135,10 @@ export class TmdbTransport {
         throw error;
       }
       this.logFailure(operation, 'connection', 502, upstreamStatus);
-      throw new BadGatewayException('Movie provider request failed');
+      throw new BadGatewayException('Movie provider request failed', {
+        cause: 'request-failed',
+        description: 'Bad Gateway',
+      });
     } finally {
       clearTimeout(timer);
       // Release unread error bodies as well as an interrupted JSON body read.

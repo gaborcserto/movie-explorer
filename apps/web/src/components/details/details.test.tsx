@@ -49,7 +49,7 @@ vi.mock('react-router', async () => ({
 
 describe('<Details />', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     useLibraryStore.setState({ items: {}, persistenceWarning: null });
     getWatchProviders.mockResolvedValue({ providers: [] });
     getRatings.mockResolvedValue({
@@ -426,7 +426,16 @@ describe('<Details />', () => {
 
   it('hides ratings from the previous movie while the next rating request is pending', async () => {
     useParams.mockReturnValue({ movieId: '1234' });
-    getMovie.mockResolvedValue(mockData);
+    getMovie.mockImplementation(async (id) => ({
+      ...mockData,
+      id,
+      title: `Movie ${id}`,
+      rating: new Map([
+        [1234, 8.5],
+        [5678, 6.2],
+        [7890, 9.1],
+      ]).get(id),
+    }));
     let finishObsolete:
       | ((value: {
           tmdb: { status: 'missing' };
@@ -473,6 +482,9 @@ describe('<Details />', () => {
     );
 
     await waitFor(() => expect(getRatings).toHaveBeenCalledTimes(3));
+    await screen.findByRole('heading', { name: 'Movie 7890' });
+    expect(screen.getByLabelText('TMDB rating: 9.1 out of 10')).toBeVisible();
+    expect(screen.queryByLabelText('TMDB rating: 8.5 out of 10')).toBeNull();
     expect(obsoleteSignal.aborted).toBe(true);
     await act(async () => {
       finishObsolete?.({

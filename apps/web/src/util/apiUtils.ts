@@ -158,15 +158,7 @@ export async function getEpisodeCredits(
   return body;
 }
 
-export const getMovie = async (
-  id: number,
-  signal?: AbortSignal
-): Promise<MovieDetails> => {
-  const body = await request<unknown>(
-    `${moviesUrl}/${id}`,
-    signal ? { signal } : {}
-  );
-
+function parseMovieResponse(body: unknown, id: number): MovieDetails {
   if (!movieCore(body, id)) {
     throw new ApiRequestError('invalid-response');
   }
@@ -222,20 +214,35 @@ export const getMovie = async (
   }
 
   if (
-    !movieSection(body, 'credits') ||
+    (!body.sections && !movieSection(body, 'credits')) ||
     ['photos', 'posters', 'videos'].some((section) => {
       const present =
         section === 'photos'
           ? body.backdrops !== undefined || body.photos !== undefined
           : body[section as 'posters' | 'videos'] !== undefined;
 
-      return present && !movieSection(body, section);
+      const status =
+        body.sections?.[section as 'photos' | 'posters' | 'videos'];
+
+      return !status && present && !movieSection(body, section);
     })
   ) {
     throw new ApiRequestError('invalid-response');
   }
 
   return body;
+}
+
+export const getMovie = async (
+  id: number,
+  signal?: AbortSignal
+): Promise<MovieDetails> => {
+  const body = await request<unknown>(
+    `${moviesUrl}/${id}`,
+    signal ? { signal } : {}
+  );
+
+  return parseMovieResponse(body, id);
 };
 
 function watchProvidersResponse(value: unknown): value is WatchProviders {
