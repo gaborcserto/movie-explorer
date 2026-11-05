@@ -26,6 +26,7 @@ export class TmdbPersonFilmographyMapper {
     }
 
     const titles = new Map<number, PersonSeriesCredit>();
+
     const add = (value: unknown, acting: boolean) => {
       const row = seriesRecord(value);
       const id = seriesPositiveId(row?.id);
@@ -51,11 +52,13 @@ export class TmdbPersonFilmographyMapper {
       if (acting) {
         entry.actingCredits ??= [];
         entry.actingRoles ??= [];
+
         const character = seriesText(row.character);
 
         if (character && !entry.actingCredits.includes(character)) {
           entry.actingCredits.push(character);
         }
+
         const role: PersonActingRole = {
           creditId: seriesText(row.credit_id),
           character,
@@ -88,8 +91,10 @@ export class TmdbPersonFilmographyMapper {
           entry.crewCredits.push(credit);
         }
       }
+
       titles.set(id, entry);
     };
+
     value.cast.forEach((row) => add(row, true));
     value.crew.forEach((row) => add(row, false));
 

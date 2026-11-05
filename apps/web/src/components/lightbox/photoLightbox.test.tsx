@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StrictMode, useLayoutEffect } from 'react';
 import type { MovieDetails } from '@movie-explorer/contracts';
+
 import { DetailsLowerContent } from '../details/detailsContent';
 import PhotoLightbox from './photoLightbox';
 
@@ -88,6 +89,7 @@ beforeEach(() => {
   });
   exitFullscreen.mockClear();
 });
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -96,12 +98,17 @@ describe('photo lightbox', () => {
   it('clears obsolete full-resolution sources on navigation and close', async () => {
     const { user, image, thumbnail } = await open();
     await user.keyboard('{ArrowRight}');
+
     expect(image).not.toHaveAttribute('src');
+
     const next = within(screen.getByRole('dialog')).getByRole('img', {
       hidden: true,
     });
+
     expect(next).toHaveAttribute('src', '/original2.jpg');
+
     await user.keyboard('{Escape}');
+
     expect(next).not.toHaveAttribute('src');
     expect(thumbnail.closest('button')).toHaveFocus();
   });
@@ -117,6 +124,7 @@ describe('photo lightbox', () => {
         />
       </StrictMode>
     );
+
     expect(
       within(screen.getByRole('dialog')).getByRole('img', { hidden: true })
     ).toHaveAttribute('src', '/original1.jpg');
@@ -131,16 +139,21 @@ describe('photo lightbox', () => {
       if (!preview) {
         throw new Error('Missing preview');
       }
+
       expect(preview).toHaveAttribute('src', '/thumb1.jpg');
       expect(preview).toHaveAttribute('aria-hidden', 'true');
       expect(image).toHaveAttribute('src', '/original1.jpg');
       expect(dialog.querySelectorAll('img')).toHaveLength(2);
+
       fireEvent.load(first === 'preview' ? preview : image);
+
       expect(
         screen.getByRole('button', { name: 'Zoom in' }).hasAttribute('disabled')
       ).toBe(first === 'preview');
       expect(preview).toHaveStyle({ opacity: first === 'preview' ? '1' : '0' });
+
       fireEvent.load(first === 'preview' ? image : preview);
+
       expect(preview).toHaveStyle({ opacity: '0' });
       expect(image).toHaveStyle({ opacity: '1' });
       expect(screen.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
@@ -155,25 +168,34 @@ describe('photo lightbox', () => {
       throw new Error('Missing preview');
     }
     fireEvent.error(preview);
+
     expect(screen.queryByRole('alert')).toBeNull();
+
     fireEvent.load(image);
+
     expect(screen.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
+
     await user.keyboard('{ArrowRight}{ArrowLeft}');
     const current = within(dialog).getByRole('img', { hidden: true });
     fireEvent.load(image);
     fireEvent.load(preview);
     fireEvent.error(image);
+
     expect(screen.queryByRole('alert')).toBeNull();
     expect(current).toHaveStyle({ opacity: '0' });
     expect(screen.getByRole('button', { name: 'Zoom in' })).toBeDisabled();
+
     const currentPreview = dialog.querySelector('.image-preview');
 
     if (!currentPreview) {
       throw new Error('Missing preview');
     }
     fireEvent.load(currentPreview);
+
     expect(currentPreview).toHaveStyle({ opacity: '1' });
+
     fireEvent.error(current);
+
     expect(currentPreview).toHaveStyle({ opacity: '0' });
     expect(screen.getByRole('alert')).toHaveTextContent('Unable to load photo');
   });
@@ -194,7 +216,9 @@ describe('photo lightbox', () => {
         />
       );
     }
+
     render(<CachedPhoto />);
+
     expect(screen.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
     expect(within(screen.getByRole('dialog')).queryByRole('status')).toBeNull();
   });
@@ -211,10 +235,12 @@ describe('photo lightbox', () => {
       'Zoom out',
     ].forEach((label) => {
       const button = within(dialog).getByRole('button', { name: label });
+
       expect(
         button.querySelector('svg[aria-hidden="true"]')
       ).toBeInTheDocument();
     });
+
     expect(
       within(dialog).getByRole('button', { name: 'Reset zoom to fit' })
     ).toHaveTextContent('100%');
@@ -224,32 +250,43 @@ describe('photo lightbox', () => {
     document.body.style.overflow = 'auto';
     const { user, thumbnail, dialog } = await open();
     const close = screen.getByRole('button', { name: 'Close photo viewer' });
+
     expect(close).toHaveFocus();
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     expect(document.body.style.overflow).toBe('hidden');
     expect(
       thumbnail.closest('.movie-details__lower')?.parentElement?.inert
     ).toBe(true);
+
     const previous = screen.getByRole('button', { name: 'Previous photo' });
     const next = screen.getByRole('button', { name: 'Next photo' });
     await user.click(next);
     await user.tab();
+
     expect(close).toHaveFocus();
+
     await user.tab({ shift: true });
+
     expect(next).toHaveFocus();
+
     previous.focus();
     await user.keyboard('{Escape}');
+
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(thumbnail.closest('button')).toHaveFocus();
     expect(document.body.style.overflow).toBe('auto');
+
     const reopen = async () => {
       await user.click(thumbnail);
+
       expect(
         screen.getByRole('button', { name: 'Reset zoom to fit' })
       ).toHaveTextContent('100%');
+
       await user.click(
         screen.getByRole('button', { name: 'Close photo viewer' })
       );
+
       expect(thumbnail.closest('button')).toHaveFocus();
     };
     await reopen();
@@ -262,22 +299,33 @@ describe('photo lightbox', () => {
     const { user, image } = await open();
     const viewport = load(image);
     await user.click(screen.getByRole('button', { name: 'Zoom in' }));
+
     expect(
       screen.getByRole('button', { name: 'Reset zoom to fit' })
     ).toHaveTextContent('150%');
+
     pointer(viewport, 'pointerdown', 1, 100, 100);
     pointer(viewport, 'pointermove', 1, 2000, 2000);
     pointer(viewport, 'pointerup', 1, 2000, 2000);
+
     expect(image.style.transform).toBe('translate(200px, 0px) scale(1.5)');
     expect(image).toHaveAttribute('src', '/original1.jpg');
+
     await user.click(screen.getByRole('button', { name: 'Zoom out' }));
+
     expect(image.style.transform).toContain('scale(1)');
+
     await user.dblClick(image);
+
     expect(image.style.transform).toContain('scale(2)');
+
     await user.click(screen.getByRole('button', { name: 'Reset zoom to fit' }));
+
     expect(image.style.transform).toBe('translate(0px, 0px) scale(1)');
+
     await user.click(screen.getByRole('button', { name: 'Zoom in' }));
     await user.keyboard('{ArrowRight}');
+
     expect(
       screen.getByRole('button', { name: 'Close photo viewer' })
     ).toHaveFocus();
@@ -287,13 +335,17 @@ describe('photo lightbox', () => {
     expect(
       screen.getByRole('button', { name: 'Reset zoom to fit' })
     ).toHaveTextContent('100%');
+
     load(within(screen.getByRole('dialog')).getByRole('img', { hidden: true }));
     await user.click(screen.getByRole('button', { name: 'Zoom in' }));
     await user.click(screen.getByRole('button', { name: 'Next photo' }));
+
     expect(
       screen.getByRole('button', { name: 'Reset zoom to fit' })
     ).toHaveTextContent('100%');
+
     await user.keyboard('{ArrowLeft}');
+
     expect(
       within(screen.getByRole('dialog')).getByRole('img', { hidden: true })
     ).toHaveAttribute('src', '/original2.jpg');
@@ -310,31 +362,46 @@ describe('photo lightbox', () => {
     const right = screen.getByRole('button', { name: 'Pan right' });
     const up = screen.getByRole('button', { name: 'Pan up' });
     const down = screen.getByRole('button', { name: 'Pan down' });
+
     expect(left).toBeDisabled();
     expect(right).toBeDisabled();
     expect(up).toBeDisabled();
     expect(down).toBeDisabled();
+
     await user.click(screen.getByRole('button', { name: 'Zoom in' }));
+
     expect(left).toBeEnabled();
     expect(right).toBeEnabled();
     expect(up).toBeEnabled();
     expect(down).toBeEnabled();
+
     await user.click(down);
+
     expect(image.style.transform).toBe('translate(0px, 80px) scale(1.5)');
+
     await user.click(up);
+
     expect(image.style.transform).toBe('translate(0px, 0px) scale(1.5)');
+
     await user.click(right);
+
     expect(image.style.transform).toBe('translate(80px, 0px) scale(1.5)');
+
     await user.keyboard('{Enter}');
+
     expect(image.style.transform).toBe('translate(160px, 0px) scale(1.5)');
+
     await user.click(right);
     await user.click(right);
     await user.click(right);
     await user.click(right);
     await user.click(right);
+
     expect(image.style.transform).toBe('translate(500px, 0px) scale(1.5)');
     expect(right).toBeDisabled();
+
     await user.click(screen.getByRole('button', { name: 'Reset zoom to fit' }));
+
     expect(image.style.transform).toBe('translate(0px, 0px) scale(1)');
     expect(left).toBeDisabled();
     expect(right).toBeDisabled();
@@ -349,33 +416,48 @@ describe('photo lightbox', () => {
     const second = within(screen.getByRole('dialog')).getByRole('img', {
       hidden: true,
     });
+
     expect(second).toHaveAttribute('src', '/original2.jpg');
+
     viewport = load(second);
     pointer(viewport, 'pointerdown', 1, 200, 100);
     pointer(viewport, 'pointerup', 1, 200, 100);
     pointer(viewport, 'pointerdown', 1, 200, 100);
     pointer(viewport, 'pointerup', 1, 200, 100);
+
     expect(second.style.transform).toContain('scale(2)');
+
     fireEvent.doubleClick(second, { detail: 2 });
+
     expect(second.style.transform).toContain('scale(2)');
+
     pointer(viewport, 'pointerdown', 1, 300, 100);
     pointer(viewport, 'pointermove', 1, 50, 100);
     pointer(viewport, 'pointerup', 1, 50, 100);
+
     expect(second).toHaveAttribute('src', '/original2.jpg');
+
     pointer(viewport, 'pointerdown', 1, 100, 100);
     pointer(viewport, 'pointerdown', 2, 200, 100);
     pointer(viewport, 'pointermove', 2, 400, 100);
+
     expect(second.style.transform).toContain('scale(4)');
+
     pointer(viewport, 'pointerup', 2, 400, 100);
     pointer(viewport, 'pointerup', 1, 100, 100);
+
     expect(second).toHaveAttribute('src', '/original2.jpg');
+
     fireEvent.click(screen.getByRole('button', { name: 'Reset zoom to fit' }));
     pointer(viewport, 'pointerdown', 1, 300, 100);
     pointer(viewport, 'pointercancel', 1, 100, 100);
+
     expect(second).toHaveAttribute('src', '/original2.jpg');
+
     pointer(viewport, 'pointerdown', 1, 100, 100);
     pointer(viewport, 'pointermove', 1, 300, 100);
     pointer(viewport, 'pointerup', 1, 300, 100);
+
     expect(
       within(screen.getByRole('dialog')).getByRole('img', { hidden: true })
     ).toHaveAttribute('src', '/original1.jpg');
@@ -383,17 +465,24 @@ describe('photo lightbox', () => {
 
   it('loads only the selected original and handles image errors and navigation recovery', async () => {
     const { user, image } = await open();
+
     expect(
       within(screen.getByRole('dialog')).getByRole('status')
     ).toHaveTextContent('Loading photo');
     expect(screen.getByRole('button', { name: 'Zoom in' })).toBeDisabled();
     expect(document.querySelector('img[src="/original2.jpg"]')).toBeNull();
+
     fireEvent.error(image);
+
     expect(screen.getByRole('alert')).toHaveTextContent('Unable to load photo');
     expect(within(screen.getByRole('dialog')).queryByRole('status')).toBeNull();
+
     await user.click(screen.getByRole('button', { name: 'Next photo' }));
+
     expect(screen.queryByRole('alert')).toBeNull();
+
     load(within(screen.getByRole('dialog')).getByRole('img', { hidden: true }));
+
     expect(within(screen.getByRole('dialog')).queryByRole('status')).toBeNull();
     expect(screen.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
   });
@@ -404,6 +493,7 @@ describe('photo lightbox', () => {
       value: undefined,
     });
     await open();
+
     expect(
       screen.getByRole('button', { name: 'Enter fullscreen' })
     ).toBeDisabled();
@@ -420,27 +510,36 @@ describe('photo lightbox', () => {
     });
     const { user, dialog } = await open();
     await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+
     expect(fullscreenElement).toBe(dialog);
     expect(
       screen.getByRole('button', { name: 'Exit fullscreen' })
     ).toHaveAttribute('aria-pressed', 'true');
+
     await user.click(screen.getByRole('button', { name: 'Exit fullscreen' }));
+
     expect(screen.getByRole('dialog')).toBeVisible();
+
     await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
     await user.keyboard('{Escape}');
+
     expect(screen.getByRole('dialog')).toBeVisible();
     expect(fullscreenElement).toBeNull();
+
     await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
     await act(async () => {
       await exitFullscreen();
     });
+
     expect(
       screen.getByRole('button', { name: 'Enter fullscreen' })
     ).toBeVisible();
+
     await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
     await user.click(
       screen.getByRole('button', { name: 'Close photo viewer' })
     );
+
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(fullscreenElement).toBeNull();
   });
@@ -452,10 +551,13 @@ describe('photo lightbox', () => {
     });
     const { user } = await open();
     await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+
     expect(screen.getByText(/Fullscreen is unavailable/)).toBeVisible();
     expect(screen.getByRole('dialog')).toBeVisible();
+
     fireEvent(document, new Event('fullscreenerror'));
     await user.keyboard('{Escape}');
+
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

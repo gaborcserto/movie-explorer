@@ -88,6 +88,7 @@ describe.each(cases)('%s %s', (mediaType, kind) => {
       posterUrl: config.imageBaseUrl + '/poster.jpg',
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+
     const [url, init] = fetchMock.mock.calls[0];
 
     expect(url.pathname).toBe(`/3/${mediaType}/1/${kind}`);
@@ -101,10 +102,12 @@ describe.each(cases)('%s %s', (mediaType, kind) => {
 
   it('distinguishes empty, intentionally excluded and posterless results', async () => {
     fetchMock.mockResolvedValueOnce(response(page([])));
+
     await expect(provider().findRelated(1, kind)).resolves.toEqual({
       results: [],
       availability: 'available',
     });
+
     fetchMock.mockResolvedValueOnce(
       response(
         page([
@@ -144,6 +147,7 @@ describe.each(cases)('%s %s', (mediaType, kind) => {
     page([null, { id: 2 }]),
   ])('rejects malformed source %j', async (body) => {
     fetchMock.mockResolvedValue(response(body));
+
     await expect(provider().findRelated(1, kind)).rejects.toBeInstanceOf(
       BadGatewayException,
     );
@@ -160,6 +164,7 @@ describe.each(cases)('%s %s', (mediaType, kind) => {
       fetchMock.mockResolvedValue(
         response({ token: config.accessToken }, status),
       );
+
       await expect(provider().findRelated(1, kind)).rejects.toBeInstanceOf(
         exception,
       );
@@ -168,6 +173,7 @@ describe.each(cases)('%s %s', (mediaType, kind) => {
 
   it('classifies connection failures', async () => {
     fetchMock.mockRejectedValue(new Error(config.accessToken));
+
     await expect(provider().findRelated(1, kind)).rejects.toThrow(
       'Movie provider request failed',
     );

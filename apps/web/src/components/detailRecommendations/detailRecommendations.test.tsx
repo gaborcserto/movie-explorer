@@ -101,6 +101,7 @@ it.each(['movies', 'series'] as const)(
         name: resource === 'movies' ? movie.title : series.title,
       })
     ).toBeVisible();
+
     await waitFor(() => expect(api.getRelatedTitles).toHaveBeenCalledTimes(1));
     const headings = Array.from(container.querySelectorAll('h2')).map(
       (node) => node.textContent
@@ -115,11 +116,13 @@ it.each(['movies', 'series'] as const)(
       'Media',
       `Similar ${label}`,
     ]);
+
     if (resource === 'series') {
       expect(headings.indexOf('Seasons')).toBeGreaterThan(
         headings.indexOf('Similar Series')
       );
     }
+
     expect(api.getRelatedTitles).toHaveBeenCalledWith(
       resource,
       1,
@@ -150,7 +153,9 @@ it('does not request optional rows before primary details succeed', async () => 
       </Routes>
     </MemoryRouter>
   );
+
   expect(api.getRelatedTitles).not.toHaveBeenCalled();
+
   await act(async () => {
     finish?.(movie);
   });

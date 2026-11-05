@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
 import ErrorPresentation from '.';
 
 test('supports a contextual service error without adding landmarks, focus, or announcements', async () => {
@@ -31,10 +32,13 @@ test('supports a contextual service error without adding landmarks, focus, or an
   ).toBeVisible();
   expect(container.querySelector('[aria-live], [role="alert"]')).toBeNull();
   expect(screen.getByRole('button')).not.toHaveFocus();
+
   await user.click(screen.getByRole('button', { name: 'Try again' }));
+
   expect(retry).toHaveBeenCalledTimes(1);
 
   const svg = container.querySelector('svg');
+
   expect(svg).toHaveAttribute('aria-hidden', 'true');
   expect(svg).toHaveAttribute('focusable', 'false');
   expect(svg).not.toHaveAttribute('tabindex');

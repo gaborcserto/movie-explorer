@@ -1,5 +1,6 @@
 import { ok } from 'node:assert/strict';
 import { HttpException, Logger } from '@nestjs/common';
+
 import { TmdbMovieProvider } from './tmdb-movie.provider';
 import { TmdbMovieMapper } from './tmdb-movie.mapper';
 import { TmdbPersonMapper } from './tmdb-person.mapper';
@@ -34,6 +35,7 @@ describe('partial detail recovery', () => {
   const originalFetch = global.fetch;
   const provider = new TmdbMovieProvider(config);
   let log: jest.SpyInstance;
+
   beforeEach(() => {
     fetchMock.mockReset();
     global.fetch = fetchMock;
@@ -41,6 +43,7 @@ describe('partial detail recovery', () => {
       .spyOn(Logger.prototype, 'warn')
       .mockImplementation(() => undefined);
   });
+
   afterEach(() => {
     global.fetch = originalFetch;
     jest.restoreAllMocks();
@@ -58,6 +61,7 @@ describe('partial detail recovery', () => {
 
       const result = await provider.findOne(1);
       const key = section === 'images' ? 'photos' : section;
+
       expect(result).toMatchObject({
         title: 'Primary movie',
         originalTitle: 'Original movie',
@@ -68,13 +72,21 @@ describe('partial detail recovery', () => {
         description: 'Overview',
         sections: { [key]: { status: 'unavailable' } },
       });
-      if (section !== 'credits') expect(result?.cast).toEqual(['Actor']);
-      if (section !== 'images')
+
+      if (section !== 'credits') {
+        expect(result?.cast).toEqual(['Actor']);
+      }
+
+      if (section !== 'images') {
         expect(result?.backdrops?.[0].fullUrl).toBe(
           'https://example.com/original/still.jpg',
         );
-      if (section !== 'videos')
+      }
+
+      if (section !== 'videos') {
         expect(result?.videos?.[0].name).toBe('Trailer');
+      }
+
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(log).toHaveBeenCalledWith({
         operation: `movie-${key}`,
@@ -97,6 +109,7 @@ describe('partial detail recovery', () => {
         videos: { results: [] },
       }),
     );
+
     await expect(provider.findOne(1)).resolves.toMatchObject({
       cast: [],
       videos: [],
@@ -119,6 +132,7 @@ describe('partial detail recovery', () => {
           videos: undefined,
         }),
       );
+
     await expect(provider.findOne(1)).resolves.toMatchObject({
       title: 'Primary movie',
       sections: {
@@ -136,6 +150,7 @@ describe('partial detail recovery', () => {
 
   it('never converts malformed primary data into partial success', async () => {
     fetchMock.mockResolvedValue(Response.json({ ...movie, genres: [null] }));
+
     await expect(provider.findOne(1)).rejects.toMatchObject({ status: 502 });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -145,6 +160,7 @@ describe('partial detail recovery', () => {
       kind === 'movie'
         ? { ...movie, credits: undefined, images: undefined, videos: undefined }
         : { id: 1, name: 'Primary person' };
+
     const load = () =>
       kind === 'movie' ? provider.findOne(1) : provider.findPerson(1);
 
@@ -188,7 +204,9 @@ describe('partial detail recovery', () => {
               },
         );
         expect(fetchMock).toHaveBeenCalledTimes(2);
+
         const urls: URL[] = fetchMock.mock.calls.map(([url]: [URL]) => url);
+
         expect(urls.map((url) => url.pathname)).toEqual([
           `/${kind}/1`,
           `/${kind}/1`,
@@ -247,6 +265,7 @@ describe('partial detail recovery', () => {
                 : 'Movie provider request failed',
           });
         }
+
         expect(fetchMock).toHaveBeenCalledTimes(2);
       },
     );
@@ -279,7 +298,9 @@ describe('partial detail recovery', () => {
     async (section) => {
       const source = section === 'photos' ? 'images' : section;
       fetchMock.mockResolvedValue(Response.json(movie[source]));
+
       const result = await provider.findMovieSection(1, section);
+
       expect(result).toHaveProperty(
         section === 'credits'
           ? 'cast'
@@ -294,6 +315,7 @@ describe('partial detail recovery', () => {
 
   it('recovers filmography without requesting the profile', async () => {
     fetchMock.mockResolvedValue(Response.json({ cast: [], crew: [] }));
+
     await expect(provider.findFilmography(1)).resolves.toEqual({
       filmography: [],
     });
@@ -379,6 +401,7 @@ describe('partial detail recovery', () => {
         ok(full.sections);
         expect(full.sections[section]).toEqual({ status: 'available' });
         expect(fetchMock).toHaveBeenCalledTimes(2);
+
         if (empty) {
           expect(mapped).not.toHaveProperty(
             section === 'credits'
@@ -462,6 +485,7 @@ describe('partial detail recovery', () => {
     const result = await provider
       .findMovieSection(1, 'videos')
       .catch((error: HttpException) => error);
+
     expect(result).toBeInstanceOf(HttpException);
     expect((result as HttpException).getResponse()).toMatchObject({
       statusCode: 429,

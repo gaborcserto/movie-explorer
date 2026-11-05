@@ -1,6 +1,7 @@
 import './App.scss';
 import { lazy, Suspense } from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router';
+
 import HomePage from './pages/homePage';
 import ErrorPage from './pages/errorPage/errorPage';
 import SearchHistoryProvider from './components/list/searchHistory';

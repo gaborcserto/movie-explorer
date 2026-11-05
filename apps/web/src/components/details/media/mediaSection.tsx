@@ -53,11 +53,13 @@ export default function MediaSection({
     tab: MediaTab;
   }>({ resetKey, tab: 'backdrops' });
   const tabsId = useId();
+
   const activeTab =
     tabSelection.resetKey === resetKey ? tabSelection.tab : 'backdrops';
   const panelsRef = useStablePanelHeight<HTMLDivElement>(
     `${resetKey}:${activeTab}`
   );
+
   const hasBackdrops = backdrops.length > 0;
   const hasPosters = posters.length > 0;
   const hasVideos = videos.length > 0;

@@ -102,6 +102,7 @@ describe('<List />', () => {
     fireEvent.click(screen.getByRole('button', { name: /load more/i }));
 
     await screen.findByText('Next 10');
+
     expect(screen.getAllByRole('article')).toHaveLength(13);
     expect(screen.queryByText('Last 1')).toBeNull();
   });
@@ -121,12 +122,14 @@ describe('<List />', () => {
           ? 'No matching movies found.'
           : 'No matching movies yet. Load more to continue.'
       );
+
       expect(
         Boolean(screen.queryByRole('button', { name: /load more/i }))
       ).toBe(page < 500);
       expect(getMovies).toHaveBeenCalledTimes(1);
     }
   );
+
   beforeEach(() => {
     vi.resetAllMocks();
   });
@@ -217,6 +220,7 @@ describe('<List />', () => {
     const homeLoadMore = await screen.findByRole('button', {
       name: 'Load more',
     });
+
     expect(homeLoadMore).toHaveClass('btn--outline', 'btn--action');
 
     cleanup();
@@ -225,6 +229,7 @@ describe('<List />', () => {
     const resultsLoadMore = await screen.findByRole('button', {
       name: 'Load more',
     });
+
     expect(resultsLoadMore).toHaveClass('btn--outline', 'btn--action');
     expect(resultsLoadMore).not.toHaveClass('btn--primary');
   });
@@ -277,7 +282,9 @@ describe('<List />', () => {
     expect(await screen.findByText('Has poster')).toBeInTheDocument();
     expect(screen.queryByText('Posterless')).not.toBeInTheDocument();
     expect(screen.getByText('1 movie loaded')).toBeInTheDocument();
+
     await user.click(screen.getByRole('button', { name: 'Load more' }));
+
     expect(getMovies).toHaveBeenLastCalledWith(
       expect.objectContaining({ page: 2 }),
       expect.any(AbortSignal)
@@ -307,6 +314,7 @@ describe('<List />', () => {
 
   test('shows results in batches of 10 and keeps the final partial batch', async () => {
     const user = userEvent.setup();
+
     const movieBatch = (start: number, count: number) =>
       Array.from({ length: count }, (_, index) => ({
         id: start + index,
@@ -337,14 +345,18 @@ describe('<List />', () => {
     expect(getMovies).toHaveBeenCalledTimes(1);
 
     const loadMore = screen.getByRole('button', { name: 'Load more' });
+
     expect(loadMore).toHaveClass('btn--outline', 'btn--action');
+
     await user.click(loadMore);
+
     expect(screen.getByText('Movie 20')).toBeInTheDocument();
     expect(screen.queryByText('Movie 21')).not.toBeInTheDocument();
     expect(screen.getByText('20 movies loaded')).toBeInTheDocument();
     expect(getMovies).toHaveBeenCalledTimes(1);
 
     await user.click(screen.getByRole('button', { name: 'Load more' }));
+
     expect(await screen.findByText('Movie 25')).toBeInTheDocument();
     expect(screen.getByText('25 movies loaded')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
@@ -374,13 +386,17 @@ describe('<List />', () => {
         await user.click(
           await screen.findByRole('button', { name: 'Load more' })
         );
+
         expect(
           screen.getByRole('button', { name: /loading more/i })
         ).toBeDisabled();
+
         const obsoleteSignal = getMovies.mock.calls[1][1];
+
         expect(obsoleteSignal).toBeInstanceOf(AbortSignal);
 
         await user.click(screen.getByRole('link', { name: destination }));
+
         expect(await screen.findByText('Current 1')).toBeInTheDocument();
         expect(obsoleteSignal?.aborted).toBe(true);
         expect(screen.getByRole('button', { name: 'Load more' })).toBeEnabled();
@@ -404,7 +420,9 @@ describe('<List />', () => {
         expect(
           screen.getByText(/10 (matching )?movies loaded/)
         ).toBeInTheDocument();
+
         await user.click(screen.getByRole('button', { name: 'Load more' }));
+
         expect(
           await screen.findByText('Current page two 1')
         ).toBeInTheDocument();
@@ -441,13 +459,18 @@ describe('<List />', () => {
       const loadingButton = screen.getByRole('button', {
         name: /loading more/i,
       });
+
       expect(loadingButton).toBeDisabled();
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
       await user.click(loadingButton);
+
       expect(getMovies).toHaveBeenCalledTimes(4);
+
       await act(async () =>
         currentPage.resolve(moviePage('Current page two', 2))
       );
+
       expect(screen.getByText('Current page two 1')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Load more' })).toBeEnabled();
     }
@@ -468,14 +491,19 @@ describe('<List />', () => {
       fireEvent.click(button);
       fireEvent.click(button);
     });
+
     expect(getMovies).toHaveBeenCalledTimes(2);
     expect(button).toBeDisabled();
     expect(document.querySelectorAll('.skeleton-card')).toHaveLength(10);
     expect(screen.getByText('First page 1')).toBeVisible();
+
     await act(async () => nextPage.resolve(moviePage('Second page', 2)));
+
     expect(document.querySelector('.skeleton-card')).toBeNull();
     expect(screen.getByText('20 movies loaded')).toBeInTheDocument();
+
     await user.click(screen.getByRole('button', { name: 'Load more' }));
+
     expect(await screen.findByText('Third page 1')).toBeInTheDocument();
     expect(getMovies.mock.calls.map(([params]) => params.page)).toEqual([
       1, 2, 3,
@@ -507,11 +535,14 @@ describe('<List />', () => {
               );
             }
             const obsoleteSignal = getMovies.mock.lastCall?.[1];
+
             expect(obsoleteSignal).toBeInstanceOf(AbortSignal);
             expect(screen.getByText(/loading/i)).toBeInTheDocument();
 
             await user.click(screen.getByRole('link', { name: '/search/B' }));
+
             expect(obsoleteSignal?.aborted).toBe(true);
+
             if (newResultsCompleted) {
               await act(async () =>
                 currentRequest.resolve(moviePage('Current'))
@@ -523,10 +554,12 @@ describe('<List />', () => {
               expect(screen.getByText(/loading/i)).toBeInTheDocument();
               expect(screen.queryByText('Obsolete 1')).not.toBeInTheDocument();
               expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
               await act(async () =>
                 currentRequest.resolve(moviePage('Current'))
               );
             }
+
             expect(screen.getByText('Current 1')).toBeInTheDocument();
             expect(screen.queryByText('Obsolete 1')).not.toBeInTheDocument();
             expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -534,7 +567,9 @@ describe('<List />', () => {
               screen.queryByRole('heading', { name: /movies found/ })
             ).toBeNull();
             expect(screen.getByText('10 movies loaded')).toBeInTheDocument();
+
             await user.click(screen.getByRole('button', { name: 'Load more' }));
+
             expect(
               await screen.findByText('Current page two 1')
             ).toBeInTheDocument();
@@ -569,14 +604,17 @@ describe('<List />', () => {
     await user.click(screen.getByRole('link', { name: destinations[0] }));
     await user.click(screen.getByRole('link', { name: destinations[1] }));
     await user.click(screen.getByRole('link', { name: destinations[2] }));
+
     expect(await screen.findByText('Latest 1')).toBeInTheDocument();
     expect(
       getMovies.mock.calls.slice(0, -1).every(([, signal]) => signal?.aborted)
     ).toBe(true);
     expect(getMovies.mock.lastCall?.[1]?.aborted).toBe(false);
+
     await settleObsoleteRequest(middleFilter, 'failure');
     await settleObsoleteRequest(obsoletePage, 'success');
     await settleObsoleteRequest(middleQuery, 'success');
+
     expect(screen.getByText('Latest 1')).toBeInTheDocument();
     expect(screen.queryByText('Obsolete 1')).not.toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -617,14 +655,18 @@ describe('<List />', () => {
           const signal = getMovies.mock.lastCall?.[1];
 
           cleanup();
+
           expect(signal?.aborted).toBe(true);
+
           renderList('/search/Current');
           await settleObsoleteRequest(obsolete, outcome);
 
           expect(screen.getByText(/loading/i)).toBeInTheDocument();
           expect(screen.queryByText('Obsolete 1')).not.toBeInTheDocument();
           expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
           await act(async () => current.resolve(moviePage('Current')));
+
           expect(screen.getByText('Current 1')).toBeInTheDocument();
           expect(screen.getByText('10 movies loaded')).toBeInTheDocument();
         }
@@ -649,6 +691,7 @@ describe('<List />', () => {
       });
     renderList();
     await screen.findByRole('link', { name: 'First revised' });
+
     expect(screen.getAllByRole('article')).toHaveLength(2);
 
     fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
@@ -722,6 +765,7 @@ describe('<List />', () => {
     expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();
 
     await user.click(screen.getByRole('link', { name: 'Documentary' }));
+
     expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Remove Documentary genre filter' })
@@ -729,6 +773,7 @@ describe('<List />', () => {
     expect(screen.queryByText(/genre:/i)).toBeNull();
 
     await user.click(screen.getByRole('link', { name: 'All' }));
+
     expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();
     expect(screen.queryByText(/genre:/i)).toBeNull();
   });
@@ -753,6 +798,7 @@ describe('<List />', () => {
     );
 
     await user.click(screen.getByRole('link', { name: 'Clear search' }));
+
     expect(await screen.findByText('0 movies loaded')).toBeInTheDocument();
     expect(screen.queryByText(/search:/i)).toBeNull();
   });
@@ -765,6 +811,7 @@ describe('<List />', () => {
     await waitFor(() =>
       expect(screen.getByText('Something went wrong')).toBeInTheDocument()
     );
+
     expect(
       screen.getByText("We couldn't load this information. Please try again.")
     ).toBeInTheDocument();
@@ -879,6 +926,7 @@ describe('<List />', () => {
 
     await user.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => expect(getMovies).toHaveBeenCalledTimes(3));
+
     expect(screen.getByText('First movie')).toBeInTheDocument();
   });
 });

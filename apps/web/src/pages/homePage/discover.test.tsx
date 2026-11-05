@@ -105,9 +105,11 @@ describe('Discover page', () => {
       'href',
       '/movie/12'
     );
+
     await user.click(
       screen.getByRole('button', { name: 'Next featured title' })
     );
+
     expect(
       await screen.findByRole('heading', { name: 'Featured Series' })
     ).toBeInTheDocument();
@@ -181,6 +183,7 @@ describe('Discover page', () => {
     await user.click(
       screen.getByRole('button', { name: 'Next featured title' })
     );
+
     expect(
       await screen.findByRole('heading', { name: 'Featured Series' })
     ).toBeInTheDocument();
@@ -197,6 +200,7 @@ describe('Discover page', () => {
     await user.click(
       within(featured).getByRole('button', { name: 'Show Trending Feature' })
     );
+
     expect(
       within(featured).getByRole('heading', { name: 'Trending Feature' })
     ).toBeInTheDocument();
@@ -212,6 +216,7 @@ describe('Discover page', () => {
     });
     nextButton.focus();
     await user.keyboard('{Enter}');
+
     expect(
       await screen.findByRole('heading', { name: 'Featured Series' })
     ).toBeInTheDocument();
@@ -236,20 +241,24 @@ describe('Discover page', () => {
 
     expect(featured).toHaveAttribute('aria-roledescription', 'carousel');
     expect(featured).toHaveAttribute('tabindex', '0');
+
     featured.focus();
 
     await user.keyboard('{ArrowLeft}');
+
     expect(
       await screen.findByRole('heading', { name: 'Featured Series' })
     ).toBeInTheDocument();
 
     await user.keyboard('{ArrowRight}');
+
     expect(
       await screen.findByRole('heading', { name: 'Trending Feature' })
     ).toBeInTheDocument();
 
     screen.getByRole('link', { name: 'Explore title' }).focus();
     await user.keyboard('{ArrowRight}');
+
     expect(
       screen.getByRole('heading', { name: 'Trending Feature' })
     ).toBeInTheDocument();
@@ -258,6 +267,7 @@ describe('Discover page', () => {
       .getByRole('textbox', { name: 'Search field outside the carousel' })
       .focus();
     await user.keyboard('{ArrowRight}');
+
     expect(
       screen.getByRole('heading', { name: 'Trending Feature' })
     ).toBeInTheDocument();
@@ -267,6 +277,7 @@ describe('Discover page', () => {
     });
     nextButton.focus();
     await user.keyboard('{ArrowRight}');
+
     expect(
       await screen.findByRole('heading', { name: 'Featured Series' })
     ).toBeInTheDocument();
@@ -326,21 +337,25 @@ describe('Discover page', () => {
         screen.getByRole('tablist', { name: 'Movie discovery categories' })
       ).getByRole('tab', { name: 'Popular' })
     );
+
     expect(getDiscoverySection).toHaveBeenCalledWith(
       'popular-movies',
       expect.any(AbortSignal),
       1
     );
+
     await user.click(
       within(
         screen.getByRole('tablist', { name: 'Series discovery categories' })
       ).getByRole('tab', { name: 'New' })
     );
+
     expect(getDiscoverySection).toHaveBeenCalledWith(
       'new-series',
       expect.any(AbortSignal),
       1
     );
+
     const providerTabs = await screen.findByRole('tablist', {
       name: 'Streaming providers available in Hungary',
     });
@@ -348,6 +363,7 @@ describe('Discover page', () => {
       name: 'SkyShowtime',
     });
     await user.click(skyShowtimeTab);
+
     expect(skyShowtimeTab).toHaveAttribute('aria-selected', 'true');
     expect(getStreamingProviderSection).toHaveBeenCalledWith(
       102,
@@ -361,6 +377,7 @@ describe('Discover page', () => {
         screen.getByRole('tablist', { name: 'Movie discovery categories' })
       ).getByRole('tab', { name: 'Trending' })
     );
+
     expect(
       within(
         screen.getByRole('tablist', { name: 'Series discovery categories' })
@@ -382,6 +399,7 @@ describe('Discover page', () => {
     await user.keyboard('{ArrowRight}');
 
     const popularTab = within(movieTabs).getByRole('tab', { name: 'Popular' });
+
     expect(popularTab).toHaveFocus();
     expect(popularTab).toHaveAttribute('aria-selected', 'true');
     expect(getDiscoverySection).toHaveBeenCalledWith(
@@ -467,6 +485,7 @@ describe('Discover page', () => {
     );
 
     const grid = await screen.findByRole('region', { name: 'New Series' });
+
     expect(grid.querySelectorAll('.discover-row__card')).toHaveLength(5);
     expect(
       screen.getByRole('link', { name: 'Unrated Upcoming Series' })
@@ -514,6 +533,7 @@ describe('Discover page', () => {
     );
 
     const grid = await screen.findByRole('region', { name: 'Popular Movies' });
+
     expect(grid.querySelectorAll('.discover-row__card')).toHaveLength(2);
     expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
     expect(getDiscoverySection).toHaveBeenCalledWith(
@@ -539,7 +559,9 @@ describe('Discover page', () => {
       ).getByRole('tab', { name: 'Popular' })
     );
     const panel = await screen.findByRole('tabpanel', { name: 'Popular' });
+
     expect(panel).toHaveClass('tab-panel-stable');
+
     await within(panel).findByText('No titles are available right now.');
 
     const pagesRequested = () =>
@@ -606,6 +628,7 @@ describe('Discover page', () => {
     const skyShowtimeTab = within(providerTabs).getByRole('tab', {
       name: 'SkyShowtime',
     });
+
     expect(skyShowtimeTab).toHaveFocus();
     expect(skyShowtimeTab).toHaveAttribute('aria-selected', 'true');
     expect(
@@ -675,6 +698,7 @@ describe('Discover page', () => {
         expect.any(AbortSignal)
       );
     });
+
     expect(appleTab).toHaveAttribute('aria-selected', 'true');
     expect(cardRail.scrollLeft).toBe(24);
     expect(pageScroll).not.toHaveBeenCalled();
@@ -694,15 +718,19 @@ describe('Discover page', () => {
     const providerTabs = await screen.findByRole('tablist', {
       name: 'Streaming providers available in Hungary',
     });
+
     expect(within(providerTabs).getAllByRole('tab')).toHaveLength(1);
+
     await waitFor(() =>
       expect(
         within(providerTabs).getByRole('tab', { name: 'Netflix' })
       ).toHaveAttribute('aria-selected', 'true')
     );
+
     expect(
       screen.getByText('Providers not listed for Hungary are omitted.')
     ).toBeInTheDocument();
+
     await waitFor(() =>
       expect(getStreamingProviderSection).toHaveBeenCalledWith(
         901,
@@ -742,6 +770,7 @@ describe('Discover page', () => {
     renderDiscover();
 
     const streaming = screen.getByRole('region', { name: 'Streaming' });
+
     expect(
       await within(streaming).findByText('No titles are available right now.')
     ).toBeInTheDocument();
@@ -890,17 +919,25 @@ describe('Discover page', () => {
     );
 
     const grid = await screen.findByRole('region', { name: 'Popular Movies' });
+
     expect(grid.querySelectorAll('.discover-row__card')).toHaveLength(5);
     expect(container.querySelector('.discover-featured')).toBeInTheDocument();
     expect(grid.closest('.discover-featured')).toBeNull();
 
     await user.click(screen.getByRole('button', { name: 'Load more' }));
+
     expect(grid.querySelectorAll('.discover-row__card')).toHaveLength(10);
+
     await user.click(screen.getByRole('button', { name: 'Load more' }));
+
     expect(grid.querySelectorAll('.discover-row__card')).toHaveLength(15);
+
     await user.click(screen.getByRole('button', { name: 'Load more' }));
+
     expect(grid.querySelectorAll('.discover-row__card')).toHaveLength(20);
+
     await user.click(screen.getByRole('button', { name: 'Load more' }));
+
     expect(
       await screen.findByRole('link', { name: 'Popular 21' })
     ).toBeInTheDocument();
@@ -915,6 +952,7 @@ describe('Discover page', () => {
 
   it('filters incomplete results before filling five positions and paginating', async () => {
     const user = userEvent.setup();
+
     const result = (
       id: number,
       posterUrl?: string,
@@ -962,6 +1000,7 @@ describe('Discover page', () => {
     );
 
     const grid = await screen.findByRole('region', { name: 'Popular Movies' });
+
     expect(grid.querySelectorAll('.discover-row__card')).toHaveLength(5);
     expect(screen.queryByRole('link', { name: 'Popular 2' })).toBeNull();
     expect(screen.queryByRole('link', { name: '   ' })).toBeNull();
@@ -992,6 +1031,7 @@ describe('Discover page', () => {
     const moviePanel = within(movieSection).getByRole('tabpanel', {
       name: 'Trending',
     });
+
     expect(
       moviePanel.querySelector('.discover-row__viewport')
     ).toBeInTheDocument();
@@ -1005,6 +1045,7 @@ describe('Discover page', () => {
     const upcomingPanel = await within(movieSection).findByRole('tabpanel', {
       name: 'Upcoming',
     });
+
     expect(
       upcomingPanel.querySelector('.discover-row__viewport')
     ).toBeInTheDocument();
@@ -1023,8 +1064,10 @@ describe('Discover page', () => {
         if (section !== 'popular-movies') {
           return emptyResponse;
         }
+
         if (page === 2 && pageTwoFails) {
           pageTwoFails = false;
+
           throw new Error('temporary failure');
         }
 
@@ -1060,11 +1103,13 @@ describe('Discover page', () => {
     );
     await user.click(await screen.findByRole('button', { name: 'Load more' }));
     await user.click(await screen.findByRole('button', { name: 'Load more' }));
+
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'More titles could not load.'
     );
 
     await user.click(screen.getByRole('button', { name: 'Try again' }));
+
     expect(
       await screen.findByRole('link', { name: 'Popular 11' })
     ).toBeInTheDocument();

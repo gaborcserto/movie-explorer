@@ -1,4 +1,5 @@
 import { MovieSectionsDto } from '../validation/section-availability.dto';
+
 import { Transform, Type } from 'class-transformer';
 import {
   IsIn,

@@ -168,6 +168,7 @@ function parseMovieResponse(body: unknown, id: number): MovieDetails {
       delete body[key];
     }
   });
+
   (['budget', 'revenue'] as const).forEach((key) => {
     const value = body[key];
 
@@ -314,6 +315,7 @@ export const getPerson = async (
       (photo) => photo.fullUrl.trim() && photo.thumbnailUrl.trim()
     );
   }
+
   if (
     body.combinedFilmography !== undefined &&
     !combinedFilmography(body.combinedFilmography)
@@ -343,6 +345,7 @@ export const getMovieSection = async (
   if (!movieSection(body, section)) {
     throw new ApiRequestError('invalid-response');
   }
+
   if (section === 'photos' && body.backdrops === undefined && body.photos) {
     body.backdrops = body.photos;
   }
@@ -519,6 +522,7 @@ export const getSearchSuggestions = async (
     limit: '6',
     includeSeries: 'true',
   });
+
   const body = await request<SearchSuggestionsResponse>(
     `${apiBaseUrl}/api/v1/search/suggestions?${params}`,
     signal ? { signal } : {}
@@ -552,6 +556,7 @@ export async function getSearchResults(
   if (year) {
     params.set('year', year);
   }
+
   const body = await request<unknown>(`${apiBaseUrl}/api/v1/search?${params}`, {
     signal,
   });
@@ -573,6 +578,7 @@ export async function getDiscoverySection(
   page = 1
 ): Promise<SearchResponse> {
   const params = new URLSearchParams({ page: String(page) });
+
   const body = await request<unknown>(
     `${apiBaseUrl}/api/v1/discover/${section}?${params}`,
     signal ? { signal } : {}
@@ -590,6 +596,7 @@ export async function getStreamingProviders(
   signal?: AbortSignal
 ): Promise<StreamingProviderInfo[]> {
   const params = new URLSearchParams({ region });
+
   const body = await request<unknown>(
     `${apiBaseUrl}/api/v1/discover/providers?${params}`,
     signal ? { signal } : {}
@@ -620,6 +627,7 @@ export async function getStreamingProviderSection(
   signal?: AbortSignal
 ): Promise<SearchResponse> {
   const params = new URLSearchParams({ region, page: String(page) });
+
   const body = await request<unknown>(
     `${apiBaseUrl}/api/v1/discover/streaming/${providerId}?${params}`,
     signal ? { signal } : {}
@@ -654,6 +662,7 @@ export async function getPopularSeries(
   if (filters.order) {
     params.set('order', filters.order);
   }
+
   const body = await request<unknown>(`${apiBaseUrl}/api/v1/series?${params}`, {
     signal,
   });

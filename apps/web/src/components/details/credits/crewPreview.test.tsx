@@ -106,6 +106,7 @@ test.each(['movie', 'series'] as const)(
     const crew = setup(kind);
     const total = kind === 'movie' ? 30 : 50;
     const first = crew.getAllByRole('link', { name: 'Crew 1' })[0];
+
     const links = () =>
       new Set(
         crew.getAllByRole('link').map((link) => link.getAttribute('href'))
@@ -116,7 +117,9 @@ test.each(['movie', 'series'] as const)(
     );
     expect(links().size).toBe(12);
     expect(crew.queryByRole('link', { name: 'Crew 13' })).toBeNull();
+
     const more = crew.getByRole('button', { name: 'Show more crew' });
+
     expect(
       document.getElementById(more.getAttribute('aria-controls') ?? '')
     ).toHaveClass('crew-groups');
@@ -127,6 +130,7 @@ test.each(['movie', 'series'] as const)(
 
     more.focus();
     await user.keyboard('{Enter}');
+
     expect(links().size).toBe(24);
     expect(more).toHaveFocus();
     expect(more).toHaveAttribute('aria-expanded', 'true');
@@ -135,13 +139,17 @@ test.each(['movie', 'series'] as const)(
 
     if (kind === 'series') {
       await user.keyboard('{Enter}');
+
       expect(links().size).toBe(36);
+
       await user.keyboard('{Enter}');
+
       expect(links().size).toBe(48);
       expect(more).toHaveFocus();
     }
 
     await user.keyboard('{Enter}');
+
     expect(links().size).toBe(total);
     expect(crew.getByRole('status')).toHaveFocus();
     expect(crew.queryByRole('button', { name: 'Show more crew' })).toBeNull();
@@ -149,6 +157,7 @@ test.each(['movie', 'series'] as const)(
     const less = crew.getByRole('button', { name: 'Show less crew' });
     less.focus();
     await user.keyboard(' ');
+
     expect(links().size).toBe(12);
     expect(crew.getByRole('status')).toHaveFocus();
     expect(crew.queryByRole('button', { name: 'Show less crew' })).toBeNull();
@@ -157,6 +166,7 @@ test.each(['movie', 'series'] as const)(
 
 test('preserves movie department ordering and counts one linked person across multiple credited jobs', () => {
   const crew = setup('movie');
+
   expect(
     crew
       .getAllByRole('heading', { level: 3 })
@@ -170,6 +180,7 @@ test('preserves movie department ordering and counts one linked person across mu
 
 test('preserves aggregate jobs and department episode totals without summing overlapping counts', () => {
   const crew = setup('series');
+
   expect(
     crew
       .getAllByRole('heading', { level: 3 })
@@ -208,10 +219,12 @@ test.each([0, 2])(
     );
     fireEvent.click(screen.getByRole('tab', { name: 'Crew' }));
     const crew = within(screen.getByRole('tabpanel', { name: 'Crew' }));
+
     expect(crew.getByRole('status')).toHaveTextContent(
       `Showing ${count} of ${count} crew members`
     );
     expect(crew.queryByRole('button')).toBeNull();
+
     if (count === 0) {
       expect(crew.getByText('No crew information available.')).toBeVisible();
     }
@@ -231,11 +244,14 @@ test('retains movie expansion on section recovery and resets it for another movi
       <DetailsLowerContent movieData={{ ...movie, description: 'Recovered' }} />
     </MemoryRouter>
   );
+
   expect(screen.getByText('Showing 24 of 30 crew members')).toBeVisible();
+
   rerender(
     <MemoryRouter>
       <DetailsLowerContent movieData={{ ...movie, id: 2 }} />
     </MemoryRouter>
   );
+
   expect(screen.getByText('Showing 12 of 30 crew members')).toBeVisible();
 });

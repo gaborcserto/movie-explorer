@@ -1,5 +1,6 @@
 import { ok } from 'node:assert/strict';
 import { HttpException, Logger } from '@nestjs/common';
+
 import { TmdbMovieProvider } from './tmdb-movie.provider';
 import { parseRetryAfter } from './retry-after';
 
@@ -43,10 +44,12 @@ describe('TMDB request failures', () => {
       );
     },
   );
+
   const fetchMock = jest.fn();
   const originalFetch = global.fetch;
   let log: jest.SpyInstance;
   let provider: TmdbMovieProvider;
+
   beforeEach(() => {
     global.fetch = fetchMock;
     fetchMock.mockReset();
@@ -61,6 +64,7 @@ describe('TMDB request failures', () => {
       requestTimeoutMs: 8000,
     });
   });
+
   afterEach(() => {
     global.fetch = originalFetch;
     jest.restoreAllMocks();
@@ -82,7 +86,9 @@ describe('TMDB request failures', () => {
     await provider.findPeople(' A&B / C ', 2);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
+
     const [url, init]: [URL, RequestInit] = fetchMock.mock.calls[0];
+
     expect(url.href).toBe(
       'https://example.com/3/search/person?language=hu-HU&region=HU&query=A%26B+%2F+C&include_adult=false&page=2',
     );
@@ -129,6 +135,7 @@ describe('TMDB request failures', () => {
             },
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+
     const init: RequestInit & { signal: AbortSignal } =
       fetchMock.mock.calls[0][1];
 
@@ -205,9 +212,11 @@ describe('TMDB request failures', () => {
 
       expect(init.signal.aborted).toBe(true);
       ok(complete);
+
       complete(stage === 'fetch' ? Response.json(primary) : primary);
 
       await result;
+
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(log).toHaveBeenCalledWith({
         operation: `${kind}-detail`,
@@ -248,13 +257,17 @@ describe('TMDB request failures', () => {
       });
 
       await jest.advanceTimersByTimeAsync(7999);
+
       ok(complete);
+
       complete(new Response(null, { status: 502 }));
       await jest.advanceTimersByTimeAsync(1);
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
+
       const first: RequestInit = fetchMock.mock.calls[0][1];
       const second: RequestInit = fetchMock.mock.calls[1][1];
+
       expect(first.signal).not.toBe(second.signal);
       ok(first.signal);
       expect(first.signal.aborted).toBe(true);
@@ -273,6 +286,7 @@ describe('TMDB request failures', () => {
 
   it.each(['movie', 'person'])('allows missing %s details', async (kind) => {
     fetchMock.mockResolvedValue(new Response(null, { status: 404 }));
+
     await expect(
       kind === 'movie' ? provider.findOne(1) : provider.findPerson(1),
     ).resolves.toBeUndefined();
@@ -296,6 +310,7 @@ describe('TMDB request failures', () => {
         people: () => provider.findPeople('test', 1),
         suggestions: () => provider.findSuggestions('test', 6),
       };
+
       await expect(calls[kind]()).rejects.toMatchObject({
         status: 502,
         message: 'Movie provider request failed',
@@ -321,6 +336,7 @@ describe('TMDB request failures', () => {
         },
         (caught: HttpException) => caught,
       );
+
       expect(error.getResponse()).toEqual({
         statusCode: 502,
         error: 'Bad Gateway',
@@ -353,6 +369,7 @@ describe('TMDB request failures', () => {
       },
       (caught: HttpException) => caught,
     );
+
     expect(error.getStatus()).toBe(429);
     expect(error.getResponse()).toEqual({
       statusCode: 429,
@@ -364,6 +381,7 @@ describe('TMDB request failures', () => {
 
   it('validates HTTP-date Retry-After values', () => {
     jest.useFakeTimers().setSystemTime(new Date('2026-01-01T00:00:00Z'));
+
     expect(parseRetryAfter('Thu, 01 Jan 2026 00:01:00 GMT')).toBe(60);
     expect(parseRetryAfter('Wed, 31 Dec 2025 23:59:59 GMT')).toBeUndefined();
     expect(parseRetryAfter('2026-01-01')).toBeUndefined();
@@ -395,6 +413,7 @@ describe('TMDB request failures', () => {
       });
       await jest.advanceTimersByTimeAsync(8000);
       await result;
+
       expect(log).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: 'movie-detail',
@@ -437,6 +456,7 @@ describe('TMDB request failures', () => {
     fetchMock.mockResolvedValue(
       Response.json({ results: [], page: 1, total_pages: 0, total_results: 0 }),
     );
+
     await expect(provider.findPeople('test', 1)).resolves.toMatchObject({
       people: [],
       totalResults: 0,

@@ -34,18 +34,21 @@ describe('SeriesService', () => {
 
   it('delegates details to the independent Series provider', async () => {
     provider.findOne.mockResolvedValue(minimalSeriesDetails);
+
     await expect(service.findOne(1399)).resolves.toBe(minimalSeriesDetails);
     expect(provider.findOne).toHaveBeenCalledWith(1399);
   });
 
   it('preserves missing results', async () => {
     provider.findOne.mockResolvedValue(undefined);
+
     await expect(service.findOne(1)).resolves.toBeUndefined();
   });
 
   it('preserves provider failures', async () => {
     const error = new Error('provider failure');
     provider.findOne.mockRejectedValue(error);
+
     await expect(service.findOne(1)).rejects.toBe(error);
   });
 
@@ -76,6 +79,7 @@ describe('SeriesService', () => {
       score: 8,
       voteCount: 10,
     });
+
     await expect(service.findRatings(1)).resolves.toMatchObject({
       tmdb: { status: 'available', score: 8 },
     });
@@ -84,16 +88,19 @@ describe('SeriesService', () => {
       status: 'unavailable',
       reason: 'upstream-error',
     });
+
     await expect(service.findRatings(1)).resolves.toMatchObject({
       tmdb: { status: 'unavailable', reason: 'upstream-error' },
     });
 
     provider.findRatings?.mockResolvedValueOnce({ status: 'missing' });
+
     await expect(service.findRatings(1)).resolves.toMatchObject({
       tmdb: { status: 'missing' },
     });
 
     provider.findRatings?.mockResolvedValueOnce(undefined);
+
     await expect(service.findRatings(1)).resolves.toBeUndefined();
   });
 });

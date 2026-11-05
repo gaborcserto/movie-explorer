@@ -6,6 +6,7 @@ import type {
 
 import { DISCOVERY_PROVIDER } from './discovery.tokens';
 import type { DiscoveryProvider } from './discovery.tokens';
+
 import type { DiscoverySection } from '@movie-explorer/contracts';
 
 @Injectable()

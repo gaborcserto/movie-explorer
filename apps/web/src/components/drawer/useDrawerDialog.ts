@@ -38,11 +38,13 @@ export default function useDrawerDialog({
           !node.closest('[inert]') &&
           node.getAttribute('aria-hidden') !== 'true'
       );
+
     const containFocus = (event: FocusEvent) => {
       if (event.target instanceof Node && !element.contains(event.target)) {
         element.focus();
       }
     };
+
     const keydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();

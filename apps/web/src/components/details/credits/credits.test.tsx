@@ -3,6 +3,7 @@ import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, MemoryRouter } from 'react-router';
 import type { MovieDetails, PersonDetails } from '@movie-explorer/contracts';
+
 import DetailsContent, { DetailsLowerContent } from '../detailsContent';
 import App from '../../../App';
 
@@ -72,6 +73,7 @@ function crewGroup(name: 'Directors' | 'Writers' | 'Producers') {
 
 test('renders structured cast and ordered crew groups with Person Details links', () => {
   renderCredits();
+
   expect(screen.getByRole('heading', { name: 'Cast' })).toBeVisible();
   expect(screen.getByRole('heading', { name: 'Crew' })).toBeVisible();
   expect(
@@ -116,6 +118,7 @@ test.each([undefined, 0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])(
       directors: [{ id, name: 'Unlinked Director' }],
       castMembers: [{ id, name: 'Unlinked Actor' }],
     });
+
     expect(crewGroup('Directors').getByText('Unlinked Director')).toBeVisible();
     expect(cards().getByText('Unlinked Actor')).toBeVisible();
     expect(screen.queryByRole('link')).toBeNull();
@@ -134,6 +137,7 @@ test.each([undefined, []])(
       cast: [' Actor A ', 'Actor B'],
       castMembers: empty,
     });
+
     expect(screen.queryByText('Director A, Director B')).toBeNull();
     expect(cards().getAllByRole('listitem')).toHaveLength(2);
     expect(
@@ -152,6 +156,7 @@ test('preserves unmatched legacy cast names in partial structured responses with
     cast: ['Same', 'Same', 'Legacy Only'],
     castMembers: [{ id: 1, name: 'Same' }],
   });
+
   expect(cards().getAllByRole('listitem')).toHaveLength(3);
   expect(
     cards()
@@ -197,22 +202,27 @@ test.each(['crew director', 'cast member', 'card portrait'])(
         await user.keyboard('{Enter}');
       }
       await screen.findByRole('heading', { level: 1, name: person.name });
+
       expect(router.state.location.pathname).toBe('/person/11');
       expect(router.state.location.search).toBe('');
       expect(screen.getByRole('main')).toHaveFocus();
+
       await act(async () => {
         await router.navigate(-1);
       });
       await screen.findByRole('heading', { level: 1, name: movie.title });
+
       expect(router.state.location.search).toBe(
         '?sorting=title&personSort=oldest'
       );
+
       await act(async () => {
         await router.navigate(1);
       });
       await screen.findByRole('heading', { level: 1, name: person.name });
       await user.click(screen.getByRole('link', { name: movie.title }));
       await screen.findByRole('heading', { level: 1, name: movie.title });
+
       expect(router.state.location.pathname).toBe('/movie/10');
       expect(router.state.location.search).toBe('');
       expect(fetchMock).toHaveBeenCalledWith(
@@ -253,6 +263,7 @@ test.each([
     render(<RouterProvider router={router} />);
     crewGroup(groupName).getByRole('link', { name }).focus();
     await user.keyboard('{Enter}');
+
     expect(
       await screen.findByRole('heading', { name: 'Person destination' })
     ).toBeVisible();

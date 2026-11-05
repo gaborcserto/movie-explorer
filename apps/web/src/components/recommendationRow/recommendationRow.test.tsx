@@ -60,6 +60,7 @@ beforeEach(() => {
   }));
   vi.mocked(getRelatedTitles).mockResolvedValue(empty);
 });
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -86,9 +87,11 @@ it('ignores late request failures after the hook source changes', async () => {
   await waitFor(() => expect(getRecommendations).toHaveBeenCalledTimes(1));
 
   rerender({ category: 'popular-series' });
+
   expect(result.current.data).toBeUndefined();
   expect(result.current.pending).toBe(true);
   expect(vi.mocked(getRecommendations).mock.calls[0][1]?.aborted).toBe(true);
+
   await waitFor(() => expect(getRecommendations).toHaveBeenCalledTimes(2));
 
   const response: Response = {
@@ -97,10 +100,12 @@ it('ignores late request failures after the hook source changes', async () => {
     candidateCount: 0,
   };
   await act(async () => resolveSecond(response));
+
   expect(result.current.data).toBe(response);
   expect(result.current.pending).toBe(false);
 
   await act(async () => rejectFirst(new Error('obsolete')));
+
   expect(result.current.data).toBe(response);
   expect(result.current.error).toBeUndefined();
   expect(result.current.pending).toBe(false);
@@ -126,19 +131,23 @@ it('keeps partial Series results and retry independent from pending Movies', asy
   });
   render(wrap(<HomeRecommendations />));
   await waitFor(() => expect(getRecommendations).toHaveBeenCalledTimes(1));
+
   expect(screen.getByText('Loading popular movies...')).toBeVisible();
+
   const tabs = within(
     screen.getByRole('tablist', { name: 'Recommendation categories' })
   );
 
   await userEvent.click(tabs.getByRole('tab', { name: 'Series' }));
   const series = screen.getByRole('region', { name: 'Popular Series' });
+
   expect(
     await within(series).findByRole('link', { name: 'Title 8' })
   ).toHaveAttribute('href', '/series/8');
   expect(
     within(series).getByText('Some recommendations are unavailable.')
   ).toBeVisible();
+
   vi.mocked(getRecommendations).mockResolvedValue({
     category: 'popular-series',
     candidateCount: 1,
@@ -148,10 +157,12 @@ it('keeps partial Series results and retry independent from pending Movies', asy
   await userEvent.click(
     within(series).getByRole('button', { name: 'Try again' })
   );
+
   expect(
     await within(series).findByRole('link', { name: 'Title 9' })
   ).toBeVisible();
   expect(getRecommendations).toHaveBeenCalledTimes(3);
+
   await act(async () => {
     resolveMovies?.({
       category: 'popular-movies',
@@ -160,6 +171,7 @@ it('keeps partial Series results and retry independent from pending Movies', asy
     });
   });
   await userEvent.click(tabs.getByRole('tab', { name: 'Movies' }));
+
   expect(
     screen.getByText('No recommendations are available right now.')
   ).toBeVisible();
@@ -226,6 +238,7 @@ it('distinguishes missing posters from a successful empty source', async () => {
       />
     )
   );
+
   expect(
     await screen.findByText(
       'No recommendations with posters are available right now.'
@@ -248,10 +261,13 @@ it('keeps usable partial results if recovery fails', async () => {
       />
     )
   );
+
   expect(
     await screen.findByRole('link', { name: 'Title 2' })
   ).toBeInTheDocument();
+
   await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
   expect(
     await screen.findByText('The request took too long. Please try again.')
   ).toBeInTheDocument();
@@ -290,12 +306,15 @@ it('cancels rapid navigation and ignores a provider that resolves after cancella
       />
     )
   );
+
   expect(
     await screen.findByRole('link', { name: 'Title 3' })
   ).toBeInTheDocument();
+
   await act(async () => {
     resolveOld?.({ availability: 'available', results: [title(9)] });
   });
+
   expect(oldSignal?.aborted).toBe(true);
   expect(
     screen.queryByRole('link', { name: 'Title 9' })
@@ -315,10 +334,13 @@ it('avoids duplicate StrictMode requests and rerender refetches', async () => {
   const { rerender, unmount } = render(node);
   await screen.findByText('No recommendations are available right now.');
   rerender(node);
+
   expect(getRelatedTitles).toHaveBeenCalledTimes(1);
+
   const signal = vi.mocked(getRelatedTitles).mock.calls[0][3];
 
   unmount();
+
   expect(signal?.aborted).toBe(true);
 });
 
@@ -345,7 +367,9 @@ it('defers offscreen resources until near the viewport', async () => {
       />
     )
   );
+
   expect(getRelatedTitles).not.toHaveBeenCalled();
+
   await act(async () => {
     notify?.(
       [{ isIntersecting: true } as IntersectionObserverEntry],
@@ -353,6 +377,7 @@ it('defers offscreen resources until near the viewport', async () => {
     );
   });
   await screen.findByText('No recommendations are available right now.');
+
   expect(getRelatedTitles).toHaveBeenCalledTimes(1);
   expect(disconnect).toHaveBeenCalled();
 });
@@ -386,21 +411,27 @@ it('supports arrow buttons, native keyboard activation, scrolling edges and redu
   expect(
     screen.getByRole('button', { name: 'Previous Similar Movies' })
   ).toBeDisabled();
+
   next.focus();
   await userEvent.keyboard('{Enter}');
+
   expect(viewport.scrollBy).toHaveBeenCalledWith({
     left: 300,
     behavior: 'auto',
   });
+
   viewport.scrollLeft = 300;
   fireEvent.scroll(viewport);
+
   expect(next).toBeDisabled();
   expect(
     screen.getByRole('button', { name: 'Previous Similar Movies' })
   ).toBeEnabled();
+
   await userEvent.click(
     screen.getByRole('button', { name: 'Previous Similar Movies' })
   );
+
   expect(viewport.scrollBy).toHaveBeenLastCalledWith({
     left: -300,
     behavior: 'auto',
@@ -445,18 +476,23 @@ it('pages by the card track plus one gap, excluding compensated hover insets', a
   await userEvent.click(
     screen.getByRole('button', { name: 'Next Similar Movies' })
   );
+
   expect(viewport.scrollBy).toHaveBeenCalledWith({
     left: 1120,
     behavior: 'smooth',
   });
+
   viewport.scrollLeft = 1120;
   fireEvent.scroll(viewport);
+
   expect(
     screen.getByRole('button', { name: 'Next Similar Movies' })
   ).toBeDisabled();
+
   await userEvent.click(
     screen.getByRole('button', { name: 'Previous Similar Movies' })
   );
+
   expect(viewport.scrollBy).toHaveBeenLastCalledWith({
     left: -1120,
     behavior: 'smooth',

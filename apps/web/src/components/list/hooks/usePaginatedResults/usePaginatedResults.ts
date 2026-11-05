@@ -28,18 +28,22 @@ export default function usePaginatedResults<Response, Item>(
       if (busy.current) {
         return;
       }
+
       busy.current = true;
       controller.current?.abort();
+
       const request = new AbortController();
       controller.current = request;
       setLoading(true);
       setMoreError(null);
+
       try {
         const response = await fetchPage(page, request.signal);
 
         if (request.signal.aborted) {
           return;
         }
+
         setError(null);
         setData(response);
         setItems((current) => [

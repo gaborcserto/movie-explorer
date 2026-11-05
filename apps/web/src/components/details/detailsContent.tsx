@@ -13,8 +13,7 @@ import { SectionRecovery } from './recovery';
 import { MediaSection } from './media';
 import HeroImage from '../heroImage';
 import MovieMetadata from './metadata';
-import CastPreview from './credits';
-import useCrewPreview from './credits/useCrewPreview';
+import CastPreview, { useCrewPreview } from './credits';
 import {
   getMoviePersonCredits,
   hasPersonId,
@@ -23,7 +22,7 @@ import {
 import { DetailsHeroFrame, DetailsLowerLayout } from './detailsPageLayout';
 import './media/media.scss';
 import WatchProviders from './watchProviders';
-import type useWatchProvidersResource from './useWatchProvidersResource';
+import type useWatchProvidersResource from './watchProviders/useWatchProvidersResource';
 import PersonalLibraryActions from '../../features/library/personalLibraryActions';
 
 interface DetailsProps {
@@ -216,6 +215,7 @@ export function DetailsLowerContent({
     posters = [],
     videos = [],
   } = movieData;
+
   const { cast, directors, writers, producers } =
     getMoviePersonCredits(movieData);
   const crewGroups = [
@@ -231,12 +231,14 @@ export function DetailsLowerContent({
       crewGroups.flatMap((group) => group.people.map((person) => person.key))
     ),
   ];
+
   const castSectionRef = useRef<HTMLElement>(null);
   const crewMeasurementRef = useRef<HTMLElement>(null);
   const [crewFitsCast, setCrewFitsCast] = useState(false);
 
   useLayoutEffect(() => {
     const breakpoint = window.matchMedia?.('(min-width: 992px)');
+
     const measure = () => {
       const castSection = castSectionRef.current;
       const crewMeasurement = crewMeasurementRef.current;
@@ -249,6 +251,7 @@ export function DetailsLowerContent({
         crewHeight > 0 &&
         crewHeight <= castHeight
       );
+
       setCrewFitsCast((current) => (current === fits ? current : fits));
     };
 
@@ -274,6 +277,7 @@ export function DetailsLowerContent({
   }, [cast.length, crewPeople.length, movieData.id]);
 
   const crewPreview = useCrewPreview(crewPeople, movieData.id, crewFitsCast);
+
   const visiblePhotos = backdrops.filter((photo) => photo.fullUrl?.trim());
 
   return (

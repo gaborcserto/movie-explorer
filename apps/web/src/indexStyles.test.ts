@@ -13,6 +13,7 @@ test('overrides reset smooth scrolling when reduced motion is requested', () => 
   );
 
   const scrollBehavior: { query: string; value: string }[] = [];
+
   stylesheet.walkRules('html:focus-within', (rule) => {
     rule.walkDecls('scroll-behavior', (declaration) => {
       const query = rule.parent?.type === 'atrule' ? rule.parent.params : 'all';
@@ -35,6 +36,7 @@ test('applies a shared coral transition and preserves visible focus on text link
     }).css
   );
   const textLinkRules: Record<string, string> = {};
+
   stylesheet.walkRules('.text-link', (rule) => {
     if (rule.parent?.type === 'root') {
       rule.walkDecls((declaration) => {

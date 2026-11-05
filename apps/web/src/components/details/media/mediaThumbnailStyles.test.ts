@@ -14,6 +14,7 @@ const stylesheet = postcss.parse(
 
 const declarations = (selector: string) =>
   declarationsForSelector(stylesheet, selector);
+
 const declarationsForMedia = (selector: string, query: string) =>
   findDeclarationsForMedia(stylesheet, selector, query);
 
@@ -62,6 +63,7 @@ test.each(['.photo-tile', '.video-tile'])(
   'matches Movie Card outer-card hover behavior for %s',
   (tileSelector) => {
     const imageSelector = `${tileSelector} img`;
+
     expect(declarations(tileSelector)).toMatchObject({
       'transform-origin': 'center top',
       transition:
@@ -182,9 +184,11 @@ test('reserves thumbnail space for loaded, missing, and failed images', () => {
 
 test('disables lightbox button transitions and hover/active scaling for reduced motion', () => {
   const query = '(prefers-reduced-motion: reduce)';
+
   expect(declarationsForMedia('.lightbox button', query).transition).toBe(
     'none'
   );
+
   [
     '.lightbox button:hover:not(:disabled)',
     '.lightbox button:active:not(:disabled)',

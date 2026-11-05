@@ -136,6 +136,16 @@ chained expressions, or where Prettier or established project conventions
 require another layout. This convention applies to both newly written and
 modified TypeScript and TSX code.
 
+### Memoized callbacks and callback factories
+
+Function-valued declarations include React `useCallback`, including multiline
+initializers, and function-producing `useMemo` when its return is identifiable.
+Separate independent callbacks and callback factories with exactly one blank
+line, just as arrow functions, async functions, function expressions, named
+functions, class methods and test helper declarations. Unknown factory return
+types require contextual review; do not guess from names. Keep ordinary
+value-producing `useMemo`, related `useState`, `useRef` and setup grouped.
+
 ### Logical Declaration Grouping
 
 For `.ts` and `.tsx` files, separate logically independent variable
@@ -562,3 +572,25 @@ confirm changes preserve tokens, comments and literal contents, not merely that
 tests pass. Widen checks for broader batches or uncertain effects. Documentation
 and skill-only work needs metadata, relative-link and whitespace validation, not
 the entire application suite. Report what ran, failures, and remaining ambiguity.
+
+## Enforcement and final review
+
+Run the shared readability check through workspace lint or root lint. The
+TypeScript-parser check in scripts/readability.cjs checks multiline, comment-free
+boundaries before function-valued variables (including useCallback and identifiable
+function-producing useMemo), named functions, class methods,
+returns, declaration-to-control-flow transitions and bound import category
+boundaries across tracked and nonignored new source. Overload signatures remain
+a cohesive group.
+It never reorders imports or statements. Fixtures cover accepted/rejected cases.
+Existing ESLint statement-padding rules remain enabled; Oxfmt controls wrapping
+and excess whitespace. The check's --write mode changes whitespace only.
+
+Review conventions still require human/agent judgment: independent declaration
+groups, setup/action/assertion phases, hooks/effects, completed blocks, import
+categories, and bracing safety. Comment-bearing and same-line boundaries are
+excluded from the custom check and must be reviewed. Preserve comment attachment
+and import evaluation order; do not sort imports to satisfy grouping. A formatting
+task does not authorize extracting inline JSX handlers or reorganizing files.
+Before completion, inspect the full diff and run formatting twice to confirm
+stability. Do not claim that syntactic checks prove semantic grouping.

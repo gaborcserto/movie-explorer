@@ -14,6 +14,7 @@ describe('RecommendationsService', () => {
   const service = new RecommendationsService(provider);
 
   beforeEach(() => jest.resetAllMocks());
+
   afterEach(() => jest.restoreAllMocks());
 
   it.each<RecommendationCategory>([

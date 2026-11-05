@@ -11,6 +11,7 @@ async function request<T>(
 ): Promise<T> {
   const controller = new AbortController();
   const callerSignal = init.signal;
+
   const cancel = () => {
     if (!controller.signal.aborted) {
       controller.abort('cancelled');
@@ -64,6 +65,7 @@ async function request<T>(
       if (controller.signal.aborted) {
         throw controller.signal.reason;
       }
+
       throw new ApiRequestError('invalid-response', status);
     }
   } catch (error: unknown) {
@@ -77,6 +79,7 @@ async function request<T>(
     if (error instanceof ApiRequestError) {
       throw error;
     }
+
     throw new ApiRequestError('network', status);
   } finally {
     clearTimeout(timer);

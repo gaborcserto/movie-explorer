@@ -266,6 +266,7 @@ describe('Series hierarchy', () => {
             ? 'Specials, Season 0'
             : `Season ${selectedSeason}`,
       });
+
       expect(selectedTab).toHaveAttribute('aria-selected', 'true');
       expect(
         screen.getByRole('link', { name: 'View season details' })
@@ -314,6 +315,7 @@ describe('Series hierarchy', () => {
     setup('/series/1');
 
     const firstSeasonTab = await screen.findByRole('tab', { name: 'Season 1' });
+
     expect(firstSeasonTab).toHaveAttribute('aria-selected', 'true');
     expect(
       await screen.findByText('No episodes available for this season yet.')
@@ -324,6 +326,7 @@ describe('Series hierarchy', () => {
     const secondSeasonTab = await screen.findByRole('tab', {
       name: 'Season 3',
     });
+
     expect(secondSeasonTab).toHaveAttribute('aria-selected', 'true');
     expect(
       await screen.findByText('No episodes available for this season yet.')
@@ -348,9 +351,11 @@ describe('Series hierarchy', () => {
       await screen.findByRole('link', { name: 'View season details' });
 
       const facts = document.querySelector('.season-preview__facts');
+
       expect(facts).toHaveTextContent(
         hasYear ? '2025·10 Episodes' : '10 Episodes'
       );
+
       const year = facts?.querySelector('.season-preview__year');
 
       if (hasYear) {
@@ -358,6 +363,7 @@ describe('Series hierarchy', () => {
       } else {
         expect(year).not.toBeInTheDocument();
       }
+
       expect(
         facts?.querySelector('.season-preview__episode-count')
       ).toHaveTextContent('10 Episodes');
@@ -414,6 +420,7 @@ describe('Series hierarchy', () => {
       callback: ResizeObserverCallback;
       observed: Set<Element>;
     }[] = [];
+
     const CastResizeObserverMock = function CastResizeObserverMock(
       this: object,
       callback: ResizeObserverCallback
@@ -495,41 +502,50 @@ describe('Series hierarchy', () => {
     const crewTab = screen.getByRole('tab', { name: 'Crew' });
     const castPanel = screen.getByRole('tabpanel', { name: 'Cast' });
     const cast = within(castPanel);
+
     expect(castTab).toHaveAttribute('aria-selected', 'true');
     expect(
       document.querySelector('.series-credits > .tab-panel-stable')
     ).toBeInTheDocument();
     expect(screen.getByRole('tabpanel', { name: 'Cast' })).toBeVisible();
     expect(cast.getByRole('link', { name: 'Actor 1' })).toBeVisible();
+
     const castScroll = cast.getByRole('region', { name: 'cast members' });
     const castObserver = castObservers.find(({ observed }) =>
       observed.has(castScroll)
     );
+
     expect(castObserver).toBeDefined();
+
     act(() =>
       castObserver?.callback(
         [{ contentRect: { width: 900 } } as ResizeObserverEntry],
         {} as ResizeObserver
       )
     );
+
     expect(cast.getByRole('status')).toHaveTextContent(
       'Showing 12 of 40 cast members'
     );
+
     act(() =>
       castObserver?.callback(
         [{ contentRect: { width: 1300 } } as ResizeObserverEntry],
         {} as ResizeObserver
       )
     );
+
     expect(cast.getByRole('status')).toHaveTextContent(
       'Showing 12 of 40 cast members'
     );
+
     act(() =>
       castObserver?.callback(
         [{ contentRect: { width: 800 } } as ResizeObserverEntry],
         {} as ResizeObserver
       )
     );
+
     expect(cast.getByRole('status')).toHaveTextContent(
       'Showing 14 of 40 cast members'
     );
@@ -538,6 +554,7 @@ describe('Series hierarchy', () => {
     expect(screen.queryByRole('link', { name: 'Writer Producer' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show more cast' }));
+
     expect(cast.getByRole('status')).toHaveTextContent(
       'Showing 22 of 40 cast members'
     );
@@ -545,6 +562,7 @@ describe('Series hierarchy', () => {
     expect(cast.queryByRole('link', { name: 'Actor 23' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show more cast' }));
+
     expect(cast.getByRole('status')).toHaveTextContent(
       'Showing 30 of 40 cast members'
     );
@@ -553,15 +571,19 @@ describe('Series hierarchy', () => {
 
     castTab.focus();
     await user.keyboard('{ArrowRight}');
+
     expect(crewTab).toHaveFocus();
     expect(crewTab).toHaveAttribute('aria-selected', 'true');
+
     const crewPanel = screen.getByRole('tabpanel', { name: 'Crew' });
     const crew = within(crewPanel);
+
     expect(crewPanel).toBeVisible();
     expect(crew.queryByRole('link', { name: 'Writer Producer' })).toBeNull();
     expect(crew.queryByRole('link', { name: 'Crew 15' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show more crew' }));
+
     expect(crew.getByRole('link', { name: 'Crew 15' })).toBeVisible();
     expect(crew.getAllByRole('link', { name: 'Writer Producer' })).toHaveLength(
       2
@@ -571,6 +593,7 @@ describe('Series hierarchy', () => {
 
     crewTab.focus();
     await user.keyboard('{Home}');
+
     expect(castTab).toHaveFocus();
     expect(cast.getByRole('link', { name: 'Actor 30' })).toBeVisible();
     expect(
@@ -578,6 +601,7 @@ describe('Series hierarchy', () => {
     ).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show less cast' }));
+
     expect(
       within(screen.getByRole('tabpanel', { name: 'Cast' })).getByRole('status')
     ).toHaveTextContent('Showing 14 of 40 cast members');
@@ -587,6 +611,7 @@ describe('Series hierarchy', () => {
 
     castTab.focus();
     await user.keyboard('{ArrowRight}');
+
     expect(crew.getByRole('link', { name: 'Crew 15' })).toBeVisible();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -623,6 +648,7 @@ describe('Series hierarchy', () => {
       })
     );
     setup('/series/1');
+
     expect(
       await screen.findByText('Showing 2 of 2 cast members')
     ).toBeVisible();
@@ -659,6 +685,7 @@ describe('Series hierarchy', () => {
     setup('/series/1');
     await screen.findByText('Showing 14 of 19 cast members');
     await user.click(screen.getByRole('button', { name: 'Show more cast' }));
+
     expect(
       await screen.findByText('Showing 19 of 19 cast members')
     ).toBeVisible();
@@ -696,9 +723,11 @@ describe('Series hierarchy', () => {
       ).not.toBeNull();
       expect(container.querySelector('header')).toBeNull();
       expect(container.querySelector(expectedSelector)).not.toBeNull();
+
       if (path !== '/series/1') {
         expect(container.querySelector('.personal-library-actions')).toBeNull();
       }
+
       expect(
         container
           .querySelector('.movie-details__lower-content .details-section')
@@ -742,10 +771,13 @@ describe('Series hierarchy', () => {
     const reveal = await screen.findByRole('button', {
       name: 'Show more crew',
     });
+
     expect(
       screen.queryByRole('link', { name: 'Crew 21' })
     ).not.toBeInTheDocument();
+
     await userEvent.click(reveal);
+
     expect(screen.getByRole('link', { name: 'Crew 21' })).toHaveAttribute(
       'href',
       '/person/120'
@@ -843,6 +875,7 @@ describe('Series hierarchy', () => {
     );
     setup('/series/1');
     await userEvent.click(await screen.findByRole('tab', { name: 'Posters' }));
+
     expect(
       await screen.findByRole('link', { name: 'Series Actor' })
     ).toHaveAttribute('href', '/person/11');
@@ -867,17 +900,23 @@ describe('Series hierarchy', () => {
     expect(
       screen.getAllByRole('button', { name: /View The Journey poster/ })
     ).toHaveLength(10);
+
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     await userEvent.click(
       screen.getByRole('button', { name: 'View The Journey poster 1' })
     );
+
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText(/1.*12/)).toBeInTheDocument();
+
     await userEvent.keyboard('{Escape}');
+
     expect(
       screen.getByRole('button', { name: 'View The Journey poster 1' })
     ).toHaveFocus();
+
     await userEvent.click(screen.getByRole('link', { name: 'Series Actor' }));
+
     expect(
       await screen.findByRole('heading', { name: 'Person profile' })
     ).toBeInTheDocument();
@@ -885,10 +924,12 @@ describe('Series hierarchy', () => {
 
   it('keeps metadata visible and recovers only a failed optional section', async () => {
     setup('/series/1');
+
     expect(
       await screen.findByRole('heading', { name: 'The Journey' })
     ).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(2);
+
     fetchMock.mockResolvedValueOnce(
       Response.json({ videos: [], availability: { status: 'available' } })
     );
@@ -901,6 +942,7 @@ describe('Series hierarchy', () => {
         screen.queryByRole('button', { name: 'Retry videos' })
       ).not.toBeInTheDocument();
     });
+
     expect(
       screen.queryByRole('heading', { name: 'Videos & Trailers' })
     ).not.toBeInTheDocument();
@@ -942,17 +984,23 @@ describe('Series hierarchy', () => {
     expect(
       await screen.findByRole('button', { name: 'View The Journey poster 1' })
     ).toBeInTheDocument();
+
     const heroGallery = screen.getByRole('button', {
       name: 'Open poster gallery for The Journey',
     });
     await userEvent.click(heroGallery);
+
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
     await userEvent.keyboard('{ArrowRight}');
+
     expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
       'src',
       '/recovered.jpg'
     );
+
     await userEvent.keyboard('{Escape}');
+
     expect(heroGallery).toHaveFocus();
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(String(fetchMock.mock.calls[2][0])).toContain(
@@ -978,6 +1026,7 @@ describe('Series hierarchy', () => {
     await userEvent.click(retry);
 
     const status = await screen.findByText('Images loaded.');
+
     expect(status).toHaveTextContent('Images loaded.');
     expect(status.parentElement).toHaveFocus();
     expect(screen.getByRole('heading', { name: 'Media' })).toBeInTheDocument();
@@ -1003,7 +1052,9 @@ describe('Series hierarchy', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Retry images' }));
     const signal = fetchMock.mock.calls[1][1]?.signal;
     await userEvent.click(screen.getByRole('link', { name: 'Other series' }));
+
     expect(signal?.aborted).toBe(true);
+
     await act(async () =>
       complete?.(
         Response.json({
@@ -1016,6 +1067,7 @@ describe('Series hierarchy', () => {
         })
       )
     );
+
     expect(screen.queryByText('Images loaded.')).not.toBeInTheDocument();
   });
 
@@ -1024,6 +1076,7 @@ describe('Series hierarchy', () => {
     await getSeason(1, 0);
     await getEpisode(1, 0, 3);
     await getEpisodeCredits(1, 0, 3);
+
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
       'http://localhost:4000/api/v1/series/1',
       'http://localhost:4000/api/v1/series/1/seasons/0',
@@ -1041,6 +1094,7 @@ describe('Series hierarchy', () => {
     { ...series, firstAirDate: '2026-02-30' },
   ])('rejects malformed series contracts %#', async (body) => {
     fetchMock.mockResolvedValue(Response.json(body));
+
     await expect(getSeries(1)).rejects.toEqual(
       new ApiRequestError('invalid-response')
     );
@@ -1054,6 +1108,7 @@ describe('Series hierarchy', () => {
     { ...season, episodes: [episode, episode], episodeCount: 2 },
   ])('rejects malformed season contracts %#', async (body) => {
     fetchMock.mockResolvedValue(Response.json(body));
+
     await expect(getSeason(1, 0)).rejects.toMatchObject({
       category: 'invalid-response',
     });
@@ -1069,6 +1124,7 @@ describe('Series hierarchy', () => {
     },
   ])('rejects malformed episode contracts %#', async (body) => {
     fetchMock.mockResolvedValue(Response.json(body));
+
     await expect(getEpisode(1, 0, 3)).rejects.toMatchObject({
       category: 'invalid-response',
     });
@@ -1108,14 +1164,17 @@ describe('Series hierarchy', () => {
     setup('/series/1');
     const first = await screen.findByRole('tab', { name: 'Season 1' });
     const seasonTabs = within(screen.getByRole('tablist', { name: 'Seasons' }));
+
     expect(first).toHaveTextContent('1');
     expect(seasonTabs.getAllByRole('tab')).toHaveLength(26);
     expect(first).toHaveAttribute('aria-selected', 'true');
+
     first.focus();
     await user.keyboard('{End}');
     const specials = seasonTabs.getByRole('tab', {
       name: 'Specials, Season 0',
     });
+
     expect(specials).toHaveTextContent('Specials');
     expect(specials).toHaveFocus();
     expect(specials).toHaveAttribute('aria-selected', 'true');
@@ -1125,14 +1184,19 @@ describe('Series hierarchy', () => {
     expect(
       screen.getByRole('link', { name: 'View season details' })
     ).toHaveAttribute('href', '/series/1/seasons/0');
+
     await user.keyboard('{ArrowRight}');
+
     expect(first).toHaveFocus();
     expect(
       screen.getByRole('link', { name: 'View season details' })
     ).toHaveAttribute('href', '/series/1/seasons/1');
+
     await user.click(screen.getByRole('button', { name: 'Next season' }));
+
     expect(first).toHaveAttribute('aria-selected', 'true');
     expect(fetchMock).toHaveBeenCalledTimes(4);
+
     if (originalClientWidth) {
       Object.defineProperty(
         HTMLElement.prototype,
@@ -1165,6 +1229,7 @@ describe('Series hierarchy', () => {
       observed: Set<Element>;
     }[] = [];
     const disconnect = vi.fn();
+
     class ResizeObserverMock {
       private readonly observed = new Set<Element>();
 
@@ -1185,6 +1250,7 @@ describe('Series hierarchy', () => {
         this.observed.delete(element);
       }
     }
+
     vi.stubGlobal('ResizeObserver', ResizeObserverMock);
     Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
       configurable: true,
@@ -1216,12 +1282,15 @@ describe('Series hierarchy', () => {
     await waitFor(() =>
       expect(observers.some(({ observed }) => observed.has(list))).toBe(true)
     );
+
     expect(screen.queryByRole('button', { name: 'Next season' })).toBeNull();
+
     list.setAttribute('data-overflow', 'yes');
     const seasonObserver = observers.find(({ observed }) => observed.has(list));
     act(() => seasonObserver?.callback([], {} as ResizeObserver));
     const next = screen.getByRole('button', { name: 'Next season' });
     const previous = screen.getByRole('button', { name: 'Previous season' });
+
     expect(previous).toBeDisabled();
     expect(next).toBeEnabled();
     expect(
@@ -1230,17 +1299,26 @@ describe('Series hierarchy', () => {
           type === 'scroll' && addEventListener.mock.contexts[index] === list
       )
     ).toHaveLength(1);
+
     await userEvent.click(next);
+
     expect(first).toHaveAttribute('aria-selected', 'true');
+
     (list as HTMLDivElement).scrollLeft = 400;
     fireEvent.scroll(list);
+
     expect(previous).toBeEnabled();
     expect(next).toBeEnabled();
+
     (list as HTMLDivElement).scrollLeft = 800;
     fireEvent.scroll(list);
+
     expect(next).toBeDisabled();
+
     view.unmount();
+
     expect(disconnect).toHaveBeenCalledTimes(observers.length);
+
     addEventListener.mockRestore();
   });
 
@@ -1270,7 +1348,9 @@ describe('Series hierarchy', () => {
     });
 
     expect(selector).toHaveAttribute('aria-expanded', 'false');
+
     await user.click(selector);
+
     expect(selector).toHaveAttribute('aria-expanded', 'true');
     expect(
       document.querySelector(
@@ -1279,19 +1359,24 @@ describe('Series hierarchy', () => {
     ).toHaveTextContent('Specials: Special stories');
 
     await user.keyboard('{Escape}');
+
     expect(selector).toHaveAttribute('aria-expanded', 'false');
     expect(selector).toHaveFocus();
 
     await user.click(selector);
     fireEvent.pointerDown(document.body);
+
     expect(selector).toHaveAttribute('aria-expanded', 'false');
 
     await user.click(selector);
     await user.tab();
+
     expect(
       screen.getByRole('link', { name: 'Season 5: Book Five' })
     ).toHaveFocus();
+
     await user.keyboard('{Enter}');
+
     expect(
       await screen.findByRole('heading', { name: 'Book Five' })
     ).toBeVisible();
@@ -1319,11 +1404,13 @@ describe('Series hierarchy', () => {
       new Response('', { status: 429, headers: { 'Retry-After': '12' } })
     );
     setup('/series/1');
+
     expect(
       await screen.findByRole('heading', { name: 'Please try again shortly' })
     ).toBeInTheDocument();
     expect(screen.getByText(/wait about 12 seconds/)).toBeInTheDocument();
   });
+
   it('wraps a long series title and omits genres when none are available', async () => {
     const title = 'A Very Long Series Title That Needs To Wrap Across Lines';
     fetchMock.mockResolvedValue(
@@ -1347,6 +1434,7 @@ describe('Series hierarchy', () => {
     setup('/series/1');
 
     await screen.findByRole('heading', { level: 1, name: series.title });
+
     expect(
       document.querySelector('.movie-details__overview')?.textContent
     ).toBe(description);
@@ -1363,6 +1451,7 @@ describe('Series hierarchy', () => {
       setup('/series/1');
 
       await screen.findByRole('heading', { level: 1, name: series.title });
+
       expect(
         document.querySelector('.movie-details__overview')?.textContent
       ).toBe(description);
@@ -1382,6 +1471,7 @@ describe('Series hierarchy', () => {
     });
     const overview = screen.getByText('A season overview.');
     const episodesHeading = screen.getByRole('heading', { name: 'Episodes' });
+
     expect(overview.compareDocumentPosition(episodesHeading)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
@@ -1419,12 +1509,15 @@ describe('Series hierarchy', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Season 1' })
     ).toBeVisible();
+
     const facts = screen.getByLabelText('Season information');
 
     expect(within(facts).getByText('2021')).toBeVisible();
     expect(within(facts).getByText('8 Episodes')).toBeVisible();
+
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
     const title = screen.getByRole('heading', { level: 1, name: 'Season 1' });
+
     expect(title.compareDocumentPosition(breadcrumb)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
@@ -1511,6 +1604,7 @@ describe('Series hierarchy', () => {
     expect(
       await screen.findByRole('link', { name: '10. Special 10' })
     ).toBeVisible();
+
     await userEvent.click(screen.getByRole('tab', { name: 'Season 5' }));
 
     expect(
@@ -1546,6 +1640,7 @@ describe('Series hierarchy', () => {
     setup('/series/1');
 
     expect(await screen.findByText('Loading episodes…')).toBeVisible();
+
     await waitFor(() => expect(pendingSeasons.has(5)).toBe(true));
     await userEvent.click(
       screen.getByRole('tab', { name: 'Specials, Season 0' })
@@ -1568,6 +1663,7 @@ describe('Series hierarchy', () => {
         })
       )
     );
+
     expect(
       await screen.findByRole('link', { name: '1. Current season episode' })
     ).toBeVisible();
@@ -1590,6 +1686,7 @@ describe('Series hierarchy', () => {
         })
       )
     );
+
     expect(firstSeasonSignal?.aborted).toBe(true);
     expect(screen.queryByRole('link', { name: '1. Stale episode' })).toBeNull();
   });
@@ -1605,6 +1702,7 @@ describe('Series hierarchy', () => {
       return Response.json(series);
     });
     const view = setup('/series/1?season=0');
+
     expect(
       await screen.findByText('No episodes available for this season yet.')
     ).toBeVisible();
@@ -1617,6 +1715,7 @@ describe('Series hierarchy', () => {
         : Response.json(series)
     );
     setup('/series/1?season=0');
+
     expect(await screen.findByText(/Episodes unavailable\./)).toBeVisible();
   });
 
@@ -1642,6 +1741,7 @@ describe('Series hierarchy', () => {
       'favorites'
     );
     setup('/series/1?season=0');
+
     expect(
       await screen.findByRole('heading', { level: 1, name: 'The Journey' })
     ).toBeInTheDocument();
@@ -1649,6 +1749,7 @@ describe('Series hierarchy', () => {
       screen.getByText('Original Journey').closest('.series-information')
     ).not.toBeNull();
     expect(screen.getByText('No overview available.')).toBeInTheDocument();
+
     const seriesTitle = screen.getByRole('heading', {
       level: 1,
       name: 'The Journey',
@@ -1657,14 +1758,17 @@ describe('Series hierarchy', () => {
     const actions = screen.getByRole('button', {
       name: 'Remove from Favorites The Journey',
     });
+
     expect(actions.closest('.personal-library-actions')).toHaveClass(
       'personal-library-actions--expanded'
     );
+
     const overview = screen.getByRole('heading', { name: 'Overview' });
     const information = screen.getByRole('heading', {
       name: 'Series Information',
     });
     const providers = screen.getByRole('heading', { name: /Where to watch/i });
+
     expect(seriesTitle.compareDocumentPosition(actions)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
@@ -1694,6 +1798,7 @@ describe('Series hierarchy', () => {
     expect(
       screen.getByRole('button', { name: 'Remove from Favorites The Journey' })
     ).toHaveAttribute('aria-pressed', 'true');
+
     await waitFor(() =>
       expect(useLibraryStore.getState().items['tv:1']).toMatchObject({
         title: 'The Journey',
@@ -1701,6 +1806,7 @@ describe('Series hierarchy', () => {
         collections: { favorites: true },
       })
     );
+
     expect(
       screen.getByLabelText('TMDB rating: 8.5 out of 10 from 200 votes')
     ).toBeInTheDocument();
@@ -1713,7 +1819,9 @@ describe('Series hierarchy', () => {
     expect(
       screen.getByRole('link', { name: 'View season details' })
     ).toHaveAttribute('href', '/series/1/seasons/0');
+
     await userEvent.click(screen.getByRole('tab', { name: 'Season 5' }));
+
     expect(screen.getByRole('heading', { name: 'Season 5' })).toBeVisible();
     expect(
       screen.getByRole('link', { name: 'View season details' })
@@ -1764,6 +1872,7 @@ describe('Series hierarchy', () => {
     await user.click(
       await screen.findByRole('link', { name: 'View season details' })
     );
+
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Special stories' })
     ).toBeInTheDocument();
@@ -1772,7 +1881,9 @@ describe('Series hierarchy', () => {
     ).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Overview' })).toBeVisible();
     expect(screen.getByText('No season overview available.')).toBeVisible();
+
     await user.click(screen.getByRole('link', { name: '3. Arrival' }));
+
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Arrival' })
     ).toBeInTheDocument();
@@ -1781,6 +1892,7 @@ describe('Series hierarchy', () => {
       '/series/1'
     );
     expect(document.querySelector('.details-ratings')).toBeNull();
+
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
     const episodeTitle = screen.getByRole('heading', {
       level: 1,
@@ -1832,6 +1944,7 @@ describe('Series hierarchy', () => {
     expect(fetchMock).toHaveBeenCalledTimes(4);
 
     await user.click(screen.getByRole('link', { name: 'Next: 8. Departure' }));
+
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Departure' })
     ).toBeInTheDocument();
@@ -1846,6 +1959,7 @@ describe('Series hierarchy', () => {
 
   it('loads direct Episode URLs with their Series breadcrumb and season context', async () => {
     setup('/series/1/seasons/0/episodes/3');
+
     expect(
       await screen.findByRole('heading', { name: 'Arrival', level: 1 })
     ).toBeInTheDocument();
@@ -1872,14 +1986,17 @@ describe('Series hierarchy', () => {
         : new Response('', { status: 502 })
     );
     setup('/series/1/seasons/0/episodes/3');
+
     expect(
       await screen.findByRole('heading', { name: 'Arrival', level: 1 })
     ).toBeInTheDocument();
+
     const retry = await screen.findByRole('button', {
       name: 'Retry season context',
     });
     fetchMock.mockResolvedValueOnce(Response.json(season));
     fireEvent.click(retry);
+
     expect(
       await screen.findByRole('link', { name: 'Next: 8. Departure' })
     ).toBeInTheDocument();
@@ -1892,6 +2009,7 @@ describe('Series hierarchy', () => {
         : new Response('', { status: 404 })
     );
     setup('/series/1/seasons/0');
+
     expect(
       await screen.findByRole('link', { name: '3. Arrival' })
     ).toBeInTheDocument();
@@ -1917,6 +2035,7 @@ describe('Series hierarchy', () => {
       )
     );
     setup('/series/1/seasons/0/episodes/3');
+
     expect(
       await screen.findByText('No episode overview available.')
     ).toBeInTheDocument();
@@ -1937,6 +2056,7 @@ describe('Series hierarchy', () => {
       )
     );
     setup('/series/1/seasons/0');
+
     expect(
       await screen.findByText('No episodes available for this season yet.')
     ).toBeInTheDocument();
@@ -1977,6 +2097,7 @@ describe('Series hierarchy', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: 'Retry episode credits' })
     );
+
     expect(
       await screen.findByRole('link', { name: 'Regular Actor' })
     ).toBeInTheDocument();
@@ -1995,6 +2116,7 @@ describe('Series hierarchy', () => {
     '/series/1/seasons/-1/episodes/1',
   ])('rejects invalid coordinates at %s without requests', async (path) => {
     setup(path);
+
     expect(
       await screen.findByText(/Invalid .* coordinates/)
     ).toBeInTheDocument();
@@ -2011,11 +2133,14 @@ describe('Series hierarchy', () => {
         })
     );
     setup('/series/1');
+
     expect(screen.getByLabelText('Loading Series')).toHaveAttribute(
       'aria-busy',
       'true'
     );
+
     await act(async () => resolve(new Response('', { status: 404 })));
+
     expect(await screen.findByText('Series not found')).toBeInTheDocument();
   });
 
@@ -2024,6 +2149,7 @@ describe('Series hierarchy', () => {
     setup('/series/1');
     const retry = await screen.findByRole('button', { name: /try again/i });
     fireEvent.click(retry);
+
     expect(
       await screen.findByRole('heading', { name: 'The Journey', level: 1 })
     ).toBeInTheDocument();
@@ -2044,11 +2170,15 @@ describe('Series hierarchy', () => {
       Response.json({ ...series, id: 2, title: 'Second series' })
     );
     fireEvent.click(screen.getByRole('link', { name: 'Other series' }));
+
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Second series' })
     ).toBeInTheDocument();
+
     await act(async () => resolve(Response.json(series)));
+
     expect(signal?.aborted).toBe(true);
+
     await waitFor(() =>
       expect(
         screen.queryByRole('heading', { level: 1, name: 'The Journey' })
@@ -2066,10 +2196,13 @@ describe('Series hierarchy', () => {
     );
     setup('/series/1/seasons/0/episodes/3');
     fireEvent.click(screen.getByRole('link', { name: 'Other episode' }));
+
     expect(
       await screen.findByRole('heading', { name: 'Departure', level: 1 })
     ).toBeInTheDocument();
+
     await act(async () => resolve(Response.json(episode)));
+
     expect(
       screen.queryByRole('heading', { name: 'Arrival', level: 1 })
     ).not.toBeInTheDocument();
@@ -2115,12 +2248,16 @@ describe('Season and Episode shared hero images', () => {
       const action = await screen.findByRole('button', {
         name: `${kind === 'season' ? 'Poster for' : 'Still from'} ${title}`,
       });
+
       expect(action).toBeDisabled();
+
       const thumbnail = action.querySelector('img');
+
       expect(thumbnail).not.toBeNull();
       expect(thumbnail).not.toHaveAttribute('src', original);
       expect(thumbnail?.getAttribute('srcset')).not.toContain('/original/');
       expect(screen.queryByRole('dialog')).toBeNull();
+
       if (thumbnail) {
         fireEvent.load(thumbnail);
       }
@@ -2128,9 +2265,12 @@ describe('Season and Episode shared hero images', () => {
       const dialog = screen.getByRole('dialog', {
         name: `${title} photo viewer`,
       });
+
       expect(dialog.querySelector('img')).toHaveAttribute('src', original);
       expect(dialog).toHaveTextContent('1 / 1');
+
       await userEvent.keyboard('{Escape}');
+
       expect(screen.queryByRole('dialog')).toBeNull();
       expect(action).toHaveFocus();
     }
@@ -2139,6 +2279,7 @@ describe('Season and Episode shared hero images', () => {
   it('keeps missing Episode stills as noninteractive fallbacks while rendering cast cards and crew', async () => {
     setup('/series/1/seasons/0/episodes/3');
     await screen.findByRole('heading', { name: 'Arrival', level: 1 });
+
     expect(
       screen.queryByRole('button', { name: 'Still from Arrival' })
     ).toBeNull();
@@ -2196,7 +2337,9 @@ describe('Series details polish edge cases', () => {
     const poster = await screen.findByRole('img', {
       name: `Poster for ${series.title}`,
     });
+
     expect(poster).toHaveAttribute('src', '/series-poster.jpg');
+
     fireEvent.load(poster);
     const trigger = screen.getByRole('button', {
       name: `Open poster gallery for ${series.title}`,
@@ -2206,12 +2349,15 @@ describe('Series details polish edge cases', () => {
     const dialog = screen.getByRole('dialog', {
       name: `${series.title} photo viewer`,
     });
+
     expect(dialog.querySelector('img')).toHaveAttribute(
       'src',
       '/series-original.jpg'
     );
     expect(screen.getByText('1 / 2')).toBeInTheDocument();
+
     await userEvent.keyboard('{ArrowRight}');
+
     expect(dialog.querySelector('img')).toHaveAttribute(
       'src',
       '/alternate-original.jpg'
@@ -2220,6 +2366,7 @@ describe('Series details polish edge cases', () => {
       'src',
       '/backdrop-original.jpg'
     );
+
     await userEvent.keyboard('{Escape}');
     await waitFor(() => expect(trigger).toHaveFocus());
   });
@@ -2261,6 +2408,7 @@ describe('Series details polish edge cases', () => {
         const seasonTabs = within(
           screen.getByRole('tablist', { name: 'Seasons' })
         );
+
         expect(seasonTabs.getAllByRole('tab')).toHaveLength(1);
         expect(seasonTabs.getByRole('tab')).toHaveAttribute(
           'aria-selected',
@@ -2275,16 +2423,19 @@ describe('Series details polish edge cases', () => {
           'href',
           `/series/1/seasons/${seasons[0].seasonNumber}`
         );
+
         const panel = screen.getByRole('tabpanel', {
           name:
             seasons[0].seasonNumber === 0
               ? 'Specials, Season 0'
               : `Season ${seasons[0].seasonNumber}`,
         });
+
         expect(panel).not.toHaveTextContent('Air date');
         expect(panel).not.toHaveTextContent('undefined');
         expect(panel).not.toHaveTextContent('null');
       }
+
       expect(fetchMock).toHaveBeenCalledTimes(seasons.length ? 2 : 1);
     }
   );
@@ -2310,22 +2461,29 @@ describe('Series details polish edge cases', () => {
       'Creators: 15, expand or collapse'
     );
     const disclosure = creatorSummary.closest('details');
+
     expect(disclosure).not.toHaveAttribute('open');
     expect(screen.getByRole('link', { name: 'Creator 14' })).not.toBeVisible();
+
     creatorSummary.focus();
     await user.click(creatorSummary);
+
     expect(disclosure).toHaveAttribute('open');
     expect(screen.getByRole('link', { name: 'Creator 14' })).toHaveAttribute(
       'href',
       '/person/114'
     );
+
     await user.click(creatorSummary);
+
     expect(disclosure).not.toHaveAttribute('open');
     expect(creatorSummary).toHaveFocus();
+
     const networkSummary = screen.getByLabelText(
       'Networks: 12, expand or collapse'
     );
     await user.click(networkSummary);
+
     expect(networkSummary.closest('details')).toHaveAttribute('open');
     expect(screen.getByText('Network 11')).toBeVisible();
     expect(fetchMock).toHaveBeenCalledTimes(2);

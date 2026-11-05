@@ -1,5 +1,5 @@
-@forward '_colors';
-@forward '_breakpoints';
-@forward '_mixins';
+@forward './colors';
+@forward './breakpoints';
+@forward './mixins';
 
 $filter-chip-radius: 4px;

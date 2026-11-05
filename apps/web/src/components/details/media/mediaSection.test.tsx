@@ -36,6 +36,7 @@ describe('<MediaSection />', () => {
     );
 
     const media = screen.getByRole('region', { name: 'Media' });
+
     expect(
       within(media).getByRole('tabpanel', { name: 'Backdrops' }).parentElement
     ).toHaveClass('tab-panel-stable');
@@ -57,10 +58,12 @@ describe('<MediaSection />', () => {
     expect(
       within(media).getByRole('tabpanel', { name: 'Backdrops' })
     ).toBeVisible();
+
     const postersTab = within(media).getByRole('tab', { name: 'Posters' });
     const videosTab = within(media).getByRole('tab', {
       name: 'Videos & Trailers',
     });
+
     expect(
       document.getElementById(postersTab.getAttribute('aria-controls')!)
     ).toHaveAttribute('hidden');
@@ -70,6 +73,7 @@ describe('<MediaSection />', () => {
     expect(
       within(media).getByText('11 backdrops available')
     ).toBeInTheDocument();
+
     [
       'Show more backdrops for Example',
       'Show more posters for Example',
@@ -146,20 +150,24 @@ describe('<MediaSection />', () => {
         { name: 'Show more backdrops for Example' }
       )
     );
+
     expect(
       screen.getByRole('img', { name: 'Example backdrop 11' })
     ).toBeInTheDocument();
 
     backdropsTab.focus();
     fireEvent.keyDown(backdropsTab, { key: 'ArrowRight' });
+
     expect(screen.getByRole('tab', { name: 'Posters' })).toHaveFocus();
     expect(screen.getByRole('tab', { name: 'Posters' })).toHaveAttribute(
       'aria-selected',
       'true'
     );
+
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Posters' }), {
       key: 'End',
     });
+
     expect(
       screen.getByRole('tab', { name: 'Videos & Trailers' })
     ).toHaveFocus();
@@ -168,6 +176,7 @@ describe('<MediaSection />', () => {
     ).toBeVisible();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Backdrops' }));
+
     expect(
       screen.getByRole('img', { name: 'Example backdrop 11' })
     ).toBeInTheDocument();

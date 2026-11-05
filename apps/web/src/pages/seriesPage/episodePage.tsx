@@ -14,16 +14,16 @@ import { seasonDetails, seriesDetails } from '../../util/seriesValidation';
 import parseDetailId from '../../util/detailId';
 import CastPreview from '../../components/details/credits';
 import { SectionRecovery } from '../../components/details/recovery';
-import useSeriesResource from './useSeriesResource';
+import useSeriesResource from './hooks/useSeriesResource';
 import parseSeasonNumber from './seriesCoordinates';
 import '../../components/details/media/media.scss';
 import {
   SeriesLayout,
-  SeriesHero,
-  EpisodeCrew,
   SeriesRequestState,
   SeriesBreadcrumbs,
 } from './seriesPresentation';
+import SeriesHero from './seriesHero';
+import EpisodeCrew from './episodeCrew';
 import seasonName from './seriesNames';
 
 function EpisodeDetails({
@@ -49,25 +49,31 @@ function EpisodeDetails({
     record(routeState) && seasonDetails(routeState.season, id, seasonNumber)
       ? routeState.season
       : undefined;
+
   const load = useCallback(
     (signal: AbortSignal) =>
       getEpisode(id, seasonNumber, episodeNumber, signal),
     [id, seasonNumber, episodeNumber]
   );
+
   const loadSeason = useCallback(
     (signal: AbortSignal) => getSeason(id, seasonNumber, signal),
     [id, seasonNumber]
   );
+
   const loadSeries = useCallback(
     (signal: AbortSignal) => getSeries(id, signal),
     [id]
   );
+
   const resource = useSeriesResource(load, valid);
   const parent = useSeriesResource(loadSeason, valid, initialSeason);
   const seriesResource = useSeriesResource(loadSeries, valid, initialSeries);
+
   const episode = resource.data;
   const season = parent.data;
   const series = seriesResource.data;
+
   const index =
     season?.episodes.findIndex(
       (item) => item.episodeNumber === episodeNumber

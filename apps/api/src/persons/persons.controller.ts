@@ -18,6 +18,7 @@ import {
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 import type { PersonDetails } from '@movie-explorer/contracts';
+
 import { GetPersonParams, PersonDetailsDto } from './persons.dto';
 import { PersonsService } from './persons.service';
 import {

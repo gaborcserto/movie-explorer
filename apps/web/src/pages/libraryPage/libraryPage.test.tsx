@@ -48,12 +48,14 @@ beforeEach(() => {
 describe('Personal Library page', () => {
   it('opens legacy Watchlist URLs in Favorites without a Watchlist navigation entry', () => {
     renderLibrary('/library?collection=watchlist');
+
     expect(screen.getByRole('link', { name: /Favorites/ })).toHaveAttribute(
       'aria-current',
       'page'
     );
     expect(screen.queryByRole('link', { name: /Watchlist/ })).toBeNull();
   });
+
   it('reuses the primary navigation with Library active and working browse links', async () => {
     const user = userEvent.setup();
     renderLibrary();
@@ -81,6 +83,7 @@ describe('Personal Library page', () => {
     ).toHaveAttribute('href', '/?view=tv');
 
     await user.click(within(navigation).getByRole('link', { name: 'Movies' }));
+
     expect(
       screen.getByRole('heading', { name: 'Homepage destination' })
     ).toBeVisible();
@@ -118,7 +121,9 @@ describe('Personal Library page', () => {
     expect(
       screen.getByRole('heading', { name: 'Personal Library' })
     ).toBeVisible();
+
     const hero = document.querySelector('.library-page__hero.header');
+
     expect(hero).toHaveClass('header--movie-details');
     expect(hero).not.toHaveTextContent(/Personal Library|saved movies/i);
     expect(
@@ -160,6 +165,7 @@ describe('Personal Library page', () => {
       );
     const user = userEvent.setup();
     renderLibrary('/library?collection=invalid');
+
     expect(
       document.querySelector('.library-page__collection-panel')
     ).toHaveClass('tab-panel-stable');
@@ -171,7 +177,9 @@ describe('Personal Library page', () => {
     expect(
       screen.getByText(/Favorites collection is empty/)
     ).toBeInTheDocument();
+
     await user.click(screen.getByRole('link', { name: /Watched/ }));
+
     expect(screen.getByLabelText('Current route')).toHaveTextContent(
       'collection=watched'
     );
@@ -185,11 +193,14 @@ describe('Personal Library page', () => {
     );
 
     await user.click(screen.getByRole('button', { name: 'Back' }));
+
     expect(screen.getByRole('link', { name: /Favorites/ })).toHaveAttribute(
       'aria-current',
       'page'
     );
+
     await user.click(screen.getByRole('button', { name: 'Forward' }));
+
     expect(screen.getByRole('link', { name: /Watched/ })).toHaveAttribute(
       'aria-current',
       'page'

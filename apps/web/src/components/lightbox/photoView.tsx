@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FaMagnifyingGlassMinus, FaMagnifyingGlassPlus } from 'react-icons/fa6';
 import type { MoviePhoto } from '@movie-explorer/contracts';
 
-import ImagePreview from '../utility/customImage/imagePreview';
+import ImagePreview from '../utility/imagePreview';
 import usePhotoGestures from './hooks/usePhotoGestures';
 import usePhotoZoom from './hooks/usePhotoZoom';
 

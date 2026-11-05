@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vp dev",
     "build": "npm run typecheck && vp build",
-    "lint": "npm run lint:oxlint && npm run lint:eslint && npm run lint:typescript && npm run format:check && npm run lint:styles",
+    "lint": "npm run lint:readability --prefix ../.. && npm run lint:oxlint && npm run lint:eslint && npm run lint:typescript && npm run format:check && npm run lint:styles",
     "lint:eslint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint:styles": "stylelint ./src/**/*.{css,scss}",
     "lint:typescript": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit",

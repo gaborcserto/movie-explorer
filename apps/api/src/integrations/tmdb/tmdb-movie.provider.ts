@@ -693,6 +693,7 @@ export class TmdbMovieProvider implements MovieProvider {
     query?: Record<string, string | undefined>,
     allowNotFound?: false,
   ): Promise<T>;
+
   private request<T>(
     path: string,
     operation: string,
@@ -700,6 +701,7 @@ export class TmdbMovieProvider implements MovieProvider {
     query: Record<string, string | undefined>,
     allowNotFound: true,
   ): Promise<T | undefined>;
+
   private async request<T>(
     path: string,
     operation: string,

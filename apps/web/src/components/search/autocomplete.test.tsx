@@ -2,6 +2,7 @@ import { RouterProvider } from 'react-router/dom';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { createMemoryRouter } from 'react-router';
 import type { SearchSuggestionsResponse } from '@movie-explorer/contracts';
+
 import Search from './search';
 import HeaderSearch from './headerSearch';
 import { getSearchSuggestions } from '../../util/apiUtils';
@@ -28,6 +29,7 @@ const mixed: SearchSuggestionsResponse = {
     { mediaType: 'movie', id: 43, title: 'Missing poster' },
   ],
 };
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((done) => {
@@ -36,6 +38,7 @@ function deferred<T>() {
 
   return { promise, resolve };
 }
+
 const tick = async (time = 300) =>
   act(async () => {
     await vi.advanceTimersByTimeAsync(time);
@@ -46,6 +49,7 @@ beforeEach(() => {
   api.mockReset();
   api.mockResolvedValue(mixed);
 });
+
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
@@ -75,16 +79,19 @@ describe.each(['home', 'movie', 'person'])(
         { initialEntries: [path] }
       );
       render(<RouterProvider router={router} />);
-      if (kind !== 'home')
+      if (kind !== 'home') {
         fireEvent.click(
           screen.getByRole('button', {
             name: 'Search movies, series and people',
           })
         );
+      }
+
       const input = screen.getByRole('combobox', {
         name: 'Search movies, series and people',
       });
       input.focus();
+
       const type = (text: string) =>
         fireEvent.change(input, { target: { value: text } });
 
@@ -95,15 +102,22 @@ describe.each(['home', 'movie', 'person'])(
       const { input, type } = setup();
       type('A');
       await tick();
+
       expect(api).not.toHaveBeenCalled();
+
       type('Al');
       await tick(299);
+
       expect(api).not.toHaveBeenCalled();
+
       await tick(1);
+
       expect(api).toHaveBeenCalledWith('Al', expect.any(AbortSignal));
+
       const list = screen.getByRole('listbox', {
         name: 'Movie, Series and Person suggestions',
       });
+
       expect(
         within(list).getByRole('group', { name: 'Movies' })
       ).toHaveTextContent('Alien1979');
@@ -139,6 +153,7 @@ describe.each(['home', 'movie', 'person'])(
         type('Al');
         await tick();
         fireEvent.keyDown(input, { key: 'ArrowUp' });
+
         expect(screen.getAllByRole('option')[3]).toHaveAttribute(
           'aria-selected',
           'true'
@@ -147,18 +162,24 @@ describe.each(['home', 'movie', 'person'])(
         expect(scroll.mock.instances.at(-1)).toBe(
           screen.getAllByRole('option')[3]
         );
+
         fireEvent.keyDown(input, { key: 'ArrowDown' });
+
         expect(screen.getAllByRole('option')[0]).toHaveAttribute(
           'aria-selected',
           'true'
         );
+
         type('Ali');
+
         expect(input).not.toHaveAttribute('aria-activedescendant');
         expect(screen.queryByRole('listbox')).toBeNull();
+
         await tick();
         fireEvent.keyDown(input, { key: 'ArrowUp' });
         fireEvent.keyDown(input, { key: 'ArrowUp' });
         fireEvent.keyDown(input, { key: 'Enter' });
+
         expect(router.state.location.pathname).toBe('/person/42');
         expect(screen.queryByRole('listbox')).toBeNull();
       } finally {
@@ -172,8 +193,11 @@ describe.each(['home', 'movie', 'person'])(
       await tick();
       const option = screen.getByRole('option', { name: 'Alien, 1979' });
       fireEvent.mouseDown(option);
+
       expect(input).toHaveFocus();
+
       fireEvent.click(option);
+
       expect(router.state.location.pathname).toBe('/movie/42');
     });
 
@@ -185,26 +209,37 @@ describe.each(['home', 'movie', 'person'])(
         const { input, type } = setup();
         type('Al');
         await tick();
+
         expect(screen.getByRole('status')).toHaveTextContent(
           'Loading suggestions'
         );
+
         const signal = api.mock.calls[0][1];
 
-        if (dismissal === 'Escape') fireEvent.keyDown(input, { key: 'Escape' });
-        else if (dismissal === 'outside') fireEvent.mouseDown(document.body);
-        else fireEvent.blur(input, { relatedTarget: document.body });
+        if (dismissal === 'Escape') {
+          fireEvent.keyDown(input, { key: 'Escape' });
+        } else if (dismissal === 'outside') {
+          fireEvent.mouseDown(document.body);
+        } else {
+          fireEvent.blur(input, { relatedTarget: document.body });
+        }
+
         expect(signal?.aborted).toBe(true);
+
         await act(async () => {
           pending.resolve(mixed);
         });
+
         expect(screen.queryByRole('listbox')).toBeNull();
         expect(input).not.toHaveAttribute('aria-activedescendant');
-        if (kind !== 'home' && dismissal === 'Escape')
+
+        if (kind !== 'home' && dismissal === 'Escape') {
           expect(
             screen.getByRole('button', {
               name: 'Search movies, series and people',
             })
           ).toHaveFocus();
+        }
       }
     );
 
@@ -219,29 +254,40 @@ describe.each(['home', 'movie', 'person'])(
       await tick();
       const signal = api.mock.calls[0][1];
       type('Alien');
+
       expect(signal?.aborted).toBe(true);
+
       await tick();
+
       expect(screen.getByRole('status')).toHaveTextContent(
         'No suggestions found'
       );
+
       await act(async () => {
         old.resolve(mixed);
       });
+
       expect(screen.queryByRole('listbox')).toBeNull();
+
       type('Aliens');
       await tick();
+
       expect(screen.getByRole('status')).toHaveTextContent(
         'Suggestions unavailable'
       );
       expect(screen.getByRole('status')).toBeVisible();
       expect(screen.getByRole('status')).not.toHaveClass('visually-hidden');
       expect(input).not.toHaveAttribute('aria-activedescendant');
+
       fireEvent.submit(input.closest('form')!);
+
       expect(router.state.location.pathname).toBe('/search/Aliens');
       expect(input).not.toHaveAttribute('aria-activedescendant');
+
       await act(async () => {
         await router.navigate('/search/committed');
       });
+
       expect(api.mock.calls.at(-1)?.[1]?.aborted).toBe(true);
     });
 
@@ -251,6 +297,7 @@ describe.each(['home', 'movie', 'person'])(
       await tick();
       fireEvent.keyDown(input, { key: 'Enter' });
       fireEvent.submit(screen.getByRole('search'));
+
       expect(router.state.location.pathname).toBe(
         `/search/${encodeURIComponent('A&B / test?')}`
       );
@@ -276,13 +323,17 @@ test('caps each suggestion group at six options', async () => {
     target: { value: 'Person' },
   });
   await tick();
+
   expect(screen.getAllByRole('option')).toHaveLength(6);
 });
 
 test.each(['home', 'header', 'mobile'])(
   'Series suggestions share keyboard, focus and navigation behavior in %s search',
   async (kind) => {
-    if (kind === 'mobile') vi.stubGlobal('innerWidth', 390);
+    if (kind === 'mobile') {
+      vi.stubGlobal('innerWidth', 390);
+    }
+
     api.mockResolvedValue({
       suggestions: [
         { mediaType: 'person', id: 1, name: 'Person' },
@@ -301,14 +352,17 @@ test.each(['home', 'header', 'mobile'])(
       { path: '/series/:id', element: <h1>Series details</h1> },
     ]);
     render(<RouterProvider router={router} />);
-    if (kind !== 'home')
+    if (kind !== 'home') {
       fireEvent.click(
         screen.getByRole('button', { name: 'Search movies, series and people' })
       );
+    }
+
     const input = screen.getByRole('combobox');
     input.focus();
     fireEvent.change(input, { target: { value: 'Story' } });
     await tick();
+
     expect(
       screen.getAllByRole('option').map((item) => item.textContent)
     ).toEqual(['Movie', 'Series title2005', 'Person']);
@@ -316,12 +370,16 @@ test.each(['home', 'header', 'mobile'])(
       screen.getByRole('group', { name: 'Series' }).querySelector('img')
     ).toHaveAttribute('src', '/series.jpg');
     expect(input).toHaveFocus();
+
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     fireEvent.keyDown(input, { key: 'ArrowDown' });
+
     expect(
       screen.getByRole('option', { name: 'Series title, 2005' })
     ).toHaveAttribute('aria-selected', 'true');
+
     fireEvent.keyDown(input, { key: 'Enter' });
+
     expect(router.state.location.pathname).toBe('/series/1');
   }
 );
@@ -351,21 +409,28 @@ test.each(['movie', 'person'] as const)(
     const input = screen.getByRole('combobox');
     fireEvent.change(input, { target: { value: 'alien' } });
     await tick();
+
     expect(screen.getAllByRole('option')).toHaveLength(2);
     expect(screen.getByRole('status')).toHaveTextContent(
       'Some suggestions unavailable.'
     );
+
     fireEvent.keyDown(input, { key: 'ArrowDown' });
+
     expect(input).toHaveAttribute(
       'aria-activedescendant',
       screen.getAllByRole('option')[0].id
     );
+
     fireEvent.keyDown(input, { key: 'ArrowUp' });
+
     expect(input).toHaveAttribute(
       'aria-activedescendant',
       screen.getAllByRole('option')[1].id
     );
+
     fireEvent.keyDown(input, { key: 'Enter' });
+
     expect(router.state.location.pathname).toBe(`/${type}/43`);
   }
 );
@@ -389,11 +454,14 @@ test('empty successful group with failed sibling avoids misleading no-suggestion
   const input = screen.getByRole('combobox');
   fireEvent.change(input, { target: { value: 'alien' } });
   await tick();
+
   expect(input).toHaveAttribute('aria-expanded', 'false');
   expect(screen.getByRole('status')).toHaveTextContent(
     'Some suggestions unavailable. Press Enter to search.'
   );
   expect(screen.queryByText(/No suggestions found/)).not.toBeInTheDocument();
+
   fireEvent.submit(input.closest('form')!);
+
   expect(router.state.location.pathname).toBe('/search/alien');
 });

@@ -56,13 +56,13 @@ npm run test:coverage --workspace @movie-explorer/api
 npm run start:dev --workspace @movie-explorer/api
 ```
 
-The web lint command includes ESLint, TypeScript, and Stylelint
-(`lint:eslint`, `lint:typescript`, and `lint:styles`). API lint is ESLint.
+The web lint command includes Oxlint, ESLint, TypeScript, Oxfmt, and Stylelint. API lint runs Oxlint,
+ESLint, and Oxfmt. Workspace lint also runs the shared readability check.
+Contracts and infrastructure lint check Oxfmt using the API configuration.
 Frontend tests use Vitest and React Testing Library; API unit and e2e tests use
 Jest. API source tests are `*.spec.ts`; frontend tests are `*.test.ts` or
 `*.test.tsx`. Pre-commit uses Husky and lint-staged for changed web/API
-TypeScript and web style files; the staged commands also run Prettier where
-configured. The API also exposes `npm run format --workspace
+TypeScript and web style files; the staged commands use Oxfmt. The API also exposes `npm run format --workspace
 @movie-explorer/api` for formatting its source and e2e files.
 
 ## Coding conventions
@@ -71,7 +71,7 @@ configured. The API also exposes `npm run format --workspace
   patterns before changing architecture. Preserve existing behavior unless a
   change is explicitly required.
 - When writing or modifying `.ts` or `.tsx` files, follow the reusable
-  conventions in `.agents/skills/code-readability/SKILL.md` from implementation
+  conventions in [.agents/skills/code-readability/SKILL.md](.agents/skills/code-readability/SKILL.md) from implementation
   through final review. For React, NestJS, or other focused work, use it
   alongside the relevant implementation skill.
 - Keep changes small, focused, readable, and reviewable. Prefer descriptive
@@ -190,6 +190,32 @@ Do not rewrite history, commit, or push unless the user explicitly requests
 it. Avoid unrelated cleanup, broad formatting, and changes outside the stated
 scope.
 
+## Mandatory skill selection
+
+Before every coding task, identify affected workspaces and technologies, read
+this guide and applicable nested agent instructions, and discover the skills
+under [.agents/skills](.agents/skills). Explicitly read **all** relevant skills
+and their applicable references before implementation; IDE discovery is not a
+substitute. Combine skills across boundaries and apply them throughout the task.
+
+Baseline: TypeScript/TSX requires code-readability; React requires
+react-development; measured React performance requires react-performance;
+NestJS requires nestjs-development; TMDB work requires tmdb-integration;
+public contracts require api-contract-change; verification requires verify-change.
+For React work, perform the component ownership and folder review in
+react-development before implementation. Use repository-local skill links below.
+Before completion, review the full diff against
+all selected skills, including conventions that require contextual judgment.
+
+For repository-wide audits, enumerate and inspect every maintained source and
+agent file, record exclusions and unresolved outcomes per file, and report exact
+counts. Sampling cannot establish completion. Fix confirmed safe violations and
+document justified exceptions before reporting PASS.
+
+Mandatory instructions govern agent work. Machine checks enforce only the
+syntactic subset documented in code-readability; logical grouping, safe import
+boundaries, and behavior preservation remain mandatory review conventions.
+
 ## Agent infrastructure
 
 Use `.agents/skills` for focused knowledge that is repeatedly useful for a
@@ -200,10 +226,10 @@ verification selection.
 
 | Work | Skill |
 | --- | --- |
-| Review or improve code readability | `.agents/skills/code-readability/SKILL.md` |
-| Select checks and verify a change | `.agents/skills/verify-change/SKILL.md` |
-| Change shared contracts or public API shapes | `.agents/skills/api-contract-change/SKILL.md` |
-| Change TMDB requests, mapping, configuration, or failures | `.agents/skills/tmdb-integration/SKILL.md` |
-| Implement React UI behavior and components | `.agents/skills/react-development/SKILL.md` |
-| Diagnose or improve measured React performance | `.agents/skills/react-performance/SKILL.md` |
-| Implement general NestJS API behavior | `.agents/skills/nestjs-development/SKILL.md` |
+| Review or improve code readability | [.agents/skills/code-readability/SKILL.md](.agents/skills/code-readability/SKILL.md) |
+| Select checks and verify a change | [.agents/skills/verify-change/SKILL.md](.agents/skills/verify-change/SKILL.md) |
+| Change shared contracts or public API shapes | [.agents/skills/api-contract-change/SKILL.md](.agents/skills/api-contract-change/SKILL.md) |
+| Change TMDB requests, mapping, configuration, or failures | [.agents/skills/tmdb-integration/SKILL.md](.agents/skills/tmdb-integration/SKILL.md) |
+| Implement React UI behavior and components | [.agents/skills/react-development/SKILL.md](.agents/skills/react-development/SKILL.md) |
+| Diagnose or improve measured React performance | [.agents/skills/react-performance/SKILL.md](.agents/skills/react-performance/SKILL.md) |
+| Implement general NestJS API behavior | [.agents/skills/nestjs-development/SKILL.md](.agents/skills/nestjs-development/SKILL.md) |

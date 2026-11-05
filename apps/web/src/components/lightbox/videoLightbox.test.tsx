@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { MovieDetails } from '@movie-explorer/contracts';
+
 import { DetailsLowerContent } from '../details/detailsContent';
 
 const movie: MovieDetails = {
@@ -46,6 +47,7 @@ describe('video lightbox', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Official Trailer' });
     const iframe = within(dialog).getByTitle('Official Trailer');
+
     expect(iframe).toHaveAttribute(
       'src',
       'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=0&playsinline=1&rel=0'
@@ -90,9 +92,11 @@ describe('video lightbox', () => {
     expect(
       screen.getByRole('button', { name: 'Previous video' })
     ).toBeDisabled();
+
     await user.click(screen.getByRole('button', { name: 'Next video' }));
 
     const secondFrame = screen.getByTitle('Behind the Scenes');
+
     expect(secondFrame).toHaveAttribute(
       'src',
       'https://www.youtube-nocookie.com/embed/9bZkp7q19f0?autoplay=0&playsinline=1&rel=0'
@@ -101,6 +105,7 @@ describe('video lightbox', () => {
     expect(screen.getByRole('button', { name: 'Next video' })).toBeDisabled();
 
     await user.click(screen.getByRole('button', { name: 'Previous video' }));
+
     expect(screen.getByTitle('Official Trailer')).not.toBe(secondFrame);
   });
 
@@ -112,10 +117,13 @@ describe('video lightbox', () => {
     const dialog = screen.getByRole('dialog');
 
     fireEvent.keyDown(dialog, { key: 'ArrowRight' });
+
     expect(screen.getByTitle('Behind the Scenes')).toBeInTheDocument();
+
     fireEvent.keyDown(screen.getByRole('button', { name: 'Previous video' }), {
       key: 'ArrowRight',
     });
+
     expect(screen.getByTitle('Behind the Scenes')).toBeInTheDocument();
   });
 
@@ -141,6 +149,7 @@ describe('video lightbox', () => {
     rerender(
       <DetailsLowerContent movieData={{ ...movie, videos: undefined }} />
     );
+
     expect(
       screen.queryByRole('heading', { name: 'Videos & Trailers' })
     ).toBeNull();
@@ -154,6 +163,7 @@ test('describes keyboard exit from the cross-origin player without playback help
     screen.getByRole('button', { name: 'Play Official Trailer' })
   );
   const dialog = screen.getByRole('dialog');
+
   expect(dialog).toHaveAccessibleDescription(
     /Tab or Shift\+Tab.*Escape outside the player/
   );
@@ -162,7 +172,9 @@ test('describes keyboard exit from the cross-origin player without playback help
   );
   expect(screen.queryByText('Video not playing?')).toBeNull();
   expect(screen.queryByRole('link', { name: /watch on youtube/i })).toBeNull();
+
   fireEvent.keyDown(dialog, { key: 'Escape' });
+
   expect(screen.queryByRole('dialog')).toBeNull();
 });
 
@@ -176,14 +188,19 @@ test('keeps video thumbnails and missing-image placeholders independent of play 
   });
   const first = screen.getByRole('button', { name: 'Play Official Trailer' });
   fireEvent.error(first.querySelector('img')!);
+
   expect(first.querySelector('img')).toBeNull();
   expect(first.querySelector('.image-placeholder')).toHaveAttribute(
     'aria-hidden',
     'true'
   );
+
   const missing = screen.getByRole('button', { name: 'Play No thumbnail' });
+
   expect(missing.querySelector('.image-placeholder')).not.toBeNull();
+
   await userEvent.click(first);
+
   expect(screen.getByRole('dialog')).toBeVisible();
 });
 

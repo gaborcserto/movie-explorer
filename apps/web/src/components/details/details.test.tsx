@@ -97,6 +97,7 @@ describe('<Details />', () => {
     expect(
       screen.getByRole('button', { name: 'Mark as Not Watched Sample Movie' })
     ).toHaveAttribute('aria-pressed', 'true');
+
     await waitFor(() =>
       expect(useLibraryStore.getState().items['movie:1234']).toMatchObject({
         title: 'Sample Movie',
@@ -205,7 +206,9 @@ describe('<Details />', () => {
       expect(screen.getByText('2021')).toBeInTheDocument();
       expect(screen.getByText('120 min')).toBeInTheDocument();
     });
+
     expect(screen.getByRole('heading', { name: 'Overview' })).toBeVisible();
+
     const movieTitle = screen.getByRole('heading', { name: mockData.title });
     const actions = screen.getByRole('button', {
       name: 'Add to Favorites Sample Movie',
@@ -216,6 +219,7 @@ describe('<Details />', () => {
       name: 'Movie information',
     });
     const providers = screen.getByRole('heading', { name: /Where to watch/i });
+
     expect(movieTitle.compareDocumentPosition(actions)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
@@ -239,7 +243,9 @@ describe('<Details />', () => {
     expect(screen.queryByRole('heading', { name: 'Credits' })).toBeNull();
     expect(getMovie).toHaveBeenCalledWith(1234, expect.any(AbortSignal));
     expect(screen.getAllByRole('main')).toHaveLength(1);
+
     const main = screen.getByRole('main');
+
     expect(main).toHaveFocus();
     expect(
       within(main).getByRole('heading', { name: mockData.title })
@@ -252,6 +258,7 @@ describe('<Details />', () => {
         name: 'Search movies, series and people',
       })
     ).toBeNull();
+
     await waitFor(() =>
       expect(document.title).toBe('Sample Movie | Movie Explorer')
     );
@@ -314,14 +321,18 @@ describe('<Details />', () => {
       1234,
       expect.any(AbortSignal)
     );
+
     await act(async () => resolveMovie(mockData));
+
     expect(screen.getByRole('heading', { name: mockData.title })).toBeVisible();
     expect(screen.getByLabelText('Loading watch providers')).toHaveAttribute(
       'aria-busy',
       'true'
     );
     expect(screen.queryByLabelText('Loading movie details')).toBeNull();
+
     await act(async () => resolveProviders({ providers: [] }));
+
     expect(screen.queryByLabelText('Loading watch providers')).toBeNull();
     expect(screen.getByRole('heading', { name: mockData.title })).toBeVisible();
   });
@@ -347,11 +358,16 @@ describe('<Details />', () => {
     });
     retry.focus();
     fireEvent.click(retry);
+
     expect(retry).toHaveFocus();
     expect(retry).toHaveAttribute('aria-disabled', 'true');
+
     fireEvent.click(retry);
+
     expect(getWatchProviders).toHaveBeenCalledTimes(2);
+
     await act(async () => resolveRetry({ providers: [] }));
+
     expect(
       screen.queryByRole('button', { name: 'Retry watch providers' })
     ).toBeNull();
@@ -388,8 +404,11 @@ describe('<Details />', () => {
       </MemoryRouter>
     );
     await screen.findByRole('heading', { name: 'New movie' });
+
     expect(oldSignal.aborted).toBe(true);
+
     await act(async () => rejectOld(new Error('Late failure')));
+
     expect(screen.getByRole('heading', { name: 'New movie' })).toBeVisible();
     expect(
       screen.queryByRole('button', { name: 'Retry watch providers' })
@@ -413,6 +432,7 @@ describe('<Details />', () => {
       </MemoryRouter>
     );
     await screen.findByRole('heading', { name: 'Sample Movie' });
+
     expect(
       await screen.findByLabelText('TMDB rating: 8.5 out of 10')
     ).toBeInTheDocument();
@@ -483,15 +503,18 @@ describe('<Details />', () => {
 
     await waitFor(() => expect(getRatings).toHaveBeenCalledTimes(3));
     await screen.findByRole('heading', { name: 'Movie 7890' });
+
     expect(screen.getByLabelText('TMDB rating: 9.1 out of 10')).toBeVisible();
     expect(screen.queryByLabelText('TMDB rating: 8.5 out of 10')).toBeNull();
     expect(obsoleteSignal.aborted).toBe(true);
+
     await act(async () => {
       finishObsolete?.({
         tmdb: { status: 'missing' },
         imdb: { status: 'available', score: 5, voteCount: null },
       });
     });
+
     expect(screen.queryByLabelText(/^IMDb rating:/)).not.toBeInTheDocument();
   });
 
@@ -546,17 +569,20 @@ describe('<Details />', () => {
     const firstThumbnail = screen.getByRole('img', {
       name: 'Sample Movie backdrop 1',
     });
+
     expect(firstThumbnail).toHaveAttribute('src', '/first-thumbnail.jpg');
     expect(firstThumbnail).toHaveAttribute('loading', 'lazy');
     expect(document.querySelector('img[src="/first-original.jpg"]')).toBeNull();
 
     await user.click(firstThumbnail);
+
     expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
       'src',
       '/first-original.jpg'
     );
 
     await user.click(screen.getByRole('button', { name: 'Next photo' }));
+
     expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
       'src',
       '/second-original.jpg'
@@ -564,17 +590,23 @@ describe('<Details />', () => {
     expect(screen.getByRole('dialog').querySelector('img')).not.toHaveAttribute(
       'srcset'
     );
+
     await user.keyboard('{ArrowRight}');
+
     expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
       'src',
       '/first-original.jpg'
     );
+
     await user.keyboard('{ArrowLeft}');
+
     expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
       'src',
       '/second-original.jpg'
     );
+
     await user.keyboard('{Escape}');
+
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(document.body.style.overflow).toBe('');
   });
@@ -604,6 +636,7 @@ describe('<Details />', () => {
         />
       </>
     );
+
     expect(screen.getByAltText('Sample Movie')).toHaveAttribute(
       'loading',
       'eager'
@@ -635,7 +668,9 @@ describe('<Details />', () => {
       />
     );
     const poster = screen.getByRole('img', { name: 'Sample Movie' });
+
     expect(poster).toHaveAttribute('srcset', '/poster-large.jpg 2x');
+
     fireEvent.load(poster);
     const trigger = screen.getByRole('button', {
       name: 'Open poster gallery for Sample Movie',
@@ -646,10 +681,12 @@ describe('<Details />', () => {
     const dialog = screen.getByRole('dialog', {
       name: 'Sample Movie photo viewer',
     });
+
     expect(dialog.querySelector('img')).toHaveAttribute(
       'src',
       '/poster-original.jpg'
     );
+
     await user.click(
       screen.getByRole('button', { name: 'Close photo viewer' })
     );
@@ -689,16 +726,20 @@ describe('<Details />', () => {
     const dialog = screen.getByRole('dialog', {
       name: 'Sample Movie photo viewer',
     });
+
     expect(dialog.querySelector('img')).toHaveAttribute(
       'src',
       '/poster-original.jpg'
     );
     expect(screen.getByText('1 / 2')).toBeInTheDocument();
+
     await user.keyboard('{ArrowRight}');
+
     expect(dialog.querySelector('img')).toHaveAttribute(
       'src',
       '/other-original.jpg'
     );
+
     await user.keyboard('{Escape}');
     await waitFor(() => expect(trigger).toHaveFocus());
   });
@@ -711,10 +752,13 @@ describe('<Details />', () => {
     });
     fireEvent.load(screen.getByRole('img', { name: 'Sample Movie' }));
     await user.click(trigger);
+
     expect(screen.getByText('1 / 1')).toBeInTheDocument();
+
     await user.keyboard('{Escape}');
 
     rerender(<DetailsContent movieData={{ ...mockData, posterUrl: '' }} />);
+
     expect(
       screen.queryByRole('button', {
         name: 'Open poster gallery for Sample Movie',
@@ -733,6 +777,7 @@ describe('<Details />', () => {
     await waitFor(() =>
       expect(screen.getByText('Something went wrong')).toBeInTheDocument()
     );
+
     expect(
       screen.getByText("We couldn't load this information. Please try again.")
     ).toBeInTheDocument();
@@ -826,7 +871,9 @@ describe('<Details />', () => {
     expect(
       await screen.findByRole('tab', { name: 'Backdrops' })
     ).toHaveAttribute('aria-selected', 'true');
+
     await user.click(screen.getByRole('tab', { name: 'Videos & Trailers' }));
+
     expect(screen.getByRole('link', { name: 'Trailer' })).toBeVisible();
     expect(getMovie).toHaveBeenCalledTimes(2);
   });
@@ -891,10 +938,14 @@ test('movie retry requests cannot change the title or focus after leaving', asyn
     </MemoryRouter>
   );
   await screen.findByText('Something went wrong');
+
   expect(document.title).toBe('Something went wrong | Movie Explorer');
   expect(screen.getByRole('main')).toHaveFocus();
+
   await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
   expect(document.title).toBe('Loading movie | Movie Explorer');
+
   unmount();
   const destination = document.createElement('button');
   document.body.append(destination);
@@ -902,8 +953,10 @@ test('movie retry requests cannot change the title or focus after leaving', asyn
   await act(async () => {
     resolveRetry(mockData);
   });
+
   expect(document.title).toBe('Movie Explorer');
   expect(destination).toHaveFocus();
+
   destination.remove();
 });
 
@@ -924,13 +977,16 @@ test('photo names and full-image viewing survive missing or failed thumbnails', 
     name: 'View Sample Movie backdrop 1',
   });
   fireEvent.error(photo.querySelector('img')!);
+
   expect(photo.querySelector('img')).toBeNull();
   expect(photo.querySelector('.image-placeholder')).not.toBeNull();
   expect(
     screen.getByRole('button', { name: 'View Sample Movie backdrop 2' })
   ).toBeVisible();
   expect(document.querySelector('img[src="/orphan.jpg"]')).toBeNull();
+
   await userEvent.click(photo);
+
   expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
     'src',
     '/full.jpg'
@@ -950,5 +1006,6 @@ test('missing movies keep a useful landmark and document title', async () => {
   await waitFor(() =>
     expect(document.title).toBe('Movie not found | Movie Explorer')
   );
+
   expect(screen.getByRole('main')).toHaveFocus();
 });

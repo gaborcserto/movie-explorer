@@ -58,6 +58,7 @@ describe('AppController (e2e)', () => {
       .expect('X-Content-Type-Options', 'nosniff')
       .expect('X-Robots-Tag', 'noindex')
       .expect(200, { status: 'ok' });
+
     expect(movieProvider.findAll).not.toHaveBeenCalled();
   });
 
@@ -67,6 +68,7 @@ describe('AppController (e2e)', () => {
       .expect('X-Content-Type-Options', 'nosniff')
       .expect('X-Robots-Tag', 'noindex')
       .expect(200, { status: 'ok' });
+
     expect(movieProvider.findAll).not.toHaveBeenCalled();
   });
 
@@ -82,6 +84,7 @@ describe('AppController (e2e)', () => {
     await request(app.getHttpServer())
       .get('/movies' + suffix)
       .expect(404);
+
     expect(movieProvider.findAll).not.toHaveBeenCalled();
     expect(movieProvider.findOne).not.toHaveBeenCalled();
     expect(movieProvider.findSuggestions).not.toHaveBeenCalled();
@@ -96,9 +99,12 @@ describe('AppController (e2e)', () => {
       .get('/api/v1/movies/269149/ratings')
       .expect(200, ratings);
     const document = createApiDocument(app);
+
     ok(document.paths['/api/v1/movies/{id}/ratings'].get);
+
     const successResponse =
       document.paths['/api/v1/movies/{id}/ratings'].get.responses['200'];
+
     expect(JSON.stringify(successResponse)).toContain(
       '#/components/schemas/RatingsDto',
     );
@@ -125,7 +131,9 @@ describe('AppController (e2e)', () => {
         totalPages: 3,
         totalResults: 42,
       });
+
     expect(discoveryProvider.find).toHaveBeenCalledWith('popular-movies', 2);
+
     await request(app.getHttpServer())
       .get('/api/v1/discover/popular-movies?page=0')
       .expect(400);
@@ -151,6 +159,7 @@ describe('AppController (e2e)', () => {
     await request(app.getHttpServer())
       .get('/api/v1/discover/streaming/88?region=HU&page=2')
       .expect(200);
+
     expect(discoveryProvider.findStreaming).toHaveBeenCalledWith(88, 'HU', 2);
 
     await request(app.getHttpServer())
@@ -201,9 +210,12 @@ describe('AppController (e2e)', () => {
       '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}',
       '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}/credits',
     ];
+
     expect(Object.keys(document.paths).sort()).toEqual(expectedPaths.sort());
+
     const operations = Object.values(document.paths).map((item) => {
       const operation = item.get ?? item.post;
+
       ok(operation);
 
       return operation;
@@ -217,6 +229,7 @@ describe('AppController (e2e)', () => {
     }
 
     const ids = operations.map((operation) => operation.operationId);
+
     expect(new Set(ids).size).toBe(ids.length);
     expect(new Set(operations.flatMap((operation) => operation.tags))).toEqual(
       new Set([
@@ -334,6 +347,7 @@ describe('AppController (e2e)', () => {
           expect(Array.isArray(response.body.message)).toBe(true);
         });
     }
+
     expect(movieProvider.findOne).not.toHaveBeenCalled();
     expect(movieProvider.findPerson).not.toHaveBeenCalled();
   });
@@ -347,6 +361,7 @@ describe('AppController (e2e)', () => {
       await request(app.getHttpServer())
         .get('/api/v1/persons/' + id)
         .expect(200);
+
       expect(movieProvider.findOne).toHaveBeenCalledWith(Number(id));
       expect(movieProvider.findPerson).toHaveBeenCalledWith(Number(id));
     },
@@ -407,11 +422,13 @@ describe('AppController (e2e)', () => {
         .get(`/api/v1/movies/42/${section}`)
         .expect(200)
         .expect(body);
+
       expect(movieProvider.findMovieSection).toHaveBeenCalledWith(42, section);
 
       await request(app.getHttpServer())
         .get(`/api/v1/movies/0/${section}`)
         .expect(400);
+
       expect(movieProvider.findMovieSection).toHaveBeenCalledTimes(1);
     },
   );
@@ -423,6 +440,7 @@ describe('AppController (e2e)', () => {
       .get('/api/v1/persons/42/filmography')
       .expect(200)
       .expect({ filmography: [] });
+
     expect(movieProvider.findFilmography).toHaveBeenCalledWith(42);
     expect(movieProvider.findPerson).not.toHaveBeenCalled();
 
@@ -517,6 +535,7 @@ describe('AppController (e2e)', () => {
       .get('/api/v1/movies/1/watch-providers')
       .expect(200)
       .expect(providers);
+
     expect(movieProvider.findWatchProviders).toHaveBeenCalledWith(1);
   });
 
@@ -562,6 +581,7 @@ describe('AppController (e2e)', () => {
           { mediaType: 'person', id: 5, name: 'Person' },
         ],
       });
+
     expect(movieProvider.findPeople).toHaveBeenCalledWith('Query', 1);
 
     await request(app.getHttpServer())
@@ -585,8 +605,11 @@ describe('AppController (e2e)', () => {
         .get('/api/v1/persons' + suffix)
         .expect(200)
         .expect(result);
+
       expect(movieProvider.findPeople).toHaveBeenCalledWith('', page);
+
       const document = createApiDocument(app);
+
       ok(document.components);
       ok(document.components.schemas);
       expect(document.components.schemas.PersonListResponseDto).toBeDefined();
@@ -606,6 +629,7 @@ describe('AppController (e2e)', () => {
       .get('/api/v1/persons?query=Person&page=2')
       .expect(200)
       .expect(result);
+
     expect(movieProvider.findPeople).toHaveBeenCalledWith('Person', 2);
 
     for (const query of [
@@ -670,6 +694,7 @@ describe('AppController (e2e)', () => {
       .get('/api/v1/persons/1')
       .expect(200)
       .expect(person);
+
     expect(movieProvider.findPerson).toHaveBeenCalledWith(1);
   });
 
@@ -679,6 +704,7 @@ describe('AppController (e2e)', () => {
       await request(app.getHttpServer())
         .get(`/api/v1/persons/${id}`)
         .expect(400);
+
       expect(movieProvider.findPerson).not.toHaveBeenCalled();
     },
   );
@@ -738,7 +764,9 @@ describe('AppController (e2e)', () => {
       }),
     );
     ok(document.components);
+
     const schemas = document.components.schemas;
+
     ok(schemas);
     expect(schemas.PersonDetailsDto).toMatchObject({
       required: ['id', 'name', 'filmography'],
@@ -892,6 +920,7 @@ describe('AppController (e2e)', () => {
       .get('/api/v1/movies')
       .query({ sort: 'popularity', sortOrder: 'asc' })
       .expect(200);
+
     expect(movieProvider.findAll).toHaveBeenLastCalledWith(
       expect.objectContaining({
         sort: 'popularity',
@@ -919,6 +948,7 @@ describe('AppController (e2e)', () => {
       .expect({
         suggestions: [{ id: 269149, title: 'Zootopia', releaseYear: 2016 }],
       });
+
     expect(movieProvider.findSuggestions).toHaveBeenCalledWith('Zoo', 5);
 
     await request(app.getHttpServer())

@@ -43,12 +43,15 @@ describe('TmdbSeriesProvider', () => {
         vote_count: 1200,
       }),
     );
+
     await expect(provider.findRatings(1399)).resolves.toEqual({
       status: 'available',
       score: 8.4,
       voteCount: 1200,
     });
+
     const url = new URL(fetchMock.mock.calls[0][0] as string);
+
     expect(url.pathname).toBe('/3/tv/1399');
     expect(url.searchParams.get('append_to_response')).toBe('external_ids');
   });
@@ -62,12 +65,14 @@ describe('TmdbSeriesProvider', () => {
         vote_count: null,
       }),
     );
+
     await expect(provider.findRatings(1399)).resolves.toEqual({
       status: 'unavailable',
       reason: 'invalid-response',
     });
 
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 404 }));
+
     await expect(provider.findRatings(1399)).resolves.toBeUndefined();
   });
 
@@ -88,6 +93,7 @@ describe('TmdbSeriesProvider', () => {
         total_results: 17000,
       }),
     );
+
     await expect(
       provider.findPopular({
         page: 2,
@@ -105,7 +111,9 @@ describe('TmdbSeriesProvider', () => {
       totalResults: 17000,
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+
     const url: URL = fetchMock.mock.calls[0][0];
+
     expect(url.pathname).toBe('/3/discover/tv');
     expect(Object.fromEntries(url.searchParams)).toMatchObject({
       page: '2',
@@ -122,6 +130,7 @@ describe('TmdbSeriesProvider', () => {
     { results: [] },
   ])('rejects invalid Series listing pages', async (body) => {
     fetchMock.mockResolvedValue(Response.json(body));
+
     await expect(
       provider.findPopular({ page: 1, sort: 'popularity', order: 'desc' }),
     ).rejects.toMatchObject({ status: 502 });
@@ -129,6 +138,7 @@ describe('TmdbSeriesProvider', () => {
 
   it('makes exactly one authenticated localized details request with aggregate credits', async () => {
     fetchMock.mockResolvedValue(Response.json({ id: 1399, name: 'Series' }));
+
     await expect(provider.findOne(1399)).resolves.toEqual({
       ...minimalSeriesDetails,
       images: {
@@ -150,7 +160,9 @@ describe('TmdbSeriesProvider', () => {
       },
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+
     const [url, init]: [URL, RequestInit] = fetchMock.mock.calls[0];
+
     expect(url.pathname).toBe('/3/tv/1399');
     expect(url.searchParams.get('append_to_response')).toBe(
       'aggregate_credits,images,videos,external_ids',
@@ -173,6 +185,7 @@ describe('TmdbSeriesProvider', () => {
     });
     fetchMock.mockResolvedValue(Response.json({ id: 1, name: 'Series' }));
     await provider.findOne(1);
+
     expect(fetchMock.mock.calls[0][0].searchParams.get('language')).toBe(
       'en-US',
     );
@@ -188,6 +201,7 @@ describe('TmdbSeriesProvider', () => {
     );
     const details = await provider.findOne(1);
     fetchMock.mockResolvedValueOnce(Response.json(aggregate));
+
     ok(details);
     await expect(provider.findCredits(1)).resolves.toEqual(details.credits);
     expect(fetchMock.mock.calls[1][0].pathname).toBe(
@@ -196,13 +210,17 @@ describe('TmdbSeriesProvider', () => {
     expect(fetchMock.mock.calls[1][0].searchParams.get('language')).toBe(
       'hu-HU',
     );
+
     fetchMock.mockResolvedValueOnce(
       Response.json({ id: 2, cast: [], crew: [] }),
     );
+
     await expect(provider.findCredits(1)).rejects.toMatchObject({
       status: 502,
     });
+
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 404 }));
+
     await expect(provider.findCredits(1)).resolves.toBeUndefined();
   });
 
@@ -224,6 +242,7 @@ describe('TmdbSeriesProvider', () => {
         section === 'images'
           ? await provider.findImages(1)
           : await provider.findVideos(1);
+
       ok(details);
       expect(recovered).toEqual(details[section]);
       expect(
@@ -253,7 +272,9 @@ describe('TmdbSeriesProvider', () => {
         }
       }
       fetchMock.mockResolvedValueOnce(Response.json({ id: 2 }));
+
       await expect(provider[method](1)).rejects.toMatchObject({ status: 502 });
+
       jest.useFakeTimers();
       fetchMock.mockImplementationOnce(
         (_url, init: RequestInit & { signal: AbortSignal }) =>
@@ -268,6 +289,7 @@ describe('TmdbSeriesProvider', () => {
       });
       await jest.advanceTimersByTimeAsync(51);
       await pending;
+
       expect(jest.getTimerCount()).toBe(0);
       expect(fetchMock).toHaveBeenCalledTimes(5);
     },
@@ -284,6 +306,7 @@ describe('TmdbSeriesProvider', () => {
       }),
     );
     const result = await provider.findOne(1);
+
     ok(result);
     ok(result.credits);
     expect(result.credits.sections.cast.status).toBe('available');
@@ -291,6 +314,7 @@ describe('TmdbSeriesProvider', () => {
     expect(result.images.sections.posters.status).toBe('available');
     ok(result.videos);
     expect(result.videos.availability.status).toBe('available');
+
     fetchMock.mockResolvedValueOnce(
       Response.json({
         id: 1,
@@ -301,6 +325,7 @@ describe('TmdbSeriesProvider', () => {
       }),
     );
     const invalid = await provider.findOne(1);
+
     ok(invalid);
     ok(invalid.credits);
     expect(invalid.credits.sections.cast.status).toBe('unavailable');
@@ -314,6 +339,7 @@ describe('TmdbSeriesProvider', () => {
     fetchMock.mockResolvedValue(Response.json({ id: 1, name: 'Series' }));
     await provider.findOne(1);
     fetchMock.mockResolvedValue(Response.json({ id: 1, name: 'Updated' }));
+
     await expect(provider.findOne(1)).resolves.toMatchObject({
       title: 'Updated',
     });
@@ -324,6 +350,7 @@ describe('TmdbSeriesProvider', () => {
     fetchMock.mockResolvedValue(
       new Response('private upstream body', { status: 404 }),
     );
+
     await expect(provider.findOne(1)).resolves.toBeUndefined();
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -334,6 +361,7 @@ describe('TmdbSeriesProvider', () => {
       fetchMock.mockResolvedValue(
         new Response('private upstream body', { status }),
       );
+
       await expect(provider.findOne(1)).rejects.toMatchObject({
         status: 502,
         message: 'Movie provider request failed',
@@ -353,6 +381,7 @@ describe('TmdbSeriesProvider', () => {
     fetchMock.mockResolvedValue(
       new Response(null, { status: 429, headers: { 'Retry-After': '30' } }),
     );
+
     await expect(provider.findOne(1)).rejects.toMatchObject({
       status: 429,
       response: {
@@ -368,6 +397,7 @@ describe('TmdbSeriesProvider', () => {
   it('normalizes network errors and clears timers', async () => {
     jest.useFakeTimers();
     fetchMock.mockRejectedValue(new Error('private URL and test-token'));
+
     await expect(provider.findOne(1)).rejects.toMatchObject({
       status: 502,
       message: 'Movie provider request failed',
@@ -402,6 +432,7 @@ describe('TmdbSeriesProvider', () => {
       });
       await jest.advanceTimersByTimeAsync(50);
       await assertion;
+
       expect(jest.getTimerCount()).toBe(0);
       expect(fetchMock).toHaveBeenCalledTimes(1);
     },
@@ -409,6 +440,7 @@ describe('TmdbSeriesProvider', () => {
 
   it('rejects invalid upstream JSON', async () => {
     fetchMock.mockResolvedValue(new Response('{invalid'));
+
     await expect(provider.findOne(1)).rejects.toMatchObject({
       status: 502,
       message: 'Movie provider response was invalid',
@@ -425,6 +457,7 @@ describe('TmdbSeriesProvider', () => {
     { id: 1, name: 'Series', success: false },
   ])('rejects malformed primary response %j without recovery', async (body) => {
     fetchMock.mockResolvedValue(Response.json(body));
+
     await expect(provider.findOne(1)).rejects.toMatchObject({
       status: 502,
       message: 'Movie provider response was invalid',

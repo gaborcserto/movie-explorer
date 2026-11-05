@@ -128,11 +128,13 @@ export function validateTmdbSeriesDetails(
       if (number === null || id === undefined) {
         continue;
       }
+
       const previous = coordinates.get(number);
 
       if (previous !== undefined && previous !== id) {
         throw new Error('Conflicting series season identities');
       }
+
       coordinates.set(number, id);
     }
   }

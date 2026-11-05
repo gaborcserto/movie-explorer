@@ -12,6 +12,7 @@ describe('Optional IMDb rating API', () => {
   let app: INestApplication;
   const resolve = jest.fn();
   const findRating = jest.fn();
+
   beforeAll(async () => {
     const module = await Test.createTestingModule({ imports: [RatingsModule] })
       .overrideProvider(TmdbExternalIds)
@@ -23,10 +24,12 @@ describe('Optional IMDb rating API', () => {
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     await app.init();
   });
+
   beforeEach(() => {
     resolve.mockReset();
     findRating.mockReset();
   });
+
   afterAll(async () => {
     if (app) {
       await app.close();
@@ -45,6 +48,7 @@ describe('Optional IMDb rating API', () => {
       await request(app.getHttpServer())
         .get(`/api/v1/ratings/${kind}/603/imdb`)
         .expect(200, { imdb: { score: 8.7, voteCount: 100 } });
+
       expect(resolve).toHaveBeenCalledWith(kind, 603);
     },
   );
@@ -60,6 +64,7 @@ describe('Optional IMDb rating API', () => {
     await request(app.getHttpServer())
       .get(`/api/v1/ratings/${coordinates}/imdb`)
       .expect(400);
+
     expect(resolve).not.toHaveBeenCalled();
   });
 
@@ -72,6 +77,7 @@ describe('Optional IMDb rating API', () => {
 
   it('documents the endpoint and nullable rating', () => {
     const document = createApiDocument(app);
+
     ok(document.paths['/api/v1/ratings/{mediaType}/{id}/imdb'].get);
     expect(
       document.paths['/api/v1/ratings/{mediaType}/{id}/imdb'].get.responses[

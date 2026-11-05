@@ -33,6 +33,7 @@ function RecommendationRowContent({
     useRecommendationResource(source);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ start: true, end: true });
+
   const isCollection = source.kind === 'collection';
   const collection = data && 'collection' in data ? data.collection : undefined;
   const seen = new Set<string>();
@@ -89,6 +90,7 @@ function RecommendationRowContent({
     if (viewport) {
       observer?.observe(viewport);
     }
+
     window.addEventListener('resize', measure);
 
     return () => {
@@ -125,6 +127,7 @@ function RecommendationRowContent({
     if (pending || delay) {
       return;
     }
+
     containerRef.current?.focus({ preventScroll: true });
     retry();
   };

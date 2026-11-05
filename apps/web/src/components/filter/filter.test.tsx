@@ -38,8 +38,10 @@ const open = async () => {
 
   return screen.getByRole('dialog');
 };
+
 const apply = async () =>
   userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
 const closed = async () =>
   waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
@@ -52,14 +54,17 @@ test('drafts multiple filters, applies atomically, and displays only committed a
   const router = setup('/search?extra=keep');
 
   await open();
+
   expect(screen.queryByText('Selected', { exact: true })).toBeNull();
   expect(screen.queryByText('Available', { exact: true })).toBeNull();
   expect(screen.queryByText('All Genres', { exact: true })).toBeNull();
   expect(screen.getByRole('group', { name: 'Selected genres' })).toBeVisible();
   expect(screen.getByRole('group', { name: 'Available genres' })).toBeVisible();
+
   await userEvent.click(
     screen.getByRole('button', { name: 'Select science fiction genre' })
   );
+
   expect(screen.getByRole('heading', { name: 'Genre' })).toBeVisible();
   expect(
     screen.getByRole('button', { name: 'Remove science fiction genre' })
@@ -83,6 +88,7 @@ test('drafts multiple filters, applies atomically, and displays only committed a
   expect(screen.getByLabelText('3 active filters')).toBeVisible();
 
   await open();
+
   expect(screen.getByLabelText('Release Year')).toHaveValue('1979');
   expect(screen.getByLabelText('Minimum TMDB rating slider')).toHaveValue('8');
 });
@@ -91,14 +97,18 @@ test('counts each applied genre while excluding default sorting and draft change
   const router = setup('/search?filter=action,adventure,crime');
 
   expect(screen.getByLabelText('3 active filters')).toBeVisible();
+
   await open();
   await userEvent.click(
     screen.getByRole('button', { name: 'Select drama genre' })
   );
+
   expect(screen.getByLabelText('3 active filters')).toBeVisible();
+
   await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
   await apply();
   await closed();
+
   expect(router.state.location.search).toBe('');
   expect(screen.queryByLabelText(/active filters/)).toBeNull();
 });
@@ -108,6 +118,7 @@ test('Reset only changes the draft; Escape discards it and restores focus', asyn
 
   await open();
   await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
+
   expect(router.state.location.search).toContain('filter=drama');
   expect(screen.getByLabelText('Release Year')).toHaveValue('');
   expect(screen.getByLabelText('3 active filters')).toBeVisible();
@@ -119,6 +130,7 @@ test('Reset only changes the draft; Escape discards it and restores focus', asyn
   );
 
   await open();
+
   expect(screen.getByLabelText('Release Year')).toHaveValue('2000');
   expect(
     screen.getByRole('button', { name: 'Remove drama genre' })
@@ -147,6 +159,7 @@ test('backdrop dismissal discards edits; close control also restores focus', asy
   expect(
     screen.getByRole('button', { name: 'Select drama genre' })
   ).toBeVisible();
+
   await userEvent.click(
     screen.getByRole('button', { name: 'Close Filters & Sort' })
   );
@@ -167,12 +180,14 @@ test('genre multi-selection uses OR filter values and leaves the selected group 
   await userEvent.click(
     screen.getByRole('button', { name: 'Select comedy genre' })
   );
+
   expect(
     screen.getByRole('button', { name: 'Remove drama genre' })
   ).toBeVisible();
   expect(
     screen.getByRole('button', { name: 'Remove comedy genre' })
   ).toBeVisible();
+
   await apply();
   await closed();
 
@@ -181,7 +196,9 @@ test('genre multi-selection uses OR filter values and leaves the selected group 
   );
 
   await act(async () => router.navigate(-1));
+
   expect(router.state.location.search).toBe('');
+
   await act(async () => router.navigate(1));
 
   await open();
@@ -191,11 +208,13 @@ test('genre multi-selection uses OR filter values and leaves the selected group 
   await userEvent.click(
     screen.getByRole('button', { name: 'Remove comedy genre' })
   );
+
   expect(screen.queryByText('All Genres', { exact: true })).toBeNull();
   expect(
     screen.getByRole('group', { name: 'Selected genres' })
   ).toBeEmptyDOMElement();
   expect(screen.getByRole('group', { name: 'Available genres' })).toBeVisible();
+
   await apply();
 
   expect(router.state.location.search).toBe('');
@@ -213,10 +232,13 @@ test.each([
 
     await open();
     await userEvent.click(screen.getByRole('button', { name: field }));
+
     expect(
       screen.getByRole('heading', { name: 'Sort Direction' })
     ).toBeVisible();
+
     await userEvent.click(screen.getByRole('button', { name: 'Ascending' }));
+
     expect(screen.getByRole('button', { name: 'Ascending' })).toHaveAttribute(
       'aria-pressed',
       'true'
@@ -225,6 +247,7 @@ test.each([
 
     await apply();
     const params = new URLSearchParams(router.state.location.search);
+
     expect(params.get('sorting')).toBe(
       {
         Popularity: 'popularity',
@@ -236,6 +259,7 @@ test.each([
     expect(params.get('order')).toBe('asc');
 
     await open();
+
     expect(screen.getByRole('button', { name: field })).toHaveAttribute(
       'aria-pressed',
       'true'
@@ -248,7 +272,9 @@ test.each([
     const descending = screen.getByRole('button', { name: 'Descending' });
     descending.focus();
     await userEvent.keyboard('{Enter}');
+
     expect(descending).toHaveAttribute('aria-pressed', 'true');
+
     await apply();
 
     expect(new URLSearchParams(router.state.location.search).get('order')).toBe(
@@ -261,6 +287,7 @@ test('Series year filtering is labeled as Date and Year while keeping URL semant
   const router = setup('/search?view=tv&year=2001');
 
   await open();
+
   expect(screen.getByRole('heading', { name: 'Date' })).toBeVisible();
   expect(screen.getByLabelText('Year')).toHaveValue('2001');
   expect(screen.queryByText('First-air Year')).toBeNull();
@@ -269,13 +296,16 @@ test('Series year filtering is labeled as Date and Year while keeping URL semant
   await userEvent.clear(screen.getByLabelText('Year'));
   await userEvent.type(screen.getByLabelText('Year'), '2012');
   await userEvent.click(screen.getByRole('button', { name: 'Date' }));
+
   expect(screen.getByRole('button', { name: 'Date' })).toHaveAttribute(
     'aria-pressed',
     'true'
   );
+
   await apply();
 
   const params = new URLSearchParams(router.state.location.search);
+
   expect(params.get('view')).toBe('tv');
   expect(params.get('year')).toBe('2012');
   expect(params.get('sorting')).toBe('releaseDate');
@@ -293,6 +323,7 @@ test('text search keeps relevance and normalizes unsupported and duplicate URL v
   );
 
   await open();
+
   expect(screen.getByText(/Sorted by relevance/)).toBeVisible();
   expect(screen.queryByRole('group', { name: 'Sort by' })).toBeNull();
 });
@@ -301,8 +332,11 @@ test('validates single-year bounds, supports arrows and Any Year', async () => {
   const router = setup();
 
   await open();
+
   expect(screen.getByRole('heading', { name: 'Release Year' })).toBeVisible();
+
   const input = screen.getByLabelText('Release Year');
+
   expect(input).toHaveAttribute('placeholder', 'Any Year');
   expect(input).toHaveAttribute('inputmode', 'numeric');
   expect(
@@ -310,22 +344,28 @@ test('validates single-year bounds, supports arrows and Any Year', async () => {
   ).toBeNull();
   expect(input).toHaveAttribute('type', 'text');
   expect(input).toHaveAttribute('inputmode', 'numeric');
+
   await userEvent.type(input, '199');
+
   expect(input).toHaveAttribute('aria-invalid', 'true');
   expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
 
   await userEvent.type(input, '9{ArrowUp}');
+
   expect(input).toHaveValue('2000');
 
   await userEvent.keyboard('{ArrowDown}');
+
   expect(input).toHaveValue('1999');
 
   expect(router.state.location.search).toBe('');
 
   await userEvent.clear(input);
+
   expect(input).toHaveValue('');
 
   await userEvent.type(input, '1873');
+
   expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
 });
 
@@ -335,6 +375,7 @@ test('rating input and slider stay synchronized for Any, half steps, and 10', as
   await open();
   const slider = screen.getByLabelText('Minimum TMDB rating slider');
   const ratingInput = screen.getByLabelText('Minimum TMDB rating');
+
   expect(
     screen.getByRole('heading', { name: 'Minimum Rating' }).parentElement
   ).toContainElement(ratingInput);
@@ -344,31 +385,44 @@ test('rating input and slider stay synchronized for Any, half steps, and 10', as
   expect(ratingInput).toHaveValue('7.5');
 
   await userEvent.clear(ratingInput);
+
   expect(slider).toHaveValue('0');
+
   await userEvent.type(ratingInput, '5.5');
+
   expect(slider).toHaveValue('5.5');
   expect(ratingInput).toHaveValue('5.5');
   expect(router.state.location.search).toBe('?rating=7.5');
+
   await apply();
   await closed();
+
   expect(router.state.location.search).toBe('?rating=5.5');
 
   await open();
   const reopenedRatingInput = screen.getByLabelText('Minimum TMDB rating');
   const reopenedSlider = screen.getByLabelText('Minimum TMDB rating slider');
   fireEvent.change(reopenedSlider, { target: { value: '10' } });
+
   expect(reopenedRatingInput).toHaveValue('10');
+
   await apply();
   await closed();
+
   expect(router.state.location.search).toBe('?rating=10');
 
   await open();
   const anyRatingInput = screen.getByLabelText('Minimum TMDB rating');
   const anyRatingSlider = screen.getByLabelText('Minimum TMDB rating slider');
+
   expect(anyRatingSlider).toHaveValue('10');
+
   await userEvent.clear(anyRatingInput);
+
   expect(anyRatingSlider).toHaveValue('0');
+
   await apply();
+
   expect(new URLSearchParams(router.state.location.search).has('rating')).toBe(
     false
   );
@@ -381,9 +435,12 @@ test('year picker selects recent and older years, closes with Escape, and restor
   const trigger = screen.getByRole('button', { name: 'Choose a year' });
 
   await userEvent.click(trigger);
+
   expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
   const recentYear = String(new Date().getFullYear() - 1);
   await userEvent.click(screen.getByRole('button', { name: recentYear }));
+
   expect(input).toHaveValue(recentYear);
   expect(input).toHaveFocus();
   expect(trigger).toHaveAttribute('aria-expanded', 'false');
@@ -392,11 +449,13 @@ test('year picker selects recent and older years, closes with Escape, and restor
   await userEvent.click(screen.getByRole('button', { name: 'Earlier years' }));
   const olderYear = String(new Date().getFullYear() - 12);
   await userEvent.click(screen.getByRole('button', { name: olderYear }));
+
   expect(input).toHaveValue(olderYear);
 
   await userEvent.click(trigger);
   await userEvent.tab();
   await userEvent.keyboard('{Escape}');
+
   expect(trigger).toHaveFocus();
   expect(trigger).toHaveAttribute('aria-expanded', 'false');
 });
@@ -448,6 +507,7 @@ test('year picker opens downward by default, flips upward near the viewport bott
     await userEvent.click(
       screen.getByRole('heading', { name: 'Minimum Rating' })
     );
+
     expect(yearList).toHaveAttribute('data-open', 'false');
   } finally {
     if (originalHeight) {
@@ -461,15 +521,19 @@ test('rating rejects invalid manual values and Date keeps the existing sort valu
   await open();
   const ratingInput = screen.getByLabelText('Minimum TMDB rating');
   await userEvent.type(ratingInput, '7.2');
+
   expect(ratingInput).toHaveAttribute('aria-invalid', 'true');
   expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
 
   await userEvent.clear(ratingInput);
   await userEvent.type(ratingInput, '7.5');
+
   expect(screen.getByLabelText('Minimum TMDB rating slider')).toHaveValue(
     '7.5'
   );
+
   await userEvent.click(screen.getByRole('button', { name: 'Date' }));
+
   expect(screen.getByRole('button', { name: 'Date' })).toHaveAttribute(
     'aria-pressed',
     'true'
@@ -485,31 +549,44 @@ test('rating input arrows adjust by half steps, clamp at bounds, and preserve in
   ratingInput.focus();
 
   await userEvent.keyboard('{ArrowUp}');
+
   expect(ratingInput).toHaveValue('0.5');
   expect(slider).toHaveValue('0.5');
+
   await userEvent.keyboard('{ArrowUp}');
+
   expect(ratingInput).toHaveValue('1');
   expect(slider).toHaveValue('1');
+
   await userEvent.keyboard('{ArrowDown}');
+
   expect(ratingInput).toHaveValue('0.5');
   expect(slider).toHaveValue('0.5');
+
   await userEvent.keyboard('{ArrowDown}');
+
   expect(ratingInput).toHaveValue('');
   expect(slider).toHaveValue('0');
 
   await userEvent.keyboard('{ArrowDown}');
+
   expect(ratingInput).toHaveValue('');
+
   await userEvent.type(ratingInput, '10');
   await userEvent.keyboard('{ArrowUp}');
+
   expect(ratingInput).toHaveValue('10');
   expect(slider).toHaveValue('10');
+
   await userEvent.keyboard('{ArrowDown}');
+
   expect(ratingInput).toHaveValue('9.5');
   expect(slider).toHaveValue('9.5');
 
   await userEvent.clear(ratingInput);
   await userEvent.type(ratingInput, '7.2');
   await userEvent.keyboard('{ArrowUp}');
+
   expect(ratingInput).toHaveValue('7.2');
   expect(ratingInput).toHaveAttribute('aria-invalid', 'true');
   expect(slider).toHaveValue('0');
@@ -549,17 +626,23 @@ test('Back/Forward closes open drafts and reopening uses committed state', async
 test('drawer traps keyboard focus, locks scrolling, dismisses via backdrop and restores focus', async () => {
   setup();
   const dialog = await open();
+
   expect(dialog).toHaveAttribute('aria-modal', 'true');
   expect(document.body.style.overflow).toBe('hidden');
   expect(dialog).toHaveFocus();
 
   await userEvent.tab({ shift: true });
+
   expect(screen.getByRole('button', { name: 'Apply' })).toHaveFocus();
+
   await userEvent.tab();
+
   expect(
     screen.getByRole('button', { name: 'Close Filters & Sort' })
   ).toHaveFocus();
+
   await userEvent.tab({ shift: true });
+
   expect(screen.getByRole('button', { name: 'Apply' })).toHaveFocus();
 
   fireEvent.click(
@@ -568,6 +651,7 @@ test('drawer traps keyboard focus, locks scrolling, dismisses via backdrop and r
   await closed();
 
   expect(document.body.style.overflow).toBe('');
+
   await waitFor(() =>
     expect(screen.getByRole('button', { name: /Filters & Sort/ })).toHaveFocus()
   );
@@ -612,6 +696,7 @@ test('drawer stays modal and locked after viewport resize', async () => {
   expect(backgroundRoot.inert).toBe(true);
 
   fireEvent(window, new Event('resize'));
+
   expect(dialog).toHaveAttribute('aria-modal', 'true');
   expect(document.body.style.overflow).toBe('hidden');
   expect(backgroundRoot.inert).toBe(true);
@@ -648,6 +733,7 @@ test('unmounting the drawer restores prior scroll and background state', async (
   });
 
   await open();
+
   expect(document.body.style.overflow).toBe('hidden');
   expect(container.inert).toBe(true);
 

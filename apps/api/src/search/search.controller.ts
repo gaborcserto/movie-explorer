@@ -10,6 +10,7 @@ import {
   ApiOkResponse,
 } from '@nestjs/swagger';
 import type { SearchSuggestionsResponse } from '@movie-explorer/contracts';
+
 import { SearchService } from './search.service';
 import { SectionAvailabilityDto } from '../validation/section-availability.dto';
 import {

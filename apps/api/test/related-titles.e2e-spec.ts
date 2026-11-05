@@ -53,6 +53,7 @@ describe('Related titles HTTP routes', () => {
       availability: 'available',
     });
   });
+
   afterAll(async () => {
     await app.close();
   });
@@ -82,6 +83,7 @@ describe('Related titles HTTP routes', () => {
         results: [2, 3, 4, 5].map(title),
         availability: 'available',
       });
+
     expect(movie.findCollection).toHaveBeenCalledTimes(1);
     expect(movie.findRelated).toHaveBeenCalledTimes(2);
   });
@@ -107,6 +109,7 @@ describe('Related titles HTTP routes', () => {
           await request(app.getHttpServer())
             .get(`/api/v1/${resource}/1/${kind}`)
             .expect(200, result);
+
           expect(provider.findRelated).toHaveBeenCalledWith(1, kind);
           expect(
             (resource === 'movies' ? series : movie).findRelated,
@@ -120,6 +123,7 @@ describe('Related titles HTTP routes', () => {
           await request(app.getHttpServer())
             .get(`/api/v1/${resource}/${id}/${kind}`)
             .expect(400);
+
           expect(provider.findRelated).not.toHaveBeenCalled();
         },
       );
@@ -140,6 +144,7 @@ describe('Related titles HTTP routes', () => {
         const document = createApiDocument(app);
         const operation =
           document.paths[`/api/v1/${resource}/{id}/${kind}`].get;
+
         ok(operation);
         expect(operation.tags).toEqual([
           resource === 'movies' ? 'Movies' : 'Series',
@@ -150,7 +155,9 @@ describe('Related titles HTTP routes', () => {
         expect(JSON.stringify(operation.responses['200'])).toContain(
           'RelatedTitlesResponseDto',
         );
+
         const schema = document.components?.schemas?.RelatedTitlesResponseDto;
+
         ok(schema && 'properties' in schema);
         expect(schema.properties?.availability).toMatchObject({
           enum: ['available', 'partial'],

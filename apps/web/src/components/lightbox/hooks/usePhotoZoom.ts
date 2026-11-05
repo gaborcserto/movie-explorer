@@ -54,6 +54,7 @@ export default function usePhotoZoom(
 
   useEffect(() => {
     const reset = () => setView(fit);
+
     const observer =
       typeof ResizeObserver === 'undefined'
         ? undefined

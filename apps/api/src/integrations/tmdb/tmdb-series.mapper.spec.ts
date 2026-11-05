@@ -19,6 +19,7 @@ describe('TMDB series mapping and validation', () => {
       },
       1,
     );
+
     expect(result.stillSrcSet).toBe(
       'https://images.example/w300/still.jpg 1x, https://images.example/original/still.jpg 3x',
     );
@@ -32,6 +33,7 @@ describe('TMDB series mapping and validation', () => {
 
   it('maps complete localized series metadata without provider fields', () => {
     const result = mapper.toSeriesDetails(seriesResponse);
+
     expect(result).toEqual({
       ...minimalSeriesDetails,
       title: 'Localized series',
@@ -99,6 +101,7 @@ describe('TMDB series mapping and validation', () => {
 
   it('accepts minimal identity and represents missing metadata as unknown', () => {
     const body = { id: 1399, name: 'Series' };
+
     expect(() => validateTmdbSeriesDetails(body, 1399)).not.toThrow();
     expect(mapper.toSeriesDetails(body)).toEqual(minimalSeriesDetails);
   });
@@ -249,7 +252,9 @@ describe('TMDB series mapping and validation', () => {
         1,
       ),
     ).toThrow('Conflicting series season identities');
+
     const season = { id: 10, season_number: 1, name: 'First' };
+
     expect(
       mapper.toSeriesDetails({
         id: 1,
@@ -263,9 +268,11 @@ describe('TMDB series mapping and validation', () => {
     const input = structuredClone(seriesResponse);
     const before = structuredClone(input);
     const result = mapper.toSeriesDetails(input);
+
     result.seasons.reverse();
     result.episodeRuntimeMinutes.push(1);
     result.creators[0].name = 'Changed';
+
     expect(input).toEqual(before);
   });
 

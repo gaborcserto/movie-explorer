@@ -123,8 +123,11 @@ describe('Personal Library store', () => {
 
     expect(notifications).toHaveBeenCalledTimes(1);
     expect(selectMovieFavorite(useLibraryStore.getState())).toBe(false);
+
     useLibraryStore.getState().add(movie, 'favorites');
+
     expect(selectMovieFavorite(useLibraryStore.getState())).toBe(true);
+
     unsubscribe();
   });
 });
@@ -158,6 +161,7 @@ describe('Personal Library persistence', () => {
     localStorage.setItem(key, legacy);
 
     const first = await loadStore();
+
     expect(
       first.useLibraryStore.getState().items['movie:42'].collections
     ).toEqual({ favorites: true, watched: true });
@@ -169,11 +173,14 @@ describe('Personal Library persistence', () => {
     ).toEqual({ favorites: false, watched: true });
     expect(Object.keys(first.useLibraryStore.getState().items)).toHaveLength(3);
     expect(localStorage.getItem(`${key}.v1-backup`)).toBe(legacy);
+
     const migrated = localStorage.getItem(key);
+
     expect(JSON.parse(migrated ?? '{}').version).toBe(2);
     expect(migrated).not.toContain('watchlist');
 
     const second = await loadStore();
+
     expect(second.useLibraryStore.getState().items).toEqual(
       first.useLibraryStore.getState().items
     );
@@ -182,6 +189,7 @@ describe('Personal Library persistence', () => {
 
     second.useLibraryStore.getState().remove('tv:42', 'favorites');
     const third = await loadStore();
+
     expect(third.useLibraryStore.getState().has('tv:42', 'favorites')).toBe(
       false
     );
@@ -209,9 +217,12 @@ describe('Personal Library persistence', () => {
     });
 
     const { useLibraryStore } = await loadStore();
+
     expect(useLibraryStore.getState().has('movie:42', 'favorites')).toBe(true);
     expect(useLibraryStore.getState().has('movie:42', 'watched')).toBe(true);
+
     useLibraryStore.getState().remove('movie:42', 'favorites');
+
     expect(localStorage.getItem(key)).toBe(original);
     expect(useLibraryStore.getState().persistenceWarning).toMatch(
       /original data is preserved/i
@@ -222,6 +233,7 @@ describe('Personal Library persistence', () => {
     const { useLibraryStore } = await loadStore();
     useLibraryStore.getState().add(movie, 'favorites');
     useLibraryStore.getState().add(movie, 'favorites');
+
     expect(Object.keys(useLibraryStore.getState().items)).toEqual(['movie:42']);
   });
 
@@ -236,6 +248,7 @@ describe('Personal Library persistence', () => {
     expect(raw).not.toContain('genres');
 
     const second = await loadStore();
+
     expect(second.useLibraryStore.getState().has('movie:42', 'favorites')).toBe(
       true
     );

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+
 import ErrorBoundary from '.';
 
 interface MockProps {
@@ -57,6 +58,7 @@ describe('<ErrorBoundary />', () => {
     vi.stubGlobal('window', { location: { reload } });
     try {
       fireEvent.click(screen.getByRole('button', { name: 'Reload page' }));
+
       expect(reload).toHaveBeenCalledTimes(1);
     } finally {
       vi.unstubAllGlobals();

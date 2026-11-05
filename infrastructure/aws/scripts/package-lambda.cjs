@@ -62,11 +62,13 @@ execFileSync(
     stdio: 'inherit',
   },
 );
+
 fs.writeFileSync(
   path.join(output, 'run.sh'),
   '#!/bin/sh\nset -eu\ncd "${LAMBDA_TASK_ROOT:-.}"\nexec node apps/api/dist/main.js\n',
   { mode: 0o755 },
 );
+
 const zip = new ZipFile();
 let bytes = 0;
 
@@ -109,5 +111,6 @@ destination.on('close', () =>
     `Lambda ZIP ready (${bytes} uncompressed bytes); run.sh has Unix mode 755`,
   ),
 );
+
 zip.outputStream.pipe(destination);
 zip.end();

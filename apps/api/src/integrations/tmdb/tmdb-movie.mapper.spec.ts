@@ -1,4 +1,5 @@
 import { ok } from 'node:assert/strict';
+
 import { TmdbMovieMapper } from './tmdb-movie.mapper';
 
 const mapper = new TmdbMovieMapper('https://image.tmdb.org/t/p/w500');
@@ -44,9 +45,11 @@ describe('TmdbMovieMapper', () => {
         budget: value,
         revenue: value,
       });
+
       expect(result.title).toBe('Movie');
       expect(result.budget).toBeUndefined();
       expect(result.revenue).toBeUndefined();
+
       if (typeof value !== 'string' || !value.trim()) {
         expect(result.originalTitle).toBeUndefined();
         expect(result.status).toBeUndefined();
@@ -111,6 +114,7 @@ describe('TmdbMovieMapper', () => {
         ],
       },
     });
+
     expect(result.writers).toEqual([
       { id: 1, name: 'Source Author', roles: ['Novel'] },
       { id: 2, name: 'Creator', roles: ['Characters', 'Comic Book'] },
@@ -150,6 +154,7 @@ describe('TmdbMovieMapper', () => {
         crew: [],
       },
     });
+
     expect(result.castMembers).toHaveLength(8);
     ok(result.castMembers);
     expect(result.castMembers[0]).toMatchObject({
@@ -210,6 +215,7 @@ describe('TmdbMovieMapper', () => {
         ],
       },
     });
+
     expect(result.cast).toEqual([
       'Same Name',
       'Same Name',
@@ -275,6 +281,7 @@ describe('TmdbMovieMapper', () => {
         ],
       },
     });
+
     expect(result.writers).toEqual([
       expect.objectContaining({
         id: 1,
@@ -458,6 +465,7 @@ describe('TmdbMovieMapper', () => {
         crew: [],
       },
     });
+
     expect(movie.posterSrcSet).toBeUndefined();
     expect(movie.posterPreviewUrl).toBeUndefined();
     expect(movie.castMembers?.[0].profileSrcSet).toBe(

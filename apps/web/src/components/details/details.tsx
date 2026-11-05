@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './details.scss';
 import { useParams } from 'react-router';
 import type { MovieDetails, MovieSection } from '@movie-explorer/contracts';
+
 import DetailsPageLayout, { DetailsLowerLayout } from './detailsPageLayout';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
 import { DetailError } from './recovery';
@@ -15,8 +16,8 @@ import {
   isNotFoundError,
 } from '../../util/apiUtils';
 import parseDetailId from '../../util/detailId';
-import useRatingsResource from './useRatingsResource';
-import useWatchProvidersResource from './useWatchProvidersResource';
+import { useRatingsResource } from './ratings';
+import { useWatchProvidersResource } from './watchProviders';
 import { useLibraryStore } from '../../features/library/libraryStore';
 import { EntityMetadata } from '../routeMetadata';
 
@@ -25,6 +26,7 @@ type DetailsState = 'loading' | 'success' | 'not-found' | 'error';
 function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
   const movieId = parseDetailId(movieIdStr);
   const validId = Number.isSafeInteger(movieId);
+
   const [detailsState, setDetailsState] = useState<DetailsState>(
     validId ? 'loading' : 'not-found'
   );
@@ -35,6 +37,7 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
   const ratingResource = useRatingsResource('movie', movieId, validId);
 
   const [movieData, setMovieData] = useState<MovieDetails | null>(null);
+
   const providerResource = useWatchProvidersResource(
     'movies',
     movieId,

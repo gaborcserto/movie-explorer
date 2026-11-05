@@ -37,6 +37,7 @@ export class MoviesService {
       this.movieProvider.findRelated(id, 'recommendations'),
       this.movieProvider.findRelated(id, 'similar'),
     ]);
+
     const results = new Map<number, RecommendationTitle>();
     const sources = [collection, recommended, similar];
 

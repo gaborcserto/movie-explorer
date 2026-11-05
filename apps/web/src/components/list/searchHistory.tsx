@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useLocation, useNavigationType } from 'react-router';
+
 import { SearchHistory } from './useSearchHistory';
 import type {
   MovieSnapshot,
@@ -25,6 +26,7 @@ export default function SearchHistoryProvider({
     scroll: new Map<string, number>(),
     detailOrigins: new Map<string, string>(),
   }));
+
   useLayoutEffect(() => {
     const from = previous.current;
 
@@ -37,11 +39,15 @@ export default function SearchHistoryProvider({
       if (history.detailOrigins.size > 30) {
         const oldest = history.detailOrigins.keys().next().value;
 
-        if (oldest !== undefined) history.detailOrigins.delete(oldest);
+        if (oldest !== undefined) {
+          history.detailOrigins.delete(oldest);
+        }
       }
     }
+
     previous.current = location;
   }, [history, location, navigationType]);
+
   useLayoutEffect(() => {
     const previousRestoration = window.history.scrollRestoration;
     window.history.scrollRestoration = 'manual';

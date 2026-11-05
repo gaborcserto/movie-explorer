@@ -77,6 +77,7 @@ export class MovieExplorerStack extends Stack {
         },
       ],
     });
+
     const apiLogs = new logs.LogGroup(this, 'ApiLogs', {
       logGroupName: '/movie-explorer/http-api',
       retention: logs.RetentionDays.TWO_WEEKS,
@@ -87,6 +88,7 @@ export class MovieExplorerStack extends Stack {
       retention: logs.RetentionDays.TWO_WEEKS,
       removalPolicy: RemovalPolicy.RETAIN,
     });
+
     const role = new iam.Role(this, 'ApiRole', {
       roleName: 'movie-explorer-api-runtime',
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
@@ -103,6 +105,7 @@ export class MovieExplorerStack extends Stack {
       'Credentials',
       props.credentialsSecretName,
     );
+
     const backend = new lambda.Function(this, 'Backend', {
       functionName: 'movie-explorer-api',
       runtime: lambda.Runtime.NODEJS_24_X,
@@ -154,6 +157,7 @@ export class MovieExplorerStack extends Stack {
       methods: [apigateway.HttpMethod.ANY],
       integration: new integrations.HttpLambdaIntegration('Nest', backend),
     });
+
     const stage = new apigateway.HttpStage(this, 'ApiStage', {
       httpApi: api,
       stageName: '$default',
@@ -217,6 +221,7 @@ export class MovieExplorerStack extends Stack {
         },
       },
     );
+
     const spa = new cloudfront.Function(this, 'SpaRouting', {
       runtime: cloudfront.FunctionRuntime.JS_2_0,
       code: cloudfront.FunctionCode.fromFile({
@@ -229,6 +234,7 @@ export class MovieExplorerStack extends Stack {
         filePath: resolve(__dirname, '../edge/seo-response.js'),
       }),
     });
+
     const frontendOrigin =
       origins.S3BucketOrigin.withOriginAccessControl(bucket);
     const apiBehavior: cloudfront.BehaviorOptions = {
@@ -243,6 +249,7 @@ export class MovieExplorerStack extends Stack {
         cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
       responseHeadersPolicy: headers,
     };
+
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
       comment: 'Movie Explorer pay-as-you-go',
       errorResponses: [

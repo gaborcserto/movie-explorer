@@ -1,10 +1,12 @@
 import { getRatings } from './apiUtils';
 
 const fetchMock = vi.fn();
+
 beforeEach(() => {
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
 });
+
 afterEach(() => vi.unstubAllGlobals());
 
 const body = {
@@ -17,6 +19,7 @@ test.each(['movie', 'series'] as const)(
   async (kind) => {
     fetchMock.mockResolvedValue(Response.json(body));
     const controller = new AbortController();
+
     await expect(getRatings(kind, 603, controller.signal)).resolves.toEqual(
       body
     );
@@ -43,6 +46,7 @@ test.each([
   },
 ])('rejects malformed unified ratings %p', async (value) => {
   fetchMock.mockResolvedValue(Response.json(value));
+
   await expect(
     getRatings('movie', 603, new AbortController().signal)
   ).rejects.toMatchObject({ category: 'invalid-response' });

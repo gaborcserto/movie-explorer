@@ -22,6 +22,7 @@ test('deployment is manual, main-only, disabled by default, and follows quality 
   assert.equal(workflow.jobs.deploy.needs, 'quality');
   assert.equal(workflow.jobs.deploy.environment.name, 'aws-production');
   assert.equal(workflow.jobs.deploy.permissions['id-token'], 'write');
+
   const quality = workflow.jobs.quality.steps
     .map((step) => step.run)
     .filter(Boolean);
@@ -45,15 +46,19 @@ test('deployment is manual, main-only, disabled by default, and follows quality 
     /aws-access-key-id|aws-secret-access-key/.test(workflowText),
     false,
   );
+
   const steps = workflow.jobs.deploy.steps;
   const artifacts = steps.find((step) =>
     step.uses?.startsWith('actions/upload-artifact@'),
   );
+
   assert.equal(artifacts.with['include-hidden-files'], true);
   assert.match(artifacts.with.path, /\.artifacts\/backend\.zip/);
+
   const authentication = steps.findIndex((step) =>
     step.uses?.startsWith('aws-actions/configure-aws-credentials@'),
   );
+
   assert.ok(
     authentication > steps.findIndex((step) => step.run === 'npm run aws:test'),
   );
@@ -67,6 +72,7 @@ test('OIDC trust is restricted to this repository and protected deployment envir
   const trust =
     bootstrap.Resources.GithubRole.Properties.AssumeRolePolicyDocument
       .Statement;
+
   assert.equal(trust.length, 1);
   assert.deepEqual(trust[0].Condition.StringEquals, {
     'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
@@ -86,23 +92,30 @@ test('OIDC trust is restricted to this repository and protected deployment envir
 test('runtime permission boundary permits only logs and deployment cannot remove it', () => {
   const boundary =
     bootstrap.Resources.RuntimeBoundary.Properties.PolicyDocument.Statement;
+
   assert.equal(boundary.length, 1);
   assert.ok(boundary[0].Action.every((action) => action.startsWith('logs:')));
+
   const execution =
     bootstrap.Resources.ExecutionPolicy.Properties.PolicyDocument.Statement;
+
   assert.equal(
     execution.some((statement) =>
       statement.Action.includes('iam:DeleteRolePermissionsBoundary'),
     ),
     false,
   );
+
   const createRole = execution.find((statement) =>
     statement.Action.includes('iam:CreateRole'),
   );
+
   assert.ok(createRole.Condition.StringEquals['iam:PermissionsBoundary']);
+
   const routine =
     bootstrap.Resources.GithubRole.Properties.Policies[0].PolicyDocument
       .Statement;
+
   assert.equal(
     routine.some((statement) =>
       statement.Action.some((action) => /^(iam|secretsmanager):/.test(action)),

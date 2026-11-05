@@ -95,6 +95,7 @@ describe.each([
     };
 
     await request(app.getHttpServer()).get(endpoint).expect(200, expected);
+
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
       new URL(
@@ -252,6 +253,7 @@ describe.each([
       await request(app.getHttpServer())
         .get(`/api/v1/${kind}/${invalidId}/watch-providers`)
         .expect(400);
+
       expect(fetchMock).not.toHaveBeenCalled();
     },
   );
@@ -261,6 +263,7 @@ describe.each([
 
     const operation =
       document.paths[`/api/v1/${kind}/{id}/watch-providers`].get;
+
     ok(operation);
     expect(operation.responses['200']).toMatchObject({
       content: {

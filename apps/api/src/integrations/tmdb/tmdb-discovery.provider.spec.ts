@@ -40,8 +40,10 @@ describe('TmdbDiscoveryProvider', () => {
         }),
       ),
     );
+
     await provider.find('popular-movies');
     await provider.find('popular-series');
+
     expect(provider['cache'].size).toBe(2);
 
     now.mockReturnValue(1000 + 5 * 60 * 1000);
@@ -49,6 +51,7 @@ describe('TmdbDiscoveryProvider', () => {
       provider.find('popular-movies'),
       provider.find('popular-movies'),
     ]);
+
     expect(first).toBe(second);
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(provider['cache'].size).toBe(1);
@@ -69,11 +72,15 @@ describe('TmdbDiscoveryProvider', () => {
     for (let page = 1; page <= 101; page += 1) {
       await provider.find('popular-movies', page);
     }
+
     expect(provider['cache'].size).toBe(100);
+
     await provider.find('popular-movies', 101);
+
     expect(fetchMock).toHaveBeenCalledTimes(101);
 
     await provider.find('popular-movies', 1);
+
     expect(fetchMock).toHaveBeenCalledTimes(102);
     expect(provider['cache'].size).toBe(100);
   });
@@ -91,14 +98,18 @@ describe('TmdbDiscoveryProvider', () => {
     for (let index = 0; index < 33; index += 1) {
       await provider.findStreamingProviders(String(index));
     }
+
     expect(provider['providerCache'].size).toBe(32);
+
     await provider.findStreamingProviders('32');
+
     expect(fetchMock).toHaveBeenCalledTimes(66);
 
     await Promise.all([
       provider.findStreamingProviders('0'),
       provider.findStreamingProviders('0'),
     ]);
+
     expect(fetchMock).toHaveBeenCalledTimes(68);
 
     now.mockReturnValue(1000 + 5 * 60 * 1000);
@@ -106,6 +117,7 @@ describe('TmdbDiscoveryProvider', () => {
       provider.findStreamingProviders('0'),
       provider.findStreamingProviders('0'),
     ]);
+
     expect(fetchMock).toHaveBeenCalledTimes(70);
     expect(provider['providerCache'].size).toBe(1);
   });
@@ -242,13 +254,16 @@ describe('TmdbDiscoveryProvider', () => {
       'movie',
       'tv',
     ]);
+
     const discoveryCalls = fetchMock.mock.calls.filter(([url]) =>
       String(url).includes('/discover/'),
     );
 
     expect(discoveryCalls).toHaveLength(2);
+
     discoveryCalls.forEach(([url]) => {
       const requestUrl = new URL(url);
+
       expect(requestUrl.searchParams.get('watch_region')).toBe('HU');
       expect(requestUrl.searchParams.get('with_watch_providers')).toBe('8');
       expect(requestUrl.searchParams.get('with_watch_monetization_types')).toBe(
@@ -285,6 +300,7 @@ describe('TmdbDiscoveryProvider', () => {
     await provider.find('new-movies');
 
     const url = new URL(fetchMock.mock.calls[0][0]);
+
     expect(url.searchParams.get('region')).toBe('HU');
     expect(url.searchParams.get('with_release_type')).toBe('2|3');
     expect(url.searchParams.get('release_date.gte')).toMatch(
@@ -314,6 +330,7 @@ describe('TmdbDiscoveryProvider', () => {
       await provider.find(section);
 
       const url = new URL(fetchMock.mock.calls[0][0]);
+
       expect(url.pathname).toBe(path);
       expect(url.searchParams.get('watch_region')).toBe('HU');
       expect(url.searchParams.get('with_watch_monetization_types')).toBe(

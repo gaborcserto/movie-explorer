@@ -1,4 +1,5 @@
 import { BadGatewayException, GatewayTimeoutException } from '@nestjs/common';
+
 import { TmdbSearchProvider } from './tmdb-search.provider';
 import { mapSearch } from './tmdb-search.mapper';
 
@@ -9,6 +10,7 @@ const config = {
   language: 'en-US',
   requestTimeoutMs: 20,
 };
+
 const page = (results: unknown[], current = 1) => ({
   results,
   page: current,
@@ -20,10 +22,12 @@ describe('unified search', () => {
   const originalFetch = global.fetch;
   const fetchMock = jest.fn();
   const provider = new TmdbSearchProvider(config);
+
   beforeEach(() => {
     global.fetch = fetchMock;
     fetchMock.mockReset();
   });
+
   afterEach(() => {
     global.fetch = originalFetch;
     jest.useRealTimers();
@@ -33,6 +37,7 @@ describe('unified search', () => {
     'uses one matching upstream request for %s and keeps page boundaries',
     async (type) => {
       fetchMock.mockResolvedValue(Response.json(page([], 500)));
+
       await expect(provider.find(' Query ', type, 500)).resolves.toEqual({
         results: [],
         page: 500,
@@ -40,7 +45,9 @@ describe('unified search', () => {
         totalResults: 18000,
       });
       expect(fetchMock).toHaveBeenCalledTimes(1);
+
       const url: URL = fetchMock.mock.calls[0][0];
+
       expect(url.pathname).toBe(`/3/search/${type === 'all' ? 'multi' : type}`);
       expect(Object.fromEntries(url.searchParams)).toEqual({
         language: 'en-US',
@@ -57,6 +64,7 @@ describe('unified search', () => {
       fetchMock.mockResolvedValue(Response.json(page([])));
       await provider.find('Query', type, 1, 2005);
       const url: URL = fetchMock.mock.calls[0][0];
+
       expect(
         url.searchParams.get(
           type === 'tv' ? 'first_air_date_year' : 'primary_release_year',
@@ -90,6 +98,7 @@ describe('unified search', () => {
       'all',
       config.imageBaseUrl,
     );
+
     expect(
       response.results.map((item) => `${item.mediaType}:${item.id}`),
     ).toEqual(['tv:1', 'movie:1', 'person:1']);
@@ -124,6 +133,7 @@ describe('unified search', () => {
         type,
         config.imageBaseUrl,
       );
+
       expect(response.results).toHaveLength(1);
       expect(response.results[0].mediaType).toBe(type);
     },
@@ -132,15 +142,18 @@ describe('unified search', () => {
   it.each(['network', 'json', 'shape', 'wrong-page', 'http'])(
     'sanitizes %s failures',
     async (kind) => {
-      if (kind === 'network') fetchMock.mockRejectedValue(new Error('secret'));
-      else if (kind === 'http')
+      if (kind === 'network') {
+        fetchMock.mockRejectedValue(new Error('secret'));
+      } else if (kind === 'http') {
         fetchMock.mockResolvedValue(new Response('secret', { status: 401 }));
-      else if (kind === 'json')
+      } else if (kind === 'json') {
         fetchMock.mockResolvedValue(new Response('secret'));
-      else
+      } else {
         fetchMock.mockResolvedValue(
           Response.json(kind === 'shape' ? {} : page([], 2)),
         );
+      }
+
       await expect(provider.find('Query', 'all', 1)).rejects.toBeInstanceOf(
         BadGatewayException,
       );
@@ -151,6 +164,7 @@ describe('unified search', () => {
     fetchMock.mockResolvedValue(
       new Response('', { status: 429, headers: { 'Retry-After': '10' } }),
     );
+
     await expect(provider.find('Query', 'tv', 1)).rejects.toMatchObject({
       status: 429,
       response: expect.objectContaining({ retryAfter: 10 }),
@@ -173,6 +187,7 @@ describe('unified search', () => {
       'tv',
       config.imageBaseUrl,
     );
+
     expect(JSON.parse(JSON.stringify(response.results))).toEqual([
       { id: 1, mediaType: 'tv', title: 'Series' },
     ]);
@@ -234,6 +249,7 @@ describe('unified search', () => {
     ).rejects.toBeInstanceOf(GatewayTimeoutException);
     await jest.advanceTimersByTimeAsync(20);
     await pending;
+
     expect(jest.getTimerCount()).toBe(0);
   });
 });

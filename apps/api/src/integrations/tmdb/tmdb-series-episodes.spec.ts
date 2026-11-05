@@ -31,6 +31,7 @@ describe('series season and episode mapping', () => {
     };
     validateTmdbSeason(body, 1, 0);
     const result = mapper.toSeasonDetails(body, 1);
+
     expect(result).toMatchObject({
       seriesId: 1,
       seasonNumber: 0,
@@ -128,6 +129,7 @@ describe('series season and episode mapping', () => {
       { id: 30, cast: null, guest_stars: [null] },
       base,
     );
+
     expect(result.sections).toEqual({
       cast: { status: 'unavailable' },
       guestStars: { status: 'available' },
@@ -167,6 +169,7 @@ describe('series season/episode transport', () => {
     fetchMock.mockReset();
     jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
   });
+
   afterEach(() => {
     global.fetch = originalFetch;
     jest.restoreAllMocks();
@@ -175,6 +178,7 @@ describe('series season/episode transport', () => {
 
   it('uses one localized season call with no per-row fetches', async () => {
     fetchMock.mockResolvedValue(Response.json(season));
+
     await expect(provider.findSeason(1, 0)).resolves.toMatchObject({
       seriesId: 1,
       episodeCount: 1,
@@ -196,6 +200,7 @@ describe('series season/episode transport', () => {
       .mockResolvedValueOnce(Response.json({ ...episode, credits }))
       .mockResolvedValueOnce(Response.json(credits));
     const result = await provider.findEpisode(1, 0, 3);
+
     expect(String(fetchMock.mock.calls[0][0])).toContain(
       'append_to_response=credits',
     );
@@ -216,6 +221,7 @@ describe('series season/episode transport', () => {
       .mockResolvedValueOnce(Response.json({ id: episode.id, ...credits }));
 
     const result = await provider.findEpisode(1, 0, 3);
+
     expect(fetchMock).toHaveBeenCalledTimes(1);
     ok(result);
     expect(result.credits.cast).toEqual([
@@ -248,6 +254,7 @@ describe('series season/episode transport', () => {
         }),
       );
       const result = await provider.findEpisode(1, 0, 3);
+
       ok(result);
       expect(result.credits.cast).toEqual([]);
       expect(result.credits.sections.cast.status).toBe('unavailable');
@@ -265,6 +272,7 @@ describe('series season/episode transport', () => {
           : kind === 'episode'
             ? provider.findEpisode(1, 0, 3)
             : provider.findEpisodeCredits(1, 0, 3);
+
       await expect(result).resolves.toBeUndefined();
     },
   );
@@ -275,6 +283,7 @@ describe('series season/episode transport', () => {
       fetchMock.mockResolvedValue(
         new Response('', { status, headers: { 'Retry-After': '12' } }),
       );
+
       await expect(provider.findEpisode(1, 0, 3)).rejects.toMatchObject({
         status: status === 429 ? 429 : 502,
       });
@@ -286,6 +295,7 @@ describe('series season/episode transport', () => {
     fetchMock
       .mockResolvedValueOnce(Response.json({ ...episode, episode_number: 4 }))
       .mockResolvedValueOnce(new Response('{'));
+
     await expect(provider.findEpisode(1, 0, 3)).rejects.toMatchObject({
       status: 502,
     });
@@ -316,6 +326,7 @@ describe('series season/episode transport', () => {
     ).rejects.toMatchObject({ status: 504 });
     await jest.advanceTimersByTimeAsync(51);
     await assertion;
+
     expect(jest.getTimerCount()).toBe(0);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });

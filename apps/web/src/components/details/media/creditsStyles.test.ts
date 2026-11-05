@@ -21,15 +21,18 @@ const globalStylesheet = postcss.parse(
 
 const declarations = (selector: string) =>
   declarationsForSelector(stylesheet, selector);
+
 const declarationsForMedia = (selector: string, query: string) =>
   findDeclarationsForMedia(stylesheet, selector, query);
 
 function declarationsForContainer(selector: string, query: string) {
   let gridTemplateColumns: string | undefined;
+
   stylesheet.walkAtRules('container', (container) => {
     if (container.params !== query) {
       return;
     }
+
     container.walkRules(selector, (rule) => {
       rule.walkDecls('grid-template-columns', (declaration) => {
         gridTemplateColumns = declaration.value;
@@ -145,6 +148,7 @@ test.each(['hover', 'focus-visible'])(
             '(hover: hover) and (pointer: fine)'
           )
         : declarations(castSelector);
+
     expect(castDeclarations).toMatchObject({ color: '#f65261' });
   }
 );
@@ -158,10 +162,12 @@ test('provides visible focus outlines on summary and complete card links', () =>
 
 test('disables Cast animations when reduced motion is requested', () => {
   const selectors: string[] = [];
+
   stylesheet.walkAtRules('media', (media) => {
     if (media.params !== '(prefers-reduced-motion: reduce)') {
       return;
     }
+
     media.walkRules((rule) => {
       rule.walkDecls('transition', (declaration) => {
         if (declaration.value === 'none') {
@@ -170,12 +176,15 @@ test('disables Cast animations when reduced motion is requested', () => {
       });
     });
   });
+
   expect(selectors).toContain('.cast-member__link h3');
   expect(selectors).toContain('.cast-member');
+
   const reducedMotionTransform = declarationsForMedia(
     '.cast-member:hover',
     '(prefers-reduced-motion: reduce)'
   ).transform;
+
   expect(reducedMotionTransform).toBe('none');
 });
 
@@ -220,12 +229,15 @@ test('uses compact Crew name grids, neutral links and visible focus', () => {
   expect(
     declarations('.crew-group .person-credit-link')['text-decoration']
   ).toBe('none');
+
   const textLinkHoverColors: string[] = [];
+
   globalStylesheet.walkRules('.text-link:hover', (rule) => {
     rule.walkDecls('color', (declaration) => {
       textLinkHoverColors.push(declaration.value);
     });
   });
+
   expect(textLinkHoverColors).toContain('#f65261');
   expect(
     declarations('.crew-group .person-credit-link:focus-visible').outline

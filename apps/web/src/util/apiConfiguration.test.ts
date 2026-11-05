@@ -32,6 +32,7 @@ describe('API URL configuration', () => {
       vi.stubGlobal('fetch', fetchMock);
       const api: { getMovie: typeof getMovie } = await import('./apiUtils');
       await api.getMovie(42);
+
       expect(fetchMock).toHaveBeenCalledWith(
         expected,
         expect.objectContaining({ signal: expect.any(AbortSignal) })

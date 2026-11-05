@@ -32,10 +32,12 @@ describe('PersonsService', () => {
 
   it('preserves missing persons and provider failures', async () => {
     provider.findPerson.mockResolvedValueOnce(undefined);
+
     await expect(service.findOne(2)).resolves.toBeUndefined();
 
     const error = new BadGatewayException('Person provider request failed');
     provider.findPerson.mockRejectedValueOnce(error);
+
     await expect(service.findOne(2)).rejects.toBe(error);
   });
 });

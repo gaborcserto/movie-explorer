@@ -45,6 +45,7 @@ export default function AnimatedSelect({
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listboxRef = useRef<HTMLDivElement>(null);
+
   const activeOptionId = `${id}-option-${activeIndex}`;
 
   useEffect(() => {
@@ -71,6 +72,7 @@ export default function AnimatedSelect({
         spaceBelow < dropdownHeight && spaceAbove >= dropdownHeight
           ? 'top'
           : 'bottom';
+
       const width = Math.min(bounds.width, window.innerWidth - 16);
       const left = Math.max(
         8,
@@ -173,6 +175,7 @@ export default function AnimatedSelect({
 
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
+
       const direction = event.key === 'ArrowDown' ? 1 : -1;
       const startIndex = open ? activeIndex : selectedIndex;
       const nextIndex =

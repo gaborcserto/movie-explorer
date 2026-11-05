@@ -42,6 +42,7 @@ describe('Person combined filmography API', () => {
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     await app.init();
   });
+
   beforeEach(() => {
     jest.resetAllMocks();
     legacy.findPerson.mockResolvedValue(profile);
@@ -52,6 +53,7 @@ describe('Person combined filmography API', () => {
     });
     combined.findCombined.mockResolvedValue(envelope);
   });
+
   afterAll(async () => {
     if (app) {
       await app.close();
@@ -67,6 +69,7 @@ describe('Person combined filmography API', () => {
       .get('/api/v1/persons/1/filmography')
       .expect(200)
       .expect({ filmography: [] });
+
     expect(combined.findPerson).not.toHaveBeenCalled();
     expect(combined.findCombined).not.toHaveBeenCalled();
   });
@@ -76,6 +79,7 @@ describe('Person combined filmography API', () => {
       .get('/api/v1/persons/1?include=combinedFilmography')
       .expect(200)
       .expect({ ...profile, combinedFilmography: envelope });
+
     expect(combined.findPerson).toHaveBeenCalledWith(1);
     expect(legacy.findPerson).not.toHaveBeenCalled();
   });
@@ -87,6 +91,7 @@ describe('Person combined filmography API', () => {
         .get(`/api/v1/persons/1/combined-filmography?mediaType=${scope}`)
         .expect(200)
         .expect(envelope);
+
       expect(combined.findCombined).toHaveBeenCalledWith(1, scope);
       expect(legacy.findFilmography).not.toHaveBeenCalled();
     },
@@ -96,6 +101,7 @@ describe('Person combined filmography API', () => {
     await request(app.getHttpServer())
       .get('/api/v1/persons/1/combined-filmography')
       .expect(200);
+
     expect(combined.findCombined).toHaveBeenCalledWith(1, 'all');
   });
 
@@ -111,6 +117,7 @@ describe('Person combined filmography API', () => {
       await request(app.getHttpServer())
         .get('/api/v1/persons' + suffix)
         .expect(400);
+
       expect(combined.findPerson).not.toHaveBeenCalled();
       expect(combined.findCombined).not.toHaveBeenCalled();
     },
@@ -131,6 +138,7 @@ describe('Person combined filmography API', () => {
 
   it('documents opt-in, scoped availability, discriminated entries and nullable participation counts', () => {
     const doc = createApiDocument(app);
+
     ok(doc.paths['/api/v1/persons/{id}'].get);
     expect(doc.paths['/api/v1/persons/{id}'].get.parameters).toEqual(
       expect.arrayContaining([expect.objectContaining({ name: 'include' })]),

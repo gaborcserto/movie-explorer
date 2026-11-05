@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+
 import { AppModule } from '../src/app.module';
 import { MOVIE_PROVIDER } from '../src/movies/movie-provider';
 import { SERIES_PROVIDER } from '../src/series/series-provider';
@@ -21,6 +22,7 @@ describe('Unified Search API', () => {
   const provider = { find: jest.fn() };
   const legacy = { findSuggestions: jest.fn(), findPeople: jest.fn() };
   const envelope = { results: [], page: 1, totalPages: 0, totalResults: 0 };
+
   beforeAll(async () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(MOVIE_PROVIDER)
@@ -38,6 +40,7 @@ describe('Unified Search API', () => {
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     await app.init();
   });
+
   beforeEach(() => {
     jest.resetAllMocks();
     provider.find.mockResolvedValue(envelope);
@@ -48,6 +51,7 @@ describe('Unified Search API', () => {
       people: [{ id: 1, name: 'Person' }],
     });
   });
+
   afterAll(async () => {
     if (app) {
       await app.close();
@@ -61,16 +65,20 @@ describe('Unified Search API', () => {
         .get(`/api/v1/search?query=%20Query%20&type=${type}&page=500`)
         .expect(200)
         .expect(envelope);
+
       expect(provider.find).toHaveBeenCalledWith('Query', type, 500, undefined);
       expect(legacy.findSuggestions).not.toHaveBeenCalled();
     },
   );
+
   it('defaults to All and accepts a single character query', async () => {
     await request(app.getHttpServer())
       .get('/api/v1/search?query=A')
       .expect(200);
+
     expect(provider.find).toHaveBeenCalledWith('A', 'all', 1, undefined);
   });
+
   it.each([
     '',
     '?query=',
@@ -92,15 +100,19 @@ describe('Unified Search API', () => {
       await request(app.getHttpServer())
         .get('/api/v1/search' + query)
         .expect(400);
+
       expect(provider.find).not.toHaveBeenCalled();
     },
   );
+
   it('passes Series first-air year', async () => {
     await request(app.getHttpServer())
       .get('/api/v1/search?query=A&type=tv&year=2005')
       .expect(200);
+
     expect(provider.find).toHaveBeenCalledWith('A', 'tv', 1, 2005);
   });
+
   it('preserves legacy autocomplete by default and opts into Series without ID collisions', async () => {
     await request(app.getHttpServer())
       .get('/api/v1/search/suggestions?query=Query')
@@ -110,7 +122,9 @@ describe('Unified Search API', () => {
           body.suggestions.map((item: { mediaType: string }) => item.mediaType),
         ).toEqual(['movie', 'person']);
       });
+
     expect(provider.find).not.toHaveBeenCalled();
+
     provider.find.mockResolvedValue({
       ...envelope,
       results: [{ id: 1, mediaType: 'tv', title: 'Series' }],
@@ -124,8 +138,10 @@ describe('Unified Search API', () => {
         ).toEqual(['movie', 'tv', 'person']);
         expect(body.groups.tv.status).toBe('available');
       });
+
     expect(provider.find).toHaveBeenCalledWith('Query', 'tv', 1);
   });
+
   it('retains successful suggestions when Series fails', async () => {
     provider.find.mockRejectedValue(new BadGatewayException());
     await request(app.getHttpServer())
@@ -136,6 +152,7 @@ describe('Unified Search API', () => {
         expect(body.suggestions).toHaveLength(2);
       });
   });
+
   it.each(['yes', '1', ''])(
     'rejects invalid includeSeries=%s',
     async (value) => {
@@ -144,6 +161,7 @@ describe('Unified Search API', () => {
         .expect(400);
     },
   );
+
   it.each([
     new BadGatewayException(),
     new GatewayTimeoutException(),
@@ -154,9 +172,11 @@ describe('Unified Search API', () => {
       .get('/api/v1/search?query=Query')
       .expect(error.getStatus());
   });
+
   it('documents the discriminated nested schemas and actual query parameters', () => {
     const doc = createApiDocument(app);
     const operation = doc.paths['/api/v1/search'].get;
+
     ok(operation);
     ok(operation.parameters);
     expect(
@@ -164,7 +184,9 @@ describe('Unified Search API', () => {
     ).toEqual(expect.arrayContaining(['query', 'type', 'page', 'year']));
     ok(doc.components);
     ok(doc.components.schemas);
+
     const schema = doc.components.schemas.SearchResponseDto;
+
     expect(schema).toMatchObject({
       properties: {
         results: {

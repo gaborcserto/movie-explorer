@@ -1,6 +1,7 @@
 import { HttpException, Logger } from '@nestjs/common';
 
 import { TmdbDiscoveryProvider } from './tmdb-discovery.provider';
+
 import type { RecommendationCategory } from '@movie-explorer/contracts';
 
 const config = {
@@ -76,6 +77,7 @@ describe('TMDB recommendation pools through DiscoveryProvider', () => {
           ? { releaseDate: '2025-03-01', releaseYear: 2025 }
           : { firstAirDate: '2024-02-01' }),
       });
+
       fetchMock.mock.calls.forEach(([url]: [URL]) => {
         expect(url.pathname).toBe(`/3${path}`);
         expect(url.searchParams.get('language')).toBe('hu-HU');
@@ -194,11 +196,15 @@ describe('TMDB recommendation pools through DiscoveryProvider', () => {
         }),
     );
     const pending = provider.findRecommendationPool('popular-movies');
+
     expect([...complete.keys()]).toEqual([1]);
+
     complete.get(1)?.();
     // Advance transport JSON parsing and the next bounded request batch.
     await new Promise((resolve) => setImmediate(resolve));
+
     expect([...complete.keys()]).toEqual([1, 2, 3, 4, 5]);
+
     [5, 3, 4, 2].forEach((number) => complete.get(number)?.());
 
     expect((await pending).results.map((title) => title.id)).toEqual([
@@ -210,7 +216,9 @@ describe('TMDB recommendation pools through DiscoveryProvider', () => {
     const now = jest.spyOn(Date, 'now').mockReturnValue(1000);
     const first = await provider.findRecommendationPool('popular-movies');
     now.mockReturnValue(1000 + 30 * 60 * 1000 - 1);
+
     expect(await provider.findRecommendationPool('popular-movies')).toBe(first);
+
     now.mockReturnValue(1000 + 30 * 60 * 1000);
     const [next, concurrent] = await Promise.all([
       provider.findRecommendationPool('popular-movies'),
@@ -239,11 +247,13 @@ describe('TMDB recommendation pools through DiscoveryProvider', () => {
         pools[index],
       );
     }
+
     expect(fetchMock).toHaveBeenCalledTimes(20);
     expect(provider['recommendationPools']['cache'].size).toBe(4);
 
     now.mockReturnValue(1000 + 30 * 60 * 1000);
     await provider.findRecommendationPool('popular-movies');
+
     expect(provider['recommendationPools']['cache'].size).toBe(1);
     expect(provider['recommendationPools']['requests'].size).toBe(0);
   });
@@ -287,7 +297,9 @@ describe('TMDB recommendation pools through DiscoveryProvider', () => {
       expect(first).toBe(waiter);
       expect(first.availability).toBe('partial');
       expect(first.results).toHaveLength(5 - failedPages);
+
       await provider.findRecommendationPool('popular-movies');
+
       expect(fetchMock).toHaveBeenCalledTimes(10);
     },
   );
@@ -313,6 +325,7 @@ describe('TMDB recommendation pools through DiscoveryProvider', () => {
       ]);
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
+
       requests.forEach((result) => {
         expect(result.status).toBe('rejected');
 
@@ -327,6 +340,7 @@ describe('TMDB recommendation pools through DiscoveryProvider', () => {
           }
         }
       });
+
       expect(
         (await provider.findRecommendationPool('popular-movies')).availability,
       ).toBe('available');

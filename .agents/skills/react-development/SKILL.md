@@ -12,6 +12,15 @@ frontend boundaries and conventions in the root `AGENTS.md`; use
 runtime performance. Read `code-readability` as well when implementing or
 reviewing TypeScript/React readability changes.
 
+- Before implementation, review component ownership and folder structure. For
+  every new component, identify page-specific versus reusable ownership, check
+  for an existing equivalent, decide whether a dedicated directory clarifies its
+  responsibility, assign hooks/styles/tests to their owner, and decide its
+  public entry point. Apply the canonical organization rules in
+  [code-readability](../code-readability/SKILL.md) and its
+  [file organization reference](../code-readability/references/file-organization.md).
+  Apply these decisions to new and modified code; small feature tasks do not
+  require unrelated migrations.
 - Inspect nearby components, hooks, route state, API utilities, and tests
   before changing structure. Preserve URL-backed search, filters, sorting,
   pagination, and selected-resource behavior.

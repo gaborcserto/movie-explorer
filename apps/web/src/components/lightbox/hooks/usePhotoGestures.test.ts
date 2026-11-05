@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
+
 import usePhotoGestures from './usePhotoGestures';
 
 function pointer(
@@ -38,19 +39,26 @@ describe('usePhotoGestures', () => {
     );
     const loadingPointer = pointer(1, 10, 10);
     act(() => result.current.start(loadingPointer.event));
+
     expect(loadingPointer.setPointerCapture).not.toHaveBeenCalled();
 
     rerender({ status: 'loaded', scale: 2 });
     const secondaryMouseButton = pointer(2, 10, 10, 'mouse', 2);
     act(() => result.current.start(secondaryMouseButton.event));
+
     expect(secondaryMouseButton.setPointerCapture).not.toHaveBeenCalled();
 
     const activePointer = pointer(3, 10, 10, 'mouse', 0);
     act(() => result.current.start(activePointer.event));
+
     expect(activePointer.setPointerCapture).toHaveBeenCalledWith(3);
+
     act(() => result.current.move(pointer(4, 30, 30).event));
+
     expect(update).not.toHaveBeenCalled();
+
     act(() => result.current.move(pointer(3, 30, 35, 'mouse').event));
+
     expect(update).toHaveBeenCalledWith(2, 20, 25);
     expect(navigate).not.toHaveBeenCalled();
   });
@@ -71,10 +79,12 @@ describe('usePhotoGestures', () => {
     act(() => result.current.start(mouseDown.event));
     act(() => result.current.move(pointer(1, 130, 125, 'mouse').event));
     act(() => result.current.end(pointer(1, 130, 125, 'mouse').event));
+
     expect(update).toHaveBeenLastCalledWith(2, 45, 15);
 
     act(() => result.current.start(pointer(2, 100, 100).event));
     act(() => result.current.move(pointer(2, 80, 110).event));
+
     expect(update).toHaveBeenLastCalledWith(2, -5, 0);
     expect(navigate).not.toHaveBeenCalled();
   });
@@ -92,14 +102,17 @@ describe('usePhotoGestures', () => {
 
     act(() => result.current.start(pointer(1, 300, 100).event));
     act(() => result.current.end(pointer(1, 250, 100).event));
+
     expect(navigate).not.toHaveBeenCalled();
 
     act(() => result.current.start(pointer(2, 300, 100).event));
     act(() => result.current.end(pointer(2, 200, 110).event));
+
     expect(navigate).toHaveBeenCalledWith(1);
 
     act(() => result.current.start(pointer(3, 100, 100).event));
     act(() => result.current.end(pointer(3, 200, 100).event));
+
     expect(navigate).toHaveBeenLastCalledWith(-1);
   });
 
@@ -118,9 +131,12 @@ describe('usePhotoGestures', () => {
     act(() => result.current.start(pointer(1, 100, 100).event));
     act(() => result.current.start(pointer(2, 200, 100).event));
     act(() => result.current.move(pointer(2, 350, 100).event));
+
     expect(update).toHaveBeenCalledWith(2.5, 0, 0);
+
     act(() => result.current.end(pointer(2, 350, 100).event));
     act(() => result.current.end(pointer(1, 100, 100).event));
+
     expect(navigate).not.toHaveBeenCalled();
   });
 

@@ -24,6 +24,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   fetchMock.mockReset();
 });
+
 afterEach(() => vi.unstubAllGlobals());
 
 it('uses canonical independent recovery URLs and preserves successful empty collections', async () => {
@@ -31,6 +32,7 @@ it('uses canonical independent recovery URLs and preserves successful empty coll
     .mockResolvedValueOnce(Response.json(credits))
     .mockResolvedValueOnce(Response.json(images))
     .mockResolvedValueOnce(Response.json(videos));
+
   await expect(getSeriesCredits(1)).resolves.toEqual(credits);
   await expect(getSeriesImages(1)).resolves.toEqual(images);
   await expect(getSeriesVideos(1)).resolves.toEqual(videos);
@@ -73,6 +75,7 @@ it.each([
   { ...credits, sections: { cast: { status: 'unknown' }, crew: available } },
 ])('rejects malformed credits at the client boundary %#', async (body) => {
   fetchMock.mockResolvedValueOnce(Response.json(body));
+
   await expect(getSeriesCredits(1)).rejects.toMatchObject({
     category: 'invalid-response',
   });
@@ -84,6 +87,7 @@ it.each([
   { ...images, sections: {} },
 ])('rejects malformed galleries at the client boundary %#', async (body) => {
   fetchMock.mockResolvedValueOnce(Response.json(body));
+
   await expect(getSeriesImages(1)).rejects.toMatchObject({
     category: 'invalid-response',
   });
@@ -91,6 +95,7 @@ it.each([
 
 it('rejects malformed videos without attempting a player or secondary request', async () => {
   fetchMock.mockResolvedValueOnce(Response.json({ ...videos, videos: [null] }));
+
   await expect(getSeriesVideos(1)).rejects.toMatchObject({
     category: 'invalid-response',
   });
@@ -113,6 +118,7 @@ const seriesCredit = {
 it('validates scoped filmography groups and accepts unknown role metadata without fabrication', async () => {
   const body = { entries: [seriesCredit], groups: { tv: available } };
   fetchMock.mockResolvedValueOnce(Response.json(body));
+
   await expect(
     getCombinedFilmography(42, 'tv', new AbortController().signal)
   ).resolves.toEqual(body);

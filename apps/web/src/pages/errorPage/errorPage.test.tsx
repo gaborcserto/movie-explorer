@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
+
 import ErrorPage from './errorPage';
 
 describe('ErrorPage component', () => {
@@ -19,16 +20,22 @@ describe('ErrorPage component', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(screen.getByText('Looks like this scene is missing.')).toBeVisible();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
     await user.tab();
     const action = screen.getByRole('link', { name: 'Back to Search' });
+
     expect(action).toHaveFocus();
+
     rerender(
       <MemoryRouter>
         <ErrorPage />
       </MemoryRouter>
     );
+
     expect(action).toHaveFocus();
+
     unmount();
+
     expect(document.title).toBe('Movie Explorer');
   });
 
@@ -42,8 +49,11 @@ describe('ErrorPage component', () => {
         </Routes>
       </MemoryRouter>
     );
+
     expect(screen.queryByRole('button', { name: 'Go back' })).toBeNull();
+
     await user.click(screen.getByRole('link', { name: 'Back to Search' }));
+
     expect(
       screen.getByRole('heading', { name: 'Search destination' })
     ).toBeVisible();

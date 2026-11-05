@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+
 import DetailsMetadata from './detailsMetadata';
 
 test('keeps the Movie metadata class by default', () => {

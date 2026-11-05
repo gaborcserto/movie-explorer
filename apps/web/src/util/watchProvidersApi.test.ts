@@ -168,6 +168,7 @@ describe.each(['movies', 'series'] as const)(
       });
 
       expect(requestSignal?.aborted).toBe(false);
+
       controller.abort();
 
       await rejected;

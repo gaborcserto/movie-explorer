@@ -30,6 +30,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
 });
+
 afterEach(() => vi.restoreAllMocks());
 
 function setup(path: string, prior?: string) {
@@ -75,18 +76,25 @@ test.each(['movie', 'person'] as const)(
     retry.focus();
     fireEvent.click(retry);
     fireEvent.click(retry);
+
     expect(request).toHaveBeenCalledTimes(2);
     expect(retry).toHaveAttribute('aria-disabled', 'true');
     expect(retry).toHaveFocus();
+
     await act(async () => reject(new ApiRequestError('timeout')));
+
     expect(
       screen.getByRole('heading', { name: 'Request timed out' })
     ).toBeVisible();
     expect(retry).toHaveFocus();
+
     fireEvent.click(retry);
     await screen.findByRole('heading', { name: `Recovered ${kind}` });
+
     expect(request).toHaveBeenCalledTimes(3);
+
     request.mock.calls.forEach(([id]) => expect(id).toBe(42));
+
     expect(screen.getByRole('main')).toHaveFocus();
   }
 );
@@ -100,10 +108,13 @@ test.each(['movie', 'person'] as const)(
     request.mockRejectedValueOnce(new ApiRequestError('cancelled'));
     const router = setup(`/${kind}/42`);
     await screen.findByRole('heading', { name: 'Please try again shortly' });
+
     expect(screen.getByRole('alert')).toHaveTextContent('wait about 2 minutes');
+
     await act(async () => {
       await router.navigate(`/${kind}/43`);
     });
+
     expect(screen.queryByRole('alert')).toBeNull();
     expect(
       screen.queryByRole('heading', { name: 'Something went wrong' })
@@ -141,11 +152,16 @@ test.each(['movies', 'people'] as const)(
     const retry = screen.getByRole('button', { name: 'Try again' });
     retry.focus();
     fireEvent.click(retry);
+
     expect(retry).toHaveFocus();
+
     const status = screen.getByText('Loading...');
+
     expect(status).toHaveClass('visually-hidden');
     expect(status.closest('[role="alert"]')).toBeNull();
+
     await act(async () => resolve());
+
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
     expect(screen.getByRole('main')).toHaveFocus();
   }
@@ -167,8 +183,11 @@ test.each(['movie', 'person'] as const)(
     await screen.findByRole('heading', {
       name: kind === 'movie' ? 'Movie not found' : 'Person not found',
     });
+
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+
     fireEvent.click(screen.getByRole('link', { name: 'Back to Search' }));
+
     expect(router.state.location.pathname).toBe('/search');
   }
 );
@@ -198,6 +217,7 @@ test.each(['movie', 'person'] as const)(
     fireEvent.scroll(window);
     fireEvent.click(screen.getByRole('link', { name: 'Back to Search' }));
     await screen.findByRole('link', { name: 'Example' });
+
     expect(window.scrollTo).toHaveBeenLastCalledWith({
       top: 0,
       behavior: 'instant',
@@ -235,7 +255,9 @@ test.each(['movie', 'person'] as const)(
     const name = kind === 'movie' ? 'Movie' : 'Person';
     await screen.findByRole('link', { name: `${name} 1` });
     fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+
     expect(screen.getAllByRole('article')).toHaveLength(20);
+
     const origin = router.state.location;
     const scrollY = vi.spyOn(window, 'scrollY', 'get').mockReturnValue(640);
     // Depart before a scroll event; the destination then clamps the old position.
@@ -246,20 +268,25 @@ test.each(['movie', 'person'] as const)(
     await screen.findByRole('heading', { name: 'Connection problem' });
     fireEvent.click(screen.getByRole('link', { name: 'Back to Search' }));
     await screen.findByRole('link', { name: `${name} 1` });
+
     expect(router.state.location).toEqual(origin);
     expect(screen.getAllByRole('article')).toHaveLength(20);
     expect(window.scrollTo).toHaveBeenCalledWith({
       top: 640,
       behavior: 'instant',
     });
+
     const listRequest = kind === 'movie' ? getMovies : getPeople;
+
     expect(listRequest).toHaveBeenCalledTimes(1);
+
     await act(async () => {
       await router.navigate(1);
     });
     await screen.findByRole('heading', { name: 'Connection problem' });
     fireEvent.click(screen.getByRole('link', { name: 'Back to Search' }));
     await screen.findByRole('link', { name: `${name} 1` });
+
     expect(router.state.location.key).toBe(origin.key);
     expect(listRequest).toHaveBeenCalledTimes(1);
   }
@@ -291,6 +318,7 @@ test('partial movie keeps primary and media, retries only credits, and preserves
     );
   setup('/movie/42');
   await screen.findByRole('heading', { name: 'Partial movie' });
+
   expect(
     screen.getByRole('button', { name: 'View Partial movie backdrop 1' })
   ).toBeVisible();
@@ -300,20 +328,26 @@ test('partial movie keeps primary and media, retries only credits, and preserves
   expect(
     screen.queryByText('No cast or crew available.')
   ).not.toBeInTheDocument();
+
   const retry = screen.getByRole('button', { name: 'Retry credits' });
   retry.focus();
   fireEvent.click(retry);
   await screen.findByText('Credits unavailable. Please try again.');
+
   expect(retry).toHaveFocus();
+
   fireEvent.click(retry);
   fireEvent.click(retry);
+
   expect(getMovieSection).toHaveBeenCalledTimes(2);
   expect(retry).toHaveAttribute('aria-disabled', 'true');
   expect(screen.getByText('Loading credits...')).toHaveClass('visually-hidden');
   expect(
     screen.getByLabelText('Loading Credits').querySelector('.skeleton')
   ).toBeInTheDocument();
+
   await act(async () => resolve({ cast: ['Recovered actor'] }));
+
   expect(screen.getAllByText('Recovered actor').length).toBeGreaterThan(0);
   expect(screen.getByText('Credits loaded.').parentElement).toHaveFocus();
   expect(window.scrollTo).not.toHaveBeenCalled();
@@ -347,14 +381,17 @@ test('unavailable filmography retains biography and URL controls until local rec
   });
   const router = setup('/person/42?personView=crew&personSort=title');
   await screen.findByRole('heading', { name: 'Partial person' });
+
   expect(screen.getByText('A surviving biography.')).toBeVisible();
   expect(screen.getByText('Filmography unavailable.')).toBeVisible();
   expect(
     screen.queryByText('No movie credits available.')
   ).not.toBeInTheDocument();
   expect(router.state.location.search).toContain('personView=crew');
+
   fireEvent.click(screen.getByRole('button', { name: 'Retry filmography' }));
   await screen.findByText('Recovered film');
+
   expect(screen.getByRole('button', { name: 'Crew' })).toHaveAttribute(
     'aria-pressed',
     'true'
@@ -401,8 +438,11 @@ test('route changes cancel a section retry and ignore a late successful response
   await act(async () => {
     await router.navigate('/movie/43');
   });
+
   expect(signal.aborted).toBe(true);
+
   await act(async () => resolve({ cast: ['Stale actor'] }));
+
   expect(screen.getByRole('heading', { name: 'New movie' })).toBeVisible();
   expect(screen.queryByText('Stale actor')).not.toBeInTheDocument();
 });
@@ -455,13 +495,16 @@ test.each(['photos', 'posters'] as const)(
     await screen.findByText(
       `${section === 'photos' ? 'Backdrops' : 'Posters'} unavailable. Please try again.`
     );
+
     expect(retry).toHaveFocus();
+
     fireEvent.click(retry);
     await screen.findByRole('button', {
       name: `View Partial media ${label.slice(0, -1)} 1`,
     });
     if (section === 'photos') {
       await userEvent.click(screen.getByRole('tab', { name: 'Posters' }));
+
       expect(
         screen.getByRole('button', {
           name: `View Partial media ${surviving} 1`,
@@ -469,6 +512,7 @@ test.each(['photos', 'posters'] as const)(
       ).toBeVisible();
     } else {
       await userEvent.click(screen.getByRole('tab', { name: 'Backdrops' }));
+
       expect(
         screen.getByRole('button', {
           name: `View Partial media ${surviving} 1`,
@@ -478,6 +522,7 @@ test.each(['photos', 'posters'] as const)(
     await userEvent.click(
       screen.getByRole('tab', { name: 'Videos & Trailers' })
     );
+
     expect(screen.getByRole('button', { name: 'Play Trailer' })).toBeVisible();
     expect(getMovie).toHaveBeenCalledTimes(1);
     expect(getMovieSection).toHaveBeenLastCalledWith(
@@ -537,9 +582,12 @@ test.each(['photo', 'poster', 'video'] as const)(
         }[kind],
       })
     );
+
     expect(screen.getByRole('dialog')).toBeVisible();
+
     await act(async () => router.navigate('/movie/43'));
     await screen.findByRole('heading', { name: 'Second movie' });
+
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(
       screen.queryByRole('tablist', { name: 'Media categories' })

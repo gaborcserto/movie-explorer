@@ -15,6 +15,7 @@ describe('Series media', () => {
       posters: [image, image, { file_path: '/hu.jpg', iso_639_1: 'hu' }],
       backdrops: [],
     });
+
     expect(result.posters).toHaveLength(2);
     expect(result.posters[0]).toEqual({
       filePath: '/poster.jpg',
@@ -33,6 +34,7 @@ describe('Series media', () => {
     const result = mapper.images({
       posters: [null, { file_path: '/valid.jpg', width: -1 }],
     });
+
     expect(result.posters).toHaveLength(1);
     expect(result.posters[0].width).toBeUndefined();
     expect(result.sections.posters.status).toBe('unavailable');
@@ -58,6 +60,7 @@ describe('Series media', () => {
         { key: 'x', name: 'Other', site: 'Unknown' },
       ],
     });
+
     expect(result.videos).toHaveLength(3);
     expect(result.videos[0]).toMatchObject({
       id: 'v1',

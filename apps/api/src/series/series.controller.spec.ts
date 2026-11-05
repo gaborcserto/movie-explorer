@@ -23,6 +23,7 @@ describe('SeriesController', () => {
 
   it('returns normalized details', async () => {
     provider.findOne.mockResolvedValue(minimalSeriesDetails);
+
     await expect(controller.getSeries({ id: 1399 })).resolves.toEqual(
       minimalSeriesDetails,
     );
@@ -41,6 +42,7 @@ describe('SeriesController', () => {
       ],
     };
     provider.findWatchProviders.mockResolvedValue(response);
+
     await expect(controller.getWatchProviders({ id: 1399 })).resolves.toEqual(
       response,
     );
@@ -49,6 +51,7 @@ describe('SeriesController', () => {
 
   it('translates missing series to resource-specific 404', async () => {
     provider.findOne.mockResolvedValue(undefined);
+
     await expect(controller.getSeries({ id: 1 })).rejects.toThrow(
       new NotFoundException('TV series not found'),
     );

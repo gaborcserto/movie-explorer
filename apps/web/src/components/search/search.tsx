@@ -45,4 +45,5 @@ function Search() {
     </header>
   );
 }
+
 export default Search;

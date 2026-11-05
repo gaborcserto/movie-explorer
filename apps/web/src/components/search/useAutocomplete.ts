@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import type { SearchSuggestion } from '@movie-explorer/contracts';
+
 import { isCancelledError } from '../../util/errorPresentation';
 import { getSearchSuggestions } from '../../util/apiUtils';
 import { mediaPath } from '../../util/seriesRoutes';
@@ -51,16 +52,20 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
     const { current } = generation;
     const controller = new AbortController();
     controllerRef.current = controller;
+
     const text = query.trim();
 
     if (!enabled || text.length < 2 || text === committedQuery) {
       return () => controller.abort();
     }
+
     const timer = window.setTimeout(async () => {
       if (current !== generation.current) {
         return;
       }
+
       setMessage('Loading suggestions…');
+
       try {
         const response = await getSearchSuggestions(text, controller.signal);
 
@@ -98,6 +103,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
         ) {
           return;
         }
+
         setFailed(true);
         setActive(-1);
         setSuggestions([]);
@@ -121,6 +127,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
         dismiss();
       }
     };
+
     document.addEventListener('mousedown', outside);
 
     return () => document.removeEventListener('mousedown', outside);
@@ -163,6 +170,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
         }
       );
     }
+
     navigate(
       `/search${text ? `/${encodeURIComponent(text)}` : ''}${params.size ? `?${params}` : ''}`
     );

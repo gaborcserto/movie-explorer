@@ -46,7 +46,9 @@ describe('OmdbAdapter', () => {
 
     expect(adapter.enabled).toBe(true);
     expect(loadLocalEnv).toHaveBeenCalledTimes(1);
+
     const url = fetchMock.mock.calls[0][0] as URL;
+
     expect(url.origin).toBe('https://local.example');
     expect(url.pathname).toBe('/api/');
     expect(url.searchParams.get('apikey')).toBe('local-key');
@@ -64,6 +66,7 @@ describe('OmdbAdapter', () => {
     await new OmdbAdapter().findRating(id, 'movie');
 
     const url = fetchMock.mock.calls[0][0] as URL;
+
     expect(url.origin).toBe('https://runtime.example');
     expect(url.searchParams.get('apikey')).toBe('runtime-key');
     expect(loadLocalEnv).toHaveBeenCalledTimes(1);
@@ -80,6 +83,7 @@ describe('OmdbAdapter', () => {
     ).findRating(id, 'movie');
 
     const url = fetchMock.mock.calls[0][0] as URL;
+
     expect(url.origin).toBe('https://override.example');
     expect(url.searchParams.get('apikey')).toBe('override-key');
     expect(loadLocalEnv).not.toHaveBeenCalled();
@@ -95,6 +99,7 @@ describe('OmdbAdapter', () => {
     );
 
     const url = fetchMock.mock.calls[0][0] as URL;
+
     expect(url.origin).toBe('https://override.example');
     expect(url.searchParams.get('apikey')).toBe('local-key');
     expect(loadLocalEnv).toHaveBeenCalledTimes(1);
@@ -113,6 +118,7 @@ describe('OmdbAdapter', () => {
       const adapter = new OmdbAdapter();
 
       expect(adapter.enabled).toBe(false);
+
       await expect(adapter.findRating(id, 'movie')).resolves.toEqual({
         status: 'unavailable',
         reason: 'not-configured',
@@ -123,9 +129,11 @@ describe('OmdbAdapter', () => {
 
   it('keeps an explicit empty key disabled despite an environment key', async () => {
     process.env.OMDB_API_KEY = 'runtime-key';
+
     const adapter = new OmdbAdapter('');
 
     expect(adapter.enabled).toBe(false);
+
     await expect(adapter.findRating(id, 'movie')).resolves.toEqual({
       status: 'unavailable',
       reason: 'not-configured',
@@ -151,6 +159,7 @@ describe('OmdbAdapter', () => {
     'normalizes %s scores and votes using only the IMDb ID',
     async (kind) => {
       fetchMock.mockResolvedValue(Response.json({ ...valid, Type: kind }));
+
       await expect(
         new OmdbAdapter('test-key').findRating(id, kind),
       ).resolves.toEqual({
@@ -158,7 +167,9 @@ describe('OmdbAdapter', () => {
         score: 8.7,
         voteCount: 2100123,
       });
+
       const url = fetchMock.mock.calls[0][0] as URL;
+
       expect(url.origin).toBe('https://www.omdbapi.com');
       expect(url.searchParams.get('i')).toBe(id);
       expect(url.searchParams.get('type')).toBe(kind);
@@ -174,6 +185,7 @@ describe('OmdbAdapter', () => {
     await new OmdbAdapter('test-key').findRating(id, 'movie');
 
     const url = fetchMock.mock.calls[0][0] as URL;
+
     expect(url.origin).toBe('https://omdb-proxy.example');
     expect(url.pathname).toBe('/api/');
     expect(url.searchParams.get('apikey')).toBe('test-key');
@@ -200,6 +212,7 @@ describe('OmdbAdapter', () => {
     'https://omdb.example/#fragment',
   ])('rejects unsafe API URL configuration %s', (apiUrl) => {
     process.env.OMDB_API_URL = apiUrl;
+
     expect(() => new OmdbAdapter('test-key')).toThrow('OMDB_API_URL');
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -208,6 +221,7 @@ describe('OmdbAdapter', () => {
     'rejects invalid rating %p',
     async (imdbRating) => {
       fetchMock.mockResolvedValue(Response.json({ ...valid, imdbRating }));
+
       await expect(
         new OmdbAdapter('key').findRating(id, 'movie'),
       ).resolves.toEqual({ status: 'unavailable', reason: 'invalid-response' });
@@ -218,6 +232,7 @@ describe('OmdbAdapter', () => {
     'keeps the rating with invalid votes %p',
     async (imdbVotes) => {
       fetchMock.mockResolvedValue(Response.json({ ...valid, imdbVotes }));
+
       await expect(
         new OmdbAdapter('key').findRating(id, 'movie'),
       ).resolves.toEqual({ status: 'available', score: 8.7, voteCount: null });
@@ -250,6 +265,7 @@ describe('OmdbAdapter', () => {
     [[], { status: 'unavailable', reason: 'invalid-response' }],
   ] as const)('classifies provider response %p', async (body, outcome) => {
     fetchMock.mockResolvedValue(Response.json(body));
+
     await expect(
       new OmdbAdapter('key').findRating(id, 'movie'),
     ).resolves.toEqual(outcome);
@@ -257,6 +273,7 @@ describe('OmdbAdapter', () => {
 
   it.each([401, 429, 503])('degrades HTTP %s to null', async (status) => {
     fetchMock.mockResolvedValue(new Response('', { status }));
+
     await expect(
       new OmdbAdapter('key').findRating(id, 'movie'),
     ).resolves.toEqual({ status: 'unavailable', reason: 'upstream-error' });
@@ -266,6 +283,7 @@ describe('OmdbAdapter', () => {
     fetchMock
       .mockRejectedValueOnce(new Error('network'))
       .mockResolvedValueOnce(new Response('invalid'));
+
     await expect(
       new OmdbAdapter('key').findRating(id, 'movie'),
     ).resolves.toEqual({ status: 'unavailable', reason: 'upstream-error' });
@@ -298,6 +316,7 @@ describe('OmdbAdapter', () => {
   it('deduplicates concurrent requests, caches for an hour, then refreshes', async () => {
     jest.useFakeTimers();
     fetchMock.mockImplementation(() => Promise.resolve(Response.json(valid)));
+
     const adapter = new OmdbAdapter('key');
 
     await Promise.all([
@@ -305,24 +324,29 @@ describe('OmdbAdapter', () => {
       adapter.findRating(id, 'movie'),
     ]);
     await adapter.findRating(id, 'movie');
+
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     await jest.advanceTimersByTimeAsync(3_600_001);
     await adapter.findRating(id, 'movie');
+
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('retries failures after a minute', async () => {
     jest.useFakeTimers();
     fetchMock.mockRejectedValue(new Error('offline'));
+
     const adapter = new OmdbAdapter('key');
 
     await adapter.findRating(id, 'movie');
     await adapter.findRating(id, 'movie');
+
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
     await jest.advanceTimersByTimeAsync(60_001);
     await adapter.findRating(id, 'movie');
+
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 

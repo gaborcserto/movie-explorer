@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   BrowserRouter,
@@ -143,7 +143,9 @@ describe('<App />', () => {
     expect(
       await screen.findByRole('heading', { name: 'Movies', level: 2 })
     ).toBeInTheDocument();
+
     const homeLink = screen.getByRole('link', { name: 'Home' });
+
     expect(homeLink).toHaveAttribute('href', '/');
     expect(homeLink.querySelector('svg')).toHaveAttribute(
       'aria-hidden',
@@ -187,24 +189,36 @@ describe('<App />', () => {
     renderApp('/');
 
     await user.click(screen.getByRole('link', { name: 'Movies' }));
+
     expect(await screen.findByText('Sample Movie')).toBeInTheDocument();
     expect(
       screen.queryByRole('heading', { name: 'Movies', level: 2 })
     ).not.toBeInTheDocument();
 
     const homeLink = screen.getByRole('link', { name: 'Home' });
+
     expect(homeLink).toHaveAttribute('href', '/');
+
     await user.click(homeLink);
+
     expect(
       await screen.findByRole('heading', { name: 'Movies', level: 2 })
     ).toBeInTheDocument();
     expect(screen.queryByText('Sample Movie')).not.toBeInTheDocument();
+
     await user.click(screen.getByRole('button', { name: 'Back' }));
+
     expect(await screen.findByText('Sample Movie')).toBeInTheDocument();
   });
 
   test('renders the search route and loaded movie results', async () => {
     renderApp('/search');
+
+    const header = document.querySelector<HTMLElement>('.app-header');
+
+    if (!header) {
+      throw new Error('The application header was not rendered.');
+    }
 
     expect(document.querySelector('.app-header')).toHaveClass(
       'app-header--search'
@@ -213,12 +227,16 @@ describe('<App />', () => {
     expect(
       screen.getByPlaceholderText('What do you want to watch?')
     ).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'MovieExplorer' })).toHaveLength(
-      1
-    );
     expect(
-      screen.getAllByRole('link', { name: 'Movie Explorer' })
-    ).toHaveLength(1);
+      within(header).getByRole('link', {
+        name: 'MovieExplorer',
+      })
+    ).toHaveAttribute('href', '/');
+    expect(
+      within(screen.getByRole('contentinfo')).getByRole('link', {
+        name: 'MovieExplorer',
+      })
+    ).toHaveAttribute('href', '/search');
     expect(await screen.findByText('Sample Movie')).toBeInTheDocument();
   });
 
@@ -293,9 +311,13 @@ describe('<App />', () => {
     expect(await screen.findByLabelText('Current route')).toHaveTextContent(
       '/series/42?view=details#episode'
     );
+
     await user.click(screen.getByRole('button', { name: 'Back' }));
+
     expect(screen.getByLabelText('Current route')).toHaveTextContent('/search');
+
     await user.click(screen.getByRole('button', { name: 'Forward' }));
+
     expect(screen.getByLabelText('Current route')).toHaveTextContent(
       '/series/42?view=details#episode'
     );
@@ -333,12 +355,18 @@ describe('<App />', () => {
         ).toBe(`${seriesPath}?view=details#media`);
         expect(window.history.length).toBe(initialHistoryLength);
 
-        await user.click(screen.getByRole('link', { name: 'MovieExplorer' }));
+        await user.click(
+          within(screen.getByRole('banner')).getByRole('link', {
+            name: 'MovieExplorer',
+          })
+        );
+
         expect(window.location.pathname).toBe('/');
         expect(window.history.length).toBe(initialHistoryLength + 1);
 
         await user.click(screen.getByRole('button', { name: 'Back' }));
         await waitFor(() => expect(window.location.pathname).toBe(seriesPath));
+
         expect(
           await screen.findByRole('heading', { name: heading })
         ).toBeVisible();

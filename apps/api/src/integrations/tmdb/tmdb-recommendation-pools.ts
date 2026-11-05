@@ -94,11 +94,13 @@ export class TmdbRecommendationPools {
   ): Promise<RecommendationPool> {
     const first = await this.fetchPage(category, 1);
     const pageCount = Math.min(5, first.totalPages);
+
     const pages = await Promise.allSettled(
       Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) =>
         this.fetchPage(category, index + 2),
       ),
     );
+
     const candidates = new Map<string, RecommendationTitle>();
     const responses = [
       first,

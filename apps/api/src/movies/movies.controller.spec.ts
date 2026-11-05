@@ -90,6 +90,7 @@ describe('MoviesController', () => {
       ],
     };
     service.findWatchProviders.mockResolvedValue(response);
+
     await expect(controller.getWatchProviders({ id: 1 })).resolves.toBe(
       response,
     );

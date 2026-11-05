@@ -1,4 +1,5 @@
 import { BadGatewayException } from '@nestjs/common';
+
 import { TmdbMovieProvider } from './tmdb-movie.provider';
 import type { TmdbMovieDetails, TmdbMovieListItem } from './tmdb.types';
 
@@ -83,10 +84,13 @@ describe('TmdbMovieProvider', () => {
         vote_count: 24800,
       }),
     );
+
     await expect(
       new TmdbMovieProvider(config).findRatings(603),
     ).resolves.toEqual({ status: 'available', score: 8.1, voteCount: 24800 });
+
     const url = new URL(fetchMock.mock.calls[0][0] as string);
+
     expect(url.pathname).toBe('/3/movie/603');
     expect(url.searchParams.has('append_to_response')).toBe(false);
   });
@@ -100,6 +104,7 @@ describe('TmdbMovieProvider', () => {
         vote_count: null,
       }),
     );
+
     await expect(
       new TmdbMovieProvider(config).findRatings(603),
     ).resolves.toEqual({
@@ -108,6 +113,7 @@ describe('TmdbMovieProvider', () => {
     });
 
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 404 }));
+
     await expect(
       new TmdbMovieProvider(config).findRatings(603),
     ).resolves.toBeUndefined();
@@ -138,12 +144,14 @@ describe('TmdbMovieProvider', () => {
     ).toHaveLength(1);
 
     await provider.findAll({});
+
     expect(
       started.filter((path) => path.endsWith('/genre/movie/list')),
     ).toHaveLength(1);
 
     jest.advanceTimersByTime(60 * 60 * 1000);
     await provider.findAll({});
+
     expect(
       started.filter((path) => path.endsWith('/genre/movie/list')),
     ).toHaveLength(2);
@@ -636,7 +644,9 @@ describe('TmdbMovieProvider', () => {
       expect(movie?.backdrops).toEqual([]);
       expect(movie?.videos).toEqual([]);
       expect(fetchMock).toHaveBeenCalledTimes(1);
+
       const url = fetchMock.mock.calls[0][0] as URL;
+
       expect(url.searchParams.get('language')).toBe(language);
       expect(url.searchParams.get('include_image_language')).toBe(
         [...new Set([language.split('-')[0], 'en', 'null'])].join(','),
@@ -702,6 +712,7 @@ describe('TmdbMovieProvider', () => {
 
       const movie = await provider.findOne(969681);
       const key = Object.keys(partial)[0];
+
       expect(movie).toMatchObject({
         id: 969681,
         title: 'Sample movie',

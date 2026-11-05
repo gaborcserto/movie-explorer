@@ -51,6 +51,7 @@ export default {
     const workspaceRoot = path.resolve('apps/web');
     const relativeFiles = files.map((file) => path.relative(workspaceRoot, file));
     const quotedFiles = relativeFiles.map(quote).join(' ');
+
     return [
       `npm exec --workspace @movie-explorer/web -- vp fmt -c .oxfmtrc.json --write ${quotedFiles}`,
       `npm exec --workspace @movie-explorer/web -- stylelint ${quotedFiles}`,

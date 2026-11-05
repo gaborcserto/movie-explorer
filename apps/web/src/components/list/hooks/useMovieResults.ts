@@ -65,11 +65,13 @@ export default function useMovieResults(
 
       loadingInitialRef.current = true;
       requestControllerRef.current?.abort();
+
       const controller = new AbortController();
       requestControllerRef.current = controller;
       const { signal } = controller;
       queryGenerationRef.current += 1;
       const queryGeneration = queryGenerationRef.current;
+
       const isCurrentRequest = () =>
         !signal.aborted && queryGeneration === queryGenerationRef.current;
 
@@ -169,10 +171,14 @@ export default function useMovieResults(
     }
 
     loadingMoreRef.current = true;
+
     const queryGeneration = queryGenerationRef.current;
+
     const isCurrentRequest = () =>
       !signal.aborted && queryGeneration === queryGenerationRef.current;
+
     setLoadingMore(true);
+
     try {
       const response = await getMovies(
         { ...params, page: moviesData.page + 1 },

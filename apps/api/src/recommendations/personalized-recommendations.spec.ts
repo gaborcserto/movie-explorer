@@ -194,12 +194,15 @@ describe('Favorites-based recommendations', () => {
       new GatewayTimeoutException(),
     );
     provider.findRecommendationPool.mockResolvedValue(response([title(10)]));
+
     expect(await service.personalize(preferences)).toMatchObject({
       source: 'popular',
       availability: 'partial',
       results: [title(10)],
     });
+
     provider.findFavoriteSimilar.mockResolvedValue(response([title(11)]));
+
     expect(await service.personalize(preferences)).toMatchObject({
       source: 'mixed',
       availability: 'available',
@@ -212,6 +215,7 @@ describe('Favorites-based recommendations', () => {
     provider.findRecommendationPool.mockRejectedValue(
       new BadGatewayException(),
     );
+
     expect(await service.personalize(preferences)).toMatchObject({
       source: 'favorites',
       availability: 'partial',
@@ -228,12 +232,14 @@ describe('Favorites-based recommendations', () => {
     provider.findRecommendationPool.mockRejectedValue(
       new BadGatewayException(),
     );
+
     await expect(service.personalize(preferences)).rejects.toBe(error);
   });
 
   it('does not hide a failed fallback behind successfully empty Similar sources', async () => {
     const error = new GatewayTimeoutException();
     provider.findRecommendationPool.mockRejectedValue(error);
+
     await expect(service.personalize(preferences)).rejects.toBe(error);
   });
 
@@ -241,6 +247,7 @@ describe('Favorites-based recommendations', () => {
     provider.findRecommendationPool.mockResolvedValue(
       response([title(10)], 'partial'),
     );
+
     expect(await service.personalize(preferences)).toMatchObject({
       availability: 'partial',
     });
@@ -252,8 +259,10 @@ describe('Favorites-based recommendations', () => {
       () => new Promise((resolve) => releases.push(resolve)),
     );
     const pending = service.personalize(preferences);
+
     expect(releases).toHaveLength(3);
     expect(provider.findRecommendationPool).not.toHaveBeenCalled();
+
     releases[2](response([title(12)]));
     releases[0](response([title(10)]));
     releases[1](response([title(11)]));

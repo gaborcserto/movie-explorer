@@ -65,9 +65,11 @@ test('keeps the featured carousel bounded with contained images and clamped text
   expect(
     declarationsForSelector(stylesheet, '.discover-featured__content').animation
   ).toBe('discover-content-in 400ms cubic-bezier(0.22, 1, 0.36, 1) both');
+
   const contentEntrance = stylesheet.nodes?.find(
     (node) => node.type === 'atrule' && node.params === 'discover-content-in'
   );
+
   expect(contentEntrance?.toString()).toContain('translateY(10px)');
   expect(contentEntrance?.toString()).toContain('translateY(0)');
   expect(

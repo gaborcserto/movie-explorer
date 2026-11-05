@@ -12,6 +12,7 @@ describe('RatingsService optional data', () => {
   const ids = new TmdbExternalIds();
   const omdb = new OmdbAdapter('test-key');
   const service = new RatingsService(ids, omdb);
+
   afterEach(() => jest.restoreAllMocks());
 
   it.each(['movie', 'series'] as const)(
@@ -21,6 +22,7 @@ describe('RatingsService optional data', () => {
       const find = jest
         .spyOn(omdb, 'findRating')
         .mockResolvedValue({ status: 'available', score: 8.7, voteCount: 100 });
+
       await expect(service.findImdb(kind, 603)).resolves.toEqual({
         imdb: { score: 8.7, voteCount: 100 },
       });
@@ -31,6 +33,7 @@ describe('RatingsService optional data', () => {
 
   it('skips ID resolution when OMDb is disabled', async () => {
     const resolve = jest.spyOn(ids, 'resolve');
+
     await expect(
       new RatingsService(ids, new OmdbAdapter('')).findImdb('movie', 603),
     ).resolves.toEqual({ imdb: null });
@@ -40,6 +43,7 @@ describe('RatingsService optional data', () => {
   it('skips OMDb for a missing ID', async () => {
     jest.spyOn(ids, 'resolve').mockResolvedValue(null);
     const find = jest.spyOn(omdb, 'findRating');
+
     await expect(service.findImdb('series', 1)).resolves.toEqual({
       imdb: null,
     });
@@ -52,6 +56,7 @@ describe('RatingsService optional data', () => {
       .mockRejectedValueOnce(new Error('TMDB'))
       .mockResolvedValue('tt0133093');
     jest.spyOn(omdb, 'findRating').mockRejectedValue(new Error('OMDb'));
+
     await expect(service.findImdb('movie', 1)).resolves.toEqual({ imdb: null });
     await expect(service.findImdb('movie', 1)).resolves.toEqual({ imdb: null });
   });
@@ -61,6 +66,7 @@ describe('RatingsService optional data', () => {
     jest
       .spyOn(omdb, 'findRating')
       .mockResolvedValue({ status: 'unavailable', reason: 'upstream-error' });
+
     await expect(
       service.findRatings('movie', 603, {
         status: 'available',
@@ -75,6 +81,7 @@ describe('RatingsService optional data', () => {
 
   it('reports an unconfigured OMDb source without attempting ID resolution', async () => {
     const resolve = jest.spyOn(ids, 'resolve');
+
     await expect(
       new RatingsService(ids, new OmdbAdapter('')).findRatings('series', 1, {
         status: 'missing',

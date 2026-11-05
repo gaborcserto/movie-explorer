@@ -1,4 +1,5 @@
 import { BadGatewayException } from '@nestjs/common';
+
 import { TmdbMovieProvider } from './tmdb-movie.provider';
 
 const config = {
@@ -13,10 +14,12 @@ describe('TmdbMovieProvider person integration', () => {
   const fetchMock = jest.fn();
   const originalFetch = global.fetch;
   const provider = new TmdbMovieProvider(config);
+
   beforeEach(() => {
     fetchMock.mockReset();
     global.fetch = fetchMock;
   });
+
   afterAll(() => {
     global.fetch = originalFetch;
   });
@@ -35,6 +38,7 @@ describe('TmdbMovieProvider person integration', () => {
         },
       }),
     );
+
     await expect(provider.findPerson(1)).resolves.toMatchObject({
       id: 1,
       name: 'Person',
@@ -71,6 +75,7 @@ describe('TmdbMovieProvider person integration', () => {
 
   it('accepts empty filmography and unavailable optional metadata', async () => {
     fetchMock.mockResolvedValue(Response.json(person));
+
     await expect(provider.findPerson(1)).resolves.toEqual({
       id: 1,
       name: 'Person',
@@ -90,6 +95,7 @@ describe('TmdbMovieProvider person integration', () => {
       fetchMock.mockResolvedValue(
         Response.json({ ...person, profile_path: '/primary.jpg', images }),
       );
+
       await expect(provider.findPerson(1)).resolves.toMatchObject({
         name: 'Person',
         filmographyAvailability: { status: 'available' },
@@ -111,6 +117,7 @@ describe('TmdbMovieProvider person integration', () => {
     { ...person, name: ' ' },
   ])('rejects invalid or incomplete responses: %j', async (payload) => {
     fetchMock.mockResolvedValue(Response.json(payload));
+
     await expect(provider.findPerson(1)).rejects.toBeInstanceOf(
       BadGatewayException,
     );
@@ -126,6 +133,7 @@ describe('TmdbMovieProvider person integration', () => {
     'retains profile when optional credits are malformed: %j',
     async (payload) => {
       fetchMock.mockResolvedValue(Response.json(payload));
+
       await expect(provider.findPerson(1)).resolves.toMatchObject({
         id: 1,
         name: 'Person',
@@ -138,20 +146,23 @@ describe('TmdbMovieProvider person integration', () => {
 
   it('returns undefined for upstream 404', async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 404 }));
+
     await expect(provider.findPerson(1)).resolves.toBeUndefined();
   });
 
   it.each(['network', 'http', 'json'])(
     'sanitizes %s failures',
     async (failure) => {
-      if (failure === 'network')
+      if (failure === 'network') {
         fetchMock.mockRejectedValue(new Error('secret upstream details'));
-      else
+      } else {
         fetchMock.mockResolvedValue(
           new Response('secret upstream details', {
             status: failure === 'http' ? 500 : 200,
           }),
         );
+      }
+
       await expect(provider.findPerson(1)).rejects.toMatchObject({
         status: 502,
       });

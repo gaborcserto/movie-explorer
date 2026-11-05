@@ -75,6 +75,7 @@ describe('<AnimatedSelect />', () => {
     await user.click(trigger);
 
     const listbox = screen.getByRole('listbox', { name: 'Sort filmography' });
+
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
     expect(listbox).toBeVisible();
     expect(listbox).toHaveAttribute('data-placement', 'bottom');
@@ -97,29 +98,38 @@ describe('<AnimatedSelect />', () => {
     const trigger = screen.getByRole('combobox', { name: 'Sort filmography' });
     trigger.focus();
     await user.keyboard('{ArrowDown}');
+
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
     expect(trigger).toHaveAttribute(
       'aria-activedescendant',
       screen.getByRole('option', { name: 'Oldest first' }).id
     );
+
     await user.keyboard('{Enter}');
+
     expect(trigger).toHaveAttribute('data-value', 'oldest');
     expect(trigger).toHaveFocus();
 
     await user.keyboard('{End}');
+
     expect(trigger).toHaveAttribute(
       'aria-activedescendant',
       screen.getByRole('option', { name: 'Title A–Z' }).id
     );
+
     await user.keyboard(' ');
+
     expect(trigger).toHaveAttribute('data-value', 'title');
 
     await user.keyboard('{Home}');
+
     expect(trigger).toHaveAttribute(
       'aria-activedescendant',
       screen.getByRole('option', { name: 'Newest first' }).id
     );
+
     await user.keyboard('{Escape}');
+
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
     expect(trigger).toHaveFocus();
   });
@@ -149,15 +159,20 @@ describe('<AnimatedSelect />', () => {
 
     try {
       await user.click(trigger);
+
       expect(screen.getByRole('listbox')).toHaveAttribute(
         'data-placement',
         'top'
       );
+
       const listbox = screen.getByRole('listbox');
+
       expect(listbox.style.bottom).toBe('108px');
       expect(listbox.style.left).toBe('8px');
       expect(listbox.style.width).toBe('200px');
+
       await user.click(screen.getByRole('button', { name: 'Outside' }));
+
       expect(trigger).toHaveAttribute('aria-expanded', 'false');
     } finally {
       restoreViewport();
@@ -175,6 +190,7 @@ describe('<AnimatedSelect />', () => {
     const trigger = screen.getByRole('combobox', { name: 'Sort filmography' });
     trigger.focus();
     fireEvent.keyDown(trigger, { key: 'Tab' });
+
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 
@@ -242,6 +258,7 @@ describe('<AnimatedSelect />', () => {
       await user.click(trigger);
 
       const listbox = screen.getByRole('listbox');
+
       expect(listbox).toHaveAttribute('data-placement', 'bottom');
       expect(listbox.style.left).toBe('20px');
       expect(listbox.style.width).toBe('280px');

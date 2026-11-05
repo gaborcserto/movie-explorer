@@ -57,6 +57,7 @@ describe('Series details API (e2e)', () => {
       )
       .expect(200)
       .expect(response);
+
     expect(provider.findPopular).toHaveBeenCalledWith({
       page: 2,
       year: 2005,
@@ -64,7 +65,9 @@ describe('Series details API (e2e)', () => {
       sort: 'title',
       order: 'asc',
     });
+
     const document = createApiDocument(app);
+
     ok(document.paths['/api/v1/series'].get);
     expect(document.paths['/api/v1/series'].get.responses['200']).toMatchObject(
       {
@@ -114,6 +117,7 @@ describe('Series details API (e2e)', () => {
     await request(app.getHttpServer())
       .get('/api/v1/series?' + query)
       .expect(400);
+
     expect(provider.findPopular).not.toHaveBeenCalled();
   });
 
@@ -129,6 +133,7 @@ describe('Series details API (e2e)', () => {
     await request(app.getHttpServer())
       .get('/api/v1/tv' + suffix)
       .expect(404);
+
     expect(provider.findOne).not.toHaveBeenCalled();
     expect(provider.findSeason).not.toHaveBeenCalled();
     expect(provider.findEpisode).not.toHaveBeenCalled();
@@ -151,7 +156,9 @@ describe('Series details API (e2e)', () => {
       .get('/api/v1/series/1399/credits')
       .expect(200)
       .expect(credits);
+
     expect(provider.findCredits).toHaveBeenCalledWith(1399);
+
     await request(app.getHttpServer())
       .get('/api/v1/series/0/credits')
       .expect(400);
@@ -160,6 +167,7 @@ describe('Series details API (e2e)', () => {
       .get('/api/v1/series/1399/credits')
       .expect(404);
     const document = createApiDocument(app);
+
     ok(document.paths['/api/v1/series/{id}/credits'].get);
     expect(
       document.paths['/api/v1/series/{id}/credits'].get.responses['200'],
@@ -202,6 +210,7 @@ describe('Series details API (e2e)', () => {
         .expect(404);
       const operation =
         createApiDocument(app).paths[`/api/v1/series/{id}/${section}`].get;
+
       ok(operation);
       expect(operation.responses['200']).toBeDefined();
     },
@@ -249,6 +258,7 @@ describe('Series details API (e2e)', () => {
       .get('/api/v1/series/1399/watch-providers')
       .expect(200)
       .expect(providers);
+
     expect(provider.findWatchProviders).toHaveBeenCalledWith(1399);
   });
 
@@ -303,6 +313,7 @@ describe('Series details API (e2e)', () => {
         .get(`${base}/1/seasons/0/episodes/3/credits`)
         .expect(200)
         .expect(credits);
+
       expect(provider.findSeason).toHaveBeenCalledWith(1, 0);
       expect(provider.findEpisode).toHaveBeenCalledWith(1, 0, 3);
       expect(provider.findEpisodeCredits).toHaveBeenCalledWith(1, 0, 3);
@@ -320,6 +331,7 @@ describe('Series details API (e2e)', () => {
           `/api/v1/series/1/seasons/0/episodes/${encodeURIComponent(coordinate)}`,
         )
         .expect(400);
+
       expect(provider.findSeason).not.toHaveBeenCalled();
       expect(provider.findEpisode).not.toHaveBeenCalled();
     },
@@ -332,6 +344,7 @@ describe('Series details API (e2e)', () => {
     await request(app.getHttpServer())
       .get('/api/v1/series/0/seasons/0')
       .expect(400);
+
     expect(provider.findSeason).not.toHaveBeenCalled();
     expect(provider.findEpisode).not.toHaveBeenCalled();
   });
@@ -379,6 +392,7 @@ describe('Series details API (e2e)', () => {
       document.paths[
         '/api/v1/series/{id}/seasons/{seasonNumber}/episodes/{episodeNumber}'
       ].get;
+
     ok(season);
     expect(season.parameters).toContainEqual(
       expect.objectContaining({
@@ -441,6 +455,7 @@ describe('Series details API (e2e)', () => {
       .get('/api/v1/series/1399')
       .expect(200)
       .expect(minimalSeriesDetails);
+
     expect(provider.findOne).toHaveBeenCalledWith(1399);
     expect(movieProvider.findOne).not.toHaveBeenCalled();
     expect(movieProvider.findPerson).not.toHaveBeenCalled();
@@ -465,6 +480,7 @@ describe('Series details API (e2e)', () => {
         expect(response.body.statusCode).toBe(400);
         expect(Array.isArray(response.body.message)).toBe(true);
       });
+
     expect(provider.findOne).not.toHaveBeenCalled();
   });
 
@@ -472,6 +488,7 @@ describe('Series details API (e2e)', () => {
     await request(app.getHttpServer())
       .get('/api/v1/series/9007199254740991')
       .expect(200);
+
     expect(provider.findOne).toHaveBeenCalledWith(Number.MAX_SAFE_INTEGER);
   });
 
@@ -544,6 +561,7 @@ describe('Series details API (e2e)', () => {
       await request(app.getHttpServer())
         .get(`/api/v1/series/1/${kind}`)
         .expect(200, result);
+
       expect(provider.findRelated).toHaveBeenCalledWith(1, kind);
       expect(provider.findOne).not.toHaveBeenCalled();
     },
@@ -555,6 +573,7 @@ describe('Series details API (e2e)', () => {
       new DocumentBuilder().setTitle('Movie Explorer').setVersion('1').build(),
     );
     const operation = document.paths['/api/v1/series/{id}'].get;
+
     ok(operation);
     expect(Object.keys(operation.responses).sort()).toEqual([
       '200',
@@ -576,7 +595,9 @@ describe('Series details API (e2e)', () => {
       }),
     );
     ok(document.components);
+
     const schemas = document.components.schemas;
+
     ok(schemas);
     expect(schemas.SeriesDetailsDto).toMatchObject({
       required: Object.keys(minimalSeriesDetails),

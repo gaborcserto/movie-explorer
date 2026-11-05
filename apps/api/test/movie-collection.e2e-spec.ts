@@ -40,6 +40,7 @@ describe('Movie collection HTTP contract', () => {
   });
 
   beforeEach(() => jest.resetAllMocks());
+
   afterAll(async () => {
     await app.close();
   });
@@ -58,6 +59,7 @@ describe('Movie collection HTTP contract', () => {
       await request(app.getHttpServer())
         .get('/api/v1/movies/1/collection')
         .expect(200, result);
+
       expect(provider.findCollection).toHaveBeenCalledWith(1);
       expect(provider.findRelated).not.toHaveBeenCalled();
     },
@@ -69,6 +71,7 @@ describe('Movie collection HTTP contract', () => {
       await request(app.getHttpServer())
         .get(`/api/v1/movies/${id}/collection`)
         .expect(400);
+
       expect(provider.findCollection).not.toHaveBeenCalled();
     },
   );
@@ -92,12 +95,15 @@ describe('Movie collection HTTP contract', () => {
   it('documents movie-only collection cards, nullable membership and error responses in Swagger', () => {
     const document = createApiDocument(app);
     const operation = document.paths['/api/v1/movies/{id}/collection'].get;
+
     ok(operation);
     expect(operation.tags).toEqual(['Movies']);
     expect(Object.keys(operation.responses)).toEqual(
       expect.arrayContaining(['200', '400', '404', '429', '502', '504']),
     );
+
     const schema = document.components?.schemas?.MovieCollectionResponseDto;
+
     ok(schema && 'properties' in schema);
     expect(schema.properties?.collection).toMatchObject({ nullable: true });
     expect(schema.properties?.results).toMatchObject({

@@ -58,6 +58,7 @@ function VideoPreviewContent({ videos, title }: Omit<Props, 'resetKey'>) {
   const [selectedVideo, setSelectedVideo] = useState<number | null>(null);
   const lastVideoRef = useRef<HTMLElement>(null);
   const focusLastVideo = useRef(false);
+
   const rememberLastVideo = (element: HTMLElement | null) => {
     lastVideoRef.current = element;
   };

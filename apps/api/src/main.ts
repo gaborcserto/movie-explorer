@@ -9,8 +9,10 @@ import { getServerConfig } from './configuration/server.config';
 
 async function bootstrap() {
   const config = getServerConfig();
+
   const app = await NestFactory.create(AppModule);
   configureHttp(app, config);
+
   const { port, host } = config;
 
   if (host !== undefined) {
@@ -42,4 +44,5 @@ async function bootstrap() {
     logger.log(`Swagger UI: ${serverUrl.origin}/api-docs`);
   }
 }
+
 void bootstrap();

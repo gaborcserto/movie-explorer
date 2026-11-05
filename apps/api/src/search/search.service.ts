@@ -9,6 +9,7 @@ import type {
   SectionAvailability,
   SearchType,
 } from '@movie-explorer/contracts';
+
 import { MOVIE_PROVIDER, MovieProvider } from '../movies/movie-provider';
 import { SEARCH_PROVIDER, SearchProvider } from './search-provider';
 

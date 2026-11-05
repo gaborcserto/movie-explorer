@@ -27,6 +27,7 @@ export default function combinedFilmography(
   ) {
     return false;
   }
+
   const { groups } = value;
   const requested = mediaType === 'all' ? ['movie', 'tv'] : [mediaType];
 
@@ -36,6 +37,7 @@ export default function combinedFilmography(
   ) {
     return false;
   }
+
   const seen = new Set<string>();
 
   return value.entries.every((entry: unknown) => {
@@ -46,6 +48,7 @@ export default function combinedFilmography(
     ) {
       return false;
     }
+
     const key = `${entry.mediaType}:${entry.id}`;
 
     if (seen.has(key)) {
@@ -62,6 +65,7 @@ export default function combinedFilmography(
     ) {
       return false;
     }
+
     const date = entry.firstAirDate;
 
     if (

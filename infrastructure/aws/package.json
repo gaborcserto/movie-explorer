@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "npm run typecheck && vp fmt -c ../../apps/api/.oxfmtrc.json --check *.ts scripts/*.cjs test/*.cjs edge/*.js",
+    "lint": "npm run lint:readability --prefix ../.. && npm run typecheck && vp fmt -c ../../apps/api/.oxfmtrc.json --check *.ts scripts/*.cjs test/*.cjs edge/*.js",
     "test": "npm run build && node --test test/*.test.cjs",
     "test:coverage": "npm run build && node --test --experimental-test-coverage test/*.test.cjs",
     "synth": "npm run build && cdk synth MovieExplorer --no-lookups",

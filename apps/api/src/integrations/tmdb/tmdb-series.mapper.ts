@@ -201,6 +201,7 @@ export class TmdbSeriesMapper {
       if (!name) {
         return;
       }
+
       const id = seriesPositiveId(row.id);
       const key = id === undefined ? `row-${index}` : `id-${id}`;
       const person = people.get(key) ?? {
@@ -230,6 +231,7 @@ export class TmdbSeriesMapper {
       if (!name) {
         return;
       }
+
       const id = seriesPositiveId(row.id);
       const department = seriesText(row.department);
       const key = `${id === undefined ? `row-${index}` : `id-${id}`}:${department}`;
@@ -322,6 +324,7 @@ export class TmdbSeriesMapper {
         },
       ];
     });
+
     const unique = new Map<number, SeasonSummary>();
 
     for (const season of seasons) {

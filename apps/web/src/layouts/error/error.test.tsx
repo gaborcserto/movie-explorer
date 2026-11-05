@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react';
+
 import Error from './error';
 
 describe('Error Component', () => {
@@ -20,6 +21,7 @@ describe('Error Component', () => {
     );
 
     const sectionElement = container.firstChild as HTMLElement;
+
     expect(sectionElement).toHaveClass('error-class');
   });
 });

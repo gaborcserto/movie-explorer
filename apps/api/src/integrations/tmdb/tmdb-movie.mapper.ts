@@ -93,8 +93,10 @@ export class TmdbMovieMapper {
   public toMovieDetails(movie: TmdbMovieDetails): MovieDetails {
     const { cast, castMembers, director, directors, writers, producers } =
       this.toMovieCredits(movie.credits);
+
     const backdrops = this.toImages(movie.images?.backdrops ?? []);
     const posters = this.toImages(movie.images?.posters ?? []);
+
     const videos = this.toMovieVideos(movie.videos);
 
     const details: MovieDetails = {
@@ -189,6 +191,7 @@ export class TmdbMovieMapper {
     const crew = credits?.crew ?? [];
     const writers = this.toCrewMembers(crew, WRITING_JOBS);
     const producers = this.toCrewMembers(crew, PRODUCING_JOBS);
+
     const directorIds = new Set<number>();
     const directors: MovieDirector[] = (credits?.crew ?? [])
       .filter((credit) => {
@@ -215,6 +218,7 @@ export class TmdbMovieMapper {
     const director = directors?.length
       ? [...new Set(directors.map((credit) => credit.name))].join(', ')
       : undefined;
+
     const castIds = new Set<number>();
     const orderedCast = [...(credits?.cast ?? [])]
       .sort((first, second) => first.order - second.order)
@@ -236,6 +240,7 @@ export class TmdbMovieMapper {
       characters.add(character);
       charactersByPerson.set(credit.id, characters);
     });
+
     const castMembers = orderedCast
       .filter((credit) => {
         if (

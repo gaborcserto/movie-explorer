@@ -58,6 +58,7 @@ export class TmdbPersonMapper {
     credits: TmdbPersonMovieCredits,
   ): PersonDetails['filmography'] {
     const movies = new Map<number, PersonFilmographyEntry>();
+
     const addCredit = (value: unknown, acting: boolean) => {
       const title = isRecord(value) ? text(value.title) : undefined;
 
@@ -113,6 +114,7 @@ export class TmdbPersonMapper {
         }
       }
     };
+
     credits.cast.forEach((credit) => addCredit(credit, true));
     credits.crew.forEach((credit) => addCredit(credit, false));
 

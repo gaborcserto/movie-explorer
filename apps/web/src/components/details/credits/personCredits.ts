@@ -76,6 +76,7 @@ export function getMoviePersonCredits(movie: MovieDetails): MoviePersonCredits {
   const directors = groupPeople(movie.directors ?? [], 'director');
   const writers = groupPeople(movie.writers ?? [], 'writer');
   const producers = groupPeople(movie.producers ?? [], 'producer');
+
   const structuredCast = (movie.castMembers ?? []).filter((person) =>
     person.name.trim()
   );

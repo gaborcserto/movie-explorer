@@ -7,8 +7,7 @@ import type {
 } from '@movie-explorer/contracts';
 
 import DetailRecommendations from '../../components/detailRecommendations';
-import CastPreview from '../../components/details/credits';
-import useCrewPreview from '../../components/details/credits/useCrewPreview';
+import CastPreview, { useCrewPreview } from '../../components/details/credits';
 import DetailsTabs from '../../components/details/detailsTabs';
 import { MediaSection } from '../../components/details/media';
 import { SectionRecovery } from '../../components/details/recovery';
@@ -81,7 +80,9 @@ export default function SeriesSections({
 
   const selectCreditTab = (tab: 'cast' | 'crew') =>
     setCreditSelection({ resetKey: series.id, tab });
+
   const [credits, setCredits] = useState(series.credits);
+
   const { images, videos } = series;
   const creditState =
     credits &&
@@ -103,6 +104,7 @@ export default function SeriesSections({
       imageState = { status: 'available' };
     }
   }
+
   const crewGroups = new Map<string, NonNullable<typeof credits>['crew']>();
   const crew = [...(credits?.crew ?? [])].sort(
     (a, b) =>

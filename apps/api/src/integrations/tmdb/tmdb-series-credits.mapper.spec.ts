@@ -67,10 +67,12 @@ describe('Series aggregate credits', () => {
       'available',
     );
     expect(mapper.map(undefined).sections.cast.status).toBe('unavailable');
+
     const partial = mapper.map({
       cast: [null, { id: 1, name: 'Person', roles: [{ character: '' }] }],
       crew: [],
     });
+
     expect(partial.cast[0].characters[0]).toEqual({
       character: null,
       creditId: null,
@@ -88,6 +90,7 @@ describe('Series aggregate credits', () => {
       ],
       crew: 'invalid',
     });
+
     expect(credits.cast[0].name).toBe('Original');
     expect(credits.cast[0].totalEpisodeCount).toBe(3);
     expect(credits.sections.cast.status).toBe('unavailable');

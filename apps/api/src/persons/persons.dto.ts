@@ -1,10 +1,12 @@
 import { SectionAvailabilityDto } from '../validation/section-availability.dto';
+
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type {
   PersonDetails,
   PersonCrewCredit,
   PersonFilmographyEntry,
 } from '@movie-explorer/contracts';
+
 import { MovieSummary } from '../movies/movies.dto';
 import { DetailIdParams } from '../validation/detail-id.dto';
 

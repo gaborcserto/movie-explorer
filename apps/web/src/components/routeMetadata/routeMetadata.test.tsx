@@ -92,6 +92,7 @@ describe('route metadata', () => {
 
   it('adds homepage canonical and WebSite data without rendering content', () => {
     renderRoute('/');
+
     expect(document.title).toBe('Movie Explorer');
     expect(content('meta[name="robots"]')).toBe('index, follow');
     expect(document.querySelector('link[rel="canonical"]')).toHaveAttribute(
@@ -113,6 +114,7 @@ describe('route metadata', () => {
     '/series/8/seasons/1',
   ])('excludes %s from indexing', (path) => {
     renderRoute(path);
+
     expect(content('meta[name="robots"]')).toBe('noindex, follow');
     expect(document.querySelector('link[rel="canonical"]')).toBeNull();
     expect(document.getElementById('route-structured-data')).toBeNull();
@@ -120,6 +122,7 @@ describe('route metadata', () => {
 
   it('uses loaded movie data and removes stale metadata on navigation', () => {
     renderRoute('/movie/42');
+
     expect(document.title).toBe('A movie <title> | Movie Explorer');
     expect(content('meta[property="og:type"]')).toBe('video.movie');
     expect(content('meta[property="og:image"]')).toBe(movie.posterUrl);
@@ -130,6 +133,7 @@ describe('route metadata', () => {
     ).toMatchObject({ '@type': 'Movie', name: movie.title });
 
     fireEvent.click(screen.getByText('Library'));
+
     expect(document.title).toBe('Library | Movie Explorer');
     expect(content('meta[name="robots"]')).toBe('noindex, follow');
     expect(document.querySelector('link[rel="canonical"]')).toBeNull();
@@ -137,6 +141,7 @@ describe('route metadata', () => {
     expect(content('meta[property="og:image"]')).toBeUndefined();
 
     fireEvent.click(screen.getByText('Home'));
+
     expect(content('meta[name="robots"]')).toBe('index, follow');
     expect(document.querySelectorAll('meta[name="description"]')).toHaveLength(
       1
@@ -154,6 +159,7 @@ describe('route metadata', () => {
       const schema = JSON.parse(
         document.getElementById('route-structured-data')!.textContent!
       );
+
       expect(schema['@type']).toBe(type);
       expect(schema).not.toHaveProperty('image');
       expect(schema).not.toHaveProperty('datePublished');
@@ -164,6 +170,7 @@ describe('route metadata', () => {
 
   it('canonicalizes entity query variants while excluding them from indexing', () => {
     renderRoute('/movie/42?page=2');
+
     expect(content('meta[name="robots"]')).toBe('noindex, follow');
     expect(document.querySelector('link[rel="canonical"]')).toHaveAttribute(
       'href',
@@ -174,6 +181,7 @@ describe('route metadata', () => {
   it('keeps unconfigured preview builds noindex without invented production URLs', () => {
     vi.stubEnv('VITE_SITE_URL', '');
     renderRoute('/movie/42');
+
     expect(content('meta[name="robots"]')).toBe('noindex, follow');
     expect(document.querySelector('link[rel="canonical"]')).toBeNull();
     expect(document.getElementById('route-structured-data')).toBeNull();
@@ -186,6 +194,7 @@ describe('route metadata', () => {
       </MemoryRouter>
     );
     view.rerender(<MemoryRouter>{null}</MemoryRouter>);
+
     expect(content('meta[name="robots"]')).toBe('noindex, follow');
     expect(document.getElementById('route-structured-data')).toBeNull();
     expect(document.querySelector('link[rel="canonical"]')).toBeNull();

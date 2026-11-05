@@ -148,6 +148,7 @@ export class TmdbDiscoveryProvider {
           with_watch_monetization_types: 'flatrate',
           sort_by: 'popularity.desc',
         };
+
         const [movies, series] = await Promise.all([
           this.fetchPage(
             '/discover/movie',
@@ -158,6 +159,7 @@ export class TmdbDiscoveryProvider {
           ),
           this.fetchPage('/discover/tv', 'tv', query, 'streaming-series', page),
         ]);
+
         const results = new Map<string, SearchResult>();
 
         [...movies.results, ...series.results].forEach((result) => {
@@ -225,6 +227,7 @@ export class TmdbDiscoveryProvider {
         validateBody: validateProviderCatalog,
       }),
     ]);
+
     const providersById = new Map<number, StreamingProviderInfo>();
 
     [
@@ -242,6 +245,7 @@ export class TmdbDiscoveryProvider {
     page: number,
   ): Promise<SearchResponse> {
     const today = new Date().toISOString().slice(0, 10);
+
     const daysAgo = (days: number) => {
       const date = new Date(`${today}T00:00:00Z`);
       date.setUTCDate(date.getUTCDate() - days);
@@ -275,6 +279,7 @@ export class TmdbDiscoveryProvider {
           page,
         ),
       ]);
+
       const results = [...movies.results, ...series.results].sort(
         (left, right) => {
           const leftDate = discoveryDate(left);

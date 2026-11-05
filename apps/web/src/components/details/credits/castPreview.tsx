@@ -32,6 +32,7 @@ export default function CastPreview({
   const [baseVisibleCount, setBaseVisibleCount] = useState(initialVisibleCount);
   const [additionalCount, setAdditionalCount] = useState(0);
   const countRef = useRef<HTMLSpanElement>(null);
+
   const pluralMemberLabel = memberLabel === 'cast' ? 'cast' : `${memberLabel}s`;
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function CastPreview({
     }
 
     const scrollContainer = scrollRef.current;
+
     const updateBaseCount = (width: number) => {
       let nextCount = responsiveInitialCounts.tabletAndMobile;
       const isTabletOrMobile =
@@ -57,6 +59,7 @@ export default function CastPreview({
 
       setBaseVisibleCount(nextCount);
     };
+
     const observer = new ResizeObserver(([entry]) => {
       if (entry) {
         updateBaseCount(entry.contentRect.width);

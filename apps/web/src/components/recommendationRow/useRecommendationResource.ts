@@ -39,6 +39,7 @@ export default function useRecommendationResource(
   source: RecommendationSource
 ) {
   const { category, resource, id, kind, preferences } = source;
+
   const containerRef = useRef<HTMLElement>(null);
   const [enabled, setEnabled] = useState(false);
   const [attempt, setAttempt] = useState(0);

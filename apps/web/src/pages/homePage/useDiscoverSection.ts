@@ -169,6 +169,7 @@ async function fetchAdditionalPages(
   }
 
   const response = await fetchFeedPage(section, provider, nextPage, signal);
+
   const nextResults = appendUniqueResults(
     results,
     eligibleResults(response.results, mediaType)
@@ -224,6 +225,7 @@ export function useDiscoverSection(
         setState(cached);
       } else {
         setState({ status: 'loading' });
+
         const loadInitialResults = async () => {
           const response = await fetchFeedPage(
             section,
@@ -231,6 +233,7 @@ export function useDiscoverSection(
             1,
             controller.signal
           );
+
           const totalPages = Math.min(response.totalPages, MAX_DISCOVERY_PAGES);
           const initialResults = eligibleResults(response.results, mediaType);
 
@@ -315,6 +318,7 @@ export function useDiscoverSection(
     try {
       const { results: existingResults } = state;
       const neededCount = state.visibleCount + RESULTS_PER_BATCH;
+
       const { response, results } = await fetchAdditionalPages(
         section,
         provider,

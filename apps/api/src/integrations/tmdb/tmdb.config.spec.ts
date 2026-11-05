@@ -1,5 +1,6 @@
 import fs from 'fs';
 import * as path from 'path';
+
 import { getTmdbConfig } from './tmdb.config';
 
 describe('getTmdbConfig', () => {

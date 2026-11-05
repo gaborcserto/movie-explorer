@@ -9,11 +9,13 @@ const stylesheet = postcss.parse(
 
 test('static filmography genres let clicks reach the movie link while Search genres stay interactive', () => {
   const pointerEvents: Record<string, string> = {};
+
   stylesheet.walkRules((rule) => {
     rule.walkDecls('pointer-events', (declaration) => {
       pointerEvents[rule.selector] = declaration.value;
     });
   });
+
   expect(pointerEvents['.card__type--static']).toBe('none');
   expect(pointerEvents['.card__type']).toBeUndefined();
   expect(pointerEvents['.card__type__link']).toBeUndefined();
@@ -21,6 +23,7 @@ test('static filmography genres let clicks reach the movie link while Search gen
 
 test('clips poster cards with consistent 10px corners', () => {
   const declarations = new Map<string, string>();
+
   stylesheet.walkRules((rule) => {
     if (
       rule.selectors.includes('.card__image__wrapper') ||

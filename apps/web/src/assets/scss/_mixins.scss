@@ -1,5 +1,5 @@
 @use 'sass:color';
-@use 'breakpoints' as *;
+@use './breakpoints' as *;
 
 $page-header-height: 100px;
 $page-header-content-gap: 42px;

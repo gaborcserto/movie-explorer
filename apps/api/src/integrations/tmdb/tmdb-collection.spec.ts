@@ -51,6 +51,7 @@ describe('TMDB movie collections', () => {
           parts: [part(2, '2000-01-01')],
         }),
       );
+
     const result = await new TmdbMovieProvider(config).findCollection(1);
 
     expect(result).toMatchObject({
@@ -63,7 +64,9 @@ describe('TMDB movie collections', () => {
       availability: 'available',
       results: [{ id: 2, mediaType: 'movie', releaseDate: '2000-01-01' }],
     });
+
     const urls = fetchMock.mock.calls.map(([url]) => new URL(String(url)));
+
     expect(urls.map((url) => url.pathname)).toEqual([
       '/3/movie/1',
       '/3/collection/10',
@@ -79,6 +82,7 @@ describe('TMDB movie collections', () => {
       fetchMock.mockResolvedValue(
         Response.json({ id: 1, belongs_to_collection }),
       );
+
       await expect(
         new TmdbMovieProvider(config).findCollection(1),
       ).resolves.toEqual({
@@ -109,6 +113,7 @@ describe('TMDB movie collections', () => {
       1,
       config.imageBaseUrl,
     );
+
     expect(result.results.map((movie) => movie.id)).toEqual([4, 5, 3, 2, 6, 7]);
     expect(result.results.every((movie) => movie.posterUrl === undefined)).toBe(
       true,
@@ -133,6 +138,7 @@ describe('TMDB movie collections', () => {
       config.imageBaseUrl,
       'Fallback',
     );
+
     expect(result.results.map((movie) => movie.id)).toEqual([2]);
     expect(result.collection?.name).toBe('Fallback');
     expect(result.availability).toBe('partial');
@@ -165,6 +171,7 @@ describe('TMDB movie collections', () => {
     { id: 1, belongs_to_collection: { id: -1 } },
   ])('rejects invalid movie membership %j', async (value) => {
     fetchMock.mockResolvedValue(Response.json(value));
+
     await expect(
       new TmdbMovieProvider(config).findCollection(1),
     ).rejects.toBeInstanceOf(BadGatewayException);
@@ -178,6 +185,7 @@ describe('TMDB movie collections', () => {
           Response.json({ id: 1, belongs_to_collection: { id: 10 } }),
         )
         .mockResolvedValueOnce(Response.json(value));
+
       await expect(
         new TmdbMovieProvider(config).findCollection(1),
       ).rejects.toBeInstanceOf(BadGatewayException);
@@ -186,14 +194,17 @@ describe('TMDB movie collections', () => {
 
   it('distinguishes a missing movie from a stale collection reference', async () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 404 }));
+
     await expect(
       new TmdbMovieProvider(config).findCollection(1),
     ).rejects.toBeInstanceOf(NotFoundException);
+
     fetchMock
       .mockResolvedValueOnce(
         Response.json({ id: 1, belongs_to_collection: { id: 10 } }),
       )
       .mockResolvedValueOnce(new Response(null, { status: 404 }));
+
     await expect(
       new TmdbMovieProvider(config).findCollection(1),
     ).rejects.toBeInstanceOf(BadGatewayException);
@@ -207,12 +218,14 @@ describe('TMDB movie collections', () => {
           signal?.addEventListener('abort', () => reject(new Error('aborted')));
         }),
     );
+
     const load = new TmdbMovieProvider(config).findCollection(1);
     const assertion = expect(load).rejects.toBeInstanceOf(
       GatewayTimeoutException,
     );
     await jest.advanceTimersByTimeAsync(3000);
     await assertion;
+
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

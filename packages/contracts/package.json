@@ -6,7 +6,7 @@
   "types": "./src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json --emitDeclarationOnly",
-    "lint": "tsc --noEmit",
+    "lint": "npm run lint:readability --prefix ../.. && tsc --noEmit && vp fmt -c ../../apps/api/.oxfmtrc.json --check \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

@@ -10,6 +10,7 @@ import {
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter } from 'react-router';
 import type { PersonDetails } from '@movie-explorer/contracts';
+
 import App from '../../App';
 import { getPerson } from '../../util/apiUtils';
 
@@ -88,9 +89,11 @@ test('direct person navigation loads the complete contract through the API witho
     { signal: expect.any(AbortSignal) }
   );
   expect(screen.getByText('Directing')).toBeVisible();
+
   const hero = screen
     .getByRole('heading', { name: person.name })
     .closest('.person-hero');
+
   expect(hero).not.toBeNull();
   expect(hero).toHaveClass('header', 'page-hero', 'header--movie-details');
   expect(hero?.querySelector('.movie-details.container')).toHaveClass(
@@ -130,16 +133,21 @@ test('direct person navigation loads the complete contract through the API witho
   expect(screen.getByRole('main')).toContainElement(
     screen.getByRole('heading', { name: 'Filmography' })
   );
+
   await waitFor(() =>
     expect(document.title).toBe(`${person.name} | Movie Explorer`)
   );
 
-  expect(screen.getAllByRole('link', { name: 'MovieExplorer' })).toHaveLength(
-    1
-  );
-  expect(screen.getAllByRole('link', { name: 'Movie Explorer' })).toHaveLength(
-    1
-  );
+  expect(
+    within(screen.getByRole('banner')).getByRole('link', {
+      name: 'MovieExplorer',
+    })
+  ).toHaveAttribute('href', '/');
+  expect(
+    within(screen.getByRole('contentinfo')).getByRole('link', {
+      name: 'MovieExplorer',
+    })
+  ).toHaveAttribute('href', '/search');
   expect(
     screen
       .getByRole('button', { name: 'Search movies, series and people' })
@@ -158,6 +166,7 @@ test('direct person navigation loads the complete contract through the API witho
 
 test('API helper retains filmography and forwards the cancellation signal', async () => {
   const controller = new AbortController();
+
   await expect(getPerson(42, controller.signal)).resolves.toEqual(person);
   expect(fetchMock).toHaveBeenCalledWith(
     'http://localhost:4000/api/v1/persons/42',
@@ -176,6 +185,7 @@ test('omits optional metadata and uses the missing portrait and biography placeh
       expect(screen.queryByText(label)).toBeNull();
     }
   );
+
   expect(screen.getByText('Biography unavailable.')).toBeVisible();
   expect(
     screen.getByRole('img', { name: 'Portrait of Only a name' }).tagName
@@ -197,6 +207,7 @@ test('keeps filmography posters in content without a photographic hero backdrop'
   );
   renderPage();
   await screen.findByRole('heading', { name: person.name });
+
   expect(document.querySelector('.person-hero__posters')).toBeNull();
   expect(
     screen.getAllByRole('link', { name: /A movie/ })[0].querySelector('img')
@@ -211,6 +222,7 @@ test.each(['', '  \n  '])(
   async (biography) => {
     fetchMock.mockResolvedValue(response({ ...person, biography }));
     renderPage();
+
     expect(await screen.findByText('Biography unavailable.')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Show More' })).toBeNull();
   }
@@ -221,6 +233,7 @@ test('uses responsive portrait candidates and failed-image fallback', async () =
   const portrait = await screen.findByRole('img', {
     name: `Portrait of ${person.name}`,
   });
+
   expect(portrait).toHaveAttribute('src', person.profileUrl);
   expect(portrait).toHaveAttribute(
     'srcset',
@@ -231,7 +244,9 @@ test('uses responsive portrait candidates and failed-image fallback', async () =
     '(max-width: 767.98px) min(320px, calc(100vw - 52px)), 320px'
   );
   expect(portrait).toHaveAttribute('loading', 'eager');
+
   fireEvent.error(portrait);
+
   expect(
     screen.getByRole('img', { name: `Portrait of ${person.name}` }).tagName
   ).toBe('DIV');
@@ -259,10 +274,12 @@ test('opens the full-resolution portrait from the keyboard and restores focus', 
   const dialog = screen.getByRole('dialog', {
     name: `${person.name} photo viewer`,
   });
+
   expect(dialog.querySelector('img')).toHaveAttribute(
     'src',
     '/portrait-original.jpg'
   );
+
   await user.keyboard('{Escape}');
   await waitFor(() => expect(trigger).toHaveFocus());
 });
@@ -280,6 +297,7 @@ test('does not expose a gallery control without a primary portrait even when opt
   );
   renderPage();
   await screen.findByRole('heading', { name: person.name });
+
   expect(
     screen.getByRole('img', { name: `Portrait of ${person.name}` }).tagName
   ).toBe('DIV');
@@ -302,11 +320,14 @@ test.each(['{Enter}', ' '])(
     const trigger = screen.getByRole('button', {
       name: `Open portrait gallery for ${person.name}`,
     });
+
     expect(trigger).toBeDisabled();
+
     fireEvent.load(portrait);
     trigger.focus();
     await user.keyboard(key);
     const dialog = screen.getByRole('dialog');
+
     expect(within(dialog).getByText('1 / 1')).toBeVisible();
     expect(
       within(dialog).queryByRole('button', { name: 'Next photo' })
@@ -315,9 +336,11 @@ test.each(['{Enter}', ' '])(
       within(dialog).queryByRole('button', { name: 'Previous photo' })
     ).toBeNull();
     expect(document.body.style.overflow).toBe('hidden');
+
     await user.click(
       within(dialog).getByRole('button', { name: 'Close photo viewer' })
     );
+
     expect(trigger).toHaveFocus();
     expect(document.body.style.overflow).not.toBe('hidden');
   }
@@ -344,45 +367,64 @@ test('opens the primary portrait first, deduplicates profiles and navigates with
       name: `Open portrait gallery for ${person.name}`,
     })
   ).getByRole('img');
+
   expect(
     document.querySelector('img[src="/portrait-original.jpg"]')
   ).toBeNull();
+
   fireEvent.load(portrait);
   const trigger = screen.getByRole('button', {
     name: `Open portrait gallery for ${person.name}`,
   });
   await user.click(trigger);
   const dialog = screen.getByRole('dialog');
+
   expect(within(dialog).getByText('1 / 2')).toBeVisible();
+
   const firstImage = dialog.querySelector('img');
+
   expect(firstImage).toHaveAttribute('src', '/portrait-original.jpg');
   expect(within(dialog).getByRole('status')).toHaveTextContent('Loading photo');
+
   if (!firstImage) {
     throw new Error('Missing primary image');
   }
 
   fireEvent.load(firstImage);
+
   expect(within(dialog).queryByRole('status')).toBeNull();
+
   await user.click(within(dialog).getByRole('button', { name: 'Next photo' }));
+
   expect(firstImage).not.toHaveAttribute('src');
+
   const nextImage = dialog.querySelector('img');
+
   expect(nextImage).toHaveAttribute('src', second.fullUrl);
+
   if (!nextImage) {
     throw new Error('Missing next image');
   }
 
   fireEvent.error(nextImage);
+
   expect(within(dialog).getByRole('alert')).toHaveTextContent(
     'Unable to load photo'
   );
+
   await user.click(
     within(dialog).getByRole('button', { name: 'Previous photo' })
   );
+
   expect(dialog.querySelector('img')).toHaveAttribute('src', primary.fullUrl);
+
   await user.keyboard('{ArrowLeft}{ArrowRight}{Escape}');
+
   expect(trigger).toHaveFocus();
+
   await user.click(trigger);
   await act(async () => router.navigate('/person/43'));
+
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(document.body.style.overflow).not.toBe('hidden');
 });
@@ -409,7 +451,9 @@ test.each([
         name: `Open portrait gallery for ${person.name}`,
       })
     );
+
     expect(within(screen.getByRole('dialog')).getByText('1 / 1')).toBeVisible();
+
     await user.keyboard('{Escape}');
   }
 );
@@ -420,20 +464,25 @@ test('renders biography as plain text and supports keyboard expansion and collap
   fetchMock.mockResolvedValue(response({ ...person, biography }));
   renderPage();
   const toggle = await screen.findByRole('button', { name: 'Show More' });
+
   expect(toggle).toHaveAttribute('aria-expanded', 'false');
   expect(toggle).toHaveAttribute('aria-controls', 'person-biography');
   expect(document.getElementById('person-biography')?.textContent).toMatch(
     /word\.…$/
   );
+
   toggle.focus();
   await user.keyboard('{Enter}');
+
   expect(toggle).toHaveAccessibleName('Show Less');
   expect(toggle).toHaveAttribute('aria-expanded', 'true');
   expect(document.getElementById('person-biography')?.textContent).toBe(
     biography
   );
   expect(document.querySelector('main script')).toBeNull();
+
   await user.keyboard(' ');
+
   expect(toggle).toHaveAccessibleName('Show More');
   expect(toggle).toHaveFocus();
 });
@@ -444,13 +493,16 @@ test('announces loading and cancels requests on unmount', () => {
     initialEntries: ['/person/42'],
   });
   const { unmount } = render(<RouterProvider router={router} />);
+
   expect(screen.getByLabelText('Loading person details')).toHaveAttribute(
     'aria-busy',
     'true'
   );
+
   const loadingHero = screen
     .getByLabelText('Loading person details')
     .closest('.person-hero');
+
   expect(loadingHero?.querySelectorAll('.skeleton').length).toBeGreaterThan(5);
   expect(
     loadingHero?.querySelector('.person-profile__portrait')
@@ -461,9 +513,13 @@ test('announces loading and cancels requests on unmount', () => {
       ?.closest('[aria-hidden="true"]')
   ).not.toBeNull();
   expect(screen.queryByRole('img')).toBeNull();
+
   const signal = fetchMock.mock.calls[0][1]?.signal;
+
   expect(signal?.aborted).toBe(false);
+
   unmount();
+
   expect(signal?.aborted).toBe(true);
 });
 
@@ -479,6 +535,7 @@ test.each([
   '9007199254740992',
 ])('rejects invalid ID %s without a request', (id) => {
   renderPage(`/person/${id}`);
+
   expect(
     screen.getByRole('heading', { level: 1, name: 'Invalid person ID' })
   ).toBeVisible();
@@ -493,6 +550,7 @@ test.each([
 test('handles HTTP 404 with a route back to browsing', async () => {
   fetchMock.mockResolvedValue(response(undefined, 404));
   renderPage();
+
   expect(
     await screen.findByRole('heading', { level: 1, name: 'Person not found' })
   ).toBeVisible();
@@ -518,12 +576,15 @@ test.each(['network', 'HTTP'])(
     }
 
     renderPage();
+
     expect(await screen.findByRole('alert')).toHaveTextContent(
       failure === 'network'
         ? 'Connection problem'
         : 'Service temporarily unavailable'
     );
+
     await user.click(screen.getByRole('button', { name: 'Try again' }));
+
     expect(
       await screen.findByRole('heading', { name: person.name })
     ).toBeVisible();
@@ -545,11 +606,13 @@ test.each(['success', 'failure'])(
     await act(async () => {
       await router.navigate('/person/43');
     });
+
     expect(
       await screen.findByRole('heading', { name: 'New person' })
     ).toBeVisible();
     expect(screen.getByRole('main')).toHaveFocus();
     expect(signal?.aborted).toBe(true);
+
     await act(async () => {
       if (result === 'success') {
         pending.resolve(response());
@@ -557,6 +620,7 @@ test.each(['success', 'failure'])(
         pending.reject(new TypeError('Old request failed'));
       }
     });
+
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       'New person'
     );
@@ -584,18 +648,22 @@ test('Back/Forward navigation loads the correct person and resets biography expa
     await router.navigate('/person/43');
   });
   await screen.findByRole('heading', { name: 'Second person' });
+
   expect(screen.getByRole('button', { name: 'Show More' })).toHaveAttribute(
     'aria-expanded',
     'false'
   );
+
   await act(async () => {
     await router.navigate(-1);
   });
   await screen.findByRole('heading', { name: person.name });
+
   expect(screen.getByRole('button', { name: 'Show More' })).toHaveAttribute(
     'aria-expanded',
     'false'
   );
+
   await act(async () => {
     await router.navigate(1);
   });
@@ -611,8 +679,10 @@ test('sets a loading title and preserves the destination title after late data',
   const pending = deferredResponse();
   fetchMock.mockReturnValueOnce(pending.promise);
   const router = renderPage();
+
   expect(document.title).toBe('Loading person | Movie Explorer');
   expect(screen.getByRole('main')).toHaveFocus();
+
   await act(async () => {
     await router.navigate('/unknown-route');
   });
@@ -622,6 +692,7 @@ test('sets a loading title and preserves the destination title after late data',
   await act(async () => {
     pending.resolve(response());
   });
+
   expect(document.title).toBe('Page not found | Movie Explorer');
 });
 
@@ -637,6 +708,7 @@ test.each([
     await waitFor(() =>
       expect(document.title).toBe(`${title} | Movie Explorer`)
     );
+
     expect(screen.getByRole('main')).toHaveFocus();
   }
 );
@@ -649,10 +721,13 @@ test('biography and filmography interactions retain focus and the person title',
   const user = userEvent.setup();
   const expand = await screen.findByRole('button', { name: 'Show More' });
   await user.click(expand);
+
   expect(expand).toHaveFocus();
+
   const sort = screen.getByRole('combobox', { name: 'Sort filmography' });
   await user.click(sort);
   await user.click(screen.getByRole('option', { name: 'Title A–Z' }));
+
   expect(sort).toHaveAttribute('data-value', 'title');
   expect(sort).toHaveFocus();
   expect(document.title).toBe(`${person.name} | Movie Explorer`);
@@ -687,6 +762,7 @@ test('person profile photos remain navigable in the portrait lightbox without a 
 
   await user.click(trigger);
   const dialog = screen.getByRole('dialog');
+
   expect(within(dialog).getByText('1 / 18')).toBeVisible();
 
   await user.keyboard('{ArrowRight}'.repeat(17));
@@ -699,6 +775,7 @@ test('person profile photos remain navigable in the portrait lightbox without a 
 
   await act(async () => router.navigate('/person/43'));
   await screen.findByRole('heading', { name: 'Next person' });
+
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(document.body.style.overflow).not.toBe('hidden');
 });

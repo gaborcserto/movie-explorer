@@ -42,6 +42,7 @@ describe('independent autocomplete groups', () => {
       }
 
       const result = await service.suggestions('query', 6);
+
       expect(result.suggestions.map((item) => item.mediaType)).toEqual(
         failure === 'movie'
           ? ['person']
@@ -59,6 +60,7 @@ describe('independent autocomplete groups', () => {
   it('distinguishes a successful empty movie group from a failed person group', async () => {
     provider.findSuggestions.mockResolvedValue({ suggestions: [] });
     provider.findPeople.mockRejectedValue(new BadGatewayException());
+
     await expect(service.suggestions('query', 6)).resolves.toEqual({
       suggestions: [],
       groups: {
@@ -73,6 +75,7 @@ describe('independent autocomplete groups', () => {
       new HttpException('Safe rate limit', 429),
     );
     provider.findPeople.mockRejectedValue(new BadGatewayException());
+
     await expect(service.suggestions('query', 6)).rejects.toMatchObject({
       status: 429,
     });
@@ -83,6 +86,7 @@ describe('independent autocomplete groups', () => {
     provider.findPeople.mockRejectedValue(
       new HttpException({ retryAfter: 15 }, 429),
     );
+
     await expect(service.suggestions('query', 6)).resolves.toMatchObject({
       groups: { person: { status: 'unavailable', retryAfterSeconds: 15 } },
     });
@@ -93,6 +97,7 @@ describe('independent autocomplete groups', () => {
     provider.findPeople.mockRejectedValue(
       new HttpException('Safe rate limit', 429),
     );
+
     await expect(service.suggestions('query', 6)).rejects.toMatchObject({
       status: 429,
     });
@@ -136,6 +141,7 @@ describe('independent autocomplete groups', () => {
         return;
       }
       const response = await request;
+
       expect(response.suggestions.map((item) => item.mediaType)).toEqual(
         ['movie', 'tv', 'person'].filter(
           (_type, index) => !(failures & (1 << index)),

@@ -83,6 +83,7 @@ for (const uri of [
       request: rewritten,
       response: { statusCode: 200, headers: {} },
     });
+
     assert.equal(response.headers['x-robots-tag'].value, 'noindex, follow');
   });
 }
@@ -91,15 +92,18 @@ test('excludes query variants and ignores spoofed noindex markers', () => {
   const queried = rewrite({
     request: request('/movie/550', { querystring: { page: { value: '2' } } }),
   });
+
   assert.equal(
     responseHeaders({ request: queried, response: { headers: {} } }).headers[
       'x-robots-tag'
     ].value,
     'noindex, follow',
   );
+
   const clean = request('/movie/550');
   clean.headers['x-movie-noindex'] = { value: 'true' };
   const rewritten = rewrite({ request: clean });
+
   assert.equal(
     responseHeaders({ request: rewritten, response: { headers: {} } }).headers[
       'x-robots-tag'

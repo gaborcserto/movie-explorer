@@ -1,5 +1,6 @@
 import { act, fireEvent, renderHook } from '@testing-library/react';
 import { useState } from 'react';
+
 import useLightboxDialog from './useLightboxDialog';
 
 function createDialog() {
@@ -48,11 +49,13 @@ describe('useLightboxDialog', () => {
 
     lastButton.focus();
     rerender(updated);
+
     expect(lastButton).toHaveFocus();
 
     fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent(document, new Event('fullscreenchange'));
     fireEvent(document, new Event('fullscreenerror'));
+
     expect(updated.onClose).toHaveBeenCalledTimes(1);
     expect(updated.onFullscreenChange).toHaveBeenCalledWith(false);
     expect(updated.onFullscreenError).toHaveBeenCalledTimes(1);
@@ -65,6 +68,7 @@ describe('useLightboxDialog', () => {
       value: root,
     });
     fireEvent.keyDown(document, { key: 'Escape' });
+
     expect(updated.onEscapeFullscreen).toHaveBeenCalledTimes(1);
     expect(initial.onEscapeFullscreen).not.toHaveBeenCalled();
 
@@ -114,10 +118,15 @@ describe('useLightboxDialog', () => {
     expect(alreadyInert.inert).toBe(true);
 
     fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+
     expect(lastButton).toHaveFocus();
+
     fireEvent.keyDown(document, { key: 'Tab' });
+
     expect(closeButton).toHaveFocus();
+
     background.focus();
+
     expect(closeButton).toHaveFocus();
 
     unmount();
@@ -170,10 +179,15 @@ describe('useLightboxDialog', () => {
     });
 
     act(() => fireEvent.keyDown(document, { key: 'ArrowLeft' }));
+
     expect(result.current).toBe(2);
+
     act(() => fireEvent.keyDown(document, { key: 'ArrowRight' }));
+
     expect(result.current).toBe(0);
+
     fireEvent.keyDown(document, { key: 'Escape' });
+
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onEscapeFullscreen).not.toHaveBeenCalled();
 
@@ -203,6 +217,7 @@ describe('useLightboxDialog', () => {
     );
 
     fireEvent.keyDown(document, { key: 'Escape' });
+
     expect(onEscapeFullscreen).toHaveBeenCalledTimes(1);
     expect(onClose).not.toHaveBeenCalled();
 

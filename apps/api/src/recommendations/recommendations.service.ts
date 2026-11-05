@@ -40,12 +40,14 @@ export class RecommendationsService {
       number,
       { title: RecommendationTitle; seeds: number; rank: number }
     >();
+
     const sources = await Promise.allSettled(
       [...favoriteIds]
         .sort((a, b) => a - b)
         .slice(0, 3)
         .map((id) => this.provider.findFavoriteSimilar(mediaType, id)),
     );
+
     let partial = false;
     let failure: unknown;
 
@@ -63,13 +65,16 @@ export class RecommendationsService {
         failure ??= source.reason;
         continue;
       }
+
       partial ||= source.value.availability === 'partial';
+
       const seen = new Set<number>();
 
       source.value.results.slice(0, 10).forEach((title, rank) => {
         if (!eligible(title) || seen.has(title.id)) {
           return;
         }
+
         seen.add(title.id);
         const existing = candidates.get(title.id);
 
@@ -100,11 +105,13 @@ export class RecommendationsService {
           mediaType === 'movie' ? 'popular-movies' : 'popular-series',
         );
         partial ||= pool.availability === 'partial';
+
         const seen = new Set(results.map((title) => title.id));
         const fallback = pool.results.filter((title) => {
           if (!eligible(title) || seen.has(title.id)) {
             return false;
           }
+
           seen.add(title.id);
 
           return true;

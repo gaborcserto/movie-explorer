@@ -99,6 +99,7 @@ describe('deployment recommendation workload budgets', () => {
 
       const warm = service.personalize(preferences);
       await jest.runAllTimersAsync();
+
       expect((await warm).results).toHaveLength(10);
       expect(fetchMock).toHaveBeenCalledTimes(seeds.length * 2 + 5);
     },
@@ -160,6 +161,7 @@ describe('deployment recommendation workload budgets', () => {
     mode = 'partial';
     const partial = service.personalize(preferences);
     await jest.runAllTimersAsync();
+
     expect(await partial).toMatchObject({
       availability: 'partial',
       source: 'popular',
@@ -168,6 +170,7 @@ describe('deployment recommendation workload budgets', () => {
     mode = 'available';
     const recovered = service.personalize(preferences);
     await jest.runAllTimersAsync();
+
     expect(await recovered).toMatchObject({ availability: 'available' });
     expect(fetchMock).toHaveBeenCalledTimes(12);
 
@@ -177,6 +180,7 @@ describe('deployment recommendation workload budgets', () => {
     );
     const empty = emptyService.personalize(preferences);
     await jest.runAllTimersAsync();
+
     expect(await empty).toMatchObject({
       results: [],
       availability: 'available',

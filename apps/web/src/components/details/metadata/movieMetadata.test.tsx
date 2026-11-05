@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import type { MovieDetails } from '@movie-explorer/contracts';
+
 import MovieMetadata from './movieMetadata';
 
 const base: MovieDetails = {
@@ -9,6 +10,7 @@ const base: MovieDetails = {
   genres: [],
   posterUrl: '',
 };
+
 function value(label: string) {
   const row = screen.getByText(label, { selector: 'dt' }).parentElement;
 
@@ -32,6 +34,7 @@ test('displays original Unicode title, actual status, human-readable language an
       }}
     />
   );
+
   expect(value('Original title')).toHaveTextContent(
     '千と千尋の神隠し — “Original”'
   );
@@ -50,6 +53,7 @@ test.each([undefined, 0, -1, NaN, Infinity])(
     render(
       <MovieMetadata movie={{ ...base, budget: amount, revenue: amount }} />
     );
+
     expect(value('Budget')).toHaveTextContent('Unknown');
     expect(value('Revenue')).toHaveTextContent('Unknown');
     expect(value('Original title')).toHaveTextContent('Unknown');
@@ -71,6 +75,7 @@ test.each(['zz', 'invalid_language!'])(
         }}
       />
     );
+
     expect(value('Original language')).toHaveTextContent(code);
     expect(value('Status')).toHaveTextContent('Future provider status');
   }
@@ -84,6 +89,7 @@ test('handles a runtime without Intl.DisplayNames', () => {
   });
   try {
     render(<MovieMetadata movie={{ ...base, originalLanguage: 'en' }} />);
+
     expect(value('Original language')).toHaveTextContent('en');
   } finally {
     Object.defineProperty(Intl, 'DisplayNames', {

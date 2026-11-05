@@ -11,11 +11,14 @@ test('disables all decorative animation immediately for reduced motion', () => {
   const disabled: string[] = [];
 
   sheet.walkAtRules('media', (media) => {
-    if (media.params !== '(prefers-reduced-motion: reduce)') return;
+    if (media.params !== '(prefers-reduced-motion: reduce)') {
+      return;
+    }
 
     media.walkRules((rule) => {
       rule.walkDecls('animation', (decl) => {
         expect(decl.value).toBe('none');
+
         disabled.push(...rule.selectors);
       });
     });
@@ -28,6 +31,7 @@ test('disables all decorative animation immediately for reduced motion', () => {
   ]);
 
   const animations: string[] = [];
+
   sheet.walkDecls('animation', (decl) => {
     animations.push(decl.value);
   });
@@ -36,6 +40,7 @@ test('disables all decorative animation immediately for reduced motion', () => {
   expect(animations).toContain('popcorn-entrance 300ms ease-out');
 
   const opacity: string[] = [];
+
   sheet.walkRules('.popcorn-illustration', (rule) => {
     rule.walkDecls('opacity', (decl) => {
       opacity.push(decl.value);
@@ -50,7 +55,9 @@ test('keeps the layout flowing, bounds its width, and stacks actions on mobile',
   const base: Record<string, string> = {};
 
   sheet.walkRules('.error-presentation', (rule) => {
-    if (rule.parent?.type !== 'root') return;
+    if (rule.parent?.type !== 'root') {
+      return;
+    }
 
     rule.walkDecls((decl) => {
       base[decl.prop] = decl.value;
@@ -67,6 +74,7 @@ test('keeps the layout flowing, bounds its width, and stacks actions on mobile',
   expect(base.height).toBeUndefined();
 
   const directions: string[] = [];
+
   sheet.walkRules('.error-presentation__actions', (rule) => {
     rule.walkDecls(/^flex-(direction|flow)$/, (decl) => {
       directions.push(decl.value.split(' ')[0]);
@@ -76,6 +84,7 @@ test('keeps the layout flowing, bounds its width, and stacks actions on mobile',
   expect(directions).toEqual(['column', 'row']);
 
   const sizes: string[] = [];
+
   sheet.walkRules('.error-presentation__illustration', (rule) => {
     rule.walkDecls('width', (decl) => {
       sizes.push(decl.value);
@@ -88,6 +97,7 @@ test('keeps the layout flowing, bounds its width, and stacks actions on mobile',
   ]);
 
   const targets: string[] = [];
+
   sheet.walkDecls('min-height', (decl) => {
     targets.push(decl.value);
   });
@@ -99,6 +109,7 @@ test('retains the intentional white-on-coral primary action contrast exception',
   // Existing product palette exception; this does not assert WCAG AA compliance.
   const sheet = styles('../../App.scss');
   const primary: Record<string, string> = {};
+
   sheet.walkRules('.btn--primary', (rule) => {
     rule.walkDecls((decl) => {
       primary[decl.prop] = decl.value;
@@ -111,6 +122,7 @@ test('retains the intentional white-on-coral primary action contrast exception',
   });
 
   let focusOutline = '';
+
   sheet.walkRules('.btn:focus-visible', (rule) => {
     rule.walkDecls('outline', (decl) => {
       focusOutline = decl.value;

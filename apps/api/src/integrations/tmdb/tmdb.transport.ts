@@ -102,6 +102,7 @@ export class TmdbTransport {
           description: 'Bad Gateway',
         });
       }
+
       try {
         const body: unknown = await response.json();
         controller.signal.throwIfAborted();
@@ -113,6 +114,7 @@ export class TmdbTransport {
         if (controller.signal.aborted) {
           throw controller.signal.reason;
         }
+
         throw new BadGatewayException('Movie provider response was invalid', {
           cause: 'invalid-response',
           description: 'Bad Gateway',
@@ -134,6 +136,7 @@ export class TmdbTransport {
         );
         throw error;
       }
+
       this.logFailure(operation, 'connection', 502, upstreamStatus);
       throw new BadGatewayException('Movie provider request failed', {
         cause: 'request-failed',

@@ -95,6 +95,7 @@ describe('Recommendations API', () => {
           results: [title],
         })
         .expect('Cache-Control', 'no-store');
+
       expect(provider.findRecommendationPool).toHaveBeenCalledWith(category);
       expect(provider.find).not.toHaveBeenCalled();
       expect(fetchMock).not.toHaveBeenCalled();
@@ -118,6 +119,7 @@ describe('Recommendations API', () => {
       await request(app.getHttpServer())
         .get(`/api/v1/recommendations/${path}`)
         .expect(400);
+
       expect(provider.findRecommendationPool).not.toHaveBeenCalled();
     },
   );
@@ -220,8 +222,11 @@ describe('Recommendations API', () => {
       imageBaseUrl: 'https://images.example/w500',
       language: 'en-US',
     });
+
     let release: (value: Response) => void = () => undefined;
+
     let started: () => void = () => undefined;
+
     let joined: () => void = () => undefined;
     const upstreamStarted = new Promise<void>((resolve) => {
       started = resolve;
@@ -267,15 +272,18 @@ describe('Recommendations API', () => {
 
     expect((await second).body.candidateCount).toBe(1);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+
     await request(app.getHttpServer())
       .get('/api/v1/recommendations/popular-movies')
       .expect(200);
+
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('documents the route, categories, title union, limits, partial behavior and errors', () => {
     const doc = createApiDocument(app);
     const operation = doc.paths['/api/v1/recommendations/{category}'].get;
+
     ok(operation);
     expect(operation.summary).toContain('ten');
     expect(operation.parameters).toEqual([
@@ -356,6 +364,7 @@ describe('Recommendations API', () => {
             expect(body.source).toBe('favorites');
             expect(body.results[0]).toMatchObject({ id: 10, mediaType });
           });
+
         expect(fetchMock).not.toHaveBeenCalled();
       },
     );
@@ -388,6 +397,7 @@ describe('Recommendations API', () => {
           .post('/api/v1/recommendations/personalized')
           .send(invalid)
           .expect(400);
+
         expect(provider.findFavoriteSimilar).not.toHaveBeenCalled();
         expect(provider.findRecommendationPool).not.toHaveBeenCalled();
       },
@@ -402,6 +412,7 @@ describe('Recommendations API', () => {
           excludedIds: Array.from({ length: 1000 }, (_, i) => i + 1),
         })
         .expect(200);
+
       expect(provider.findFavoriteSimilar).not.toHaveBeenCalled();
       expect(provider.findRecommendationPool).toHaveBeenCalledWith(
         'popular-series',
@@ -413,6 +424,7 @@ describe('Recommendations API', () => {
         .post('/api/v1/recommendations/personalized?favoriteIds=1')
         .send(payload)
         .expect(400);
+
       expect(provider.findFavoriteSimilar).not.toHaveBeenCalled();
     });
 
@@ -436,6 +448,7 @@ describe('Recommendations API', () => {
     it('documents bounded payload, discriminated summaries, availability, source and errors', () => {
       const doc = createApiDocument(app);
       const operation = doc.paths['/api/v1/recommendations/personalized'].post;
+
       ok(operation);
       expect(Object.keys(operation.responses).sort()).toEqual([
         '200',

@@ -12,6 +12,7 @@ function languageName(code: string | undefined) {
   if (!code?.trim()) {
     return 'Unknown';
   }
+
   try {
     return (
       new Intl.DisplayNames(['en'], { type: 'language', fallback: 'code' }).of(

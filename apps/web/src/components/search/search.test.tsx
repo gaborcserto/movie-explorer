@@ -1,5 +1,6 @@
 import { act, render, fireEvent, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
+
 import Search from './search';
 import { getSearchSuggestions as originalGetMovieSuggestions } from '../../util/apiUtils';
 
@@ -65,10 +66,12 @@ describe('Search Component', () => {
   test('navigates to search results on form submission', () => {
     renderSearch();
     const input = screen.getByPlaceholderText('What do you want to watch?');
+
     expect(screen.getByRole('button', { name: 'search' })).toHaveClass(
       'btn--primary',
       'btn'
     );
+
     fireEvent.change(input, { target: { value: 'Inception' } });
     fireEvent.submit(screen.getByRole('search'));
 
@@ -125,22 +128,28 @@ describe('Search Component', () => {
     });
 
     fireEvent.change(input, { target: { value: 'Al' } });
+
     expect(getSearchSuggestions).not.toHaveBeenCalled();
+
     await act(async () => vi.advanceTimersByTimeAsync(300));
 
     expect(screen.getByRole('listbox')).toBeInTheDocument();
     expect(getSearchSuggestions).toHaveBeenCalledTimes(1);
 
     fireEvent.keyDown(input, { key: 'ArrowDown' });
+
     expect(input).toHaveAttribute(
       'aria-activedescendant',
       `${input.getAttribute('aria-controls')}-0`
     );
+
     fireEvent.keyDown(input, { key: 'ArrowDown' });
+
     expect(input).toHaveAttribute(
       'aria-activedescendant',
       `${input.getAttribute('aria-controls')}-1`
     );
+
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(screen.getByTestId('location')).toHaveTextContent('/movie/43');
@@ -182,7 +191,9 @@ describe('Search Component', () => {
     });
 
     expect(screen.queryByText('Stale')).toBeNull();
+
     fireEvent.keyDown(input, { key: 'Escape' });
+
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 });

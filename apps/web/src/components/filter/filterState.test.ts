@@ -13,6 +13,7 @@ test.each(['all', 'tv', 'people'])(
       `view=${view}&view=invalid&filter=drama&year=wrong&rating=8&extra=a&extra=b&sorting=title&order=asc`
     );
     const next = normalizeSearchFilters(params, true);
+
     expect(readSearchView(next)).toBe(view);
     expect(next.getAll('view')).toEqual([view]);
     expect(next.get('filter')).toBe('drama');
@@ -24,6 +25,7 @@ test.each(['all', 'tv', 'people'])(
     expect(normalizeSearchFilters(next, true).toString()).toBe(next.toString());
   }
 );
+
 test.each(['invalid', 'series', 'movies', ''])(
   'canonicalizes invalid/default view %s to legacy Movies',
   (view) => {
@@ -31,10 +33,12 @@ test.each(['invalid', 'series', 'movies', ''])(
       new URLSearchParams(`view=${view}&year=2005`),
       true
     );
+
     expect(next.toString()).toBe('year=2005');
     expect(readSearchView(next)).toBe('movies');
   }
 );
+
 test('Series year changes preserve dormant Movie selections and unrelated repeated state', () => {
   const params = new URLSearchParams(
     'view=tv&filter=drama&rating=8&year=2005&extra=a&extra=b'
@@ -44,6 +48,7 @@ test('Series year changes preserve dormant Movie selections and unrelated repeat
     { ...readFilters(params, true), year: '2010' },
     true
   );
+
   expect(next.toString()).toBe(
     'view=tv&filter=drama&rating=8&year=2010&extra=a&extra=b'
   );

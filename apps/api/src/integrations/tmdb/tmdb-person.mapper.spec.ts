@@ -1,4 +1,5 @@
 import { ok } from 'node:assert/strict';
+
 import { TmdbPersonMapper } from './tmdb-person.mapper';
 import type { TmdbPersonDetails } from './tmdb.types';
 
@@ -28,6 +29,7 @@ describe('TmdbPersonMapper', () => {
         ],
       },
     });
+
     expect(result.profilePhotos).toEqual(
       ['primary', 'second', 'tall'].map((name) => ({
         thumbnailUrl: `https://image.tmdb.org/t/p/w500/${name}.jpg`,
@@ -52,6 +54,7 @@ describe('TmdbPersonMapper', () => {
         profile_path: '/primary.jpg',
         images,
       });
+
       expect(result.profilePhotos).toHaveLength(1);
       ok(result.profilePhotos);
       expect(result.profilePhotos[0].fullUrl).toContain(
@@ -67,6 +70,7 @@ describe('TmdbPersonMapper', () => {
         .profilePhotos,
     ).toBeUndefined();
   });
+
   it('merges movie identities, distinct characters, and distinct department/job pairs in credit order', () => {
     const movie = {
       id: 2,
@@ -95,7 +99,9 @@ describe('TmdbPersonMapper', () => {
         ],
       },
     };
+
     const result = mapper.toPersonDetails(input);
+
     expect(result.filmography).toHaveLength(1);
     expect(result.filmography[0]).toMatchObject({
       id: 2,
@@ -141,6 +147,7 @@ describe('TmdbPersonMapper', () => {
         ],
       },
     });
+
     expect(result.filmography).toEqual([
       {
         id: 1,

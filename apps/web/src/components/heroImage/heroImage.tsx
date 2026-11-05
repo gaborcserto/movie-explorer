@@ -58,6 +58,7 @@ function HeroImageContent({
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState(false);
+
   const fullUrl = src ? getHighestResolution(src, fullSrcSet ?? srcSet) : '';
   const photo: MoviePhoto = { thumbnailUrl: src ?? '', fullUrl, alt };
   const gallery = [

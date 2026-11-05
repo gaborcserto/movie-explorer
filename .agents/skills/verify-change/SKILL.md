@@ -16,7 +16,12 @@ in the root `AGENTS.md`.
 3. For cross-workspace, dependency, build, CI, or quality-gate changes, run
    the root lint, typecheck, coverage, and build commands. Include e2e when
    API behavior, build ordering, or CI scope makes it relevant.
-4. Review `git diff --check` and the final diff. Report checks that were not
+4. After structural moves, check every consumer and public export, relative
+   imports and stylesheet URLs, test discovery and coverage inclusion. Run
+   focused tests after each batch, then affected typechecks and production build.
+   Preserve hook order, route entry points and stylesheet evaluation order;
+   inspect the dependency graph for cycles through new entry points.
+5. Review `git diff --check` and the final diff. Report checks that were not
    run and why.
 
 Use the actual scripts from `AGENTS.md`; do not invent workspace commands or

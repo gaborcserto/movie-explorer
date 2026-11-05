@@ -73,6 +73,7 @@ test('preserves movie metadata and full cast in the API contract', async () => {
     })),
   };
   fetchMock.mockResolvedValueOnce(response(body));
+
   await expect(getMovie(1234)).resolves.toEqual(body);
 });
 
@@ -90,6 +91,7 @@ test.each([null, '100', -1, Infinity, {}])(
       })
     );
     const result = await getMovie(1234);
+
     expect(result.title).toBe(mockMovieData.title);
     expect(result.budget).toBeUndefined();
     expect(result.revenue).toBeUndefined();
@@ -134,6 +136,7 @@ test('accepts categorized media metadata and targets the poster recovery endpoin
   fetchMock
     .mockResolvedValueOnce(response(body))
     .mockResolvedValueOnce(response({ posters: [image] }));
+
   await expect(getMovie(1234)).resolves.toEqual(body);
   await expect(
     getMovieSection(1234, 'posters', new AbortController().signal)
@@ -156,6 +159,7 @@ test.each([{ width: 'invalid' }, { language: 12 }, { aspectRatio: -1 }])(
         ],
       })
     );
+
     await expect(
       getMovieSection(1234, 'posters', new AbortController().signal)
     ).rejects.toMatchObject({
@@ -180,6 +184,7 @@ test('unavailable posters clear stale media while preserving successful backdrop
       },
     })
   );
+
   await expect(getMovie(1234)).resolves.toMatchObject({
     backdrops: [image],
     posters: [],
@@ -189,6 +194,7 @@ test('unavailable posters clear stale media while preserving successful backdrop
 test('normalizes legacy photo retry responses so recovered backdrops replace an unavailable collection', async () => {
   const photos = [{ thumbnailUrl: '/thumb.jpg', fullUrl: '/full.jpg' }];
   fetchMock.mockResolvedValueOnce(response({ photos }));
+
   await expect(
     getMovieSection(1234, 'photos', new AbortController().signal)
   ).resolves.toMatchObject({ backdrops: photos });
@@ -202,6 +208,7 @@ describe('API functions', () => {
         ...response(undefined, 429),
         headers: new Headers({ 'Retry-After': delay }),
       });
+
       await expect(getMovie(1)).rejects.toMatchObject({
         category: 'rate-limited',
         status: 429,
@@ -231,12 +238,14 @@ describe('API functions', () => {
       fetchMock.mockResolvedValue(
         response('private exception', Number(status))
       );
+
       await expect(getMovie(1)).rejects.toMatchObject({ category, status });
     }
   );
 
   it('classifies a connection failure without exposing its message', async () => {
     fetchMock.mockRejectedValue(new TypeError('private connection details'));
+
     await expect(getMovie(1)).rejects.toMatchObject({
       category: 'network',
       message: 'API request failed: network',
@@ -249,6 +258,7 @@ describe('API functions', () => {
       status: 200,
       json: () => Promise.reject(new SyntaxError('private body')),
     });
+
     await expect(getMovie(1)).rejects.toMatchObject({
       category: 'invalid-response',
       status: 200,
@@ -303,6 +313,7 @@ describe('API functions', () => {
   it('does not fetch when the caller has already cancelled', async () => {
     const caller = new AbortController();
     caller.abort();
+
     await expect(getPeople('Alien', 1, caller.signal)).rejects.toMatchObject({
       category: 'cancelled',
     });
@@ -317,6 +328,7 @@ describe('API functions', () => {
       .mockResolvedValueOnce(response(mockMoviesData))
       .mockResolvedValueOnce(response(undefined, 500));
     await getMovies({}, caller.signal);
+
     await expect(getMovies({}, caller.signal)).rejects.toMatchObject({
       category: 'internal-server',
     });
@@ -465,6 +477,7 @@ describe('API functions', () => {
     };
     fetchMock.mockResolvedValue(response(result));
     const controller = new AbortController();
+
     await expect(
       getSearchSuggestions('A&B / test?', controller.signal)
     ).resolves.toEqual(result);
@@ -530,6 +543,7 @@ describe('API functions', () => {
     };
     fetchMock.mockResolvedValue(response(result));
     const controller = new AbortController();
+
     await expect(getPeople('A&B', 2, controller.signal)).resolves.toEqual(
       result
     );
@@ -601,6 +615,7 @@ test.each([
         ...(Object.keys(invalid).length ? {} : { id: undefined }),
       })
     );
+
     await expect(getMovie(1234)).rejects.toMatchObject({
       category: 'invalid-response',
     });
@@ -613,6 +628,7 @@ test.each([{ name: null }, { id: 2 }, { filmography: [{}] }])(
     fetchMock.mockResolvedValueOnce(
       response({ id: 1, name: 'Person', filmography: [], ...invalid })
     );
+
     await expect(getPerson(1)).rejects.toMatchObject({
       category: 'invalid-response',
     });
@@ -622,6 +638,7 @@ test.each([{ name: null }, { id: 2 }, { filmography: [{}] }])(
 test('accepts a minimal legacy person without optional fields or availability', async () => {
   const person = { id: 1, name: 'Person', filmography: [] };
   fetchMock.mockResolvedValueOnce(response(person));
+
   await expect(getPerson(1)).resolves.toEqual(person);
 });
 
@@ -631,6 +648,7 @@ test.each([
   { movies: [], page: 1, totalPages: '1', totalResults: 0 },
 ])('rejects malformed movie pages: %j', async (body) => {
   fetchMock.mockResolvedValueOnce(response(body));
+
   await expect(getMovies({})).rejects.toMatchObject({
     category: 'invalid-response',
   });
@@ -640,6 +658,7 @@ test('rejects malformed people and movie suggestion entries', async () => {
   fetchMock.mockResolvedValueOnce(
     response({ people: [{ id: 1 }], page: 1, totalPages: 1, totalResults: 1 })
   );
+
   await expect(getPeople('')).rejects.toMatchObject({
     category: 'invalid-response',
   });
@@ -647,6 +666,7 @@ test('rejects malformed people and movie suggestion entries', async () => {
   fetchMock.mockResolvedValueOnce(
     response({ suggestions: [{ id: 1, title: 'Movie', releaseYear: '2024' }] })
   );
+
   await expect(getMovieSuggestions('Movie')).rejects.toMatchObject({
     category: 'invalid-response',
   });

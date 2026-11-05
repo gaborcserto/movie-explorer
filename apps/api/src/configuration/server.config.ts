@@ -11,6 +11,7 @@ export function getServerConfig(
   env: NodeJS.ProcessEnv = { ...loadLocalEnv(), ...process.env },
 ) {
   const production = env.NODE_ENV === 'production';
+
   const rawPort = env.PORT ?? '4000';
   const port = Number(rawPort);
 

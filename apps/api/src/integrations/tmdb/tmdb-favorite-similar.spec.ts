@@ -46,11 +46,15 @@ describe('Favorite Similar integration', () => {
           ],
         }),
       );
+
       const result = await new TmdbDiscoveryProvider(
         config,
       ).findFavoriteSimilar(mediaType, 1);
+
       expect(fetchMock).toHaveBeenCalledTimes(1);
+
       const [url] = fetchMock.mock.calls[0];
+
       expect(url.pathname).toBe(`/3/${mediaType}/1/similar`);
       expect(url.searchParams.get('page')).toBe('1');
       expect(url.searchParams.get('language')).toBe('hu-HU');
@@ -89,6 +93,7 @@ describe('Favorite Similar integration', () => {
       );
       await jest.advanceTimersByTimeAsync(Math.min(6000, requestTimeoutMs));
       await assertion;
+
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(Logger.prototype.warn).toHaveBeenCalledWith({
         operation: 'movie-similar',
@@ -112,9 +117,11 @@ describe('Favorite Similar integration', () => {
         results: [],
       }),
     );
+
     await expect(provider.findFavoriteSimilar('tv', 1)).rejects.toThrow(
       'Movie provider request failed',
     );
+
     expect(await provider.findFavoriteSimilar('tv', 1)).toEqual({
       results: [],
       availability: 'available',

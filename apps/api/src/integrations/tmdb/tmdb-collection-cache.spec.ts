@@ -61,17 +61,20 @@ describe('bounded collection enrichment', () => {
     expect(first).toEqual(second);
     expect(first.results.map(({ id }) => id)).toEqual([2, 3]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+
     await expect(provider.findCollection(1)).resolves.toEqual(first);
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
     await jest.advanceTimersByTimeAsync(30 * 60 * 1000);
     await provider.findCollection(1);
+
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   it('reuses detail metadata and a shared collection while excluding each current movie', async () => {
     const provider = new TmdbMovieProvider(config);
     await Promise.all([provider.findOne(1), provider.findOne(2)]);
+
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
     const [first, second] = await Promise.all([
@@ -117,6 +120,7 @@ describe('bounded collection enrichment', () => {
     expect(first.results.map(({ id }) => id)).toEqual([2, 3, 4, 5]);
     expect(first.availability).toBe('available');
     expect(fetchMock).toHaveBeenCalledTimes(4);
+
     await expect(service.findRelated(1, 'similar')).resolves.toEqual(first);
     expect(fetchMock).toHaveBeenCalledTimes(6);
   });
@@ -125,6 +129,7 @@ describe('bounded collection enrichment', () => {
     const provider = new TmdbMovieProvider(config);
     fetchMock.mockResolvedValueOnce(Response.json(movie(1, null)));
     await provider.findOne(1);
+
     await expect(provider.findCollection(1)).resolves.toMatchObject({
       collection: null,
       results: [],
@@ -156,7 +161,9 @@ describe('bounded collection enrichment', () => {
     await localized.findCollection(1);
 
     expect(fetchMock).toHaveBeenCalledTimes(4);
+
     const urls = fetchMock.mock.calls.map(([url]) => new URL(String(url)));
+
     expect(urls.map((url) => url.searchParams.get('language'))).toEqual([
       'en-US',
       'en-US',
@@ -172,6 +179,7 @@ describe('bounded collection enrichment', () => {
     const provider = new TmdbMovieProvider(config);
     await provider.findOne(1);
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 503 }));
+
     await expect(provider.findCollection(1)).rejects.toThrow(
       'Movie provider request failed',
     );
@@ -179,6 +187,7 @@ describe('bounded collection enrichment', () => {
     fetchMock.mockResolvedValueOnce(
       Response.json({ ...collection(), parts: [movie(2), null] }),
     );
+
     await expect(provider.findCollection(1)).resolves.toMatchObject({
       availability: 'partial',
     });
@@ -201,10 +210,15 @@ describe('bounded collection enrichment', () => {
     for (let id = 1; id <= 101; id += 1) {
       await provider.findCollection(id);
     }
+
     expect(fetchMock).toHaveBeenCalledTimes(202);
+
     await provider.findCollection(101);
+
     expect(fetchMock).toHaveBeenCalledTimes(202);
+
     await provider.findCollection(1);
+
     expect(fetchMock).toHaveBeenCalledTimes(203);
   });
 
@@ -218,8 +232,11 @@ describe('bounded collection enrichment', () => {
       await provider.findCollection(id);
     }
     await provider.findCollection(501);
+
     expect(fetchMock).toHaveBeenCalledTimes(501);
+
     await provider.findCollection(1);
+
     expect(fetchMock).toHaveBeenCalledTimes(502);
   });
 
@@ -253,11 +270,14 @@ describe('bounded collection enrichment', () => {
           );
           signal?.addEventListener('abort', () => {
             clearTimeout(timer);
-            if (isCollection) aborted.push(url.pathname);
+            if (isCollection) {
+              aborted.push(url.pathname);
+            }
             reject(new Error('aborted'));
           });
         }),
     );
+
     const start = Date.now();
     const pending = new MoviesService(provider).findRelated(1, 'similar');
     await jest.advanceTimersByTimeAsync(2999);
@@ -266,7 +286,9 @@ describe('bounded collection enrichment', () => {
       settled = true;
     });
     await Promise.resolve();
+
     expect(settled).toBe(false);
+
     await jest.advanceTimersByTimeAsync(1);
     const result = await pending;
 
@@ -285,12 +307,14 @@ describe('bounded collection enrichment', () => {
           signal?.addEventListener('abort', () => reject(new Error('aborted')));
         }),
     );
+
     const pending = new TmdbMovieProvider(config).findCollection(1);
     const assertion = expect(pending).rejects.toBeInstanceOf(
       GatewayTimeoutException,
     );
     await jest.advanceTimersByTimeAsync(3000);
     await assertion;
+
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(jest.getTimerCount()).toBe(0);
   });
@@ -309,6 +333,7 @@ describe('bounded collection enrichment', () => {
           );
         }),
     );
+
     const older = provider.findCollection(1);
     const olderAssertion = expect(older).rejects.toBeInstanceOf(
       GatewayTimeoutException,
@@ -318,6 +343,7 @@ describe('bounded collection enrichment', () => {
     await jest.advanceTimersByTimeAsync(2000);
     await olderAssertion;
     await jest.advanceTimersByTimeAsync(500);
+
     await expect(newer).resolves.toMatchObject({ availability: 'available' });
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(jest.getTimerCount()).toBe(0);

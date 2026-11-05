@@ -7,16 +7,16 @@ import { record } from '../../util/partialValidation';
 import { seasonDetails, seriesDetails } from '../../util/seriesValidation';
 import parseDetailId from '../../util/detailId';
 import EpisodeList from './episodeList';
-import useSeriesResource from './useSeriesResource';
+import useSeriesResource from './hooks/useSeriesResource';
 import parseSeasonNumber from './seriesCoordinates';
 import '../../components/details/media/media.scss';
 import {
   SeriesLayout,
-  SeriesHero,
   SeriesRequestState,
   SeriesBreadcrumbs,
-  SeasonSelector,
 } from './seriesPresentation';
+import SeriesHero from './seriesHero';
+import SeasonSelector from './seasonSelector';
 import seasonName from './seriesNames';
 
 function SeasonDetails({
@@ -39,16 +39,20 @@ function SeasonDetails({
     record(routeState) && seriesDetails(routeState.series, id)
       ? routeState.series
       : undefined;
+
   const load = useCallback(
     (signal: AbortSignal) => getSeason(id, number, signal),
     [id, number]
   );
+
   const loadSeries = useCallback(
     (signal: AbortSignal) => getSeries(id, signal),
     [id]
   );
+
   const resource = useSeriesResource(load, valid, initialSeason);
   const parent = useSeriesResource(loadSeries, valid, initialSeries);
+
   const season = resource.data;
   const series = parent.data;
 

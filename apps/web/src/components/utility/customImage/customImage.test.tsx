@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useLayoutEffect, useRef } from 'react';
+
 import MovieImage from './customImage';
 
 function LoadImageDuringLayout() {
@@ -42,6 +43,7 @@ describe('<MovieImage />', () => {
       if (!preview) {
         throw new Error('Missing preview');
       }
+
       expect(final).toHaveAttribute('src', '/poster.jpg');
       expect(final).toHaveAttribute('loading', 'eager');
       expect(final).toHaveAttribute('decoding', 'async');
@@ -49,12 +51,17 @@ describe('<MovieImage />', () => {
       expect(preview).toHaveAttribute('aria-hidden', 'true');
       expect(preview).toHaveAttribute('alt', '');
       expect(imageConstructor).not.toHaveBeenCalled();
+
       fireEvent.load(first === 'preview' ? preview : final);
+
       expect(final).toHaveStyle({ opacity: first === 'final' ? '1' : '0' });
       expect(preview).toHaveStyle({ opacity: first === 'preview' ? '1' : '0' });
+
       fireEvent.load(first === 'preview' ? final : preview);
+
       expect(final).toHaveStyle({ opacity: '1' });
       expect(preview).toHaveStyle({ opacity: '0' });
+
       imageConstructor.mockRestore();
     }
   );
@@ -76,12 +83,17 @@ describe('<MovieImage />', () => {
       throw new Error('Missing preview');
     }
     fireEvent.error(preview);
+
     expect(final).toHaveAttribute('src', '/poster.jpg');
     expect(preview).toHaveStyle({ opacity: '0' });
+
     fireEvent.load(final);
+
     expect(final).toHaveStyle({ opacity: '1' });
+
     fireEvent.error(final);
     fireEvent.load(preview);
+
     expect(screen.getByRole('img', { name: 'Poster' })).toHaveClass(
       'image-placeholder'
     );
@@ -111,24 +123,32 @@ describe('<MovieImage />', () => {
       throw new Error('Missing preview');
     }
     fireEvent.load(first);
+
     expect(second).toHaveStyle({ opacity: '0' });
+
     fireEvent.load(second);
+
     expect(second).toHaveStyle({ opacity: '1' });
+
     rerender(<MovieImage {...props} src="/next.jpg" previewSrc="/third.jpg" />);
     fireEvent.error(second);
+
     expect(screen.getByAltText('Poster')).toHaveStyle({ opacity: '0' });
+
     const third = container.querySelector('.image-preview');
 
     if (!third) {
       throw new Error('Missing preview');
     }
     fireEvent.load(third);
+
     expect(third).toHaveStyle({ opacity: '1' });
   });
 
   it('renders the accessible icon placeholder when no source is provided', () => {
     render(<MovieImage alt="Poster" className="movie-image" />);
     const placeholder = screen.getByRole('img', { name: 'Poster' });
+
     expect(placeholder).toHaveClass(
       'movie-image__placeholder',
       'image-placeholder'
@@ -146,18 +166,23 @@ describe('<MovieImage />', () => {
       <MovieImage src="/poster.jpg" alt="Poster" className="movie-image" />
     );
     const image = screen.getByAltText('Poster');
+
     expect(image).toHaveAttribute('src', '/poster.jpg');
     expect(image).toHaveAttribute('loading', 'lazy');
     expect(image).toHaveAttribute('decoding', 'async');
     expect(imageConstructor).not.toHaveBeenCalled();
     expect(screen.queryByRole('img', { name: 'Poster' })).toBe(image);
+
     fireEvent.load(image);
+
     expect(image).toHaveStyle({ opacity: '1' });
+
     imageConstructor.mockRestore();
   });
 
   it('keeps a successful load that arrives before passive effects run', () => {
     render(<LoadImageDuringLayout />);
+
     expect(screen.getByAltText('Cached poster')).toHaveStyle({ opacity: '1' });
   });
 
@@ -173,6 +198,7 @@ describe('<MovieImage />', () => {
       />
     );
     const image = screen.getByAltText('Poster');
+
     expect(image).toHaveAttribute('loading', 'eager');
     expect(image).toHaveAttribute('srcset', '/small.jpg 300w, /large.jpg 780w');
     expect(image).toHaveAttribute('sizes', '300px');
@@ -191,6 +217,7 @@ describe('<MovieImage />', () => {
     const image = screen.getByAltText('Poster');
     fireEvent.error(image);
     const fallback = screen.getByRole('img', { name: 'Poster' });
+
     expect(fallback).toHaveClass('image-placeholder');
     expect(fallback.querySelector('svg')).toBeInTheDocument();
   });
@@ -210,8 +237,10 @@ describe('<MovieImage />', () => {
       />
     );
     const nextImage = screen.getByAltText('Poster');
+
     expect(screen.getByAltText('Poster')).toHaveAttribute('src', '/next.jpg');
     expect(screen.getByAltText('Poster')).toHaveStyle({ opacity: '0' });
+
     rerender(
       <MovieImage
         src="/last.jpg"
@@ -222,9 +251,13 @@ describe('<MovieImage />', () => {
     );
     const lastImage = screen.getByAltText('Poster');
     fireEvent.load(nextImage);
+
     expect(lastImage).toHaveStyle({ opacity: '0' });
+
     fireEvent.load(lastImage);
+
     expect(lastImage).toHaveStyle({ opacity: '1' });
+
     rerender(
       <MovieImage
         src="/last.jpg"
@@ -236,9 +269,11 @@ describe('<MovieImage />', () => {
     );
     const responsiveImage = screen.getByAltText('Poster');
     fireEvent.error(responsiveImage);
+
     expect(screen.getByRole('img', { name: 'Poster' })).toHaveClass(
       'image-placeholder'
     );
+
     fireEvent.error(oldImage);
     rerender(
       <MovieImage
@@ -250,9 +285,12 @@ describe('<MovieImage />', () => {
       />
     );
     const recoveredImage = screen.getByAltText('Poster');
+
     expect(recoveredImage).toHaveAttribute('src', '/recovered.jpg');
     expect(recoveredImage).toHaveStyle({ opacity: '0' });
+
     fireEvent.load(recoveredImage);
+
     expect(recoveredImage).toHaveStyle({ opacity: '1' });
     expect(screen.getByAltText('Poster')).toHaveAttribute(
       'srcset',
@@ -266,15 +304,19 @@ describe('<MovieImage />', () => {
     );
     const firstImage = screen.getByAltText('Poster');
     fireEvent.load(firstImage);
+
     expect(firstImage).toHaveStyle({ opacity: '1' });
 
     rerender(
       <MovieImage src="/temporary.jpg" alt="Poster" className="movie-image" />
     );
+
     expect(screen.getByAltText('Poster')).toHaveStyle({ opacity: '0' });
+
     rerender(
       <MovieImage src="/first.jpg" alt="Poster" className="movie-image" />
     );
+
     expect(screen.getByAltText('Poster')).toHaveStyle({ opacity: '0' });
   });
 });

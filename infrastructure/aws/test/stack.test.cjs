@@ -28,7 +28,9 @@ test('observes CSP compatibility without enforcing an unverified policy', () => 
   const csp = headers.find(
     (header) => header.Header === 'Content-Security-Policy-Report-Only',
   );
+
   assert.equal(csp.Override, true);
+
   const directives = new Map(
     csp.Value.split('; ').map((directive) => {
       const [name, ...sources] = directive.split(' ');
@@ -36,6 +38,7 @@ test('observes CSP compatibility without enforcing an unverified policy', () => 
       return [name, sources];
     }),
   );
+
   assert.deepEqual(directives.get('script-src'), ["'self'"]);
   assert.deepEqual(directives.get('connect-src'), ["'self'"]);
   assert.deepEqual(directives.get('object-src'), ["'none'"]);
@@ -62,6 +65,7 @@ test('observes CSP compatibility without enforcing an unverified policy', () => 
 
 test('defines private retained S3 with OAC and distribution-scoped access', () => {
   const template = Template.fromStack(stack());
+
   template.hasResource('AWS::S3::Bucket', {
     DeletionPolicy: 'Retain',
     Properties: {
@@ -90,6 +94,7 @@ test('defines private retained S3 with OAC and distribution-scoped access', () =
 
 test('bounds Lambda cost and injects secret references without runtime secret permissions', () => {
   const template = Template.fromStack(stack());
+
   template.hasResourceProperties('AWS::Lambda::Function', {
     Runtime: 'nodejs24.x',
     Architectures: ['arm64'],
@@ -106,7 +111,9 @@ test('bounds Lambda cost and injects secret references without runtime secret pe
       }),
     },
   });
+
   const json = JSON.stringify(template.toJSON());
+
   assert.ok(json.includes('{{resolve:secretsmanager:'));
   assert.ok(json.includes(':SecretString:TMDB_ACCESS_TOKEN::}}'));
   assert.equal(json.includes('AdministratorAccess'), false);
@@ -120,6 +127,7 @@ test('bounds Lambda cost and injects secret references without runtime secret pe
 
 test('keeps API errors and methods separate from SPA fallback with no API caching', () => {
   const template = Template.fromStack(stack());
+
   template.hasResourceProperties('AWS::CloudFront::Distribution', {
     DistributionConfig: {
       CustomErrorResponses: Match.arrayWith([
@@ -161,6 +169,7 @@ test('defines bounded logs, three low-noise alarms and optional email actions', 
   const template = Template.fromStack(
     stack({ alarmEmail: 'operator@example.com' }),
   );
+
   template.resourceCountIs('AWS::Logs::LogGroup', 2);
   template.allResourcesProperties('AWS::Logs::LogGroup', {
     RetentionInDays: 14,
@@ -195,12 +204,14 @@ test('requires a matching future alias and existing us-east-1 certificate', () =
       }),
     /us-east-1/,
   );
+
   const template = Template.fromStack(
     stack({
       alias: 'movies.example.com',
       certificateArn: 'arn:aws:acm:us-east-1:000000000000:certificate/1234',
     }),
   );
+
   template.resourceCountIs('AWS::CertificateManager::Certificate', 0);
   template.hasResourceProperties('AWS::CloudFront::Distribution', {
     DistributionConfig: { Aliases: ['movies.example.com'] },

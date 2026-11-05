@@ -6,6 +6,7 @@ interface LoadingProps {
   className: string;
   title?: string;
 }
+
 function Loading({ className, title }: LoadingProps) {
   useEffect(() => {
     if (!title) {

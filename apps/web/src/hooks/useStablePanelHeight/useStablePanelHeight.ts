@@ -49,6 +49,7 @@ export default function useStablePanelHeight<T extends HTMLElement>(
 
     // eslint-disable-next-line react-hooks/immutability -- Imperative DOM measurement/animation is the purpose of this layout effect.
     panel.style.minHeight = '';
+
     const nextHeight = panel.getBoundingClientRect().height;
 
     if (
@@ -62,9 +63,11 @@ export default function useStablePanelHeight<T extends HTMLElement>(
     }
 
     panel.style.minHeight = `${previousHeight}px`;
+
     const frame = window.requestAnimationFrame(() => {
       panel.style.minHeight = `${nextHeight}px`;
     });
+
     const timeout = window.setTimeout(() => {
       panel.style.minHeight = '';
       observedHeightRef.current = panel.getBoundingClientRect().height;

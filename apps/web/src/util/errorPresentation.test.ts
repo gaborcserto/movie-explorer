@@ -24,6 +24,7 @@ test('never presents untrusted exception content', () => {
 
 test('cancellation stays silent', () => {
   const error = new ApiRequestError('cancelled');
+
   expect(presentApiError(error)).toBeNull();
   expect(isCancelledError(error)).toBe(true);
   expect(isCancelledError(new DOMException('aborted', 'AbortError'))).toBe(

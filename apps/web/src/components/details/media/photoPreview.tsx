@@ -42,6 +42,7 @@ function PhotoPreviewContent({
   const plural = category ?? 'photos';
   const singular = plural.slice(0, -1);
   const batchSize = PHOTO_BATCH_SIZES[plural];
+
   const [visibleCount, setVisibleCount] = useState<number>(batchSize);
   const visiblePhotos = available.slice(0, visibleCount);
 

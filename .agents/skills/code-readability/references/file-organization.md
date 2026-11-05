@@ -36,15 +36,12 @@ export when that matches local conventions. Keep stylesheets with their owning
 feature when selectors are independently owned. Preserve shared stylesheet
 order and cascade when a feature shares a stylesheet with its parent.
 
-Use direct-file counts as a review signal, not a target or enforcement rule:
-
-- 1–5 direct files is a useful starting range for many components.
-- 6–9 direct files can be reasonable when the files share ownership.
-- At 10 or more direct files, review boundaries and file ownership.
-
-Count files directly inside a directory separately from files in its
-subdirectories. Do not split cohesive files or create subdirectories solely to
-meet a count. Avoid unnecessary barrels, wrapper directories, and deep nesting.
+Review folders for multiple independent components, unrelated utilities, unclear
+public/private boundaries, distant tests, unclear hook ownership, duplicate
+implementations and excessive cross-folder imports. Do not set file-count limits
+or split cohesive responsibilities merely to reduce counts. Trivial private JSX
+helpers may stay with their parent. Prefer dedicated directories for independently
+meaningful components, including page-specific ones.
 
 Keep component-specific hooks in that component or feature's `hooks/`
 directory. Move a hook to shared code only when multiple independent consumers
@@ -55,7 +52,7 @@ already justify shared ownership; anticipated reuse is not enough.
 Use subdirectories when several files belong to a cohesive responsibility such
 as credits, media, metadata, or recovery. Keep the feature root focused on page
 composition and orchestration, and review it when unrelated responsibilities
-accumulate or it reaches ten direct files. Keep implementation, tests, and
+accumulate. Keep implementation, tests, and
 styles together when they share ownership; a numeric threshold alone does not
 justify moving tightly coupled files.
 

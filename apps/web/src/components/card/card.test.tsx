@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import type { MovieSummary } from '@movie-explorer/contracts';
+
 import Card from './card';
 
 const mockMovie: MovieSummary = {
@@ -66,6 +67,7 @@ describe('<Card />', () => {
     );
 
     const movieLink = screen.getByRole('link', { name: mockMovie.title });
+
     expect(movieLink).toBeVisible();
     expect(movieLink).toHaveAttribute('href', '/movie/1234');
     expect(screen.getByText('1894')).toBeVisible();
@@ -98,6 +100,7 @@ describe('<Card />', () => {
     );
 
     const image = screen.getByAltText(mockMovie.title);
+
     expect(image).toHaveAttribute('loading', 'eager');
     expect(image).toHaveAttribute('sizes', '300px');
     expect(image.getAttribute('srcset')).not.toContain('/original.jpg');

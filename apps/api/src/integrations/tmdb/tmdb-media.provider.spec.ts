@@ -1,5 +1,6 @@
 import { ok } from 'node:assert/strict';
 import { Logger } from '@nestjs/common';
+
 import { TmdbMovieProvider } from './tmdb-movie.provider';
 
 const config = {
@@ -46,11 +47,13 @@ const movie = {
 describe('movie media coverage', () => {
   const fetchMock = jest.fn();
   const originalFetch = global.fetch;
+
   beforeEach(() => {
     fetchMock.mockReset();
     global.fetch = fetchMock;
     jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
   });
+
   afterEach(() => {
     global.fetch = originalFetch;
     jest.restoreAllMocks();
@@ -98,7 +101,9 @@ describe('movie media coverage', () => {
         },
       }),
     );
+
     const result = await new TmdbMovieProvider(config).findOne(movie.id);
+
     ok(result);
     expect(result.backdrops).toHaveLength(14);
     expect(result.posters).toHaveLength(9);
@@ -158,10 +163,12 @@ describe('movie media coverage', () => {
       await provider.findMovieSection(movie.id, 'videos');
       for (const [url] of fetchMock.mock.calls) {
         const union = language === 'hu-HU' ? 'hu,en,null' : 'en,null';
+
         expect(url.searchParams.get('language')).toBe(language);
         expect(url.searchParams.get('include_image_language')).toBe(union);
         expect(url.searchParams.get('include_video_language')).toBe(union);
       }
+
       expect(fetchMock.mock.calls.map(([url]) => url.pathname)).toEqual([
         '/movie/969681',
         '/movie/969681/images',
@@ -183,7 +190,9 @@ describe('movie media coverage', () => {
           },
         }),
       );
+
       const result = await new TmdbMovieProvider(config).findOne(movie.id);
+
       ok(result);
       expect(result.title).toBe(movie.title);
       ok(result.sections);
@@ -215,6 +224,7 @@ describe('movie media coverage', () => {
       );
     const provider = new TmdbMovieProvider(config);
     const empty = await provider.findOne(550);
+
     expect(empty).toMatchObject({
       backdrops: [],
       posters: [expect.objectContaining({ language: 'hu' })],
@@ -225,7 +235,9 @@ describe('movie media coverage', () => {
         videos: { status: 'available' },
       },
     });
+
     const missing = await provider.findOne(movie.id);
+
     ok(missing);
     ok(missing.sections);
     expect(missing.sections.posters).toEqual({ status: 'unavailable' });
@@ -239,7 +251,9 @@ describe('movie media coverage', () => {
     { results: [{ ...trailer, iso_639_1: 12 }] },
   ])('isolates unexpected video responses: %j', async (videos) => {
     fetchMock.mockResolvedValue(Response.json({ ...movie, videos }));
+
     const result = await new TmdbMovieProvider(config).findOne(movie.id);
+
     ok(result);
     ok(result.sections);
     expect(result.sections.videos).toEqual({ status: 'unavailable' });

@@ -22,7 +22,9 @@ test('uses a dark token, reserved poster proportions and disables pulse for redu
     'aspect-ratio': '2/3',
     height: 'auto',
   });
+
   let reducedMotion = false;
+
   stylesheet.walkAtRules('media', (media) => {
     if (media.params === '(prefers-reduced-motion: reduce)') {
       media.walkDecls('animation', (declaration) => {
@@ -30,5 +32,6 @@ test('uses a dark token, reserved poster proportions and disables pulse for redu
       });
     }
   });
+
   expect(reducedMotion).toBe(true);
 });

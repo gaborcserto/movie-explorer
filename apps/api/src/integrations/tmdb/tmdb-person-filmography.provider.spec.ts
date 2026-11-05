@@ -60,6 +60,7 @@ describe('Combined Person filmography', () => {
     jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
     provider = new TmdbPersonFilmographyProvider(config);
   });
+
   afterEach(() => {
     global.fetch = originalFetch;
     jest.restoreAllMocks();
@@ -76,6 +77,7 @@ describe('Combined Person filmography', () => {
       }),
     );
     const person = await provider.findPerson(1);
+
     ok(person);
     expect(person.filmography).toHaveLength(1);
     expect(person.filmography[0]).not.toHaveProperty('mediaType');
@@ -112,6 +114,7 @@ describe('Combined Person filmography', () => {
       Response.json({ id: 1, name: 'Person', movie_credits: movie }),
     );
     const person = await provider.findPerson(1);
+
     ok(person);
     expect(person.name).toBe('Person');
     ok(person.combinedFilmography);
@@ -130,6 +133,7 @@ describe('Combined Person filmography', () => {
         Response.json(type === 'movie' ? movie : tv),
       );
       const result = await provider.findCombined(1, type);
+
       ok(result);
       expect(result.groups).toEqual({ [type]: { status: 'available' } });
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -146,6 +150,7 @@ describe('Combined Person filmography', () => {
     fetchMock.mockResolvedValueOnce(
       new Response(null, { status: 429, headers: { 'Retry-After': '12' } }),
     );
+
     await expect(provider.findCombined(1, 'all')).resolves.toEqual({
       entries: [],
       groups: {
@@ -158,10 +163,13 @@ describe('Combined Person filmography', () => {
   it('prioritizes rate limiting when all sources fail and preserves missing-person 404', async () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }));
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 429 }));
+
     await expect(provider.findCombined(1, 'all')).rejects.toMatchObject({
       status: 429,
     });
+
     fetchMock.mockResolvedValue(new Response(null, { status: 404 }));
+
     await expect(provider.findCombined(1, 'all')).resolves.toBeUndefined();
     await expect(provider.findPerson(1)).resolves.toBeUndefined();
   });
@@ -173,6 +181,7 @@ describe('Combined Person filmography', () => {
       { success: false },
     ]) {
       fetchMock.mockResolvedValueOnce(Response.json(body));
+
       await expect(provider.findCombined(1, 'tv')).rejects.toMatchObject({
         status: 502,
       });
@@ -195,6 +204,7 @@ describe('Combined Person filmography', () => {
     });
     await jest.advanceTimersByTimeAsync(51);
     await result;
+
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(jest.getTimerCount()).toBe(0);
   });
@@ -209,6 +219,7 @@ describe('Combined Person filmography', () => {
       ],
       crew: [],
     });
+
     expect(rows).toEqual([
       {
         mediaType: 'tv',

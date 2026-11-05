@@ -1,5 +1,6 @@
 ﻿import { BadGatewayException } from '@nestjs/common';
 import type { SearchSuggestionsResponse } from '@movie-explorer/contracts';
+
 import { TmdbMovieProvider } from './tmdb-movie.provider';
 import { mapPeople, searchPage } from './tmdb-search.mapper';
 import { SearchService } from '../../search/search.service';
@@ -11,6 +12,7 @@ const config = {
   imageBaseUrl: 'https://image.tmdb.org/t/p/w500',
   language: 'en-US',
 };
+
 const page = (results: unknown[], current = 1) => ({
   results,
   page: current,
@@ -22,10 +24,12 @@ describe('search provider and public contracts', () => {
   const fetchMock = jest.fn();
   const originalFetch = global.fetch;
   const provider = new TmdbMovieProvider(config);
+
   beforeEach(() => {
     fetchMock.mockReset();
     global.fetch = fetchMock;
   });
+
   afterAll(() => {
     global.fetch = originalFetch;
   });
@@ -43,12 +47,15 @@ describe('search provider and public contracts', () => {
         ),
       ),
     );
+
     await expect(provider.findPeople('', 2)).resolves.toMatchObject({
       people: [{ id: 1, name: 'Duplicate' }],
       page: 2,
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+
     const url: URL = fetchMock.mock.calls[0][0];
+
     expect(url.pathname).toBe('/3/person/popular');
     expect(url.searchParams.get('page')).toBe('2');
     expect(url.searchParams.has('query')).toBe(false);
@@ -86,6 +93,7 @@ describe('search provider and public contracts', () => {
       provider,
       new TmdbSearchProvider(config),
     ).suggestions(' Query ', 1);
+
     expect(result).toEqual({
       groups: {
         movie: { status: 'available' },
@@ -109,6 +117,7 @@ describe('search provider and public contracts', () => {
       ],
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
+
     for (const [url] of fetchMock.mock.calls) {
       expect(url.searchParams.get('query')).toBe('Query');
       expect(url.searchParams.get('include_adult')).toBe('false');
@@ -154,6 +163,7 @@ describe('search provider and public contracts', () => {
         ),
       ),
     );
+
     await expect(provider.findPeople(' Two ', 2)).resolves.toEqual({
       people: [
         { id: 1, name: 'One' },
@@ -186,6 +196,7 @@ describe('search provider and public contracts', () => {
         ]),
       ),
     );
+
     await expect(provider.findSuggestions('Query', 6)).resolves.toEqual({
       suggestions: [
         { id: 1, title: 'First' },
@@ -215,15 +226,18 @@ describe('search provider and public contracts', () => {
   it.each(['network', 'http', 'json', 'shape'])(
     'sanitizes %s failures',
     async (kind) => {
-      if (kind === 'network')
+      if (kind === 'network') {
         fetchMock.mockRejectedValue(new Error('Bearer secret upstream'));
-      else if (kind === 'http')
+      } else if (kind === 'http') {
         fetchMock.mockResolvedValue(
           new Response('secret upstream', { status: 401 }),
         );
-      else if (kind === 'json')
+      } else if (kind === 'json') {
         fetchMock.mockResolvedValue(new Response('secret upstream'));
-      else fetchMock.mockResolvedValue(Response.json({ secret: 'upstream' }));
+      } else {
+        fetchMock.mockResolvedValue(Response.json({ secret: 'upstream' }));
+      }
+
       await expect(provider.findPeople('Query', 1)).rejects.toBeInstanceOf(
         BadGatewayException,
       );

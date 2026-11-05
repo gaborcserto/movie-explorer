@@ -74,9 +74,12 @@ export function useResultHistory<T>(
   const location = useLocation();
   const key = `${location.key}:${signature}`;
   const [restored] = useState(() => cache?.get(key));
+
   const save = useCallback(
     (snapshot: T | undefined) => {
-      if (cache && snapshot) remember(cache, key, snapshot);
+      if (cache && snapshot) {
+        remember(cache, key, snapshot);
+      }
     },
     [cache, key]
   );
@@ -87,12 +90,14 @@ export function useResultHistory<T>(
 export function useSearchScroll() {
   const history = useSearchHistory();
   const location = useLocation();
+
   useLayoutEffect(() => {
     const saved = history?.scroll.get(location.key);
 
     if (saved !== undefined) {
       window.scrollTo({ top: saved, behavior: 'instant' });
     }
+
     const save = () => {
       if (history) {
         remember(history.scroll, location.key, window.scrollY);

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
+
 import ErrorPresentation from '../../errorPresentation';
 import { useSearchHistory } from '../../list/useSearchHistory';
 
@@ -18,6 +19,7 @@ export default function DetailError({
   const navigate = useNavigate();
   const history = useSearchHistory();
   const retryRef = useRef<HTMLButtonElement>(null);
+
   useLayoutEffect(() => {
     const button = retryRef.current;
 

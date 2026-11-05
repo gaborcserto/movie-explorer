@@ -16,6 +16,7 @@ function List() {
   const history = useSearchHistory();
   const { searchQuery } = useParams();
   const [searchParams] = useSearchParams();
+
   const signature = movieHistorySignature(searchQuery, searchParams);
   const filters = readFilters(searchParams, Boolean(searchQuery));
   const filterValue = filters.filter.join(',');
@@ -69,6 +70,7 @@ function List() {
         ? 'No matching movies yet. Load more to continue.'
         : 'No matching movies found.';
     }
+
     const genre = filter.length
       ? filter.map(capitalizeFirstLetter).join(' or ')
       : null;
@@ -76,9 +78,11 @@ function List() {
     if (searchQuery && genre) {
       return `No movies found for "${searchQuery}" in ${genre}.`;
     }
+
     if (searchQuery) {
       return `No movies found for "${searchQuery}".`;
     }
+
     if (genre) {
       return `No movies found in ${genre}.`;
     }
@@ -108,10 +112,13 @@ function List() {
     (visibleMovieCount < movies.length ||
       moviesData.page < Math.min(moviesData.totalPages, 500))
   );
+
   const hasPageLevelSearchFilters = Boolean(
     searchQuery && (filter.length > 0 || minimumRating)
   );
+
   const visibleMovies = movies.slice(0, visibleMovieCount);
+
   const sorting = sortParams(sort);
   const badges = [
     ...(filter.length
@@ -145,22 +152,29 @@ function List() {
         ]
       : []),
   ];
+
   const handleRemoveBadge = (key: string, genreValue?: string) => {
     const next = new URLSearchParams(searchParams);
 
     if (genreValue) {
       const remaining = filter.filter((value) => value !== genreValue);
       next.delete('filter');
-      if (remaining.length) next.set('filter', remaining.join(','));
+
+      if (remaining.length) {
+        next.set('filter', remaining.join(','));
+      }
     } else if (key === 'sorting') {
       next.set('sorting', 'popularity');
     } else {
       next.delete(key);
     }
+
     setSearchParams(next);
   };
+
   const handleClearFilters = () => {
     const next = new URLSearchParams(searchParams);
+
     ['filter', 'year', 'rating', 'sorting', 'order'].forEach((key) =>
       next.delete(key)
     );

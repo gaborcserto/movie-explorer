@@ -13,15 +13,18 @@ const envelope = {
   totalPages: 1,
   totalResults: 1,
 };
+
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   fetchMock.mockReset();
 });
+
 afterEach(() => vi.unstubAllGlobals());
 
 test('requests canonical unified search with exact Series year and caller cancellation', async () => {
   fetchMock.mockResolvedValue(Response.json(envelope));
   const controller = new AbortController();
+
   await expect(
     getSearchResults('Story & title', 'tv', 1, controller.signal, '2005')
   ).resolves.toEqual(envelope);
@@ -30,6 +33,7 @@ test('requests canonical unified search with exact Series year and caller cancel
     expect.objectContaining({ signal: expect.any(AbortSignal) })
   );
 });
+
 test.each([
   null,
   {},
@@ -52,10 +56,12 @@ test.each([
   },
 ])('rejects malformed, mismatched or unsupported response %j', async (body) => {
   fetchMock.mockResolvedValue(Response.json(body));
+
   await expect(getSearchResults('Story', 'tv', 1)).rejects.toMatchObject({
     category: 'invalid-response',
   });
 });
+
 test('All accepts different media types with the same numeric ID and missing metadata', async () => {
   const body = {
     ...envelope,
@@ -66,8 +72,10 @@ test('All accepts different media types with the same numeric ID and missing met
     ],
   };
   fetchMock.mockResolvedValue(Response.json(body));
+
   await expect(getSearchResults('Story', 'all', 1)).resolves.toEqual(body);
 });
+
 test('opts into Series suggestions with optional metadata and validates the group availability', async () => {
   const body = {
     suggestions: envelope.results,
@@ -83,6 +91,7 @@ test('opts into Series suggestions with optional metadata and validates the grou
       groups: { ...body.groups, tv: { status: 'wrong' } },
     })
   );
+
   await expect(getSearchSuggestions('Story')).resolves.toEqual(body);
 
   expect(fetchMock).toHaveBeenCalledWith(
@@ -93,6 +102,7 @@ test('opts into Series suggestions with optional metadata and validates the grou
     ApiRequestError
   );
 });
+
 test('aborts an obsolete search without turning it into a network error', async () => {
   fetchMock.mockImplementation(
     (_url: string, init: RequestInit) =>
@@ -105,5 +115,6 @@ test('aborts an obsolete search without turning it into a network error', async 
   const controller = new AbortController();
   const pending = getSearchResults('Story', 'all', 1, controller.signal);
   controller.abort();
+
   await expect(pending).rejects.toMatchObject({ category: 'cancelled' });
 });

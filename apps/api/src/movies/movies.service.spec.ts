@@ -130,6 +130,7 @@ describe('MoviesService', () => {
       availability: 'available',
     });
     await service.findRelated(1, 'recommendations');
+
     expect(movieProvider.findCollection).not.toHaveBeenCalled();
   });
 
@@ -187,6 +188,7 @@ describe('MoviesService', () => {
       score: 8,
       voteCount: 10,
     });
+
     await expect(service.findRatings(1)).resolves.toMatchObject({
       tmdb: { status: 'available', score: 8 },
     });
@@ -195,16 +197,19 @@ describe('MoviesService', () => {
       status: 'unavailable',
       reason: 'upstream-error',
     });
+
     await expect(service.findRatings(1)).resolves.toMatchObject({
       tmdb: { status: 'unavailable', reason: 'upstream-error' },
     });
 
     movieProvider.findRatings?.mockResolvedValueOnce({ status: 'missing' });
+
     await expect(service.findRatings(1)).resolves.toMatchObject({
       tmdb: { status: 'missing' },
     });
 
     movieProvider.findRatings?.mockResolvedValueOnce(undefined);
+
     await expect(service.findRatings(1)).resolves.toBeUndefined();
   });
 });

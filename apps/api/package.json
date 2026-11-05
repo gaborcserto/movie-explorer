@@ -12,7 +12,7 @@
     "start:dev": "nest start --watch --preserveWatchOutput",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "npm run lint:oxlint && npm run lint:eslint && npm run lint:format",
+    "lint": "npm run lint:readability --prefix ../.. && npm run lint:oxlint && npm run lint:eslint && npm run lint:format",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",

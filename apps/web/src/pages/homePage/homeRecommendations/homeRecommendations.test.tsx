@@ -71,6 +71,7 @@ it('shows one compass heading and lazily retains Movies/Series results and scrol
     name: 'Recommendations',
     level: 2,
   });
+
   expect(
     screen.getAllByRole('heading', { name: 'Recommendations' })
   ).toHaveLength(1);
@@ -81,9 +82,12 @@ it('shows one compass heading and lazily retains Movies/Series results and scrol
     recommendationTabs().getByRole('tab', { name: 'Movies' })
   ).toHaveAttribute('aria-selected', 'true');
   expect(screen.queryByText('Top Rated')).toBeNull();
+
   const movie = await screen.findByRole('link', { name: 'popular-movies' });
+
   expect(movie).toHaveAttribute('href', '/movie/2');
   expect(getRecommendations).toHaveBeenCalledTimes(1);
+
   const movieViewport = screen.getByRole('region', {
     name: 'Scroll Popular Movies cards',
   });
@@ -93,9 +97,11 @@ it('shows one compass heading and lazily retains Movies/Series results and scrol
     recommendationTabs().getByRole('tab', { name: 'Series' })
   );
   const series = await screen.findByRole('link', { name: 'popular-series' });
+
   expect(series).toHaveAttribute('href', '/series/2');
   expect(screen.queryByRole('link', { name: 'popular-movies' })).toBeNull();
   expect(screen.getAllByRole('tabpanel')).toHaveLength(1);
+
   const seriesViewport = screen.getByRole('region', {
     name: 'Scroll Popular Series cards',
   });
@@ -104,11 +110,14 @@ it('shows one compass heading and lazily retains Movies/Series results and scrol
   await userEvent.click(
     recommendationTabs().getByRole('tab', { name: 'Movies' })
   );
+
   expect(screen.getByRole('link', { name: 'popular-movies' })).toBe(movie);
   expect(movieViewport.scrollLeft).toBe(125);
+
   await userEvent.click(
     recommendationTabs().getByRole('tab', { name: 'Series' })
   );
+
   expect(screen.getByRole('link', { name: 'popular-series' })).toBe(series);
   expect(seriesViewport.scrollLeft).toBe(75);
   expect(
@@ -129,6 +138,7 @@ it('preserves keyboard selection, roving focus and accessible panel linkage', as
   recommendationTabs().getByRole('tab', { name: 'Movies' }).focus();
 
   await userEvent.keyboard('{ArrowRight}');
+
   expect(
     recommendationTabs().getByRole('tab', { name: 'Series' })
   ).toHaveFocus();
@@ -138,20 +148,26 @@ it('preserves keyboard selection, roving focus and accessible panel linkage', as
   expect(
     recommendationTabs().getByRole('tab', { name: 'Movies' })
   ).toHaveAttribute('tabindex', '-1');
+
   await screen.findByRole('link', { name: 'popular-series' });
   await userEvent.keyboard('{Home}{End}{ArrowLeft}{ArrowLeft}');
+
   expect(
     recommendationTabs().getByRole('tab', { name: 'Series' })
   ).toHaveFocus();
+
   await userEvent.keyboard('{ArrowRight}');
+
   expect(
     recommendationTabs().getByRole('tab', { name: 'Movies' })
   ).toHaveFocus();
   expect(getRecommendations).toHaveBeenCalledTimes(2);
+
   const tab = recommendationTabs().getByRole('tab', { name: 'Movies' });
   const panel = document.getElementById(
     tab.getAttribute('aria-controls') ?? ''
   );
+
   expect(panel).toHaveAttribute('aria-labelledby', tab.id);
   expect(panel).toBeVisible();
 });
@@ -181,26 +197,33 @@ it('keeps a pending tab request alive and caches its error until explicit retry'
   await userEvent.click(
     recommendationTabs().getByRole('tab', { name: 'Series' })
   );
+
   expect(screen.getByText('Loading popular series...')).toBeVisible();
+
   const signal = vi.mocked(getRecommendations).mock.calls[1][1];
   await userEvent.click(
     recommendationTabs().getByRole('tab', { name: 'Movies' })
   );
+
   expect(signal?.aborted).toBe(false);
   expect(
     within(screen.getByRole('region', { name: 'Popular Movies' })).getByText(
       'No recommendations are available right now.'
     )
   ).toBeVisible();
+
   await act(async () => {
     rejectSeries?.(new ApiRequestError('network'));
   });
+
   expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
 
   await userEvent.click(
     recommendationTabs().getByRole('tab', { name: 'Series' })
   );
+
   expect(getRecommendations).toHaveBeenCalledTimes(2);
+
   vi.mocked(getRecommendations).mockResolvedValue({
     category: 'popular-series',
     results: [],
@@ -211,6 +234,7 @@ it('keeps a pending tab request alive and caches its error until explicit retry'
   await waitFor(() =>
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
   );
+
   expect(getRecommendations).toHaveBeenCalledTimes(3);
 });
 
@@ -233,6 +257,7 @@ function renderHome() {
 it('personalizes Movies independently and preserves Series Popular and numeric identities', async () => {
   addFavorite(2);
   renderHome();
+
   expect(
     await screen.findByRole('link', { name: 'Personalized movie' })
   ).toHaveAttribute('href', '/movie/10');
@@ -247,6 +272,7 @@ it('personalizes Movies independently and preserves Series Popular and numeric i
   await userEvent.click(
     recommendationTabs().getByRole('tab', { name: 'Series' })
   );
+
   expect(
     await screen.findByRole('link', { name: 'popular-series' })
   ).toHaveAttribute('href', '/series/2');
@@ -260,9 +286,11 @@ it('personalizes Series independently and both types when both have Favorites', 
   await userEvent.click(
     recommendationTabs().getByRole('tab', { name: 'Series' })
   );
+
   expect(
     await screen.findByRole('link', { name: 'Personalized tv' })
   ).toHaveAttribute('href', '/series/10');
+
   const seriesViewport = screen.getByRole('region', {
     name: 'Scroll Popular Series cards',
   });
@@ -272,16 +300,19 @@ it('personalizes Series independently and both types when both have Favorites', 
   await waitFor(() =>
     expect(getPersonalizedRecommendations).toHaveBeenCalledTimes(2)
   );
+
   expect(seriesViewport.scrollLeft).toBe(80);
   expect(
     vi
       .mocked(getPersonalizedRecommendations)
       .mock.calls.map(([input]) => input.mediaType)
   ).toEqual(['tv', 'movie']);
+
   await userEvent.click(
     recommendationTabs().getByRole('tab', { name: 'Movies' })
   );
   await screen.findByRole('link', { name: 'Personalized movie' });
+
   expect(getPersonalizedRecommendations).toHaveBeenCalledTimes(2);
 });
 
@@ -292,13 +323,16 @@ it('responds to card Favorites and Watched actions', async () => {
     screen.getByRole('button', { name: /Add to Favorites/ })
   );
   await screen.findByRole('link', { name: 'Personalized movie' });
+
   expect(screen.queryByRole('link', { name: 'popular-movies' })).toBeNull();
+
   await userEvent.click(
     screen.getByRole('button', { name: /Mark as Watched/ })
   );
   await waitFor(() =>
     expect(getPersonalizedRecommendations).toHaveBeenCalledTimes(2)
   );
+
   expect(screen.queryByRole('link', { name: 'Personalized movie' })).toBeNull();
   expect(vi.mocked(getPersonalizedRecommendations).mock.calls[1][0]).toEqual({
     mediaType: 'movie',
@@ -315,6 +349,7 @@ it('restores Popular after removing the final Favorite without a reload', async 
     useLibraryStore.getState().remove('movie:1', 'favorites');
   });
   await screen.findByRole('link', { name: 'popular-movies' });
+
   expect(getRecommendations).toHaveBeenCalledTimes(1);
   expect(screen.queryByText('Based on your Favorites.')).toBeNull();
 });
@@ -325,6 +360,7 @@ it('uses filtered Popular for a Watched-only library', async () => {
     .add({ mediaType: 'movie', id: 1, title: 'Watched' }, 'watched');
   renderHome();
   await screen.findByRole('link', { name: 'Personalized movie' });
+
   expect(vi.mocked(getPersonalizedRecommendations).mock.calls[0][0]).toEqual({
     mediaType: 'movie',
     favoriteIds: [],
@@ -337,16 +373,19 @@ it('selects bounded, spread-out seeds deterministically and ignores snapshot edi
   [9, 1, 7, 3, 5].forEach((id) => addFavorite(id));
   renderHome();
   await screen.findByRole('link', { name: 'Personalized movie' });
+
   expect(vi.mocked(getPersonalizedRecommendations).mock.calls[0][0]).toEqual({
     mediaType: 'movie',
     favoriteIds: [1, 5, 9],
     excludedIds: [1, 3, 5, 7, 9],
   });
+
   act(() => {
     useLibraryStore
       .getState()
       .updateSnapshot({ mediaType: 'movie', id: 1, title: 'Updated snapshot' });
   });
+
   expect(getPersonalizedRecommendations).toHaveBeenCalledTimes(1);
 });
 
@@ -372,6 +411,7 @@ it('aborts obsolete personalized work and ignores late responses after preferenc
     useLibraryStore.getState().remove('movie:1', 'favorites');
   });
   await screen.findByRole('link', { name: 'popular-movies' });
+
   expect(signal?.aborted).toBe(true);
 
   await act(async () => {
@@ -389,6 +429,7 @@ it('aborts obsolete personalized work and ignores late responses after preferenc
       ],
     });
   });
+
   expect(screen.queryByRole('link', { name: 'Stale response' })).toBeNull();
   expect(screen.getByRole('link', { name: 'popular-movies' })).toBeVisible();
 });
@@ -417,11 +458,14 @@ it('retains partial results during independent retry and leaves the other tab in
   await userEvent.click(
     recommendationTabs().getByRole('tab', { name: 'Movies' })
   );
+
   expect(
     screen.getByText('Some recommendations are unavailable.')
   ).toBeVisible();
+
   await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
   await screen.findByRole('link', { name: 'Personalized movie' });
+
   expect(getRecommendations).toHaveBeenCalledTimes(1);
   expect(getPersonalizedRecommendations).toHaveBeenCalledTimes(2);
 });
@@ -460,15 +504,18 @@ it('uses migrated Watchlist titles as Favorites seeds while preserving Watched e
   });
   renderHome();
   await screen.findByRole('link', { name: 'Personalized movie' });
+
   expect(vi.mocked(getPersonalizedRecommendations).mock.calls[0][0]).toEqual({
     mediaType: 'movie',
     favoriteIds: [1],
     excludedIds: [1, 2],
   });
+
   await userEvent.click(
     recommendationTabs().getByRole('tab', { name: 'Series' })
   );
   await screen.findByRole('link', { name: 'Personalized tv' });
+
   expect(vi.mocked(getPersonalizedRecommendations).mock.calls[1][0]).toEqual({
     mediaType: 'tv',
     favoriteIds: [1],
@@ -498,6 +545,7 @@ it('rehydrates cross-tab storage changes and invalidates only the affected media
     );
   });
   await screen.findByRole('link', { name: 'Personalized movie' });
+
   expect(getPersonalizedRecommendations).toHaveBeenCalledTimes(1);
 
   act(() => {
@@ -508,7 +556,9 @@ it('rehydrates cross-tab storage changes and invalidates only the affected media
       })
     );
   });
+
   expect(getPersonalizedRecommendations).toHaveBeenCalledTimes(1);
+
   localStorage.removeItem(LIBRARY_STORAGE_KEY);
   act(() => {
     window.dispatchEvent(
@@ -519,5 +569,6 @@ it('rehydrates cross-tab storage changes and invalidates only the affected media
     );
   });
   await screen.findByRole('link', { name: 'popular-movies' });
+
   expect(getRecommendations).toHaveBeenCalledTimes(2);
 });

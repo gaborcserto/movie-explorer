@@ -41,6 +41,7 @@ export default function SectionRecovery({
   }, [delay]);
 
   const unavailable = availability?.status === 'unavailable';
+
   const retry = async () => {
     if (controllerRef.current || delay) {
       return;

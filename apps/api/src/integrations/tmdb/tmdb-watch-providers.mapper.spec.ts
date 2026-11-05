@@ -25,6 +25,7 @@ describe('mapWatchProviders', () => {
       },
       'https://image.tmdb.org/t/p/w500',
     );
+
     expect(result.providers).toEqual([
       {
         id: 1,

@@ -93,6 +93,7 @@ export class TmdbPersonFilmographyProvider implements PersonFilmographyProvider 
   ): Promise<CombinedFilmography | undefined> {
     const types: ('movie' | 'tv')[] =
       mediaType === 'all' ? ['movie', 'tv'] : [mediaType];
+
     const results = await Promise.allSettled(
       types.map(async (type) => {
         const body = await this.transport.request({
@@ -111,6 +112,7 @@ export class TmdbPersonFilmographyProvider implements PersonFilmographyProvider 
         return body === undefined ? undefined : this.map(body, type);
       }),
     );
+
     const response: CombinedFilmography = { entries: [], groups: {} };
     results.forEach((result, index) => {
       const type = types[index];
@@ -129,6 +131,7 @@ export class TmdbPersonFilmographyProvider implements PersonFilmographyProvider 
         };
       }
     });
+
     if (
       !Object.values(response.groups).some(
         (group) => group.status === 'available',

@@ -42,6 +42,7 @@ export const LIBRARY_STORAGE_VERSION = 2;
 
 const collections: LibraryCollection[] = ['watched', 'favorites'];
 const mediaTypes: LibraryMediaType[] = ['movie', 'tv'];
+
 let writesBlocked = false;
 let warning: string | null = null;
 let lastItemsSignature = '{}';
@@ -242,6 +243,7 @@ const safeStateStorage: StateStorage = {
             );
           }
         }
+
         const storedState = isRecord(parsed.state) ? parsed.state : undefined;
         lastItemsSignature =
           parsed.version === 1 ? '' : JSON.stringify(storedState?.items ?? {});
@@ -354,6 +356,7 @@ export const useLibraryStore = create<LibraryState>()(
         } else {
           items[key] = { ...current, collections: flags };
         }
+
         set({ items });
 
         return true;

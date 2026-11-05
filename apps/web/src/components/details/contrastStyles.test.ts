@@ -8,12 +8,16 @@ const stylesheets = [
     compile(fileURLToPath(new URL('./details.scss', import.meta.url))).css
   ),
   postcss.parse(
-    compile(fileURLToPath(new URL('./ratings.scss', import.meta.url))).css
+    compile(fileURLToPath(new URL('./ratings/ratings.scss', import.meta.url)))
+      .css
   ),
   postcss.parse(
     compile(
       fileURLToPath(
-        new URL('../../pages/personPage/filmography.scss', import.meta.url)
+        new URL(
+          '../../pages/personPage/filmography/filmography.scss',
+          import.meta.url
+        )
       )
     ).css
   ),
@@ -24,6 +28,7 @@ function declarations(selector: string) {
 
   stylesheets.forEach((stylesheet) => {
     let values: Record<string, string> | undefined;
+
     stylesheet.walkRules((rule) => {
       if (rule.parent?.type !== 'root' || !rule.selectors.includes(selector)) {
         return;
@@ -33,6 +38,7 @@ function declarations(selector: string) {
         values![declaration.prop] = declaration.value;
       });
     });
+
     if (values) {
       result = values;
     }
@@ -67,6 +73,7 @@ function contrastRatio(foreground: string, background: string) {
 
 test('details ratings use coral icons and bold white scores without badges', () => {
   const score = declarations('.details-ratings__score');
+
   expect(score.color).toBe('#ffffff');
   expect(score['font-weight']).toBe('700');
   expect(declarations('.details-ratings__icon').color).toBe('#f65261');
@@ -83,6 +90,7 @@ test('details ratings use coral icons and bold white scores without badges', () 
 
 test('selected filmography view preserves the intentional white-on-coral contrast exception', () => {
   const style = declarations('.filmography__controls [aria-pressed=true]');
+
   expect(style.background).toBe('#f65261');
   expect(style.color).toBe('#ffffff');
   // This requested visual treatment does not meet AA contrast for normal text.
@@ -94,6 +102,7 @@ test('selected view keeps white text through hover, active, and focus states', (
   const base = declarations(selector);
 
   expect(base.color).toBe('#ffffff');
+
   [':hover', ':active', ':focus-visible'].forEach((state) => {
     const rule = stylesheets[1]!.nodes?.find(
       (node) =>
@@ -102,9 +111,11 @@ test('selected view keeps white text through hover, active, and focus states', (
 
     if (rule?.type === 'rule') {
       let color: string | undefined;
+
       rule.walkDecls('color', (declaration) => {
         color = declaration.value;
       });
+
       expect(color ?? base.color).toBe('#ffffff');
     }
   });

@@ -65,13 +65,16 @@ after(() => {
 test('ZIP has executable Linux launcher and excludes local credentials and tooling', () => {
   const zip = fs.readFileSync(path.resolve(artifact, '../backend.zip'));
   const end = zip.length - 22;
+
   assert.equal(zip.readUInt32LE(end), 0x06054b50);
+
   let offset = zip.readUInt32LE(end + 16);
   const count = zip.readUInt16LE(end + 10);
   const entries = new Map();
 
   for (let index = 0; index < count; index += 1) {
     assert.equal(zip.readUInt32LE(offset), 0x02014b50);
+
     const nameLength = zip.readUInt16LE(offset + 28);
     const name = zip.toString('utf8', offset + 46, offset + 46 + nameLength);
     entries.set(name, zip.readUInt32LE(offset + 38) >>> 16);
@@ -144,6 +147,7 @@ test(
 
       for (const route of ['/health', '/api/health']) {
         const response = await get(base + route);
+
         assert.equal(response.status, 200);
         assert.deepEqual(await response.json(), { status: 'ok' });
         assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
@@ -156,8 +160,11 @@ test(
       }
 
       const invalid = await get(`${base}/api/v1/movies/invalid`);
+
       assert.equal(invalid.status, 400);
+
       const failure = await get(`${base}/api/v1/movies/550`);
+
       assert.ok([502, 503, 504].includes(failure.status));
       assert.equal(
         (await failure.text()).includes('offline-smoke-placeholder'),
@@ -174,6 +181,7 @@ test(
         `${base}/api/v1/recommendations/personalized`,
         preferences,
       );
+
       assert.equal(personalized.status, 502);
       assert.equal(
         personalized.headers.get('cache-control'),
@@ -203,6 +211,7 @@ test(
           400,
         );
       }
+
       assert.equal(output.includes('offline-smoke-placeholder'), false);
       assert.equal(
         fs.readFileSync(path.join(artifact, 'run.sh'), 'utf8').includes('\r'),
@@ -242,6 +251,7 @@ test(
       output += data;
     });
     const [code] = await once(child, 'exit');
+
     assert.notEqual(code, 0);
     assert.match(output, /Missing required TMDB_ACCESS_TOKEN/);
   },

@@ -58,16 +58,21 @@ test('keeps the previous panel height during a shrink transition, then releases 
   }
 
   rerender(<StablePanel panelKey="crew" height={120} />);
+
   expect(panel.style.minHeight).toBe('300px');
 
   act(() => animateHeight?.(0));
+
   expect(panel.style.minHeight).toBe('120px');
 
   act(() => vi.advanceTimersByTime(259));
+
   expect(panel.style.minHeight).toBe('120px');
 
   act(() => vi.advanceTimersByTime(1));
+
   expect(panel.style.minHeight).toBe('');
+
   vi.useRealTimers();
 
   unmount();
@@ -106,6 +111,7 @@ test('does not preserve a temporary height when reduced motion is enabled', () =
   }
 
   rerender(<StablePanel panelKey="crew" height={120} />);
+
   expect(panel.style.minHeight).toBe('');
 
   unmount();
@@ -119,6 +125,7 @@ test('observes recovered and replaced nodes and disconnects each observer', () =
     observe: ReturnType<typeof vi.fn>;
     disconnect: ReturnType<typeof vi.fn>;
   }[] = [];
+
   class Observer {
     observe = vi.fn();
 
@@ -134,6 +141,7 @@ test('observes recovered and replaced nodes and disconnects each observer', () =
       });
     }
   }
+
   vi.stubGlobal('ResizeObserver', Observer);
   const measure = vi
     .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
@@ -143,14 +151,17 @@ test('observes recovered and replaced nodes and disconnects each observer', () =
   const { rerender, unmount } = render(
     <StablePanel present={false} panelKey="cast" height={300} />
   );
+
   expect(observers).toHaveLength(0);
 
   rerender(<StablePanel panelKey="cast" height={300} />);
+
   expect(observers[0].observe).toHaveBeenCalledWith(
     document.querySelector('div[style]')
   );
 
   rerender(<StablePanel panelKey="cast" height={200} nodeKey="replacement" />);
+
   expect(observers[0].disconnect).toHaveBeenCalledTimes(1);
   expect(observers[1].observe).toHaveBeenCalledWith(
     document.querySelector('div[style]')
@@ -158,16 +169,21 @@ test('observes recovered and replaced nodes and disconnects each observer', () =
 
   act(() => observers[1].callback([], {} as ResizeObserver));
   rerender(<StablePanel panelKey="crew" height={100} nodeKey="replacement" />);
+
   expect(
     document.querySelector<HTMLElement>('div[style]')?.style.minHeight
   ).toBe('200px');
 
   rerender(<StablePanel panelKey="cast" height={250} nodeKey="replacement" />);
+
   expect(
     document.querySelector<HTMLElement>('div[style]')?.style.minHeight
   ).toBe('');
+
   unmount();
+
   expect(observers[1].disconnect).toHaveBeenCalledTimes(1);
+
   measure.mockRestore();
   vi.unstubAllGlobals();
 });

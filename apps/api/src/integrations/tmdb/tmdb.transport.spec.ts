@@ -72,10 +72,12 @@ describe('TMDB transport validation boundary', () => {
         await expect(result).resolves.toEqual(body);
         expect(logger.warn).not.toHaveBeenCalled();
       }
+
       expect(validateBody).toHaveBeenCalledTimes(1);
       expect(validateBody).toHaveBeenCalledWith(body);
       expect(signalAbortedDuringValidation).toBe(false);
       expect(timersDuringValidation).toBe(1);
+
       const init: RequestInit & { signal: AbortSignal } =
         fetchMock.mock.calls[0][1];
 

@@ -4,6 +4,7 @@ import { sortParams, sortOrderParams } from '../../util/apiUtils';
 export const ratingOptions = Array.from({ length: 20 }, (_, index) =>
   String((index + 1) / 2)
 );
+
 export const validYear = (value: string) =>
   /^\d{4}$/.test(value) && Number(value) >= 1874 && Number(value) <= 9999;
 
@@ -72,8 +73,11 @@ export function writeFilters(
       return;
     }
 
-    if (value) next.set(key, String(value));
-    else next.delete(key);
+    if (value) {
+      next.set(key, String(value));
+    } else {
+      next.delete(key);
+    }
   });
 
   return next;
@@ -90,8 +94,11 @@ export function normalizeSearchFilters(
   const next = normalizeFilters(params, isSearch);
   const view = readSearchView(params);
 
-  if (view === 'movies' || (view === 'all' && !isSearch)) next.delete('view');
-  else next.set('view', view);
+  if (view === 'movies' || (view === 'all' && !isSearch)) {
+    next.delete('view');
+  } else {
+    next.set('view', view);
+  }
 
   return next;
 }

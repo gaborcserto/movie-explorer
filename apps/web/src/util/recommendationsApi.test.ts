@@ -35,6 +35,7 @@ it('validates normalized movie collections without imposing the ten-recommendati
     })),
   };
   fetchMock.mockResolvedValue(Response.json(result));
+
   await expect(getMovieCollection(1)).resolves.toEqual(
     JSON.parse(JSON.stringify(result))
   );
@@ -66,6 +67,7 @@ it.each([
   { collection: { id: 10 }, results: [], availability: 'unavailable' },
 ])('rejects malformed collection contract %j', async (value) => {
   fetchMock.mockResolvedValue(Response.json(value));
+
   await expect(getMovieCollection(1)).rejects.toMatchObject({
     category: 'invalid-response',
   });
@@ -74,6 +76,7 @@ it.each([
 it('accepts absent movie membership as an empty collection', async () => {
   const result = { collection: null, results: [], availability: 'available' };
   fetchMock.mockResolvedValue(Response.json(result));
+
   await expect(getMovieCollection(1)).resolves.toEqual(result);
 });
 
@@ -81,6 +84,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   fetchMock.mockReset();
 });
+
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
@@ -101,6 +105,7 @@ it.each<RecommendationCategory>([
     ],
   };
   fetchMock.mockResolvedValue(Response.json(result));
+
   await expect(getRecommendations(category)).resolves.toEqual(result);
   expect(String(fetchMock.mock.calls[0][0])).toContain(
     `/api/v1/recommendations/${category}`
@@ -118,6 +123,7 @@ it.each([
   { ...body, results: Array(11).fill(title) },
 ])('rejects malformed recommendation contract %j', async (value) => {
   fetchMock.mockResolvedValue(Response.json(value));
+
   await expect(getRecommendations('popular-movies')).rejects.toMatchObject({
     category: 'invalid-response',
   });
@@ -133,18 +139,21 @@ it.each(['movies', 'series'] as const)(
       availability: 'partial',
     };
     fetchMock.mockResolvedValue(Response.json(result));
+
     await expect(getRelatedTitles(resource, 1, 'similar')).resolves.toEqual(
       result
     );
     expect(String(fetchMock.mock.calls[0][0])).toContain(
       `/api/v1/${resource}/1/similar`
     );
+
     fetchMock.mockResolvedValue(
       Response.json({
         ...result,
         results: [{ id: 2, mediaType: 'person', name: 'Person' }],
       })
     );
+
     await expect(
       getRelatedTitles(resource, 1, 'recommendations')
     ).rejects.toMatchObject({ category: 'invalid-response' });
@@ -169,6 +178,7 @@ it('limits pool concurrency, releases slots and cancels queued work without a fe
   const fourth = getRecommendations('top-rated-series');
 
   expect(fetchMock).toHaveBeenCalledTimes(2);
+
   controller.abort();
   await assertion;
   resolvers[0](Response.json(body));
@@ -204,7 +214,9 @@ it('gives only homepage pools the cold-cache deadline and preserves active cance
 
   await vi.advanceTimersByTimeAsync(API_REQUEST_TIMEOUT_MS);
   await movieAssertion;
+
   expect(fetchMock.mock.calls[0][1]?.signal?.aborted).toBe(false);
+
   await vi.advanceTimersByTimeAsync(
     RECOMMENDATION_REQUEST_TIMEOUT_MS - API_REQUEST_TIMEOUT_MS
   );
@@ -218,6 +230,7 @@ it('gives only homepage pools the cold-cache deadline and preserves active cance
 
   controller.abort();
   await assertion;
+
   expect(fetchMock.mock.calls[2][1]?.signal?.aborted).toBe(true);
 });
 
@@ -225,6 +238,7 @@ it('preserves safe rate-limit retry guidance', async () => {
   fetchMock.mockResolvedValue(
     new Response('{}', { status: 429, headers: { 'Retry-After': '3' } })
   );
+
   await expect(getRecommendations('popular-movies')).rejects.toMatchObject({
     category: 'rate-limited',
     retryAfterSeconds: 3,
@@ -249,10 +263,13 @@ it('posts only bounded typed IDs privately with the existing recommendation dead
     ...preferences,
     excludedIds: Array.from({ length: 1100 }, (_, i) => i + 1),
   };
+
   await expect(getPersonalizedRecommendations(input)).resolves.toEqual(
     personalized
   );
+
   const [url, init] = fetchMock.mock.calls[0];
+
   expect(String(url)).toMatch(/\/api\/v1\/recommendations\/personalized$/);
   expect(init).toMatchObject({
     method: 'POST',
@@ -275,6 +292,7 @@ it.each([
   { ...personalized, results: Array(11).fill(title) },
 ])('rejects malformed personalized responses: %j', async (value) => {
   fetchMock.mockResolvedValue(Response.json(value));
+
   await expect(
     getPersonalizedRecommendations(preferences)
   ).rejects.toMatchObject({ category: 'invalid-response' });
@@ -295,6 +313,7 @@ it('forwards active personalized cancellation without changing the global timeou
     controller.signal
   );
   controller.abort();
+
   await expect(pending).rejects.toMatchObject({ category: 'cancelled' });
   expect(API_REQUEST_TIMEOUT_MS).toBe(12_000);
   expect(RECOMMENDATION_REQUEST_TIMEOUT_MS).toBe(25_000);

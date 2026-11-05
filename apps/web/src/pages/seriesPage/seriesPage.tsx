@@ -6,38 +6,42 @@ import {
   getSeriesImages,
   getSeriesVideos,
 } from '../../util/apiUtils';
-import WatchProviders from '../../components/details/watchProviders';
-import useWatchProvidersResource from '../../components/details/useWatchProvidersResource';
+import WatchProviders, {
+  useWatchProvidersResource,
+} from '../../components/details/watchProviders';
 import parseDetailId from '../../util/detailId';
 import SeasonPreview from './seasonPreview';
 import SeriesSections from './seriesSections';
-import useSeriesResource from './useSeriesResource';
+import useSeriesResource from './hooks/useSeriesResource';
 import { DetailSectionsSkeleton } from '../../components/skeleton';
-import useRatingsResource from '../../components/details/useRatingsResource';
+import { useRatingsResource } from '../../components/details/ratings';
 import {
   SeriesLayout,
-  SeriesHero,
   SeriesFacts,
-  SeriesMetadataList,
-  ProductionCompanies,
   SeriesRequestState,
 } from './seriesPresentation';
+import SeriesHero from './seriesHero';
+import SeriesMetadataList from './seriesMetadataList';
+import ProductionCompanies from './productionCompanies';
 import PersonalLibraryActions from '../../features/library/personalLibraryActions';
 import { useLibraryStore } from '../../features/library/libraryStore';
 import { EntityMetadata } from '../../components/routeMetadata';
 
 function SeriesDetails({ idText }: { idText: string }) {
   const id = parseDetailId(idText);
+
   const load = useCallback(
     (signal: AbortSignal) => getSeries(id, signal),
     [id]
   );
+
   const resource = useSeriesResource(load, Number.isSafeInteger(id));
   const ratingResource = useRatingsResource(
     'series',
     id,
     Number.isSafeInteger(id)
   );
+
   const series = resource.data;
   const setResourceData = resource.setData;
   const seriesGenres =
@@ -82,6 +86,7 @@ function SeriesDetails({ idText }: { idText: string }) {
       });
     }
   }, [series, updateSnapshot]);
+
   const providerResource = useWatchProvidersResource(
     'series',
     id,

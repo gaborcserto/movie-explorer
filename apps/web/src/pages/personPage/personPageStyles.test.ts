@@ -18,6 +18,7 @@ const detailStylesheet = postcss.parse(
 const appStylesheet = postcss.parse(
   compile(fileURLToPath(new URL('../../App.scss', import.meta.url))).css
 );
+
 test('reuses the shared cinematic background for the Person hero', () => {
   expect(declarationsForSelector(stylesheet, '.person-hero')).toMatchObject({
     'border-bottom': '10px solid #555555',
@@ -99,15 +100,19 @@ test('keeps the loading profile geometry while sharing the successful hero geome
 
 test('keeps the person name and biography readable in the mobile layout', () => {
   const mobileDeclarations = new Map<string, Record<string, string>>();
+
   stylesheet.walkAtRules('media', (media) => {
     if (media.params !== '(max-width: 767.98px)') {
       return;
     }
+
     media.walkRules((rule) => {
       const values: Record<string, string> = {};
+
       rule.walkDecls((declaration) => {
         values[declaration.prop] = declaration.value;
       });
+
       mobileDeclarations.set(rule.selector, values);
     });
   });

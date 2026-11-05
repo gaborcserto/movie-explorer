@@ -8,7 +8,7 @@ import {
   useLibraryStore,
 } from '../../../features/library/libraryStore';
 import type { LibraryItem } from '../../../features/library/libraryStore';
-import type { RecommendationSource } from '../../../components/recommendationRow/useRecommendationResource';
+import type { RecommendationSource } from '../../../components/recommendationRow';
 
 const tabs = [
   { value: 'movies', label: 'Movies' },
@@ -95,6 +95,7 @@ export default function HomeRecommendations() {
         useLibraryStore.persist.rehydrate();
       }
     };
+
     window.addEventListener('storage', handleStorage);
     useLibraryStore.persist.rehydrate();
 

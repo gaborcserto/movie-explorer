@@ -48,6 +48,7 @@ function date(value: unknown) {
 function count(value: unknown) {
   return value === null || integer(value);
 }
+
 function rating(value: unknown) {
   return (
     value === null ||
@@ -178,6 +179,7 @@ export function seasonDetails(
   ) {
     return false;
   }
+
   const { episodes } = value;
 
   return (
@@ -248,6 +250,7 @@ export function seriesCredits(value: unknown): value is SeriesCredits {
           ) {
             return false;
           }
+
           const roles = item[kind === 'cast' ? 'characters' : 'jobs'];
 
           return (

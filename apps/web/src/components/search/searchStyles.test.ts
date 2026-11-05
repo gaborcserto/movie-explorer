@@ -44,8 +44,10 @@ test('preserves the original Search submit button width', () => {
     if (
       rule.parent?.type !== 'root' ||
       !rule.selectors.includes('.header__search .btn')
-    )
+    ) {
       return;
+    }
+
     rule.walkDecls((declaration) => {
       declarations[declaration.prop] = declaration.value;
     });
@@ -204,5 +206,6 @@ test('allows unbroken queries to wrap in result context and empty states', () =>
       wrapping = declaration.value;
     });
   });
+
   expect(wrapping).toBe('anywhere');
 });
