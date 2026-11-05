@@ -75,18 +75,3 @@ Type checking and declaration generation use TypeScript 6.0.3. Frontend
 typechecks include both application source and the Vite configuration project.
 Native Vite+ type-aware checking is available, but does not replace these
 compiler checks or declaration builds.
-
-## Documentation
-
-- [Recommendation API, candidate caching and data ownership](docs/recommendations.md)
-- [Personal Library persistence and legacy saved-title migration](docs/library.md)
-- [AWS serverless deployment, OIDC setup, costs and SEO limitations](docs/deployment.md)
-
-The AWS foundation uses private S3/CloudFront and an HTTP API/Lambda backend.
-After the production build, run `npm run aws:package`, `npm run aws:test` and
-`npm run aws:synth` for credential-free artifact and infrastructure checks.
-These commands use the Vite+ task graph, reusing unchanged prerequisite builds.
-Packaging, artifact smoke tests and synthesis always execute.
-Deployment is manual, disabled by default, and requires separately authorized
-AWS bootstrap and a protected GitHub environment. No cloud resources are created
-by the local checks.
