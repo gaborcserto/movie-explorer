@@ -64,7 +64,10 @@ test.each(['.photo-tile', '.video-tile'])(
     const imageSelector = `${tileSelector} img`;
     expect(declarations(tileSelector)).toMatchObject({
       'transform-origin': 'center top',
-      transition: 'transform 0.24s ease, filter 0.24s ease',
+      transition:
+        tileSelector === '.photo-tile'
+          ? 'transform 0.24s ease, filter 0.24s ease, box-shadow 0.24s ease'
+          : 'transform 0.24s ease, filter 0.24s ease',
     });
     expect(declarations(tileSelector)).toMatchObject({
       'border-radius': '10px',

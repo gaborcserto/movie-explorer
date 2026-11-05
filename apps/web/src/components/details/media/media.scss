@@ -1,4 +1,5 @@
 @use '../../../assets/scss' as *;
+@use '../../../assets/scss/card-elevation' as elevation;
 @use '../../lightbox/controls';
 
 .movie-details__lower {
@@ -184,6 +185,9 @@
   border-radius: 10px;
   margin-bottom: 10px;
   overflow: hidden;
+
+  @include elevation.card-elevation;
+
   transition: box-shadow 0.24s ease;
   width: 100%;
 
@@ -208,12 +212,12 @@
   }
 
   .cast-member:hover .cast-member__image {
-    box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
+    @include elevation.card-elevation-hover;
   }
 }
 
 .cast-member:focus-within .cast-member__image {
-  box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
+  @include elevation.card-elevation-hover;
 }
 
 .cast-member:focus-within h3 {
@@ -422,15 +426,21 @@
     filter 0.24s ease;
 }
 
+.photo-tile {
+  transition:
+    transform 0.24s ease,
+    filter 0.24s ease,
+    box-shadow 0.24s ease;
+  aspect-ratio: 16 / 9;
+
+  @include elevation.card-elevation;
+}
+
 .photo-tile:focus-visible,
 .video-tile:focus-visible {
   outline: 2px solid $red-1;
   outline-offset: 3px;
   z-index: 2;
-}
-
-.photo-tile {
-  aspect-ratio: 16 / 9;
 }
 
 .photo-tile img,
@@ -463,6 +473,10 @@
     filter: saturate(1.2);
     transform: scale(1.06);
     z-index: 3;
+  }
+
+  .photo-tile:hover {
+    @include elevation.card-elevation-hover;
   }
 }
 

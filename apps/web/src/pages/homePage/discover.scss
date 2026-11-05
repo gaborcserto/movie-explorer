@@ -113,6 +113,9 @@
 
 .discover-featured {
   background: #171719;
+  box-shadow:
+    0 2px 8px rgb(0 0 0 / 0.14),
+    0 14px 32px rgb(0 0 0 / 0.12);
   isolation: isolate;
   height: clamp(320px, 31vw, 400px);
   overflow: hidden;

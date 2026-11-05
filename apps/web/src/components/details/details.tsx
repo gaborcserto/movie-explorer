@@ -170,9 +170,7 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
           watchProviders={providerResource.providers}
           providerResource={providerResource}
           ratings={ratingResource.ratings}
-          ratingsError={ratingResource.error}
           ratingsLoading={ratingResource.loading}
-          retryRatings={ratingResource.retry}
         />
       );
     }

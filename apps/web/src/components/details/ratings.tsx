@@ -87,16 +87,12 @@ export default function DetailsRatings({
   tmdb,
   votes,
   value,
-  error = false,
   loading = false,
-  retry,
 }: {
   tmdb?: number | null;
   votes?: number | null;
   value?: Ratings;
-  error?: boolean;
   loading?: boolean;
-  retry?: () => void;
 }) {
   const fallback: RatingResult =
     typeof tmdb === 'number' && Number.isFinite(tmdb) && tmdb >= 0 && tmdb <= 10
@@ -110,22 +106,6 @@ export default function DetailsRatings({
         <span className="visually-hidden" role="status">
           Loading ratings
         </span>
-      )}
-      {(error ||
-        value?.tmdb.status === 'unavailable' ||
-        value?.imdb.status === 'unavailable') && (
-        <div className="details-ratings__error" role="status">
-          <span>
-            {error
-              ? 'Ratings could not be loaded.'
-              : 'One or more ratings are unavailable.'}
-          </span>{' '}
-          {retry && (
-            <button type="button" onClick={retry}>
-              Retry ratings
-            </button>
-          )}
-        </div>
       )}
     </>
   );

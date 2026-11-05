@@ -1,4 +1,5 @@
 @use '../../assets/scss' as *;
+@use '../../assets/scss/card-elevation' as elevation;
 
 .card {
   color: $white;
@@ -131,6 +132,10 @@
     aspect-ratio: 2 / 3;
     background-color: rgb(0 0 0 / 0.25);
     background-clip: padding-box;
+
+    @include elevation.card-elevation;
+
+    box-sizing: border-box;
     overflow: hidden;
     position: relative;
     transition: box-shadow 0.24s ease;
@@ -155,17 +160,17 @@
   @media (hover: hover) and (pointer: fine) {
     &:hover {
       filter: saturate(1.2);
-      transform: scale(1.06);
+      transform: scale(1.02);
       z-index: 3;
     }
 
     &:hover .card__image__wrapper {
-      box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
+      @include elevation.card-elevation-hover;
     }
   }
 
   &:focus-within .card__image__wrapper {
-    box-shadow: 0 16px 30px rgb(0 0 0 / 0.32);
+    @include elevation.card-elevation-hover;
   }
 }
 

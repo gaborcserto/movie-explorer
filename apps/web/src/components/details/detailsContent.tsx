@@ -31,9 +31,7 @@ interface DetailsProps {
   watchProviders?: WatchProvider[];
   providerResource?: ReturnType<typeof useWatchProvidersResource>;
   ratings?: Ratings;
-  ratingsError?: boolean;
   ratingsLoading?: boolean;
-  retryRatings?: () => void;
 }
 
 interface LowerDetailsProps {
@@ -128,9 +126,7 @@ export function DetailsHero({
   watchProviders = [],
   providerResource,
   ratings,
-  ratingsError,
   ratingsLoading,
-  retryRatings,
 }: DetailsProps) {
   const {
     title,
@@ -174,9 +170,7 @@ export function DetailsHero({
         <DetailsRatings
           tmdb={rating !== undefined && rating > 0 ? rating : null}
           value={ratings}
-          error={ratingsError}
           loading={ratingsLoading}
-          retry={retryRatings}
         />
       }
     >

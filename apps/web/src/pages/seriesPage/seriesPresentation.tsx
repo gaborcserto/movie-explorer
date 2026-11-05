@@ -122,9 +122,7 @@ export function SeriesHero({
   rating,
   votes,
   ratingsValue,
-  ratingsError,
   ratingsLoading,
-  retryRatings,
   showVoteCount = true,
   photos,
   className,
@@ -139,9 +137,7 @@ export function SeriesHero({
   rating?: number | null;
   votes?: number | null;
   ratingsValue?: Ratings;
-  ratingsError?: boolean;
   ratingsLoading?: boolean;
-  retryRatings?: () => void;
   showVoteCount?: boolean;
   photos?: MoviePhoto[];
   className?: string;
@@ -159,9 +155,7 @@ export function SeriesHero({
             tmdb={rating}
             votes={votes}
             value={ratingsValue}
-            error={ratingsError}
             loading={ratingsLoading}
-            retry={retryRatings}
           />
         )
       }

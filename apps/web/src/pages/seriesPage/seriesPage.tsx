@@ -100,9 +100,7 @@ function SeriesDetails({ idText }: { idText: string }) {
             rating={series.rating}
             votes={series.voteCount}
             ratingsValue={ratingResource.ratings}
-            ratingsError={ratingResource.error}
             ratingsLoading={ratingResource.loading}
-            retryRatings={ratingResource.retry}
             showVoteCount={false}
             image={series.posterUrl}
             srcSet={series.posterSrcSet}

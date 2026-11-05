@@ -397,7 +397,7 @@ describe('<Details />', () => {
     expect(screen.queryByLabelText('Loading watch providers')).toBeNull();
   });
 
-  it('loads unified ratings independently and retries ratings without reloading movie details', async () => {
+  it('loads unified ratings independently and silently keeps primary ratings after a request failure', async () => {
     useParams.mockReturnValue({ movieId: '1234' });
     getMovie.mockResolvedValue(mockData);
     getRatings
@@ -413,16 +413,15 @@ describe('<Details />', () => {
       </MemoryRouter>
     );
     await screen.findByRole('heading', { name: 'Sample Movie' });
-    await screen.findByText('Ratings could not be loaded.');
+    expect(
+      await screen.findByLabelText('TMDB rating: 8.5 out of 10')
+    ).toBeInTheDocument();
     expect(getMovie).toHaveBeenCalledTimes(1);
     expect(getRatings).toHaveBeenCalledTimes(1);
-
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Retry ratings' })
-    );
-    await screen.findByLabelText('IMDb rating: 7.9 out of 10');
+    expect(screen.queryByRole('button', { name: 'Retry ratings' })).toBeNull();
+    expect(screen.queryByText(/ratings could not be loaded/i)).toBeNull();
     expect(getMovie).toHaveBeenCalledTimes(1);
-    expect(getRatings).toHaveBeenCalledTimes(2);
+    expect(getRatings).toHaveBeenCalledTimes(1);
   });
 
   it('hides ratings from the previous movie while the next rating request is pending', async () => {
