@@ -1,5 +1,26 @@
+import type { SeriesGenre } from '@movie-explorer/contracts';
+
 import { genresFilter } from '../../data';
 import { sortParams, sortOrderParams } from '../../util/apiUtils';
+
+export const seriesGenres = [
+  'action & adventure',
+  'animation',
+  'comedy',
+  'crime',
+  'documentary',
+  'drama',
+  'family',
+  'kids',
+  'mystery',
+  'news',
+  'reality',
+  'sci-fi & fantasy',
+  'soap',
+  'talk',
+  'war & politics',
+  'western',
+] satisfies SeriesGenre[];
 
 export const ratingOptions = Array.from({ length: 20 }, (_, index) =>
   String((index + 1) / 2)
@@ -37,6 +58,8 @@ export function readFilters(params: URLSearchParams, isSearch: boolean) {
   const sorting = sortParams(params.get('sorting')) ?? 'popularity';
 
   return {
+    seriesGenre:
+      seriesGenres.find((genre) => genre === params.get('seriesGenre')) ?? '',
     filter: genres,
     year: validYear(year) ? year : '',
     rating: ratingOptions.includes(rating) ? rating : '',

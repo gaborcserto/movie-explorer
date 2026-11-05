@@ -112,7 +112,9 @@ export async function getSeason(
 ): Promise<SeasonDetails> {
   const body = await request<unknown>(
     `${apiBaseUrl}/api/v1/series/${id}/seasons/${season}`,
-    { signal }
+    {
+      signal,
+    }
   );
 
   if (!seasonDetails(body, id, season)) {
@@ -277,7 +279,9 @@ export async function getWatchProviders(
 ): Promise<WatchProviders> {
   const body = await request<unknown>(
     `${apiBaseUrl}/api/v1/${kind}/${id}/watch-providers`,
-    { signal }
+    {
+      signal,
+    }
   );
 
   if (!watchProvidersResponse(body)) {
@@ -642,11 +646,20 @@ export async function getStreamingProviderSection(
 
 export async function getPopularSeries(
   page: number,
-  filters: { year?: string; rating?: string; sorting?: string; order?: string },
+  filters: {
+    genre?: string;
+    year?: string;
+    rating?: string;
+    sorting?: string;
+    order?: string;
+  },
   signal?: AbortSignal
 ): Promise<SearchResponse> {
   const params = new URLSearchParams({ page: String(page) });
 
+  if (filters.genre) {
+    params.set('genre', filters.genre);
+  }
   if (filters.year) {
     params.set('year', filters.year);
   }

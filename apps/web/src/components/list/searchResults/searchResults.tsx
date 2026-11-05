@@ -94,11 +94,12 @@ function ResultViews({
       {view === 'all' && <GroupedList query={query} />}
       {view === 'tv' && (
         <UnifiedList
-          key={['year', 'rating', 'sorting', 'order']
+          key={['seriesGenre', 'year', 'rating', 'sorting', 'order']
             .map((key) => params.get(key))
             .join(':')}
           query={query}
           type="tv"
+          genre={!query ? (params.get('seriesGenre') ?? undefined) : undefined}
           year={params.get('year') ?? undefined}
           rating={!query ? (params.get('rating') ?? undefined) : undefined}
           sorting={!query ? (params.get('sorting') ?? undefined) : undefined}

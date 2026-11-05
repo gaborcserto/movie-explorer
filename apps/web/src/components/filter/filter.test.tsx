@@ -742,3 +742,29 @@ test('unmounting the drawer restores prior scroll and background state', async (
   expect(document.body.style.overflow).toBe('scroll');
   expect(container.inert).toBe(false);
 });
+
+test('applies Series browse genre independently of dormant Movie genres and restores history', async () => {
+  const router = setup('/search?view=tv&filter=drama');
+
+  await open();
+  await userEvent.selectOptions(
+    screen.getByLabelText('Genre'),
+    'sci-fi & fantasy'
+  );
+  await apply();
+  await closed();
+
+  expect(
+    new URLSearchParams(router.state.location.search).get('seriesGenre')
+  ).toBe('sci-fi & fantasy');
+  expect(new URLSearchParams(router.state.location.search).get('filter')).toBe(
+    'drama'
+  );
+
+  await act(async () => {
+    await router.navigate(-1);
+  });
+  await open();
+
+  expect(screen.getByLabelText('Genre')).toHaveValue('');
+});

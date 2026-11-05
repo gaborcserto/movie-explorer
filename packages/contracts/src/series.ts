@@ -1,6 +1,24 @@
 import type { MediaPhoto, MediaVideo } from './movies';
 import type { SectionAvailability } from './availability';
 
+export type SeriesGenre =
+  | 'action & adventure'
+  | 'animation'
+  | 'comedy'
+  | 'crime'
+  | 'documentary'
+  | 'drama'
+  | 'family'
+  | 'kids'
+  | 'mystery'
+  | 'news'
+  | 'reality'
+  | 'sci-fi & fantasy'
+  | 'soap'
+  | 'talk'
+  | 'war & politics'
+  | 'western';
+
 export interface SeriesSummary {
   /** Stable wire discriminator; retained for existing mediaType:id identities. */
   mediaType: 'tv';

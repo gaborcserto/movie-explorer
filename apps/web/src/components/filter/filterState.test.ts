@@ -118,3 +118,20 @@ test('movie history uses canonical repeated filters and ignores invalid URL valu
     movieHistorySignature(undefined, new URLSearchParams('filter=drama'))
   );
 });
+
+test('normalizes invalid and repeated Series genres deterministically', () => {
+  const params = new URLSearchParams(
+    'view=tv&seriesGenre=drama&seriesGenre=comedy&extra=a&extra=b'
+  );
+  const next = normalizeSearchFilters(params, false);
+
+  expect(next.getAll('seriesGenre')).toEqual(['drama']);
+  expect(next.getAll('extra')).toEqual(['a', 'b']);
+  expect(normalizeSearchFilters(next, false).toString()).toBe(next.toString());
+  expect(
+    normalizeSearchFilters(
+      new URLSearchParams('view=tv&seriesGenre=invalid'),
+      false
+    ).has('seriesGenre')
+  ).toBe(false);
+});

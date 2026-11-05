@@ -2,13 +2,42 @@ import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsNumber, IsOptional, Max, Min } from 'class-validator';
 import { ApiPropertyOptional, PickType } from '@nestjs/swagger';
 
+import type { SeriesGenre } from '@movie-explorer/contracts';
+
 import type { SeriesProviderQuery } from './series-provider';
 import { GetPeopleQuery } from '../persons/people.dto';
+
+const seriesGenres = [
+  'action & adventure',
+  'animation',
+  'comedy',
+  'crime',
+  'documentary',
+  'drama',
+  'family',
+  'kids',
+  'mystery',
+  'news',
+  'reality',
+  'sci-fi & fantasy',
+  'soap',
+  'talk',
+  'war & politics',
+  'western',
+] satisfies SeriesGenre[];
 
 export class SeriesListQuery
   extends PickType(GetPeopleQuery, ['page'])
   implements SeriesProviderQuery
 {
+  @ApiPropertyOptional({
+    enum: seriesGenres,
+    description: 'Series browse genre',
+  })
+  @IsOptional()
+  @IsIn(seriesGenres)
+  genre?: SeriesGenre;
+
   @ApiPropertyOptional({ minimum: 1874, maximum: 9999 })
   @IsOptional()
   @Type(() => Number)

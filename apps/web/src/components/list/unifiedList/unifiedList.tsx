@@ -24,6 +24,7 @@ const resultKey = (item: SearchResult) => `${item.mediaType}:${item.id}`;
 export default function UnifiedList({
   query,
   type,
+  genre,
   year,
   rating,
   sorting,
@@ -31,6 +32,7 @@ export default function UnifiedList({
 }: {
   query: string;
   type: 'tv';
+  genre?: string;
   year?: string;
   rating?: string;
   sorting?: string;
@@ -39,15 +41,19 @@ export default function UnifiedList({
   const history = useSearchHistory();
   const { restored, save } = useResultHistory(
     history?.unified,
-    JSON.stringify([query, type, year, rating, sorting, order])
+    JSON.stringify([query, type, genre, year, rating, sorting, order])
   );
 
   const fetchPage = useCallback(
     (page: number, signal: AbortSignal) =>
       query
         ? getSearchResults(query, type, page, signal, year)
-        : getPopularSeries(page, { year, rating, sorting, order }, signal),
-    [query, type, year, rating, sorting, order]
+        : getPopularSeries(
+            page,
+            { genre, year, rating, sorting, order },
+            signal
+          ),
+    [query, type, genre, year, rating, sorting, order]
   );
 
   const getItems = useCallback(

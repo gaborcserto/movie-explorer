@@ -1,5 +1,6 @@
 import type {
   RelatedTitleKind,
+  SeriesGenre,
   RelatedTitlesResponse,
   SeriesDetails,
   SearchResponse,
@@ -16,6 +17,7 @@ import type {
 export const SERIES_PROVIDER = Symbol('SERIES_PROVIDER');
 
 export interface SeriesProviderQuery {
+  genre?: SeriesGenre;
   page?: number;
   year?: number;
   minimumRating?: number;

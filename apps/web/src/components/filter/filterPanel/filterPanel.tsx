@@ -11,7 +11,7 @@ import {
 
 import { genresFilter, sortOptions } from '../../../data';
 import { sortParams } from '../../../util/apiUtils';
-import { readFilters, validYear } from '../filterState';
+import { readFilters, validYear, seriesGenres } from '../filterState';
 import type { FilterValues } from '../filterState';
 import Drawer from '../../drawer';
 
@@ -212,6 +212,25 @@ export default function FilterPanel({
             }
           }}
         >
+          {series && !isSearch && (
+            <section className="filter-section">
+              <label htmlFor={`${formId}-genre`}>Genre</label>
+              <select
+                id={`${formId}-genre`}
+                value={draft.seriesGenre}
+                onChange={(event) =>
+                  update({ seriesGenre: event.target.value })
+                }
+              >
+                <option value="">Any genre</option>
+                {seriesGenres.map((genre) => (
+                  <option key={genre} value={genre}>
+                    {genre}
+                  </option>
+                ))}
+              </select>
+            </section>
+          )}
           {!series && (
             <section className="filter-section">
               <h3>Genre</h3>

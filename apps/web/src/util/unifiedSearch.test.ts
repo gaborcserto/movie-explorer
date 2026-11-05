@@ -1,6 +1,7 @@
 import {
   ApiRequestError,
   getSearchResults,
+  getPopularSeries,
   getSearchSuggestions,
 } from './apiUtils';
 
@@ -117,4 +118,28 @@ test('aborts an obsolete search without turning it into a network error', async 
   controller.abort();
 
   await expect(pending).rejects.toMatchObject({ category: 'cancelled' });
+});
+
+test('forwards an encoded Series genre alongside browse filters and cancellation', async () => {
+  fetchMock.mockResolvedValue(Response.json(envelope));
+  const controller = new AbortController();
+
+  await expect(
+    getPopularSeries(
+      1,
+      {
+        genre: 'sci-fi & fantasy',
+        year: '2005',
+        rating: '8',
+        sorting: 'releaseDate',
+        order: 'asc',
+      },
+      controller.signal
+    )
+  ).resolves.toEqual(envelope);
+
+  expect(fetchMock).toHaveBeenCalledWith(
+    'http://localhost:4000/api/v1/series?page=1&genre=sci-fi+%26+fantasy&year=2005&minimumRating=8&sort=firstAirDate&order=asc',
+    expect.objectContaining({ signal: expect.any(AbortSignal) })
+  );
 });
