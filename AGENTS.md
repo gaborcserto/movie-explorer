@@ -141,6 +141,17 @@ the TMDB integration.
 
 ## Working rules
 
+### Repository discovery
+
+- Prefer Git-aware discovery (`git ls-files` and `rg --files`) scoped to the
+  relevant application directories; respect `.gitignore` and exclude
+  dependencies, generated output, caches, and `.git`.
+- Do not dump repository trees. Limit search output, narrow searches
+  progressively, and inspect specific files only when relevant.
+- Git-ignored documentation such as `.notes` may be inspected or deliberately
+  edited when the task requests it; ignored files may be examined when the task
+  specifically requires them.
+
 - Keep changes scoped; do not change application functionality or UI while
   working on tooling or documentation tasks.
 - Run the narrowest useful check while iterating, then broaden verification

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   FaChevronLeft,
@@ -33,6 +33,7 @@ export default function PhotoLightbox({
   const [index, setIndex] = useState(initialIndex);
   const [fullscreen, setFullscreen] = useState(false);
   const [fullscreenError, setFullscreenError] = useState('');
+  const titleId = useId();
   const root = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
 
@@ -104,10 +105,13 @@ export default function PhotoLightbox({
       className="lightbox"
       role="dialog"
       aria-modal="true"
-      aria-label={i18n.t('messages.photoViewer', { title })}
+      aria-labelledby={titleId}
       ref={root}
     >
       <div className="lightbox__toolbar">
+        <h2 id={titleId} className="lightbox__title">
+          {i18n.t('messages.photoViewer', { title })}
+        </h2>
         <span aria-live="polite">
           {index + 1} / {photos.length}
         </span>

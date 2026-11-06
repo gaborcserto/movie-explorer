@@ -135,13 +135,22 @@
   &--transparent {
     @include btn-variant(
       rgba(96, 96, 96, 0.68),
-      $red-1,
+      $white,
       rgba(96, 96, 96, 0.68)
     );
   }
 
   &--primary {
     @include btn-variant($red-1, $white, $red-1);
+
+    &.focus,
+    &:hover,
+    &:focus,
+    &:active {
+      background: $red-1;
+      border-color: $red-1;
+      color: $white;
+    }
   }
 
   &--outline {
@@ -160,7 +169,7 @@
 
     &:hover,
     &:focus-visible {
-      background: rgb(246 82 97 / 0.14);
+      background: rgba($red-1, 0.14);
       border-color: $red-1;
       color: $red-1;
     }

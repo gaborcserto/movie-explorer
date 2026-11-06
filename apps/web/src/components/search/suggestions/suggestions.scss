@@ -55,7 +55,7 @@
 
     &:hover,
     &.is-active {
-      background: rgb(246 82 97 / 0.16);
+      background: rgba($red-1, 0.16);
     }
 
     strong,

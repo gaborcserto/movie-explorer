@@ -142,6 +142,7 @@ test('genre hover changes color without underlining and keeps visible focus', ()
   });
 
   expect(hover['text-decoration']).toBe('none');
-  expect(focus.outline).toBe(`2px solid ${hover.color}`);
+  expect(hover.color).toBe('#f65261');
+  expect(focus.outline).toBe('2px solid #f65261');
   expect(focus['outline-offset']).toBe('3px');
 });

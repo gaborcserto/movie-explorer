@@ -51,7 +51,7 @@
   margin: 12px 0 20px;
 
   span + span:before {
-    content: '·';
+    content: 'Â·';
     margin-right: 10px;
   }
 }
@@ -84,7 +84,7 @@
   text-align: right;
 
   span + span:before {
-    content: '·';
+    content: 'Â·';
     margin-right: 10px;
   }
 }
@@ -449,7 +449,7 @@
     }
 
     li > a:active {
-      background: rgb(246 82 97 / 0.2);
+      background: rgba($red-1, 0.2);
     }
 
     li > a:focus-visible {
@@ -458,7 +458,7 @@
     }
 
     [aria-current='page'] {
-      background: rgb(246 82 97 / 0.14);
+      background: rgba($red-1, 0.14);
       color: $red-1;
       font-weight: 600;
     }
@@ -920,7 +920,7 @@
     line-height: 1.4;
 
     span + span:before {
-      content: '·';
+      content: 'Â·';
       margin-right: 8px;
     }
   }

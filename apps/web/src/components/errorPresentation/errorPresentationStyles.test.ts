@@ -105,7 +105,7 @@ test('keeps the layout flowing, bounds its width, and stacks actions on mobile',
   expect(targets).toContain('44px');
 });
 
-test('retains the intentional white-on-coral primary action contrast exception', () => {
+test('uses an AA white-on-coral primary action contrast exception', () => {
   // Existing product palette exception; this does not assert WCAG AA compliance.
   const sheet = styles('../../App.scss');
   const primary: Record<string, string> = {};

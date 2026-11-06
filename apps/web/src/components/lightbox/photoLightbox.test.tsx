@@ -95,6 +95,23 @@ afterEach(() => {
 });
 
 describe('photo lightbox', () => {
+  it('names the dialog from its visible heading and preserves keyboard dismissal', async () => {
+    const { user, dialog, thumbnail } = await open();
+    const heading = within(dialog).getByRole('heading', { level: 2 });
+
+    expect(heading).toBeVisible();
+    expect(dialog).toHaveAccessibleName(heading.textContent ?? '');
+    expect(dialog).toHaveAttribute('aria-labelledby', heading.id);
+    expect(
+      screen.getByRole('button', { name: 'Close photo viewer' })
+    ).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(thumbnail.closest('button')).toHaveFocus();
+  });
+
   it('clears obsolete full-resolution sources on navigation and close', async () => {
     const { user, image, thumbnail } = await open();
     await user.keyboard('{ArrowRight}');

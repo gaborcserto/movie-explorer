@@ -27,13 +27,13 @@ $page-header-content-gap-mobile: 24px;
   &:hover,
   &:focus {
     background-color: color.scale($background, $lightness: -8%);
-    border-color: color.scale($border, $lightness: -8%);
+    border-color: $border;
     color: $color;
   }
 
   &:active {
     background: color.scale($background, $lightness: -25%);
-    border-color: color.scale($border, $lightness: -25%);
+    border-color: $border;
     color: $color;
   }
 }

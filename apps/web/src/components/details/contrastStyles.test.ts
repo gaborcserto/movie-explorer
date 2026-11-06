@@ -88,12 +88,11 @@ test('details ratings use coral icons and bold white scores without badges', () 
   ).toBe(false);
 });
 
-test('selected filmography view preserves the intentional white-on-coral contrast exception', () => {
+test('selected filmography view records the approved white-on-coral contrast exception', () => {
   const style = declarations('.filmography__controls [aria-pressed=true]');
 
   expect(style.background).toBe('#f65261');
   expect(style.color).toBe('#ffffff');
-  // This requested visual treatment does not meet AA contrast for normal text.
   expect(contrastRatio(style.color!, style.background!)).toBeCloseTo(3.33, 2);
 });
 
@@ -104,7 +103,7 @@ test('selected view keeps white text through hover, active, and focus states', (
   expect(base.color).toBe('#ffffff');
 
   [':hover', ':active', ':focus-visible'].forEach((state) => {
-    const rule = stylesheets[1]!.nodes?.find(
+    const rule = stylesheets[2]!.nodes?.find(
       (node) =>
         node.type === 'rule' && node.selectors.includes(`${selector}${state}`)
     );

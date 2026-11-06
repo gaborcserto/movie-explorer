@@ -127,7 +127,7 @@
       color 180ms ease;
 
     &[data-active='true'] {
-      background: rgb(246 82 97 / 0.2);
+      background: rgba($red-1, 0.2);
     }
 
     &[aria-selected='true'] {
@@ -136,8 +136,8 @@
       font-weight: 600;
     }
 
-    &:hover {
-      background: rgb(246 82 97 / 0.28);
+    &:hover:not([aria-selected='true']) {
+      background: rgba($red-1, 0.28);
     }
 
     &:focus-visible {

@@ -100,10 +100,11 @@
       border-radius: 10px;
     }
 
-    [aria-pressed='true'] {
+    [aria-pressed='true'],
+    [aria-pressed='true']:hover,
+    [aria-pressed='true']:active,
+    [aria-pressed='true']:focus-visible {
       background: $red-1;
-
-      // Intentional white-on-coral contrast exception for normal text.
       color: $white;
     }
   }

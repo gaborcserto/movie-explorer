@@ -62,8 +62,8 @@
 
       &:focus {
         background-color: rgb(35 35 35 / 0.92);
-        border-color: rgb(246 82 97 / 0.65);
-        box-shadow: 0 0 0 3px rgb(246 82 97 / 0.18);
+        border-color: rgba($red-1, 0.65);
+        box-shadow: 0 0 0 3px rgba($red-1, 0.18);
         outline: none;
       }
     }

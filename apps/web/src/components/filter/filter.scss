@@ -209,6 +209,7 @@
 
       &[aria-pressed='true'] {
         background: $red-1;
+        color: $white;
       }
     }
   }
@@ -518,5 +519,3 @@
     transition: none;
   }
 }
-
-/* White on #f65261 is intentional; its contrast is below WCAG AA for normal text. */

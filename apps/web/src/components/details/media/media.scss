@@ -575,7 +575,15 @@
   z-index: 2;
 }
 
+.lightbox__title {
+  flex: 1 1 100%;
+  font-size: 16px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .lightbox__toolbar {
+  flex-wrap: wrap;
   justify-content: flex-end;
   padding-bottom: 12px;
 
