@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { useLayoutEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 
+import { i18n } from '../../../i18n';
 import ErrorPresentation from '../../errorPresentation';
 import { useSearchHistory } from '../../list/useSearchHistory';
 
@@ -15,6 +17,8 @@ export default function DetailError({
   retry?: () => void;
   pending?: boolean;
 }) {
+  useTranslation();
+
   const location = useLocation();
   const navigate = useNavigate();
   const history = useSearchHistory();
@@ -41,7 +45,7 @@ export default function DetailError({
   return (
     <>
       <div role="status" className="visually-hidden">
-        {pending ? 'Loading information.' : ''}
+        {pending ? i18n.t('ui.loading_information') : ''}
       </div>
       <div role="alert">
         <ErrorPresentation
@@ -54,7 +58,7 @@ export default function DetailError({
                 ref={retryRef}
                 type="button"
                 className="btn btn--primary"
-                aria-label="Try again"
+                aria-label={i18n.t('ui.try_again')}
                 aria-disabled={pending}
                 onClick={() => {
                   if (pending || locked.current) {
@@ -65,7 +69,7 @@ export default function DetailError({
                   retry();
                 }}
               >
-                {pending ? 'Trying again...' : 'Try again'}
+                {pending ? i18n.t('ui.trying_again') : i18n.t('ui.try_again')}
               </button>
             ) : null
           }
@@ -88,7 +92,7 @@ export default function DetailError({
                 }
               }}
             >
-              Back to Search
+              {i18n.t('ui.back_to_search')}
             </Link>
           }
         />

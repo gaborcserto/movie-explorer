@@ -85,7 +85,7 @@ describe.each(['movies', 'series'] as const)(
       { category: 'flatrate' },
       { category: 'free' },
       { category: null },
-      { region: 'US' },
+      { region: 'USA' },
       { region: null },
       { logoUrl: null },
       { logoUrl: 42 },

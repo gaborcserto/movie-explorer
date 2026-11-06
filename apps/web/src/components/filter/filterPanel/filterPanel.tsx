@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useId, useRef, useState } from 'react';
 import { FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
 import {
@@ -9,6 +10,8 @@ import {
   FaXmark,
 } from 'react-icons/fa6';
 
+import { genreLabel, sortLabel } from '../../../i18n/labels';
+import { i18n } from '../../../i18n';
 import { genresFilter, sortOptions } from '../../../data';
 import { sortParams } from '../../../util/apiUtils';
 import { readFilters, validYear, seriesGenres } from '../filterState';
@@ -17,10 +20,10 @@ import Drawer from '../../drawer';
 
 function getSortOptionLabel(option: string) {
   if (option !== 'Release Date') {
-    return option;
+    return sortLabel(option);
   }
 
-  return 'Date';
+  return i18n.t('ui.date');
 }
 
 export default function FilterPanel({
@@ -38,6 +41,8 @@ export default function FilterPanel({
   onClose: () => void;
   closing: boolean;
 }) {
+  useTranslation();
+
   const [draft, setDraft] = useState(committed);
   const yearId = useId();
   const yearListId = useId();
@@ -198,14 +203,14 @@ export default function FilterPanel({
 
   const footer = (
     <div className="filter-panel__footer">
-      <p>Reset changes the draft. Apply updates results.</p>
+      <p>{i18n.t('ui.reset_changes_the_draft_apply_updates_results')}</p>
       <div>
         <button
           type="button"
           onClick={() => setDraft(readFilters(new URLSearchParams(), isSearch))}
         >
           <FaArrowRotateLeft aria-hidden="true" />
-          Reset
+          {i18n.t('ui.reset')}
         </button>
         <button
           className="filter-panel__apply"
@@ -214,7 +219,7 @@ export default function FilterPanel({
           disabled={invalidFilters}
         >
           <FaCheck aria-hidden="true" />
-          Apply
+          {i18n.t('ui.apply')}
         </button>
       </div>
     </div>
@@ -223,7 +228,7 @@ export default function FilterPanel({
   return (
     <Drawer
       open={!closing}
-      title="Filters & Sort"
+      title={i18n.t('ui.filters_sort')}
       onClose={onClose}
       footer={footer}
     >
@@ -239,19 +244,24 @@ export default function FilterPanel({
         >
           {(!series || !isSearch) && (
             <section className="filter-section">
-              <h3>Genre</h3>
-              <div className="filter-genres" aria-label="Genres">
+              <h3>{i18n.t('ui.genre')}</h3>
+              <div className="filter-genres" aria-label={i18n.t('ui.genres')}>
                 <div
                   className={`filter-genres__selected${selectedGenres.length ? '' : ' is-empty'}`}
                   role="group"
-                  aria-label="Selected genres"
+                  aria-label={i18n.t('ui.selected_genres')}
                 >
                   {selectedGenres.map((genre) => (
-                    <span className="filter-genre-chip is-selected" key={genre}>
-                      {genre}
+                    <span
+                      className="filter-genre-chip is-selected"
+                      key={genreLabel(genre)}
+                    >
+                      {genreLabel(genre)}
                       <button
                         type="button"
-                        aria-label={`Remove ${genre} genre`}
+                        aria-label={i18n.t('messages.removeGenre', {
+                          genre: genreLabel(genre),
+                        })}
                         onClick={() => handleRemoveGenre(genre)}
                       >
                         <FaXmark aria-hidden="true" />
@@ -262,19 +272,21 @@ export default function FilterPanel({
                 <div
                   className="filter-genres__available"
                   role="group"
-                  aria-label="Available genres"
+                  aria-label={i18n.t('ui.available_genres')}
                 >
                   {availableGenres
                     .filter((genre) => !selectedGenres.includes(genre))
                     .map((genre) => (
                       <button
                         type="button"
-                        key={genre}
+                        key={genreLabel(genre)}
                         className="filter-genre-link"
-                        aria-label={`Select ${genre} genre`}
+                        aria-label={i18n.t('messages.selectGenre', {
+                          genre: genreLabel(genre),
+                        })}
                         onClick={() => handleSelectGenre(genre)}
                       >
-                        {genre}
+                        {genreLabel(genre)}
                       </button>
                     ))}
                 </div>
@@ -284,9 +296,9 @@ export default function FilterPanel({
           <section className="filter-section">
             <h3>
               <FaCalendarDays aria-hidden="true" />
-              {series ? 'Date' : 'Release Year'}
+              {series ? i18n.t('ui.date') : i18n.t('ui.release_year')}
             </h3>
-            {series && <label htmlFor={yearId}>Year</label>}
+            {series && <label htmlFor={yearId}>{i18n.t('ui.year')}</label>}
             <div
               ref={yearPicker}
               className={`filter-year-picker${series ? '' : ' filter-year-picker--compact'}`}
@@ -297,8 +309,10 @@ export default function FilterPanel({
                 type="text"
                 inputMode="numeric"
                 maxLength={4}
-                aria-label={series ? 'Year' : 'Release Year'}
-                placeholder="Any Year"
+                aria-label={
+                  series ? i18n.t('ui.year') : i18n.t('ui.release_year')
+                }
+                placeholder={i18n.t('ui.any_year')}
                 value={draft.year}
                 aria-invalid={invalidYear}
                 aria-describedby={
@@ -336,7 +350,7 @@ export default function FilterPanel({
                 ref={yearTrigger}
                 type="button"
                 className="filter-year-picker__trigger"
-                aria-label="Choose a year"
+                aria-label={i18n.t('ui.choose_a_year')}
                 aria-expanded={yearPickerOpen}
                 aria-controls={yearListId}
                 onClick={toggleYearPicker}
@@ -348,7 +362,7 @@ export default function FilterPanel({
                 id={yearListId}
                 className="filter-year-picker__list"
                 role="group"
-                aria-label="Choose a year"
+                aria-label={i18n.t('ui.choose_a_year')}
                 aria-hidden={!yearPickerOpen}
                 inert={!yearPickerOpen}
                 data-open={yearPickerOpen && yearPickerReady}
@@ -377,7 +391,7 @@ export default function FilterPanel({
                     className="filter-year-picker__earlier"
                     onClick={() => setEarlierYearPage((page) => page + 1)}
                   >
-                    Earlier years
+                    {i18n.t('ui.earlier_years')}
                   </button>
                 )}
               </div>
@@ -385,8 +399,8 @@ export default function FilterPanel({
             {(invalidYear || series) && (
               <p id={`${yearId}-help`}>
                 {invalidYear
-                  ? 'Enter a year from 1874 to 9999.'
-                  : 'Leave empty for Any Year.'}
+                  ? i18n.t('ui.enter_a_year_from_1874_to_9999')
+                  : i18n.t('ui.leave_empty_for_any_year')}
               </p>
             )}
           </section>
@@ -395,7 +409,7 @@ export default function FilterPanel({
               <div className="filter-rating__heading">
                 <h3>
                   <FaStar aria-hidden="true" />
-                  Minimum Rating
+                  {i18n.t('ui.minimum_rating')}
                 </h3>
                 <input
                   id={`${ratingId}-value`}
@@ -403,8 +417,8 @@ export default function FilterPanel({
                   inputMode="decimal"
                   className="filter-rating__input"
                   value={draft.rating}
-                  placeholder="Any"
-                  aria-label="Minimum TMDB rating"
+                  placeholder={i18n.t('ui.any')}
+                  aria-label={i18n.t('ui.minimum_tmdb_rating')}
                   aria-invalid={invalidRating}
                   aria-describedby={
                     invalidRating ? `${ratingId}-error` : undefined
@@ -445,11 +459,11 @@ export default function FilterPanel({
                 max="10"
                 step="0.5"
                 value={validRating ? draft.rating || '0' : '0'}
-                aria-label="Minimum TMDB rating slider"
+                aria-label={i18n.t('ui.minimum_tmdb_rating_slider')}
                 aria-valuetext={
                   draft.rating && validRating
-                    ? `${draft.rating} out of 10 or higher`
-                    : 'Any Rating'
+                    ? i18n.t('messages.minimumRating', { rating: draft.rating })
+                    : i18n.t('ui.any_rating')
                 }
                 onChange={(event) =>
                   update({
@@ -459,7 +473,7 @@ export default function FilterPanel({
                 }
               />
               <div className="filter-rating__scale" aria-hidden="true">
-                <span>Any</span>
+                <span>{i18n.t('ui.any')}</span>
                 <span>10</span>
               </div>
               {invalidRating && (
@@ -468,8 +482,9 @@ export default function FilterPanel({
                   className="filter-rating__error"
                   role="alert"
                 >
-                  Enter a rating from 0.5 to 10 in 0.5 increments, or clear the
-                  field.
+                  {i18n.t(
+                    'ui.enter_a_rating_from_0_5_to_10_in_0_5_increments_or_clear_the_field'
+                  )}
                 </p>
               )}
             </section>
@@ -477,15 +492,15 @@ export default function FilterPanel({
           <section className="filter-section">
             <h3>
               <FaArrowDownWideShort aria-hidden="true" />
-              Sort By
+              {i18n.t('ui.sort_by')}
             </h3>
             {isSearch ? (
-              <p>Sorted by relevance.</p>
+              <p>{i18n.t('ui.sorted_by_relevance')}</p>
             ) : (
               <div
                 className="filter-sort-options"
                 role="group"
-                aria-label="Sort by"
+                aria-label={i18n.t('ui.sort_by_label')}
               >
                 {sortOptions.map((option) => {
                   const sorting = sortParams(option) ?? 'popularity';
@@ -507,18 +522,22 @@ export default function FilterPanel({
           {!isSearch && (
             <section className="filter-section">
               <div className="filter-sort-heading">
-                <h3>Sort Direction</h3>
+                <h3>{i18n.t('ui.sort_direction')}</h3>
                 <div
                   className="filter-sort-direction"
                   role="group"
-                  aria-label="Sort direction"
+                  aria-label={i18n.t('ui.sort_direction_label')}
                 >
                   {(['asc', 'desc'] as const).map((order) => (
                     <button
                       key={order}
                       type="button"
                       aria-pressed={draft.order === order}
-                      aria-label={order === 'asc' ? 'Ascending' : 'Descending'}
+                      aria-label={
+                        order === 'asc'
+                          ? i18n.t('ui.ascending')
+                          : i18n.t('ui.descending')
+                      }
                       onClick={() => update({ order })}
                     >
                       {order === 'asc' ? (

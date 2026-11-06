@@ -1,6 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect } from 'react';
 import { useParams } from 'react-router';
 
+import { formatDate } from '../../i18n/format';
+import { statusLabel } from '../../i18n/labels';
+import { i18n } from '../../i18n';
 import {
   getSeries,
   getSeriesImages,
@@ -28,6 +32,8 @@ import { useLibraryStore } from '../../features/library/libraryStore';
 import { EntityMetadata } from '../../components/routeMetadata';
 
 function SeriesDetails({ idText }: { idText: string }) {
+  useTranslation();
+
   const id = parseDetailId(idText);
 
   const load = useCallback(
@@ -95,7 +101,7 @@ function SeriesDetails({ idText }: { idText: string }) {
 
   return (
     <SeriesLayout
-      title={series?.title ?? 'Series details'}
+      title={series?.title ?? i18n.t('ui.series_details')}
       navigation={null}
       hero={
         series ? (
@@ -112,7 +118,12 @@ function SeriesDetails({ idText }: { idText: string }) {
             className="series-page-hero"
             photos={series.images?.posters.map((poster, index) => ({
               ...poster,
-              alt: poster.alt ?? `Poster ${index + 1} for ${series.title}`,
+              alt:
+                poster.alt ??
+                i18n.t('messages.posterNumber', {
+                  number: index + 1,
+                  title: series.title,
+                }),
             }))}
           >
             <div className="series-hero-metadata">
@@ -128,10 +139,18 @@ function SeriesDetails({ idText }: { idText: string }) {
                   <div className="movie-details__data">
                     {firstAiredYear && <span>{firstAiredYear}</span>}
                     {series.seasonCount !== null && (
-                      <span>{series.seasonCount} seasons</span>
+                      <span>
+                        {i18n.t('messages.seasons', {
+                          count: series.seasonCount,
+                        })}
+                      </span>
                     )}
                     {series.episodeCount !== null && (
-                      <span>{series.episodeCount} episodes</span>
+                      <span>
+                        {i18n.t('messages.episodeCount', {
+                          count: series.episodeCount,
+                        })}
+                      </span>
                     )}
                   </div>
                 )}
@@ -145,57 +164,69 @@ function SeriesDetails({ idText }: { idText: string }) {
                 />
               </div>
               <section className="movie-details__section">
-                <h2 className="movie-details__section-title">Overview</h2>
+                <h2 className="movie-details__section-title">
+                  {i18n.t('ui.overview')}
+                </h2>
                 <p className="movie-details__overview">
-                  {series.description ?? 'No overview available.'}
+                  {series.description ?? i18n.t('ui.no_overview_available')}
                 </p>
               </section>
               <section className="movie-details__section series-information">
                 <h2 className="movie-details__section-title">
-                  Series Information
+                  {i18n.t('ui.series_information')}
                 </h2>
                 <SeriesFacts
                   hero
                   facts={[
-                    ['Last aired', series.lastAirDate],
-                    ['Status', series.status],
                     [
-                      'Original title',
+                      i18n.t('ui.last_aired'),
+                      series.lastAirDate
+                        ? formatDate(series.lastAirDate)
+                        : null,
+                    ],
+                    [i18n.t('ui.status'), statusLabel(series.status)],
+                    [
+                      i18n.t('ui.original_title'),
                       series.originalTitle !== series.title
                         ? series.originalTitle
                         : null,
                     ],
                     [
-                      'Episode runtime',
+                      i18n.t('ui.episode_runtime'),
                       series.episodeRuntimeMinutes.length
-                        ? `${series.episodeRuntimeMinutes.join(', ')} min`
+                        ? i18n.t('messages.runtimeList', {
+                            minutes: series.episodeRuntimeMinutes.join(', '),
+                          })
                         : null,
                     ],
-                    ['Original language', series.originalLanguage],
-                    ['Origin countries', series.originCountries.join(', ')],
+                    [i18n.t('ui.original_language'), series.originalLanguage],
                     [
-                      'Creators',
+                      i18n.t('ui.origin_countries'),
+                      series.originCountries.join(', '),
+                    ],
+                    [
+                      i18n.t('ui.creators'),
                       series.creators.length ? (
                         <SeriesMetadataList
                           key="creators"
-                          label="Creators"
+                          label={i18n.t('ui.creators')}
                           people={series.creators}
                           linked
                         />
                       ) : null,
                     ],
                     [
-                      'Networks',
+                      i18n.t('ui.networks'),
                       series.networks.length ? (
                         <SeriesMetadataList
                           key="networks"
-                          label="Networks"
+                          label={i18n.t('ui.networks')}
                           people={series.networks}
                         />
                       ) : null,
                     ],
                     [
-                      'Production companies',
+                      i18n.t('ui.production_companies'),
                       series.productionCompanies.length ? (
                         <ProductionCompanies
                           companies={series.productionCompanies}
@@ -235,7 +266,7 @@ function SeriesDetails({ idText }: { idText: string }) {
             className="details-section"
           >
             <div className="details-section__heading">
-              <h2 id="seasons-heading">Seasons</h2>
+              <h2 id="seasons-heading">{i18n.t('ui.seasons')}</h2>
             </div>
             <SeasonPreview key={series.id} series={series} />
           </section>
@@ -246,6 +277,8 @@ function SeriesDetails({ idText }: { idText: string }) {
 }
 
 export default function SeriesPage() {
+  useTranslation();
+
   const { id = '' } = useParams();
 
   return <SeriesDetails key={id} idText={id} />;

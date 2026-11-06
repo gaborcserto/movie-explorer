@@ -1,11 +1,12 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import type { SearchResult } from '@movie-explorer/contracts';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa6';
 import type { KeyboardEvent } from 'react';
 import { Link } from 'react-router';
 
+import { i18n } from '../../../i18n';
 import { CardRating } from '../../../components/card';
-
 import { mediaPath } from '../../../util/seriesRoutes';
 import type { DiscoverSectionData } from '../useDiscoverSection';
 import '../discover.scss';
@@ -21,6 +22,8 @@ export default function FeaturedHero({
 }: {
   data: DiscoverSectionData;
 }) {
+  useTranslation();
+
   const [activeIndex, setActiveIndex] = useState(0);
   const [failedImageKey, setFailedImageKey] = useState<string>();
 
@@ -68,7 +71,7 @@ export default function FeaturedHero({
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Focusable carousel region handles its own arrow-key navigation.
     <section
       className="discover-featured"
-      aria-label="Featured trending title"
+      aria-label={i18n.t('ui.featured_trending_title')}
       aria-roledescription="carousel"
       tabIndex={items.length > 1 ? 0 : undefined}
       onKeyDown={handleKeyDown}
@@ -91,11 +94,16 @@ export default function FeaturedHero({
         })}
       </div>
       <div className="discover-featured__content" key={itemKey ?? 'fallback'}>
-        <p className="discover-featured__eyebrow">Movie Explorer presents</p>
+        <p className="discover-featured__eyebrow">
+          {i18n.t('ui.movie_explorer_presents')}
+        </p>
         {item ? (
           <>
             <p className="discover-featured__type">
-              {item.mediaType === 'movie' ? 'Movie' : 'Series'} · Trending now
+              {item.mediaType === 'movie'
+                ? i18n.t('ui.movie')
+                : i18n.t('ui.series')}{' '}
+              {i18n.t('messages.nowTrending')}
             </p>
             <h2>{item.title}</h2>
             <div className="discover-featured__metadata">
@@ -115,23 +123,26 @@ export default function FeaturedHero({
               />
             </div>
             <p className="discover-featured__overview">
-              {item.description?.trim() || 'Discover a story worth watching.'}
+              {item.description?.trim() ||
+                i18n.t('ui.discover_a_story_worth_watching')}
             </p>
             <Link
               className="discover-featured__link"
               to={mediaPath(item.mediaType, item.id)}
             >
-              Explore title <span aria-hidden="true">→</span>
+              {i18n.t('ui.explore_title')} <span aria-hidden="true">→</span>
             </Link>
           </>
         ) : (
           <>
-            <h2>Find your next favorite.</h2>
+            <h2>{i18n.t('ui.find_your_next_favorite')}</h2>
             <p className="discover-featured__overview">
-              Explore movies, series and the people who bring them to life.
+              {i18n.t(
+                'ui.explore_movies_series_and_the_people_who_bring_them_to_life'
+              )}
             </p>
             <Link className="discover-featured__link" to="/search">
-              Browse titles <span aria-hidden="true">→</span>
+              {i18n.t('ui.browse_titles')} <span aria-hidden="true">→</span>
             </Link>
           </>
         )}
@@ -139,12 +150,12 @@ export default function FeaturedHero({
       {items.length > 1 && (
         <div
           className="discover-featured__navigation"
-          aria-label="Featured titles"
+          aria-label={i18n.t('ui.featured_titles')}
         >
           <button
             type="button"
             className="lightbox-control"
-            aria-label="Previous featured title"
+            aria-label={i18n.t('ui.previous_featured_title')}
             onClick={showPrevious}
           >
             <FaChevronLeft aria-hidden="true" focusable="false" />
@@ -152,13 +163,15 @@ export default function FeaturedHero({
           <div
             className="discover-featured__indicators"
             role="group"
-            aria-label="Choose featured title"
+            aria-label={i18n.t('ui.choose_featured_title')}
           >
             {items.map((entry, index) => (
               <button
                 key={`${entry.mediaType}:${entry.id}`}
                 type="button"
-                aria-label={`Show ${entry.title}`}
+                aria-label={i18n.t('messages.showTitle', {
+                  title: entry.title,
+                })}
                 aria-current={selectedIndex === index ? 'true' : undefined}
                 onClick={() => setActiveIndex(index)}
               />
@@ -167,7 +180,7 @@ export default function FeaturedHero({
           <button
             type="button"
             className="lightbox-control"
-            aria-label="Next featured title"
+            aria-label={i18n.t('ui.next_featured_title')}
             onClick={showNext}
           >
             <FaChevronRight aria-hidden="true" focusable="false" />

@@ -1,7 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import type { PersonDetails } from '@movie-explorer/contracts';
 
+import usePreferencesStore from '../../features/preferences/preferencesStore';
+import { i18n } from '../../i18n';
 import {
   SectionRecovery,
   DetailError,
@@ -28,6 +31,10 @@ type PersonState =
   | { status: 'success'; person: PersonDetails };
 
 function PersonDetailsPage({ id }: { id: string }) {
+  const guestPreferences = usePreferencesStore((state) => state.preferences);
+
+  useTranslation();
+
   const personId = parseDetailId(id);
   const validId = Number.isSafeInteger(personId) && personId > 0;
 
@@ -35,6 +42,16 @@ function PersonDetailsPage({ id }: { id: string }) {
   const [requestError, setRequestError] = useState<unknown>(null);
   const [pending, setPending] = useState(validId);
   const [attempt, setAttempt] = useState(0);
+
+  const [requestPreferences, setRequestPreferences] =
+    useState(guestPreferences);
+
+  if (requestPreferences !== guestPreferences) {
+    setRequestPreferences(guestPreferences);
+    setState({ status: 'loading' });
+    setPending(validId);
+    setRequestError(null);
+  }
 
   useEffect(() => {
     if (!validId) {
@@ -70,9 +87,11 @@ function PersonDetailsPage({ id }: { id: string }) {
       current = false;
       controller.abort();
     };
-  }, [personId, validId, attempt]);
+  }, [personId, validId, attempt, guestPreferences]);
 
-  const title = validId ? 'Person not found' : 'Invalid person ID';
+  const title = validId
+    ? i18n.t('ui.person_not_found')
+    : i18n.t('ui.invalid_person_id');
 
   let pageTitle = title;
 
@@ -81,10 +100,11 @@ function PersonDetailsPage({ id }: { id: string }) {
       state.status === 'success'
         ? state.person.name
         : {
-            loading: 'Loading person',
+            loading: i18n.t('ui.loading_person'),
             error: pending
-              ? 'Loading person'
-              : (presentApiError(requestError)?.heading ?? 'Person details'),
+              ? i18n.t('ui.loading_person')
+              : (presentApiError(requestError)?.heading ??
+                i18n.t('ui.person_details')),
           }[state.status];
   }
 
@@ -163,7 +183,7 @@ function PersonDetailsPage({ id }: { id: string }) {
         {validId && state.status === 'loading' && (
           <ResultsSkeleton
             className="person-filmography-skeleton"
-            label="Loading filmography"
+            label={i18n.t('ui.loading_filmography')}
           />
         )}
         {!validId || state.status === 'not-found' ? (
@@ -171,8 +191,10 @@ function PersonDetailsPage({ id }: { id: string }) {
             heading={title}
             description={
               validId
-                ? 'We could not find that person.'
-                : 'Please use a valid positive whole-number person ID.'
+                ? i18n.t('ui.we_could_not_find_that_person')
+                : i18n.t(
+                    'ui.please_use_a_valid_positive_whole_number_person_id'
+                  )
             }
           />
         ) : (
@@ -180,8 +202,8 @@ function PersonDetailsPage({ id }: { id: string }) {
             {state.status === 'error' && (
               <DetailError
                 {...(presentApiError(requestError) ?? {
-                  heading: 'Something went wrong',
-                  description: 'Please try again.',
+                  heading: i18n.t('ui.something_went_wrong'),
+                  description: i18n.t('ui.please_try_again'),
                 })}
                 pending={pending}
                 retry={() => {
@@ -209,8 +231,8 @@ function PersonDetailsPage({ id }: { id: string }) {
                           key={type}
                           label={
                             type === 'movie'
-                              ? 'Movie credits'
-                              : 'Series credits'
+                              ? i18n.t('ui.movie_credits')
+                              : i18n.t('ui.series_credits')
                           }
                           availability={
                             state.person.combinedFilmography?.groups[type]
@@ -223,7 +245,7 @@ function PersonDetailsPage({ id }: { id: string }) {
                     </>
                   ) : (
                     <SectionRecovery
-                      label="Filmography"
+                      label={i18n.t('ui.filmography')}
                       availability={state.person.filmographyAvailability}
                       recover={recoverFilmography}
                     />
@@ -239,6 +261,8 @@ function PersonDetailsPage({ id }: { id: string }) {
 }
 
 export default function PersonPage() {
+  useTranslation();
+
   const { id = '' } = useParams();
 
   // Each route owns its request, biography state, and initial focus.

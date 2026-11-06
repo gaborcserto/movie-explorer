@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { StateStorage } from 'zustand/middleware';
 
+import { i18n } from '../../i18n';
+
 export type LibraryMediaType = 'movie' | 'tv';
 export type LibraryCollection = 'watched' | 'favorites';
 
@@ -213,7 +215,9 @@ const safeStateStorage: StateStorage = {
 
       if (!isRecord(parsed) || typeof parsed.version !== 'number') {
         reportWarning(
-          'Saved Personal Library data is invalid and was ignored. Changes may not survive a reload.'
+          i18n.t(
+            'ui.saved_personal_library_data_is_invalid_and_was_ignored_changes_may_not_survive_a_reload'
+          )
         );
 
         return null;
@@ -223,8 +227,12 @@ const safeStateStorage: StateStorage = {
         writesBlocked = true;
         reportWarning(
           parsed.version > LIBRARY_STORAGE_VERSION
-            ? 'Personal Library data was created by a newer app version. It is preserved, but changes may not survive a reload.'
-            : 'Personal Library data uses an unsupported version. It is preserved, but changes may not survive a reload.'
+            ? i18n.t(
+                'ui.personal_library_data_was_created_by_a_newer_app_version_it_is_preserved_but_changes_may_not_survive_a_reload'
+              )
+            : i18n.t(
+                'ui.personal_library_data_uses_an_unsupported_version_it_is_preserved_but_changes_may_not_survive_a_reload'
+              )
         );
       } else {
         writesBlocked = false;
@@ -239,7 +247,9 @@ const safeStateStorage: StateStorage = {
           } catch {
             writesBlocked = true;
             reportWarning(
-              'Personal Library migration could not be saved. Your original data is preserved; changes may not survive a reload.'
+              i18n.t(
+                'ui.personal_library_migration_could_not_be_saved_your_original_data_is_preserved_changes_may_not_survive_a_reload'
+              )
             );
           }
         }
@@ -255,7 +265,9 @@ const safeStateStorage: StateStorage = {
       return raw;
     } catch {
       reportWarning(
-        'Personal Library data could not be read from this browser. Changes may not survive a reload.'
+        i18n.t(
+          'ui.personal_library_data_could_not_be_read_from_this_browser_changes_may_not_survive_a_reload'
+        )
       );
 
       return null;
@@ -280,7 +292,9 @@ const safeStateStorage: StateStorage = {
       lastItemsSignature = itemsSignature;
       reportWarning(null);
     } catch {
-      reportWarning('Personal Library changes may not survive a reload.');
+      reportWarning(
+        i18n.t('ui.personal_library_changes_may_not_survive_a_reload')
+      );
     }
   },
   removeItem(name) {
@@ -291,7 +305,9 @@ const safeStateStorage: StateStorage = {
     try {
       globalThis.localStorage.removeItem(name);
     } catch {
-      reportWarning('Personal Library changes may not survive a reload.');
+      reportWarning(
+        i18n.t('ui.personal_library_changes_may_not_survive_a_reload')
+      );
     }
   },
 };
@@ -426,8 +442,12 @@ export const useLibraryStore = create<LibraryState>()(
         if (version !== LIBRARY_STORAGE_VERSION) {
           reportWarning(
             version > LIBRARY_STORAGE_VERSION
-              ? 'Personal Library data was created by a newer app version. It is preserved, but changes may not survive a reload.'
-              : 'Saved Personal Library data uses an unsupported version. Changes may not survive a reload.'
+              ? i18n.t(
+                  'ui.personal_library_data_was_created_by_a_newer_app_version_it_is_preserved_but_changes_may_not_survive_a_reload'
+                )
+              : i18n.t(
+                  'ui.saved_personal_library_data_uses_an_unsupported_version_changes_may_not_survive_a_reload'
+                )
           );
 
           return { items: {} };
@@ -437,7 +457,9 @@ export const useLibraryStore = create<LibraryState>()(
       },
       onRehydrateStorage: () => (state, error) => {
         if (error) {
-          reportWarning('Personal Library data could not be restored.');
+          reportWarning(
+            i18n.t('ui.personal_library_data_could_not_be_restored')
+          );
         } else if (state && warning !== state.persistenceWarning) {
           applyWarning?.(warning);
         }

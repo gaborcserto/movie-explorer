@@ -1,5 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import type { RatingResult, Ratings } from '@movie-explorer/contracts';
 import { SiImdb, SiThemoviedatabase } from 'react-icons/si';
+
+import { i18n } from '../../../i18n';
 
 import './ratings.scss';
 
@@ -35,6 +38,8 @@ export function RatingsDisplay({
   votes?: number | null;
   imdb?: RatingResult | { score: number; voteCount: number | null } | null;
 }) {
+  useTranslation();
+
   const tmdbResult = normalizedRating(tmdb, votes);
   const imdbResult = normalizedRating(imdb);
   const tmdbScore =
@@ -72,10 +77,25 @@ export function RatingsDisplay({
             className="details-ratings__item"
             key={label}
             role="img"
-            aria-label={`${label} rating: ${score?.toFixed(1)} out of 10${voteCount !== null && voteCount !== undefined ? ` from ${voteCount} votes` : ''}`}
+            aria-label={i18n.t('messages.rating', {
+              label,
+              score: new Intl.NumberFormat(i18n.language, {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              }).format(Number((score ?? 0).toFixed(1))),
+              votes:
+                voteCount != null
+                  ? i18n.t('messages.votes', { count: voteCount })
+                  : '',
+            })}
           >
             <Icon className="details-ratings__icon" aria-hidden="true" />
-            <span className="details-ratings__score">{score?.toFixed(1)}</span>
+            <span className="details-ratings__score">
+              {new Intl.NumberFormat(i18n.language, {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              }).format(Number((score ?? 0).toFixed(1)))}
+            </span>
           </div>
         ))}
       </div>
@@ -94,6 +114,8 @@ export default function DetailsRatings({
   value?: Ratings;
   loading?: boolean;
 }) {
+  useTranslation();
+
   const fallback: RatingResult =
     typeof tmdb === 'number' && Number.isFinite(tmdb) && tmdb >= 0 && tmdb <= 10
       ? { status: 'available', score: tmdb, voteCount: votes ?? null }
@@ -104,7 +126,7 @@ export default function DetailsRatings({
       <RatingsDisplay tmdb={value?.tmdb ?? fallback} imdb={value?.imdb} />
       {loading && (
         <span className="visually-hidden" role="status">
-          Loading ratings
+          {i18n.t('ui.loading_ratings')}
         </span>
       )}
     </>

@@ -8,6 +8,7 @@ import type {
   RelatedTitlesResponse,
 } from '@movie-explorer/contracts';
 
+import usePreferencesStore from '../../features/preferences/preferencesStore';
 import {
   getPersonalizedRecommendations,
   getRecommendations,
@@ -38,6 +39,8 @@ export type RecommendationSource =
 export default function useRecommendationResource(
   source: RecommendationSource
 ) {
+  const guestPreferences = usePreferencesStore((state) => state.preferences);
+
   const { category, resource, id, kind, preferences } = source;
 
   const containerRef = useRef<HTMLElement>(null);
@@ -57,16 +60,25 @@ export default function useRecommendationResource(
     id,
     kind,
     preferences,
+    guestPreferences,
   });
 
   if (
+    identity.guestPreferences !== guestPreferences ||
     identity.category !== category ||
     identity.resource !== resource ||
     identity.id !== id ||
     identity.kind !== kind ||
     identity.preferences !== preferences
   ) {
-    setIdentity({ category, resource, id, kind, preferences });
+    setIdentity({
+      category,
+      resource,
+      id,
+      kind,
+      preferences,
+      guestPreferences,
+    });
     setData(undefined);
     setError(undefined);
     setPending(true);
@@ -95,7 +107,7 @@ export default function useRecommendationResource(
     observer.observe(element);
 
     return () => observer.disconnect();
-  }, []);
+  }, [guestPreferences]);
 
   useEffect(() => {
     if (!enabled) {
@@ -154,7 +166,16 @@ export default function useRecommendationResource(
     });
 
     return () => controller.abort();
-  }, [category, resource, id, kind, enabled, attempt, preferences]);
+  }, [
+    category,
+    resource,
+    id,
+    kind,
+    enabled,
+    attempt,
+    preferences,
+    guestPreferences,
+  ]);
 
   useEffect(() => {
     if (!delay) {
@@ -164,7 +185,7 @@ export default function useRecommendationResource(
     const timer = window.setTimeout(() => setDelay(delay - 1), 1000);
 
     return () => window.clearTimeout(timer);
-  }, [delay]);
+  }, [delay, guestPreferences]);
 
   const retry = () => {
     if (!pending && !delay) {

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import type {
@@ -6,6 +7,8 @@ import type {
 } from '@movie-explorer/contracts';
 import { FaClapperboard, FaPlay, FaTv } from 'react-icons/fa6';
 
+import usePreferencesStore from '../../features/preferences/preferencesStore';
+import { i18n } from '../../i18n';
 import FeaturedHero from './featuredHero';
 import HomeRecommendations from './homeRecommendations';
 import DiscoverRow from './discoverSection';
@@ -17,6 +20,12 @@ import './discover.scss';
 
 const categoryTabs = ['Trending', 'Popular', 'New', 'Upcoming'] as const;
 type CategoryTab = (typeof categoryTabs)[number];
+const categoryKeys = {
+  Trending: 'ui.trending',
+  Popular: 'ui.popular',
+  New: 'ui.new',
+  Upcoming: 'ui.upcoming',
+} as const;
 
 const movieSections: Record<CategoryTab, DiscoverySection> = {
   Trending: 'trending',
@@ -112,6 +121,9 @@ function selectProviderFromKeyboard(
 }
 
 export default function DiscoverPage() {
+  useTranslation();
+
+  const guestPreferences = usePreferencesStore((state) => state.preferences);
   const [movieTab, setMovieTab] = useState<CategoryTab>('Trending');
   const [seriesTab, setSeriesTab] = useState<CategoryTab>('Trending');
   const [requestedProviderId, setSelectedProviderId] = useState<number | null>(
@@ -166,8 +178,10 @@ export default function DiscoverPage() {
   );
   const streamingProviderSelection = useMemo(
     () =>
-      selectedProvider ? { id: selectedProvider.id, region: 'HU' } : undefined,
-    [selectedProvider]
+      selectedProvider
+        ? { id: selectedProvider.id, region: guestPreferences.region }
+        : undefined,
+    [selectedProvider, guestPreferences.region]
   );
   const streaming = useDiscoverSection(null, streamingProviderSelection);
 
@@ -179,12 +193,12 @@ export default function DiscoverPage() {
           <div className="discover-category__heading">
             <h2 id="movies-heading">
               <FaClapperboard aria-hidden="true" />
-              Movies
+              {i18n.t('ui.movies')}
             </h2>
             <div
               className="discover-category__tabs"
               role="tablist"
-              aria-label="Movie discovery categories"
+              aria-label={i18n.t('ui.movie_discovery_categories')}
             >
               {categoryTabs.map((tab) => (
                 <button
@@ -194,19 +208,21 @@ export default function DiscoverPage() {
                   aria-controls="movies-row-panel"
                   aria-selected={movieTab === tab}
                   tabIndex={movieTab === tab ? 0 : -1}
-                  key={tab}
+                  key={i18n.t(categoryKeys[tab])}
                   onClick={() => setMovieTab(tab)}
                   onKeyDown={(event) =>
                     selectTabFromKeyboard(event, movieTab, setMovieTab)
                   }
                 >
-                  {tab}
+                  {i18n.t(categoryKeys[tab])}
                 </button>
               ))}
             </div>
           </div>
           <DiscoverRow
-            title={`${movieTab} Movies`}
+            title={i18n.t('messages.discoveryMovies', {
+              category: i18n.t(categoryKeys[movieTab]),
+            })}
             id="movies-row"
             tabId={`movie-${movieTab.toLowerCase()}-tab`}
             data={movieData}
@@ -216,12 +232,12 @@ export default function DiscoverPage() {
           <div className="discover-category__heading">
             <h2 id="series-heading">
               <FaTv aria-hidden="true" />
-              Series
+              {i18n.t('ui.series')}
             </h2>
             <div
               className="discover-category__tabs"
               role="tablist"
-              aria-label="Series discovery categories"
+              aria-label={i18n.t('ui.series_discovery_categories')}
             >
               {categoryTabs.map((tab) => (
                 <button
@@ -231,19 +247,21 @@ export default function DiscoverPage() {
                   aria-controls="series-row-panel"
                   aria-selected={seriesTab === tab}
                   tabIndex={seriesTab === tab ? 0 : -1}
-                  key={tab}
+                  key={i18n.t(categoryKeys[tab])}
                   onClick={() => setSeriesTab(tab)}
                   onKeyDown={(event) =>
                     selectTabFromKeyboard(event, seriesTab, setSeriesTab)
                   }
                 >
-                  {tab}
+                  {i18n.t(categoryKeys[tab])}
                 </button>
               ))}
             </div>
           </div>
           <DiscoverRow
-            title={`${seriesTab} Series`}
+            title={i18n.t('messages.discoverySeries', {
+              category: i18n.t(categoryKeys[seriesTab]),
+            })}
             id="series-row"
             tabId={`series-${seriesTab.toLowerCase()}-tab`}
             data={seriesData}
@@ -256,13 +274,15 @@ export default function DiscoverPage() {
           <div className="discover-category__heading">
             <h2 id="streaming-heading">
               <FaPlay aria-hidden="true" />
-              Streaming
+              {i18n.t('ui.streaming')}
             </h2>
             {providerCatalog.state.status === 'success' && (
               <div
                 className="discover-category__tabs"
                 role="tablist"
-                aria-label="Streaming providers available in Hungary"
+                aria-label={i18n.t(
+                  'ui.streaming_providers_available_in_hungary'
+                )}
                 ref={providerTabsRef}
               >
                 {availableProviders.map((provider, index) => (
@@ -292,21 +312,23 @@ export default function DiscoverPage() {
           </div>
           {providerCatalog.state.status === 'loading' && (
             <p className="discover-row__message" role="status">
-              Loading streaming providers…
+              {i18n.t('ui.loading_streaming_providers')}
             </p>
           )}
           {providerCatalog.state.status === 'error' && (
             <p className="discover-row__message" role="alert">
-              Streaming providers could not load.{' '}
+              {i18n.t('ui.streaming_providers_could_not_load')}{' '}
               <button type="button" onClick={providerCatalog.retry}>
-                Try again
+                {i18n.t('ui.try_again')}
               </button>
             </p>
           )}
           {providerCatalog.state.status === 'success' &&
             availableProviders.length === 0 && (
               <p className="discover-row__message" role="status">
-                No supported streaming providers are listed for Hungary.
+                {i18n.t(
+                  'ui.no_supported_streaming_providers_are_listed_for_hungary'
+                )}
               </p>
             )}
           {providerCatalog.state.status === 'success' &&
@@ -314,12 +336,14 @@ export default function DiscoverPage() {
               <>
                 {availableProviders.length < featuredProviders.length && (
                   <p className="discover-row__message">
-                    Providers not listed for Hungary are omitted.
+                    {i18n.t('ui.providers_not_listed_for_hungary_are_omitted')}
                   </p>
                 )}
                 {selectedProvider && (
                   <DiscoverRow
-                    title={`Available to Stream · ${selectedProvider.label}`}
+                    title={i18n.t('messages.streamProvider', {
+                      provider: selectedProvider.label,
+                    })}
                     id="streaming-row"
                     tabId={`streaming-provider-${selectedProvider.id}-tab`}
                     data={streaming}

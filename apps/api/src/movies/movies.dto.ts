@@ -29,6 +29,8 @@ import type {
   MovieVideo,
 } from '@movie-explorer/contracts';
 
+import { LocalizationQuery } from '../localization.dto';
+
 const MOVIE_SORT_FIELDS = [
   'popularity',
   'title',
@@ -99,7 +101,7 @@ export class GetMoviesQuery implements MovieQueryParams {
   page?: number = 1;
 }
 
-export class GetMovieSuggestionsQuery {
+export class GetMovieSuggestionsQuery extends LocalizationQuery {
   @ApiProperty({ description: 'Search value', minLength: 2 })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,

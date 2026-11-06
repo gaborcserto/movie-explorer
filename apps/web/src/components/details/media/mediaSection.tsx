@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
 import type {
@@ -6,6 +7,7 @@ import type {
   SectionAvailability,
 } from '@movie-explorer/contracts';
 
+import { i18n } from '../../../i18n';
 import DetailsTabs from '../detailsTabs';
 import useStablePanelHeight from '../../../hooks/useStablePanelHeight';
 import PhotoPreview from './photoPreview';
@@ -29,9 +31,24 @@ interface Props {
 }
 
 const mediaTabs = [
-  { key: 'backdrops', label: 'Backdrops' },
-  { key: 'posters', label: 'Posters' },
-  { key: 'videos', label: 'Videos & Trailers' },
+  {
+    key: 'backdrops',
+    get label() {
+      return i18n.t('ui.backdrops');
+    },
+  },
+  {
+    key: 'posters',
+    get label() {
+      return i18n.t('ui.posters');
+    },
+  },
+  {
+    key: 'videos',
+    get label() {
+      return i18n.t('ui.videos_trailers');
+    },
+  },
 ] as const;
 
 type MediaTab = (typeof mediaTabs)[number]['key'];
@@ -48,6 +65,8 @@ export default function MediaSection({
   videosRecovery,
   imagesRecovery,
 }: Props) {
+  useTranslation();
+
   const [tabSelection, setTabSelection] = useState<{
     resetKey: number;
     tab: MediaTab;
@@ -81,12 +100,12 @@ export default function MediaSection({
           className="details-section media-section"
           aria-labelledby={`${tabsId}-heading`}
         >
-          <h2 id={`${tabsId}-heading`}>Media</h2>
+          <h2 id={`${tabsId}-heading`}>{i18n.t('ui.media')}</h2>
           <DetailsTabs
             id={tabsId}
             tabs={mediaTabs}
             activeTab={activeTab}
-            ariaLabel="Media categories"
+            ariaLabel={i18n.t('ui.media_categories')}
             onChange={selectTab}
           />
           <div ref={panelsRef} className="tab-panel-stable">
@@ -109,7 +128,7 @@ export default function MediaSection({
               ) : (
                 !hasBackdropsState && (
                   <p className="media-section__empty">
-                    No backdrops are available.
+                    {i18n.t('ui.no_backdrops_are_available')}
                   </p>
                 )
               )}
@@ -134,7 +153,7 @@ export default function MediaSection({
               ) : (
                 !hasPostersState && (
                   <p className="media-section__empty">
-                    No posters are available.
+                    {i18n.t('ui.no_posters_are_available')}
                   </p>
                 )
               )}
@@ -157,7 +176,7 @@ export default function MediaSection({
               ) : (
                 !hasVideosState && (
                   <p className="media-section__empty">
-                    No videos are available.
+                    {i18n.t('ui.no_videos_are_available')}
                   </p>
                 )
               )}

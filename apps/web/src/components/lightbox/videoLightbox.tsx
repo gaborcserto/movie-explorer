@@ -1,7 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FaChevronLeft, FaChevronRight, FaXmark } from 'react-icons/fa6';
 import type { MovieVideo } from '@movie-explorer/contracts';
+
+import { i18n } from '../../i18n';
 
 interface Props {
   videos: { video: MovieVideo; videoId: string }[];
@@ -16,6 +19,8 @@ export default function VideoLightbox({
   title,
   onClose,
 }: Props) {
+  useTranslation();
+
   const [index, setIndex] = useState(initialIndex);
   const root = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
@@ -137,7 +142,7 @@ export default function VideoLightbox({
     >
       <div className="lightbox__toolbar">
         <h2 id="video-lightbox-title" className="visually-hidden">
-          {video.video.name || `${title} video`}
+          {video.video.name || i18n.t('messages.videoTitle', { title })}
         </h2>
         <span aria-live="polite">
           {index + 1} / {videos.length}
@@ -145,20 +150,21 @@ export default function VideoLightbox({
         <button
           type="button"
           ref={closeButton}
-          aria-label="Close video player"
+          aria-label={i18n.t('ui.close_video_player')}
           onClick={onClose}
         >
           <FaXmark aria-hidden="true" focusable="false" />
         </button>
       </div>
       <p id="video-keyboard-help" className="visually-hidden">
-        Use Tab or Shift+Tab to reach the dialog controls. Press Escape outside
-        the player to close this viewer.
+        {i18n.t(
+          'ui.use_tab_or_shift_tab_to_reach_the_dialog_controls_press_escape_outside_the_player_to_close_this_viewer'
+        )}
       </p>
       <div className="video-lightbox__player">
         <iframe
           key={video.videoId}
-          title={video.video.name || `${title} video`}
+          title={video.video.name || i18n.t('messages.videoTitle', { title })}
           src={`https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=0&playsinline=1&rel=0`}
           allow="encrypted-media; picture-in-picture; fullscreen"
           aria-describedby="video-keyboard-help"
@@ -170,7 +176,7 @@ export default function VideoLightbox({
           <button
             type="button"
             className="lightbox__nav lightbox__nav--previous"
-            aria-label="Previous video"
+            aria-label={i18n.t('ui.previous_video')}
             disabled={index === 0}
             onClick={() => setIndex((current) => Math.max(0, current - 1))}
           >
@@ -179,7 +185,7 @@ export default function VideoLightbox({
           <button
             type="button"
             className="lightbox__nav lightbox__nav--next"
-            aria-label="Next video"
+            aria-label={i18n.t('ui.next_video')}
             disabled={index === videos.length - 1}
             onClick={() =>
               setIndex((current) => Math.min(videos.length - 1, current + 1))

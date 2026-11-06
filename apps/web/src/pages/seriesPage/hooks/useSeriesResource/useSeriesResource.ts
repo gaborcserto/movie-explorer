@@ -1,32 +1,45 @@
 import { useEffect, useState } from 'react';
 
+import usePreferencesStore from '../../../../features/preferences/preferencesStore';
+
 export default function useSeriesResource<T>(
   load: (signal: AbortSignal) => Promise<T>,
   enabled: boolean,
   initial?: T
 ) {
-  const [data, setData] = useState<T | undefined>(initial);
+  const guestPreferences = usePreferencesStore((state) => state.preferences);
+
+  const [initialPreferences] = useState(guestPreferences);
+  const usableInitial =
+    initialPreferences === guestPreferences ? initial : undefined;
+  const [data, setData] = useState<T | undefined>(usableInitial);
   const [error, setError] = useState<unknown>();
-  const [pending, setPending] = useState(enabled && !initial);
+  const [pending, setPending] = useState(enabled && !usableInitial);
   const [attempt, setAttempt] = useState(0);
-  const [identity, setIdentity] = useState({ load, enabled, initial });
+  const [identity, setIdentity] = useState({
+    load,
+    enabled,
+    usableInitial,
+    guestPreferences,
+  });
 
   // The loader identifies the selected series/season. Reset before children
   // commit so they never observe the previous selection's data or error.
   if (
+    identity.guestPreferences !== guestPreferences ||
     identity.load !== load ||
     identity.enabled !== enabled ||
-    identity.initial !== initial
+    identity.usableInitial !== usableInitial
   ) {
-    setIdentity({ load, enabled, initial });
-    setData(initial);
+    setIdentity({ load, enabled, usableInitial, guestPreferences });
+    setData(usableInitial);
     setError(undefined);
-    setPending(enabled && !initial);
+    setPending(enabled && !usableInitial);
     setAttempt(0);
   }
 
   useEffect(() => {
-    if (!enabled || (initial && attempt === 0)) {
+    if (!enabled || (usableInitial && attempt === 0)) {
       return undefined;
     }
 
@@ -51,7 +64,7 @@ export default function useSeriesResource<T>(
       });
 
     return () => controller.abort();
-  }, [load, enabled, initial, attempt]);
+  }, [load, enabled, usableInitial, attempt, guestPreferences]);
 
   return {
     data,

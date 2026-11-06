@@ -10,6 +10,7 @@ import type {
   MovieSummary,
 } from '@movie-explorer/contracts';
 
+import usePreferencesStore from '../../../features/preferences/preferencesStore';
 import type { URLParams } from '../../../types';
 import { getMovies } from '../../../util/apiUtils';
 import { isCancelledError } from '../../../util/errorPresentation';
@@ -37,6 +38,8 @@ export default function useMovieResults(
   signature: string,
   cache: Map<string, MovieSnapshot> | undefined
 ) {
+  const guestPreferences = usePreferencesStore((state) => state.preferences);
+
   const { restored, save } = useResultHistory(cache, signature);
   const [moviesData, setMoviesData] = useState<MovieListResponse | undefined>(
     restored?.data
@@ -53,6 +56,18 @@ export default function useMovieResults(
   const loadingMoreRef = useRef(false);
   const queryGenerationRef = useRef(0);
   const requestControllerRef = useRef<AbortController | null>(null);
+
+  const [requestPreferences, setRequestPreferences] =
+    useState(guestPreferences);
+
+  if (requestPreferences !== guestPreferences) {
+    setRequestPreferences(guestPreferences);
+    setMoviesData(restored?.data);
+    setMovies(restored?.items ?? []);
+    setVisibleMovieCount(restored?.visible ?? MOVIE_BATCH_SIZE);
+    setLoadingData(!restored);
+    setErrorData(null);
+  }
 
   const loadInitialMovies = useCallback(
     (retry = false) => {
@@ -134,7 +149,7 @@ export default function useMovieResults(
     }
 
     return () => requestControllerRef.current?.abort();
-  }, [loadInitialMovies, restored]);
+  }, [loadInitialMovies, restored, guestPreferences]);
 
   useLayoutEffect(() => {
     if (moviesData && !loadingData) {

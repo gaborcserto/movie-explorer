@@ -1,7 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { PersonDetails } from '@movie-explorer/contracts';
 
+import { formatDate } from '../../../i18n/format';
+import { i18n } from '../../../i18n';
 import HeroImage from '../../../components/heroImage';
 import { DetailsMetadata } from '../../../components/details/metadata';
 import { DetailsHeroFrame } from '../../../components/details/detailsPageLayout';
@@ -21,6 +24,8 @@ function isVisibleMetadataValue(value: ReactNode | undefined) {
 }
 
 export default function PersonProfile({ person }: { person: PersonDetails }) {
+  useTranslation();
+
   const [expanded, setExpanded] = useState(false);
 
   const biography = person.biography?.trim() ?? '';
@@ -30,21 +35,21 @@ export default function PersonProfile({ person }: { person: PersonDetails }) {
 
   const age = getPersonAge(person.birthday, person.deathDate);
   const metadata: [string, ReactNode | undefined][] = [
-    ['Known for', person.knownForDepartment],
+    [i18n.t('ui.known_for'), person.knownForDepartment],
     [
-      'Birthday',
+      i18n.t('ui.birthday'),
       person.birthday?.trim() ? (
-        <time dateTime={person.birthday}>{person.birthday}</time>
+        <time dateTime={person.birthday}>{formatDate(person.birthday)}</time>
       ) : undefined,
     ],
-    ['Age', age],
+    [i18n.t('ui.age'), age],
     [
-      'Death date',
+      i18n.t('ui.death_date'),
       person.deathDate?.trim() ? (
-        <time dateTime={person.deathDate}>{person.deathDate}</time>
+        <time dateTime={person.deathDate}>{formatDate(person.deathDate)}</time>
       ) : undefined,
     ],
-    ['Place of birth', person.placeOfBirth],
+    [i18n.t('ui.place_of_birth'), person.placeOfBirth],
   ];
   const visibleMetadata = metadata.filter(([, value]) =>
     isVisibleMetadataValue(value)
@@ -56,14 +61,15 @@ export default function PersonProfile({ person }: { person: PersonDetails }) {
       title={person.name}
       image={
         <HeroImage
+          overlayLabel={i18n.t('messages.viewPhotos')}
           src={person.profileUrl}
           srcSet={person.profileSrcSet}
           fullSrcSet={person.profileSrcSet}
           sizes="(max-width: 767.98px) min(320px, calc(100vw - 52px)), 320px"
-          alt={`Portrait of ${person.name}`}
+          alt={i18n.t('messages.portrait', { name: person.name })}
           title={person.name}
           photos={person.profilePhotos}
-          actionLabel={`Open portrait gallery for ${person.name}`}
+          actionLabel={i18n.t('messages.openPortraits', { name: person.name })}
           className="movie-details__image person-profile__portrait"
         />
       }
@@ -76,11 +82,11 @@ export default function PersonProfile({ person }: { person: PersonDetails }) {
           />
         )}
         <section aria-labelledby="biography-heading">
-          <h2 id="biography-heading">Biography</h2>
+          <h2 id="biography-heading">{i18n.t('ui.biography')}</h2>
           <p id="person-biography" className="person-profile__biography">
             {biography && isLong && !expanded
               ? `${excerpt}…`
-              : biography || 'Biography unavailable.'}
+              : biography || i18n.t('ui.biography_unavailable')}
           </p>
           {isLong && (
             <button
@@ -90,7 +96,9 @@ export default function PersonProfile({ person }: { person: PersonDetails }) {
               aria-controls="person-biography"
               onClick={() => setExpanded(!expanded)}
             >
-              {expanded ? 'Show Less' : 'Show More'}
+              {expanded
+                ? i18n.t('ui.show_less_label')
+                : i18n.t('ui.show_more_label')}
             </button>
           )}
         </section>
@@ -100,8 +108,10 @@ export default function PersonProfile({ person }: { person: PersonDetails }) {
 }
 
 export function PersonProfileLoading() {
+  useTranslation();
+
   return (
-    <SkeletonRegion label="Loading person details">
+    <SkeletonRegion label={i18n.t('ui.loading_person_details')}>
       <div className="person-profile person-profile--loading">
         <Skeleton
           className="movie-details__image person-profile__portrait"

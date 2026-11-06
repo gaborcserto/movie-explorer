@@ -108,12 +108,12 @@ test('direct person navigation loads the complete contract through the API witho
   expect(document.querySelector('.person-profile__metadata')).toBeVisible();
   expect(hero?.querySelector('.person-hero__posters')).toBeNull();
   expect(screen.getByText('Budapest, Hungary')).toBeVisible();
-  expect(screen.getByText('1970-01-01')).toHaveAttribute(
+  expect(screen.getByText('1/1/1970')).toHaveAttribute(
     'datetime',
     '1970-01-01'
   );
   expect(screen.getByText('Age').nextElementSibling).toHaveTextContent('50');
-  expect(screen.getByText('2020-12-31')).toHaveAttribute(
+  expect(screen.getByText('12/31/2020')).toHaveAttribute(
     'datetime',
     '2020-12-31'
   );

@@ -5,6 +5,7 @@ import type {
   SeriesDetails,
 } from '@movie-explorer/contracts';
 
+import { contentLanguage } from '../../localization';
 import { TmdbRelatedTitles } from './tmdb-related-titles';
 import { TmdbExternalIds } from './tmdb-external-ids';
 import { normalizeTmdbRating } from './tmdb-ratings';
@@ -214,7 +215,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
 
   private mediaLanguages() {
     const languages = [
-      ...new Set([this.language.split('-')[0], 'en', 'null']),
+      ...new Set([contentLanguage(this.language).split('-')[0], 'en', 'null']),
     ].join(',');
 
     return {

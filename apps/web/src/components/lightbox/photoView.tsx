@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState } from 'react';
 import { FaMagnifyingGlassMinus, FaMagnifyingGlassPlus } from 'react-icons/fa6';
 import type { MoviePhoto } from '@movie-explorer/contracts';
 
+import { i18n } from '../../i18n';
 import ImagePreview from '../utility/imagePreview';
 import usePhotoGestures from './hooks/usePhotoGestures';
 import usePhotoZoom from './hooks/usePhotoZoom';
@@ -15,6 +17,8 @@ export default function PhotoView({
   alt: string;
   navigate: (direction: number) => void;
 }) {
+  useTranslation();
+
   const viewport = useRef<HTMLDivElement>(null);
   const image = useRef<HTMLImageElement>(null);
   const [status, setStatus] = useState('loading');
@@ -45,10 +49,14 @@ export default function PhotoView({
 
   return (
     <>
-      <div className="lightbox__zoom" role="group" aria-label="Zoom controls">
+      <div
+        className="lightbox__zoom"
+        role="group"
+        aria-label={i18n.t('ui.zoom_controls')}
+      >
         <button
           type="button"
-          aria-label="Zoom out"
+          aria-label={i18n.t('ui.zoom_out')}
           disabled={status !== 'loaded' || view.scale === 1}
           onClick={() => update(view.scale - 0.5, view.x, view.y)}
         >
@@ -56,7 +64,7 @@ export default function PhotoView({
         </button>
         <button
           type="button"
-          aria-label="Reset zoom to fit"
+          aria-label={i18n.t('ui.reset_zoom_to_fit')}
           disabled={status !== 'loaded'}
           onClick={() => update(1)}
         >
@@ -64,20 +72,24 @@ export default function PhotoView({
         </button>
         <button
           type="button"
-          aria-label="Zoom in"
+          aria-label={i18n.t('ui.zoom_in')}
           disabled={status !== 'loaded' || view.scale === maxZoom}
           onClick={() => update(view.scale + 0.5, view.x, view.y)}
         >
           <FaMagnifyingGlassPlus aria-hidden="true" focusable="false" />
         </button>
       </div>
-      <div className="lightbox__pan" role="group" aria-label="Pan controls">
+      <div
+        className="lightbox__pan"
+        role="group"
+        aria-label={i18n.t('ui.pan_controls')}
+      >
         {(
           [
-            ['Pan left', -1, 0],
-            ['Pan right', 1, 0],
-            ['Pan up', 0, -1],
-            ['Pan down', 0, 1],
+            [i18n.t('ui.pan_left'), -1, 0],
+            [i18n.t('ui.pan_right'), 1, 0],
+            [i18n.t('ui.pan_up'), 0, -1],
+            [i18n.t('ui.pan_down'), 0, 1],
           ] as const
         ).map(([label, dx, dy]) => {
           const limits = panLimits();
@@ -96,7 +108,7 @@ export default function PhotoView({
               disabled={status !== 'loaded' || view.scale === 1 || atBoundary}
               onClick={() => pan(dx * 80, dy * 80)}
             >
-              {label.replace('Pan ', '')}
+              {label.replace(i18n.t('ui.pan'), '')}
             </button>
           );
         })}
@@ -120,10 +132,14 @@ export default function PhotoView({
           }
         }}
       >
-        {status === 'loading' && <p role="status">Loading photo…</p>}
+        {status === 'loading' && (
+          <p role="status">{i18n.t('ui.loading_photo')}</p>
+        )}
         {status === 'error' && (
           <p role="alert">
-            Unable to load photo. Try another photo or reopen the viewer.
+            {i18n.t(
+              'ui.unable_to_load_photo_try_another_photo_or_reopen_the_viewer'
+            )}
           </p>
         )}
         <img

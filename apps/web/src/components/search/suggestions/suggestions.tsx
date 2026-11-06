@@ -1,14 +1,29 @@
+import { useTranslation } from 'react-i18next';
+
+import { i18n } from '../../../i18n';
 import MovieImage from '../../utility/customImage';
 import type useAutocomplete from '../useAutocomplete';
 import './suggestions.scss';
 
-const groupLabels = { movie: 'Movies', tv: 'Series', person: 'People' };
+const groupLabels = {
+  get movie() {
+    return i18n.t('ui.movies');
+  },
+  get tv() {
+    return i18n.t('ui.series');
+  },
+  get person() {
+    return i18n.t('ui.people');
+  },
+};
 
 type Props = {
   autocomplete: Omit<ReturnType<typeof useAutocomplete>, 'containerRef'>;
 };
 
 export default function Suggestions({ autocomplete }: Props) {
+  useTranslation();
+
   return (
     <>
       <span
@@ -29,7 +44,7 @@ export default function Suggestions({ autocomplete }: Props) {
         className="search-suggestions"
         id={autocomplete.listId}
         role="listbox"
-        aria-label="Movie, Series and Person suggestions"
+        aria-label={i18n.t('ui.movie_series_and_person_suggestions')}
       >
         {(['movie', 'tv', 'person'] as const).map((type) => {
           const items = autocomplete.suggestions.filter(

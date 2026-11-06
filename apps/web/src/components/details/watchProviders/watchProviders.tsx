@@ -1,12 +1,13 @@
+import { useTranslation } from 'react-i18next';
 import { useCallback, useRef, useState } from 'react';
 import type {
   WatchProvider,
   WatchProviderCategory,
 } from '@movie-explorer/contracts';
 
+import { i18n } from '../../../i18n';
 import { Skeleton, SkeletonRegion } from '../../skeleton';
 import type useWatchProvidersResource from './useWatchProvidersResource';
-
 import appleLogo from '../../../assets/img/providers/apple.webp';
 import disneyLogo from '../../../assets/img/providers/disney.webp';
 import netflixLogo from '../../../assets/img/providers/netflix.webp';
@@ -27,10 +28,13 @@ const localLogos: Record<number, string> = {
   1773: skyShowtimeLogo,
 };
 
-const categories: [WatchProviderCategory, string][] = [
-  ['streaming', 'Streaming'],
-  ['rent', 'Rent'],
-  ['buy', 'Buy'],
+const categories: [
+  WatchProviderCategory,
+  'ui.streaming' | 'ui.rent' | 'ui.buy',
+][] = [
+  ['streaming', 'ui.streaming'],
+  ['rent', 'ui.rent'],
+  ['buy', 'ui.buy'],
 ];
 
 function ProviderLogo({
@@ -40,6 +44,8 @@ function ProviderLogo({
   provider: WatchProvider;
   categoryLabel: string;
 }) {
+  useTranslation();
+
   const [broken, setBroken] = useState(false);
   const logoUrl = localLogos[provider.id] ?? provider.logoUrl;
   const accessibleLabel = `${provider.name} — ${categoryLabel}`;
@@ -67,6 +73,8 @@ export default function WatchProviders({
   providers: WatchProvider[];
   resource?: ReturnType<typeof useWatchProvidersResource>;
 }) {
+  useTranslation();
+
   const retryRef = useRef<HTMLButtonElement>(null);
 
   const attachRetry = useCallback((button: HTMLButtonElement | null) => {
@@ -93,8 +101,8 @@ export default function WatchProviders({
       <div className="section-recovery" aria-busy={resource.pending}>
         <p role="status">
           {resource.pending
-            ? 'Loading watch providers'
-            : 'Watch providers could not be loaded.'}
+            ? i18n.t('ui.loading_watch_providers')
+            : i18n.t('ui.watch_providers_could_not_be_loaded')}
         </p>
         {resource.pending && (
           <div aria-hidden="true">
@@ -112,7 +120,7 @@ export default function WatchProviders({
             }
           }}
         >
-          Retry watch providers
+          {i18n.t('ui.retry_watch_providers')}
         </button>
       </div>
     );
@@ -120,7 +128,7 @@ export default function WatchProviders({
   if (resource?.pending && groups.length === 0) {
     return (
       <SkeletonRegion
-        label="Loading watch providers"
+        label={i18n.t('ui.loading_watch_providers')}
         className="watch-providers details-section"
       >
         <Skeleton width={160} height={22} />
@@ -142,18 +150,18 @@ export default function WatchProviders({
       aria-labelledby="watch-providers-heading"
     >
       <div className="details-section__heading">
-        <h2 id="watch-providers-heading">Where to watch</h2>
+        <h2 id="watch-providers-heading">{i18n.t('ui.where_to_watch')}</h2>
       </div>
       <div className="watch-providers__groups">
         {groups.map((group) => (
           <div className="watch-providers__group" key={group.key}>
-            <h3>{group.label}</h3>
+            <h3>{i18n.t(group.label)}</h3>
             <ul>
               {group.providers.map((provider) => (
                 <ProviderLogo
                   key={`${group.key}-${provider.id}`}
                   provider={provider}
-                  categoryLabel={group.label}
+                  categoryLabel={i18n.t(group.label)}
                 />
               ))}
             </ul>

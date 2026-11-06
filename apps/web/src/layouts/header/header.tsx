@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router';
 
 import HeaderSearch from '../../components/search/headerSearch';
+import PreferencesControls from '../../features/preferences/preferencesControls';
 
 function Header() {
   const { pathname } = useLocation();
@@ -19,7 +20,10 @@ function Header() {
         <Link to="/" className="brand app-header__brand">
           <strong>Movie</strong>Explorer
         </Link>
-        {(showSearch || showLibrarySearch) && <HeaderSearch />}
+        <div className="app-header__actions">
+          {(showSearch || showLibrarySearch) && <HeaderSearch />}
+          <PreferencesControls />
+        </div>
       </div>
     </header>
   );

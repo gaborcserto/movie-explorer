@@ -1,4 +1,5 @@
 import { Link, useLocation, useSearchParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   FaClapperboard,
   FaHouse,
@@ -12,14 +13,6 @@ import './primaryNavigation.scss';
 type NavigationTarget = 'discover' | 'all' | 'movies' | 'tv' | 'people';
 export type PrimaryNavigationMode = 'home' | 'results' | 'library';
 
-const viewLabels: Record<NavigationTarget, string> = {
-  discover: 'Home',
-  all: 'All',
-  movies: 'Movies',
-  tv: 'Series',
-  people: 'Persons',
-};
-
 export interface PrimaryNavigationProps {
   mode: PrimaryNavigationMode;
   activeView: string;
@@ -31,6 +24,7 @@ export default function PrimaryNavigation({
   activeView,
   query = '',
 }: PrimaryNavigationProps) {
+  const { t } = useTranslation();
   const location = useLocation();
   const [params] = useSearchParams();
   const targets: readonly NavigationTarget[] =
@@ -63,7 +57,7 @@ export default function PrimaryNavigation({
   };
 
   return (
-    <nav className="search-views" aria-label="Main navigation">
+    <nav className="search-views" aria-label={t('navigation.label')}>
       {targets
         .filter((target) => mode !== 'results' || query || target !== 'all')
         .map((target) => (
@@ -78,7 +72,7 @@ export default function PrimaryNavigation({
               target !== 'people' &&
               target !== 'tv' && <FaClapperboard aria-hidden="true" />}
             {target === 'people' && <FaUsers aria-hidden="true" />}
-            {viewLabels[target]}
+            {t(`navigation.${target}`)}
           </Link>
         ))}
       <Link
@@ -87,7 +81,7 @@ export default function PrimaryNavigation({
         aria-current={activeView === 'library' ? 'page' : undefined}
       >
         <FaRegBookmark aria-hidden="true" />
-        Library
+        {t('navigation.library')}
       </Link>
     </nav>
   );

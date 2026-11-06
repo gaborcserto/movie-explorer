@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { useRef } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useStore } from 'zustand';
 
+import { i18n } from '../../i18n';
 import Card from '../../components/card';
 import '../../components/list/list.scss';
 import PrimaryNavigation from '../../components/navigation';
@@ -14,13 +16,27 @@ import type { LibraryCollection } from '../../features/library/libraryStore';
 import './libraryPage.scss';
 
 const collections: { id: LibraryCollection; label: string }[] = [
-  { id: 'favorites', label: 'Favorites' },
-  { id: 'watched', label: 'Watched' },
+  {
+    id: 'favorites',
+    get label() {
+      return i18n.t('ui.favorites');
+    },
+  },
+  {
+    id: 'watched',
+    get label() {
+      return i18n.t('ui.watched');
+    },
+  },
 ];
 
 const emptyMessages: Record<LibraryCollection, string> = {
-  watched: 'You have not marked any movies or series as watched yet.',
-  favorites: 'Your Favorites collection is empty.',
+  get watched() {
+    return i18n.t('ui.you_have_not_marked_any_movies_or_series_as_watched_yet');
+  },
+  get favorites() {
+    return i18n.t('ui.your_favorites_collection_is_empty');
+  },
 };
 
 function isCollection(value: string | null): value is LibraryCollection {
@@ -28,6 +44,8 @@ function isCollection(value: string | null): value is LibraryCollection {
 }
 
 export default function LibraryPage() {
+  useTranslation();
+
   const [searchParams] = useSearchParams();
   const activeCollectionLink = useRef<HTMLAnchorElement>(null);
   const requestedCollection = searchParams.get('collection');
@@ -55,13 +73,13 @@ export default function LibraryPage() {
         </div>
       </div>
       <div className="list__container container library-page__content">
-        <h1>Personal Library</h1>
+        <h1>{i18n.t('ui.personal_library')}</h1>
         <p className="library-page__description">
-          Your saved movies and series, all in one place.
+          {i18n.t('ui.your_saved_movies_and_series_all_in_one_place')}
         </p>
         <nav
           className="library-page__navigation"
-          aria-label="Library collections"
+          aria-label={i18n.t('ui.library_collections')}
         >
           {collections.map(({ id, label }) => {
             const count = Object.values(allItems).filter(
@@ -91,7 +109,11 @@ export default function LibraryPage() {
           ) : (
             <section
               className="list__items"
-              aria-label={`${collections.find(({ id }) => id === activeCollection)?.label} items`}
+              aria-label={i18n.t('messages.collectionItems', {
+                collection: collections.find(
+                  ({ id }) => id === activeCollection
+                )?.label,
+              })}
             >
               {items.map((item) => (
                 <Card

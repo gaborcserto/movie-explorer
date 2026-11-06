@@ -36,6 +36,27 @@ describe('production HTTP configuration', () => {
     expect(response.headers['x-robots-tag']).toBe('noindex');
   });
 
+  it('validates explicit locale queries without rejecting browser language negotiation headers', async () => {
+    await createApp({ NODE_ENV: 'production' });
+
+    await request(app.getHttpServer())
+      .get('/health')
+      .set('Accept-Language', 'en-US,en;q=0.9')
+      .expect(200);
+    await request(app.getHttpServer())
+      .get('/health?language=hu-HU&watchRegion=US')
+      .expect(200);
+    await request(app.getHttpServer())
+      .get('/health?language=de-DE')
+      .expect(400);
+    await request(app.getHttpServer())
+      .get('/health?language=en-US&language=hu-HU')
+      .expect(400);
+    await request(app.getHttpServer())
+      .get('/health?watchRegion=invalid')
+      .expect(400);
+  });
+
   it('does not expose Swagger UI or JSON in production by default', async () => {
     await createApp({ NODE_ENV: 'production' });
 

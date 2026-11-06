@@ -1,5 +1,7 @@
+import { useTranslation } from 'react-i18next';
 import type { MoviePhoto, Ratings } from '@movie-explorer/contracts';
 
+import { i18n } from '../../../i18n';
 import DetailsRatings from '../../../components/details/ratings';
 import HeroImage from '../../../components/heroImage';
 import { DetailsHeroFrame } from '../../../components/details/detailsPageLayout';
@@ -36,6 +38,8 @@ export default function SeriesHero({
   className?: string;
   children: React.ReactNode;
 }) {
+  useTranslation();
+
   return (
     <DetailsHeroFrame
       title={title}
@@ -61,7 +65,7 @@ export default function SeriesHero({
           photos={photos}
           actionLabel={
             seriesId !== undefined
-              ? `Open poster gallery for ${title}`
+              ? i18n.t('messages.openPosters', { title })
               : undefined
           }
           sizes={
@@ -70,14 +74,20 @@ export default function SeriesHero({
               ? '(max-width: 767.98px) min(500px, calc(100vw - 52px)), (max-width: 991.98px) 260px, 320px'
               : '(max-width: 767.98px) min(320px, calc(100vw - 52px)), (max-width: 991.98px) 260px, 320px')
           }
-          alt={still ? `Still from ${title}` : `Poster for ${title}`}
+          alt={
+            still
+              ? i18n.t('messages.still', { title })
+              : i18n.t('messages.poster', { title })
+          }
           title={title}
           className={`movie-details__image${still ? ' movie-details__image--still' : ''}`}
         />
       }
     >
       {showVoteCount && votes !== null && votes !== undefined && (
-        <p className="series-rating">{votes.toLocaleString()} votes</p>
+        <p className="series-rating">
+          {i18n.t('messages.voteCount', { count: votes })}
+        </p>
       )}
       {children}
     </DetailsHeroFrame>

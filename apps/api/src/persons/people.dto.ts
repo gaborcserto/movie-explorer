@@ -14,7 +14,9 @@ import type {
   PersonSummary,
 } from '@movie-explorer/contracts';
 
-export class GetPeopleQuery {
+import { LocalizationQuery } from '../localization.dto';
+
+export class GetPeopleQuery extends LocalizationQuery {
   @ApiProperty({ minLength: 1, maxLength: 100 })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,

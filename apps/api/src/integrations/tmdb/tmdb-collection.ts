@@ -1,6 +1,7 @@
 import { GatewayTimeoutException, NotFoundException } from '@nestjs/common';
 import type { MovieCollectionResponse } from '@movie-explorer/contracts';
 
+import { localizationKey } from '../../localization';
 import { mapSearch, searchRecord, searchText } from './tmdb-search.mapper';
 import { TmdbTransport } from './tmdb.transport';
 
@@ -27,8 +28,8 @@ type CollectionReference = { id: number; name?: string } | null;
 type Cached<T> = { value: T; expiresAt: number };
 
 function cacheValue<T>(
-  cache: Map<number, Cached<T>>,
-  id: number,
+  cache: Map<string, Cached<T>>,
+  id: string,
   value: T,
   capacity: number,
 ) {
@@ -45,19 +46,19 @@ function cacheValue<T>(
   cache.set(id, { value, expiresAt: Date.now() + COLLECTION_TTL_MS });
 }
 
-// Each provider owns one fixed-locale instance; no cache crosses configuration boundaries.
+// Locale and region form part of every cache and in-flight request identity.
 export class TmdbCollections {
-  private readonly references = new Map<number, Cached<CollectionReference>>();
+  private readonly references = new Map<string, Cached<CollectionReference>>();
   private readonly collections = new Map<
-    number,
+    string,
     Cached<MovieCollectionResponse>
   >();
   private readonly requests = new Map<
-    number,
+    string,
     Promise<MovieCollectionResponse>
   >();
   private readonly collectionRequests = new Map<
-    number,
+    string,
     Promise<MovieCollectionResponse>
   >();
 
@@ -77,11 +78,16 @@ export class TmdbCollections {
 
     const reference =
       id === undefined ? null : { id, name: searchText(record(value)?.name) };
-    cacheValue(this.references, movieId, reference, REFERENCE_CAPACITY);
+    cacheValue(
+      this.references,
+      localizationKey(movieId),
+      reference,
+      REFERENCE_CAPACITY,
+    );
   }
 
   find(movieId: number): Promise<MovieCollectionResponse> {
-    const pending = this.requests.get(movieId);
+    const pending = this.requests.get(localizationKey(movieId));
 
     if (pending) {
       return pending;
@@ -89,9 +95,9 @@ export class TmdbCollections {
 
     const deadline = Date.now() + ENRICHMENT_BUDGET_MS;
     const request = this.load(movieId, deadline).finally(() =>
-      this.requests.delete(movieId),
+      this.requests.delete(localizationKey(movieId)),
     );
-    this.requests.set(movieId, request);
+    this.requests.set(localizationKey(movieId), request);
 
     return request;
   }
@@ -110,11 +116,11 @@ export class TmdbCollections {
     movieId: number,
     deadline: number,
   ): Promise<MovieCollectionResponse> {
-    let reference = this.references.get(movieId);
+    let reference = this.references.get(localizationKey(movieId));
 
     if (!reference || reference.expiresAt <= Date.now()) {
       await this.lookupReference(movieId, deadline);
-      reference = this.references.get(movieId);
+      reference = this.references.get(localizationKey(movieId));
     }
 
     const memberOf = reference?.value;
@@ -123,19 +129,19 @@ export class TmdbCollections {
       return { collection: null, results: [], availability: 'available' };
     }
 
-    const cached = this.collections.get(memberOf.id);
+    const cached = this.collections.get(localizationKey(memberOf.id));
     let collection: MovieCollectionResponse;
 
     if (cached && cached.expiresAt > Date.now()) {
       collection = cached.value;
     } else {
-      let pending = this.collectionRequests.get(memberOf.id);
+      let pending = this.collectionRequests.get(localizationKey(memberOf.id));
 
       if (!pending) {
         pending = this.lookupCollection(memberOf.id, deadline).finally(() =>
-          this.collectionRequests.delete(memberOf.id),
+          this.collectionRequests.delete(localizationKey(memberOf.id)),
         );
-        this.collectionRequests.set(memberOf.id, pending);
+        this.collectionRequests.set(localizationKey(memberOf.id), pending);
       }
 
       // A shared collection request may belong to a caller with a later deadline.
@@ -222,7 +228,12 @@ export class TmdbCollections {
     const result = mapMovieCollection(body, id, 0, this.imageBaseUrl);
 
     if (result.availability === 'available') {
-      cacheValue(this.collections, id, result, COLLECTION_CAPACITY);
+      cacheValue(
+        this.collections,
+        localizationKey(id),
+        result,
+        COLLECTION_CAPACITY,
+      );
     }
 
     return result;

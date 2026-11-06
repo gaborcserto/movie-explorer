@@ -4,6 +4,7 @@ import type {
   RecommendationTitle,
 } from '@movie-explorer/contracts';
 
+import { contentLanguage, contentRegion } from '../../localization';
 import type { RecommendationPool } from '../../recommendations/recommendation-provider';
 import type { TitleSignals } from '../../recommendations/title-ranking';
 import { rankingSignals } from './tmdb-ranking-signals';
@@ -40,8 +41,8 @@ export class TmdbRecommendationPools {
     this.prune();
     const key = JSON.stringify([
       category,
-      this.config.language,
-      this.config.region ?? null,
+      contentLanguage(this.config.language),
+      contentRegion(this.config.region),
     ]);
     const cached = this.cache.get(key);
 

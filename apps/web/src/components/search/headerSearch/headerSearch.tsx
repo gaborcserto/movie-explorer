@@ -1,12 +1,16 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { FaMagnifyingGlass, FaXmark } from 'react-icons/fa6';
 
+import { i18n } from '../../../i18n';
 import useAutocomplete from '../useAutocomplete';
 import Suggestions from '../suggestions';
 import './headerSearch.scss';
 
 export default function HeaderSearch() {
+  useTranslation();
+
   const [expanded, setExpanded] = useState(false);
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -45,7 +49,9 @@ export default function HeaderSearch() {
         type="button"
         className="detail-search__trigger"
         aria-label={
-          expanded ? 'Close search' : 'Search movies, series and people'
+          expanded
+            ? i18n.t('ui.close_search')
+            : i18n.t('ui.search_movies_series_and_people')
         }
         aria-expanded={expanded}
         aria-controls={inputId}
@@ -69,7 +75,7 @@ export default function HeaderSearch() {
       <form
         className={`detail-search__form${expanded ? ' detail-search__form--expanded' : ''}`}
         role="search"
-        aria-label="Movie, Series and Person search"
+        aria-label={i18n.t('ui.movie_series_and_person_search')}
         aria-hidden={!expanded}
         inert={!expanded}
         onSubmit={(event) => {
@@ -80,13 +86,13 @@ export default function HeaderSearch() {
         }}
       >
         <label className="visually-hidden" htmlFor={inputId}>
-          Search movies, series and people
+          {i18n.t('ui.search_movies_series_and_people')}
         </label>
         <input
           ref={inputRef}
           id={inputId}
           type="search"
-          placeholder="Search movies, series and people..."
+          placeholder={i18n.t('ui.search_movies_series_and_people_label')}
           autoComplete="off"
           value={autocomplete.query}
           onChange={(event) => autocomplete.edit(event.target.value)}

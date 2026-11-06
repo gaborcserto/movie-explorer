@@ -12,6 +12,7 @@ import type {
   RecommendationCategory,
 } from '@movie-explorer/contracts';
 
+import { localizationKey, contentRegion } from '../../localization';
 import { getTmdbConfig, TmdbConfig } from './tmdb.config';
 import { TmdbTransport } from './tmdb.transport';
 import { mapSearch, searchPage } from './tmdb-search.mapper';
@@ -93,25 +94,26 @@ export class TmdbDiscoveryProvider {
   async findStreamingProviders(
     region: string,
   ): Promise<StreamingProviderInfo[]> {
+    const providerKey = localizationKey(region);
     pruneCache(this.providerCache, PROVIDER_CACHE_CAPACITY);
-    const cached = this.providerCache.get(region);
+    const cached = this.providerCache.get(providerKey);
 
     if (cached && cached.expiresAt > Date.now()) {
       return cached.providers;
     }
 
-    const pending = this.providerRequests.get(region);
+    const pending = this.providerRequests.get(providerKey);
 
     if (pending) {
       return pending;
     }
 
     const request = this.loadStreamingProviders(region);
-    this.providerRequests.set(region, request);
+    this.providerRequests.set(providerKey, request);
 
     try {
       const providers = await request;
-      this.providerCache.set(region, {
+      this.providerCache.set(providerKey, {
         providers,
         expiresAt: Date.now() + CACHE_TTL_MS,
       });
@@ -119,7 +121,7 @@ export class TmdbDiscoveryProvider {
 
       return providers;
     } finally {
-      this.providerRequests.delete(region);
+      this.providerRequests.delete(providerKey);
     }
   }
 
@@ -175,6 +177,7 @@ export class TmdbDiscoveryProvider {
     key: string,
     load: () => Promise<SearchResponse>,
   ): Promise<SearchResponse> {
+    key = localizationKey(key);
     pruneCache(this.cache, SEARCH_CACHE_CAPACITY);
     const cached = this.cache.get(key);
 
@@ -254,7 +257,7 @@ export class TmdbDiscoveryProvider {
           '/discover/movie',
           'movie',
           {
-            region: 'HU',
+            region: contentRegion('HU'),
             'primary_release_date.gte': today,
             'primary_release_date.lte': daysAhead(90),
             sort_by: 'primary_release_date.asc',
@@ -305,7 +308,7 @@ export class TmdbDiscoveryProvider {
         path: '/discover/movie',
         mediaType: 'movie',
         query: {
-          region: 'HU',
+          region: contentRegion('HU'),
           'release_date.gte': daysAgo(30),
           'release_date.lte': today,
           with_release_type: '2|3',
@@ -326,14 +329,14 @@ export class TmdbDiscoveryProvider {
       cinema: {
         path: '/movie/now_playing',
         mediaType: 'movie',
-        query: { region: 'HU' },
+        query: { region: contentRegion('HU') },
       },
       'coming-soon': { path: '/discover/movie', mediaType: 'movie' },
       'streaming-movies': {
         path: '/discover/movie',
         mediaType: 'movie',
         query: {
-          watch_region: 'HU',
+          watch_region: contentRegion('HU'),
           with_watch_monetization_types: 'flatrate',
           sort_by: 'popularity.desc',
         },
@@ -342,7 +345,7 @@ export class TmdbDiscoveryProvider {
         path: '/discover/tv',
         mediaType: 'tv',
         query: {
-          watch_region: 'HU',
+          watch_region: contentRegion('HU'),
           with_watch_monetization_types: 'flatrate',
           sort_by: 'popularity.desc',
         },

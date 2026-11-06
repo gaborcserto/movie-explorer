@@ -45,7 +45,7 @@ test('keeps episode metadata compact and hides unavailable metadata and ratings'
   });
   const metadata = ratedEpisode.querySelector('.series-episode-metadata');
 
-  expect(metadata).toHaveTextContent('Air date2021-04-01');
+  expect(metadata).toHaveTextContent('Air date4/1/2021');
   expect(metadata).toHaveTextContent('Runtime43 min');
 
   const description = ratedEpisode.querySelector('.series-excerpt');

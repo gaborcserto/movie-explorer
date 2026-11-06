@@ -1,4 +1,7 @@
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
+
+import { i18n } from '../../../i18n';
 
 // Native disclosures keep long organization/person lists out of the hero flow.
 export default function SeriesMetadataList({
@@ -10,6 +13,8 @@ export default function SeriesMetadataList({
   people: { id?: number | null; name: string }[];
   linked?: boolean;
 }) {
+  useTranslation();
+
   const content = (
     <ul className="series-people">
       {people.map((person) => (
@@ -32,7 +37,12 @@ export default function SeriesMetadataList({
 
   return (
     <details className="series-metadata-disclosure">
-      <summary aria-label={`${label}: ${people.length}, expand or collapse`}>
+      <summary
+        aria-label={i18n.t('messages.expandPeople', {
+          label,
+          count: people.length,
+        })}
+      >
         {people
           .slice(0, 2)
           .map((person) => person.name)

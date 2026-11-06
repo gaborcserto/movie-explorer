@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { useCallback } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
 
+import { i18n } from '../../i18n';
 import { getSeason, getSeries } from '../../util/apiUtils';
 import { seriesPath } from '../../util/seriesRoutes';
 import { record } from '../../util/partialValidation';
@@ -26,6 +28,8 @@ function SeasonDetails({
   idText: string;
   seasonText: string;
 }) {
+  useTranslation();
+
   const id = parseDetailId(idText);
   const number = parseSeasonNumber(seasonText);
   const valid = Number.isSafeInteger(id) && Number.isSafeInteger(number);
@@ -58,7 +62,7 @@ function SeasonDetails({
 
   return (
     <SeriesLayout
-      title={season?.title ?? 'Season details'}
+      title={season?.title ?? i18n.t('ui.season_details')}
       navigation={null}
       hero={
         season ? (
@@ -74,7 +78,7 @@ function SeasonDetails({
                 <SeriesBreadcrumbs>
                   <li>
                     <Link className="text-link" to={seriesPath(idText)}>
-                      {series?.title ?? 'Series details'}
+                      {series?.title ?? i18n.t('ui.series_details')}
                     </Link>
                   </li>
                   <li>
@@ -84,20 +88,25 @@ function SeasonDetails({
               )}
               <p
                 className="series-detail__metadata"
-                aria-label="Season information"
+                aria-label={i18n.t('ui.season_information')}
               >
                 {season.airDate && (
                   <span>
                     {/^(\d{4})/.exec(season.airDate)?.[1] ?? season.airDate}
                   </span>
                 )}
-                <span>{season.episodeCount} Episodes</span>
+                <span>
+                  {season.episodeCount} {i18n.t('ui.episodes')}
+                </span>
               </p>
             </div>
             <section className="movie-details__section">
-              <h2 className="movie-details__section-title">Overview</h2>
+              <h2 className="movie-details__section-title">
+                {i18n.t('ui.overview')}
+              </h2>
               <p className="movie-details__overview">
-                {season.description?.trim() || 'No season overview available.'}
+                {season.description?.trim() ||
+                  i18n.t('ui.no_season_overview_available')}
               </p>
             </section>
           </SeriesHero>
@@ -118,14 +127,14 @@ function SeasonDetails({
           )}
           {parent.error !== undefined && (
             <p role="status">
-              Series context unavailable.{' '}
+              {i18n.t('ui.series_context_unavailable')}{' '}
               <button
                 type="button"
                 className="btn btn--outline btn--action"
                 onClick={parent.retry}
                 disabled={parent.pending}
               >
-                Retry series context
+                {i18n.t('ui.retry_series_context')}
               </button>
             </p>
           )}
@@ -134,10 +143,10 @@ function SeasonDetails({
             aria-labelledby="episodes-heading"
           >
             <div className="details-section__heading">
-              <h2 id="episodes-heading">Episodes</h2>
+              <h2 id="episodes-heading">{i18n.t('ui.episodes')}</h2>
             </div>
             {!season.episodes.length && (
-              <p>No episodes available for this season yet.</p>
+              <p>{i18n.t('ui.no_episodes_available_for_this_season_yet')}</p>
             )}
             <EpisodeList
               seriesId={id}
@@ -154,6 +163,8 @@ function SeasonDetails({
 }
 
 export default function SeasonPage() {
+  useTranslation();
+
   const { id = '', seasonNumber = '' } = useParams();
 
   return (

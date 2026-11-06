@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -9,6 +10,8 @@ import {
 } from 'react-icons/fa6';
 import type { MoviePhoto } from '@movie-explorer/contracts';
 
+import { i18n } from '../../i18n';
+import { photoDescription } from '../../i18n/labels';
 import PhotoView from './photoView';
 import useLightboxDialog from './hooks/useLightboxDialog';
 
@@ -25,6 +28,8 @@ export default function PhotoLightbox({
   title,
   onClose,
 }: Props) {
+  useTranslation();
+
   const [index, setIndex] = useState(initialIndex);
   const [fullscreen, setFullscreen] = useState(false);
   const [fullscreenError, setFullscreenError] = useState('');
@@ -47,7 +52,9 @@ export default function PhotoLightbox({
         .exitFullscreen()
         .catch(() =>
           setFullscreenError(
-            'Unable to exit fullscreen. Use your browser’s fullscreen control.'
+            i18n.t(
+              'ui.unable_to_exit_fullscreen_use_your_browser_s_fullscreen_control'
+            )
           )
         ),
     onFullscreenChange: (isFullscreen) => {
@@ -56,7 +63,9 @@ export default function PhotoLightbox({
     },
     onFullscreenError: () =>
       setFullscreenError(
-        'Fullscreen is unavailable. You can continue viewing photos here.'
+        i18n.t(
+          'ui.fullscreen_is_unavailable_you_can_continue_viewing_photos_here'
+        )
       ),
   });
 
@@ -79,7 +88,9 @@ export default function PhotoLightbox({
       }
     } catch {
       setFullscreenError(
-        'Fullscreen is unavailable. You can continue viewing photos here.'
+        i18n.t(
+          'ui.fullscreen_is_unavailable_you_can_continue_viewing_photos_here'
+        )
       );
     }
   }
@@ -93,7 +104,7 @@ export default function PhotoLightbox({
       className="lightbox"
       role="dialog"
       aria-modal="true"
-      aria-label={`${title} photo viewer`}
+      aria-label={i18n.t('messages.photoViewer', { title })}
       ref={root}
     >
       <div className="lightbox__toolbar">
@@ -102,13 +113,17 @@ export default function PhotoLightbox({
         </span>
         <button
           type="button"
-          aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+          aria-label={
+            fullscreen
+              ? i18n.t('ui.exit_fullscreen')
+              : i18n.t('ui.enter_fullscreen')
+          }
           aria-pressed={fullscreen}
           disabled={!supported}
           title={
             supported
               ? undefined
-              : 'Fullscreen is not supported in this browser'
+              : i18n.t('ui.fullscreen_is_not_supported_in_this_browser')
           }
           onClick={toggleFullscreen}
         >
@@ -121,7 +136,7 @@ export default function PhotoLightbox({
         <button
           type="button"
           ref={closeButton}
-          aria-label="Close photo viewer"
+          aria-label={i18n.t('ui.close_photo_viewer')}
           onClick={onClose}
         >
           <FaXmark aria-hidden="true" focusable="false" />
@@ -135,7 +150,12 @@ export default function PhotoLightbox({
       <PhotoView
         key={`${index}-${photos[index].fullUrl}`}
         photo={photos[index]}
-        alt={photos[index].alt ?? `${title} still ${index + 1}`}
+        alt={
+          (photos[index].alt
+            ? photoDescription(photos[index].alt)
+            : undefined) ??
+          i18n.t('messages.stillNumber', { title, number: index + 1 })
+        }
         navigate={navigate}
       />
       {photos.length > 1 && (
@@ -143,7 +163,7 @@ export default function PhotoLightbox({
           <button
             type="button"
             className="lightbox__nav lightbox__nav--previous"
-            aria-label="Previous photo"
+            aria-label={i18n.t('ui.previous_photo')}
             onClick={() => navigate(-1)}
           >
             <FaChevronLeft aria-hidden="true" focusable="false" />
@@ -151,7 +171,7 @@ export default function PhotoLightbox({
           <button
             type="button"
             className="lightbox__nav lightbox__nav--next"
-            aria-label="Next photo"
+            aria-label={i18n.t('ui.next_photo')}
             onClick={() => navigate(1)}
           >
             <FaChevronRight aria-hidden="true" focusable="false" />

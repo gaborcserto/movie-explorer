@@ -1,5 +1,7 @@
+import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 
+import { i18n } from '../../i18n';
 import { DetailsMetadata } from '../../components/details/metadata';
 import DetailsPageLayout, {
   DetailsLowerLayout,
@@ -23,6 +25,8 @@ export function SeriesLayout({
   navigation?: React.ReactNode;
   children?: React.ReactNode;
 }) {
+  useTranslation();
+
   return (
     <DetailsPageLayout title={title} hero={hero} navigation={navigation}>
       {children && <DetailsLowerLayout>{children}</DetailsLowerLayout>}
@@ -41,24 +45,38 @@ export function SeriesRequestState({
   pending: boolean;
   error: unknown;
   retry: () => void;
-  resource: string;
+  resource: 'series' | 'season' | 'episode' | 'Series' | 'Season' | 'Episode';
 }) {
+  useTranslation();
+
   if (!valid) {
     return (
       <DetailError
-        heading={`Invalid ${resource} coordinates`}
-        description="Please use a positive whole-number ID and episode number, and a nonnegative season number."
+        heading={i18n.t('messages.invalidResource', {
+          resource: i18n.t(`resources.${resource}`),
+        })}
+        description={i18n.t(
+          'ui.please_use_a_positive_whole_number_id_and_episode_number_and_a_nonnegative_season_number'
+        )}
       />
     );
   }
   if (pending && !error) {
-    return <DetailHeroSkeleton label={`Loading ${resource}`} />;
+    return (
+      <DetailHeroSkeleton
+        label={i18n.t('messages.loadingResource', {
+          resource: i18n.t(`resources.${resource}`),
+        })}
+      />
+    );
   }
   if (isNotFoundError(error)) {
     return (
       <DetailError
-        heading={`${resource} not found`}
-        description="We could not find that resource."
+        heading={i18n.t('messages.resourceMissing', {
+          resource: i18n.t(`resources.${resource}`),
+        })}
+        description={i18n.t('ui.we_could_not_find_that_resource')}
       />
     );
   }
@@ -66,8 +84,8 @@ export function SeriesRequestState({
   return (
     <DetailError
       {...(presentApiError(error) ?? {
-        heading: 'Something went wrong',
-        description: 'Please try again.',
+        heading: i18n.t('ui.something_went_wrong'),
+        description: i18n.t('ui.please_try_again'),
       })}
       pending={pending}
       retry={retry}
@@ -82,6 +100,8 @@ export function SeriesFacts({
   hero?: boolean;
   facts: [string, ReactNode][];
 }) {
+  useTranslation();
+
   const entries = facts.filter(([, value]) => value !== null && value !== '');
 
   if (hero) {
@@ -105,8 +125,10 @@ export function SeriesFacts({
 }
 
 export function SeriesBreadcrumbs({ children }: { children: React.ReactNode }) {
+  useTranslation();
+
   return (
-    <nav aria-label="Breadcrumb" className="series-breadcrumbs">
+    <nav aria-label={i18n.t('ui.breadcrumb')} className="series-breadcrumbs">
       <ol>{children}</ol>
     </nav>
   );
@@ -119,5 +141,7 @@ export function SeasonName({
   number: number;
   title?: string;
 }) {
+  useTranslation();
+
   return seasonName(number, title);
 }

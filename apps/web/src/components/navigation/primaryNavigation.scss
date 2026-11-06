@@ -90,3 +90,12 @@
     }
   }
 }
+
+@media (width <= 390px) {
+  [lang='hu-HU'] .search-views a {
+    flex-direction: column;
+    font-size: 11px;
+    padding: 8px 2px;
+    white-space: nowrap;
+  }
+}

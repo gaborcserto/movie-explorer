@@ -49,10 +49,10 @@ describe('TMDB IMDb identification', () => {
     expect(request).toHaveBeenCalledTimes(2);
     expect(request.mock.contexts[0]).toBe(request.mock.contexts[1]);
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'https://api.example/3/movie/603/external_ids?language=en-US',
+      'https://api.example/3/movie/603/external_ids',
     );
     expect(String(fetchMock.mock.calls[1][0])).toBe(
-      'https://api.example/3/tv/1396/external_ids?language=en-US',
+      'https://api.example/3/tv/1396/external_ids',
     );
     expect(fetchMock.mock.calls[0][1]).toMatchObject({
       headers: { Authorization: 'Bearer test' },

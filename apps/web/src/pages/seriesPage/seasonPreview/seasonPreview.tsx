@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import type { SeriesDetails } from '@movie-explorer/contracts';
 
+import { i18n } from '../../../i18n';
 import MovieImage from '../../../components/utility/customImage';
 import useStablePanelHeight from '../../../hooks/useStablePanelHeight';
 import { getPosterDisplaySrcSet } from '../../../util/imageSizing';
@@ -65,6 +67,8 @@ function getDefaultSeasonIndex(
 }
 
 export default function SeasonPreview({ series }: { series: SeriesDetails }) {
+  useTranslation();
+
   const id = useId();
   const [searchParams] = useSearchParams();
   const requestedSeason = searchParams.get('season');
@@ -124,7 +128,7 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
   }, [series.seasons.length]);
 
   if (!season) {
-    return <p>No season information available.</p>;
+    return <p>{i18n.t('ui.no_season_information_available')}</p>;
   }
 
   function select(index: number) {
@@ -153,7 +157,7 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
           <button
             type="button"
             className="btn btn--outline"
-            aria-label="Previous season"
+            aria-label={i18n.t('ui.previous_season')}
             disabled={scrollState.atStart}
             onClick={() => {
               if (tabs.current) {
@@ -168,7 +172,7 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
           ref={tabs}
           role="tablist"
           tabIndex={-1}
-          aria-label="Seasons"
+          aria-label={i18n.t('ui.seasons')}
           className="season-tabs"
           onScroll={() => {
             const container = tabs.current;
@@ -207,13 +211,17 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
               aria-controls={`${id}-panel`}
               aria-label={
                 item.seasonNumber === 0
-                  ? 'Specials, Season 0'
-                  : `Season ${item.seasonNumber}`
+                  ? i18n.t('ui.specials_season_0')
+                  : i18n.t('messages.seasonNumber', {
+                      number: item.seasonNumber,
+                    })
               }
               tabIndex={index === selected ? 0 : -1}
               onClick={() => select(index)}
             >
-              {item.seasonNumber === 0 ? 'Specials' : item.seasonNumber}
+              {item.seasonNumber === 0
+                ? i18n.t('ui.specials')
+                : item.seasonNumber}
             </button>
           ))}
         </div>
@@ -221,7 +229,7 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
           <button
             type="button"
             className="btn btn--outline"
-            aria-label="Next season"
+            aria-label={i18n.t('ui.next_season')}
             disabled={scrollState.atEnd}
             onClick={() => {
               if (tabs.current) {
@@ -247,7 +255,7 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
             season.posterUrl ?? undefined,
             season.posterSrcSet
           )}
-          alt={`Poster for ${season.title}`}
+          alt={i18n.t('messages.poster', { title: season.title })}
           className="series-season-poster"
         />
         <div>
@@ -271,7 +279,9 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
                 {season.episodeCount !== null && (
                   <span className="season-preview__episode-count">
                     {season.episodeCount}{' '}
-                    {season.episodeCount === 1 ? 'Episode' : 'Episodes'}
+                    {season.episodeCount === 1
+                      ? i18n.t('ui.episode')
+                      : i18n.t('ui.episodes')}
                   </span>
                 )}
               </p>
@@ -294,7 +304,7 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
                     : undefined,
               }}
             >
-              View season details
+              {i18n.t('ui.view_season_details')}
             </Link>
           </div>
         </div>
@@ -302,23 +312,25 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
           className="season-preview__episodes"
           aria-labelledby={`${id}-episodes-heading`}
         >
-          <h4 id={`${id}-episodes-heading`}>Episodes</h4>
-          {seasonResource.pending && <p role="status">Loading episodes…</p>}
+          <h4 id={`${id}-episodes-heading`}>{i18n.t('ui.episodes')}</h4>
+          {seasonResource.pending && (
+            <p role="status">{i18n.t('ui.loading_episodes')}</p>
+          )}
           {seasonResource.error !== undefined && (
             <p role="status">
-              Episodes unavailable.{' '}
+              {i18n.t('ui.episodes_unavailable')}{' '}
               <button
                 type="button"
                 onClick={seasonResource.retry}
                 disabled={seasonResource.pending}
               >
-                Retry
+                {i18n.t('ui.retry')}
               </button>
             </p>
           )}
           {seasonResource.data?.seasonNumber === season.seasonNumber &&
             !seasonResource.data.episodes.length && (
-              <p>No episodes available for this season yet.</p>
+              <p>{i18n.t('ui.no_episodes_available_for_this_season_yet')}</p>
             )}
           {seasonResource.data?.seasonNumber === season.seasonNumber &&
             seasonResource.data.episodes.length > 0 && (

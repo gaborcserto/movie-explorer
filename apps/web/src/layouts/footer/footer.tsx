@@ -1,7 +1,13 @@
+import { useTranslation } from 'react-i18next';
 import './footer.scss';
+
 import { Link } from 'react-router';
 
+import { i18n } from '../../i18n';
+
 function Footer() {
+  useTranslation();
+
   return (
     <footer className="footer">
       <Link to="/search" className="footer__title brand">
@@ -22,7 +28,7 @@ function Footer() {
           href="https://www.omdbapi.com/"
           target="_blank"
           rel="noreferrer"
-          title="IMDb ratings supplied by OMDb / Brian Fritz; score and votes normalized for display"
+          title={i18n.t('messages.attribution')}
         >
           OMDb / Brian Fritz
         </a>

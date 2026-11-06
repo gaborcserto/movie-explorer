@@ -264,7 +264,8 @@ function watchProvidersResponse(value: unknown): value is WatchProviders {
         typeof item.name === 'string' &&
         item.name.trim().length > 0 &&
         ['streaming', 'rent', 'buy'].includes(String(item.category)) &&
-        item.region === 'HU' &&
+        typeof item.region === 'string' &&
+        /^[A-Z]{2}$/.test(item.region) &&
         (item.logoUrl === undefined || typeof item.logoUrl === 'string') &&
         (item.watchUrl === undefined || typeof item.watchUrl === 'string')
       );

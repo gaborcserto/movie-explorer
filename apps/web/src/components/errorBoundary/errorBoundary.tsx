@@ -1,36 +1,41 @@
+import { useTranslation } from 'react-i18next';
 import React, { ReactNode } from 'react';
+
+import { i18n } from '../../i18n';
 
 import './errorBoundary.scss';
 import ErrorPresentation from '../errorPresentation';
 import useDetailPage from '../../hooks/useDetailPage';
 
 function FatalErrorFallback() {
-  const mainRef = useDetailPage('Something went wrong');
+  useTranslation();
+
+  const mainRef = useDetailPage(i18n.t('ui.something_went_wrong'));
 
   return (
     <main
       className="fatal-error"
       ref={mainRef}
       tabIndex={-1}
-      aria-label="Something went wrong"
+      aria-label={i18n.t('ui.something_went_wrong')}
     >
       <ErrorPresentation
         variant="page"
         headingLevel={1}
-        heading="Something went wrong"
-        description="An unexpected error interrupted this scene."
+        heading={i18n.t('ui.something_went_wrong')}
+        description={i18n.t('ui.an_unexpected_error_interrupted_this_scene')}
         primaryAction={
           <button
             className="btn btn--primary"
             type="button"
             onClick={() => window.location.reload()}
           >
-            Reload page
+            {i18n.t('ui.reload_page')}
           </button>
         }
         secondaryAction={
           <a className="btn btn--outline" href="/search">
-            Back to Search
+            {i18n.t('ui.back_to_search')}
           </a>
         }
       />

@@ -14,6 +14,7 @@ import type {
   RatingResult,
 } from '@movie-explorer/contracts';
 
+import { contentLanguage } from '../../localization';
 import { TmdbRelatedTitles } from './tmdb-related-titles';
 import { TmdbCollections } from './tmdb-collection';
 import { TmdbExternalIds } from './tmdb-external-ids';
@@ -150,8 +151,11 @@ export class TmdbMovieProvider implements MovieProvider {
 
     const genres = await this.getGenres();
     const requestedGenres = new Set(this.normalizeGenreFilter(query.genre));
+    const filterGenres = query.genre?.length
+      ? await this.getGenres('en-US')
+      : genres;
     const genreNamesById = new Map(
-      genres.map((genre) => [genre.id, genre.name.toLowerCase()]),
+      filterGenres.map((genre) => [genre.id, genre.name.toLowerCase()]),
     );
     let movies: MovieListResponse['movies'];
 
@@ -421,7 +425,11 @@ export class TmdbMovieProvider implements MovieProvider {
   private mediaLanguages(): Record<string, string> {
     // Appended and standalone requests use the same explicit fallback union.
     const languages = [
-      ...new Set([this.config.language.split('-')[0], 'en', 'null']),
+      ...new Set([
+        contentLanguage(this.config.language).split('-')[0],
+        'en',
+        'null',
+      ]),
     ].join(',');
 
     return {
@@ -563,8 +571,10 @@ export class TmdbMovieProvider implements MovieProvider {
     );
   }
 
-  private async getGenres(): Promise<TmdbGenre[]> {
-    const key = this.config.language;
+  private async getGenres(
+    language = contentLanguage(this.config.language),
+  ): Promise<TmdbGenre[]> {
+    const key = language;
     const cached = this.genreCache.get(key);
 
     if (cached && cached.expiresAt > Date.now()) {
@@ -581,6 +591,7 @@ export class TmdbMovieProvider implements MovieProvider {
       '/genre/movie/list',
       'movie-genres',
       validateGenres,
+      { language },
     ).then((response) => {
       this.genreCache.set(key, {
         genres: response.genres,
@@ -606,7 +617,7 @@ export class TmdbMovieProvider implements MovieProvider {
       return [];
     }
 
-    const genres = await this.getGenres();
+    const genres = await this.getGenres('en-US');
 
     return genres
       .filter((genre) => requestedGenres.includes(genre.name.toLowerCase()))

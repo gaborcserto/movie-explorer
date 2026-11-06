@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { SectionAvailability } from '@movie-explorer/contracts';
 
+import { i18n } from '../../../i18n';
 import { ApiRequestError } from '../../../util/apiUtils';
 import { isCancelledError } from '../../../util/errorPresentation';
 import './sectionRecovery.scss';
@@ -17,6 +19,8 @@ export default function SectionRecovery({
   availability,
   recover,
 }: Props) {
+  useTranslation();
+
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
   const [delay, setDelay] = useState(
@@ -84,14 +88,17 @@ export default function SectionRecovery({
     return null;
   }
 
-  let message = `${label} loaded.`;
+  let message = i18n.t('messages.sectionLoaded', { label });
 
   if (unavailable) {
-    message = `${label} unavailable.${error ? ' Please try again.' : ''}`;
+    message = i18n.t('messages.sectionUnavailable', {
+      label,
+      guidance: error ? i18n.t('messages.retryGuidance') : '',
+    });
   }
 
   if (pending) {
-    message = `Loading ${label.toLowerCase()}...`;
+    message = i18n.t('messages.sectionLoading', { label: label.toLowerCase() });
   }
 
   return (
@@ -120,8 +127,11 @@ export default function SectionRecovery({
           onClick={retry}
         >
           {delay > 0
-            ? `Retry ${label.toLowerCase()} in ${delay}s`
-            : `Retry ${label.toLowerCase()}`}
+            ? i18n.t('messages.sectionRetryDelay', {
+                label: label.toLowerCase(),
+                count: delay,
+              })
+            : i18n.t('messages.sectionRetry', { label: label.toLowerCase() })}
         </button>
       )}
     </div>

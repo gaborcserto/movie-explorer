@@ -2,6 +2,11 @@ import path from 'node:path';
 
 const quote = (file) => `"${file.replaceAll('"', '\\"')}"`;
 
+const batch = (files, size = 20) =>
+  Array.from({ length: Math.ceil(files.length / size) }, (_, index) =>
+    files.slice(index * size, (index + 1) * size),
+  );
+
 const runWorkspaceCommands = (workspace, files) => {
   const workspaceRoot = path.resolve('apps', workspace);
   const relativeFiles = files.map((file) => path.relative(workspaceRoot, file));
@@ -19,20 +24,20 @@ const runWorkspaceCommands = (workspace, files) => {
     (file) => workspace === 'api' || file.startsWith(`src${path.sep}`),
   );
 
-  if (oxlintFiles.length > 0) {
-    const quotedOxlintFiles = oxlintFiles.map(quote).join(' ');
+  for (const filesBatch of batch(oxlintFiles)) {
+    const quotedFiles = filesBatch.map(quote).join(' ');
     commands.push(
-      `vp lint -c .oxlintrc.json --max-warnings=0 ${quotedOxlintFiles}`,
+      `vp lint -c .oxlintrc.json --max-warnings=0 ${quotedFiles}`,
     );
   }
 
-  if (lintFiles.length > 0) {
-    const quotedLintFiles = lintFiles.map(quote).join(' ');
-    commands.push(`eslint --max-warnings=0 ${quotedLintFiles}`);
+  for (const filesBatch of batch(lintFiles)) {
+    const quotedFiles = filesBatch.map(quote).join(' ');
+    commands.push(`eslint --max-warnings=0 ${quotedFiles}`);
   }
 
-  if (relativeFiles.length > 0) {
-    const quotedFiles = relativeFiles.map(quote).join(' ');
+  for (const filesBatch of batch(relativeFiles)) {
+    const quotedFiles = filesBatch.map(quote).join(' ');
     commands.push(`vp fmt -c .oxfmtrc.json --write ${quotedFiles}`);
   }
 
@@ -50,11 +55,15 @@ export default {
   'apps/web/**/*.{css,scss}': (files) => {
     const workspaceRoot = path.resolve('apps/web');
     const relativeFiles = files.map((file) => path.relative(workspaceRoot, file));
-    const quotedFiles = relativeFiles.map(quote).join(' ');
 
-    return [
-      `npm exec --workspace @movie-explorer/web -- vp fmt -c .oxfmtrc.json --write ${quotedFiles}`,
-      `npm exec --workspace @movie-explorer/web -- stylelint ${quotedFiles}`,
-    ];
+    return batch(relativeFiles).flatMap((filesBatch) => {
+      const quotedFiles = filesBatch.map(quote).join(' ');
+
+      return [
+        `npm exec --workspace @movie-explorer/web -- vp fmt -c .oxfmtrc.json --write ${quotedFiles}`,
+        `npm exec --workspace @movie-explorer/web -- stylelint ${quotedFiles}`,
+      ];
+    });
   },
 };
+

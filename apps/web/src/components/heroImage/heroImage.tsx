@@ -20,6 +20,7 @@ interface Props {
   className: string;
   photos?: MoviePhoto[];
   actionLabel?: string;
+  overlayLabel?: string;
 }
 
 function getHighestResolution(src: string, srcSet?: string) {
@@ -54,6 +55,7 @@ function HeroImageContent({
   className,
   photos,
   actionLabel,
+  overlayLabel,
 }: Props) {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -92,6 +94,7 @@ function HeroImageContent({
           disabled={!loaded}
           className={`hero-image${loaded ? ' hero-image--loaded' : ''} ${className}`}
           aria-label={actionLabel ?? alt}
+          data-gallery-label={overlayLabel}
           aria-haspopup="dialog"
           onClick={() => setOpen(true)}
         >

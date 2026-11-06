@@ -4,6 +4,7 @@ import type {
   RelatedTitleKind,
 } from '@movie-explorer/contracts';
 
+import { localizationKey } from '../../localization';
 import type { RankedRecommendationPool } from '../../recommendations/recommendation-provider';
 import type { TitleSignals } from '../../recommendations/title-ranking';
 import { rankTitles } from '../../recommendations/title-ranking';
@@ -110,7 +111,7 @@ export class TmdbRelatedTitles {
       }
     }
 
-    const key = `${mediaType}:${id}`;
+    const key = localizationKey(`${mediaType}:${id}`);
     this.sources.delete(key);
 
     if (this.sources.size >= 100) {
@@ -168,7 +169,7 @@ export class TmdbRelatedTitles {
     id: number,
     timeoutMs: number,
   ): Promise<TitleSignals> {
-    const key = `${mediaType}:${id}`;
+    const key = localizationKey(`${mediaType}:${id}`);
     const cached = this.sources.get(key);
 
     if (cached && cached.expiresAt > Date.now()) {

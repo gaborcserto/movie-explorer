@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useMemo, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { FaCompass } from 'react-icons/fa6';
 
+import { i18n } from '../../../i18n';
 import RecommendationRow from '../../../components/recommendationRow';
 import {
   LIBRARY_STORAGE_KEY,
@@ -11,8 +13,18 @@ import type { LibraryItem } from '../../../features/library/libraryStore';
 import type { RecommendationSource } from '../../../components/recommendationRow';
 
 const tabs = [
-  { value: 'movies', label: 'Movies' },
-  { value: 'series', label: 'Series' },
+  {
+    value: 'movies',
+    get label() {
+      return i18n.t('ui.movies');
+    },
+  },
+  {
+    value: 'series',
+    get label() {
+      return i18n.t('ui.series');
+    },
+  },
 ] as const;
 type RecommendationTab = (typeof tabs)[number]['value'];
 
@@ -68,6 +80,8 @@ function recommendationSource(
 }
 
 export default function HomeRecommendations() {
+  useTranslation();
+
   const [selected, setSelected] = useState<RecommendationTab>('movies');
   const [visited, setVisited] = useState<RecommendationTab[]>(['movies']);
   const groupId = 'recommendations';
@@ -136,12 +150,12 @@ export default function HomeRecommendations() {
     >
       <div className="discover-category__heading">
         <h2 id={`${groupId}-heading`}>
-          <FaCompass aria-hidden="true" /> Recommendations
+          <FaCompass aria-hidden="true" /> {i18n.t('ui.recommendations')}
         </h2>
         <div
           className="discover-category__tabs"
           role="tablist"
-          aria-label="Recommendation categories"
+          aria-label={i18n.t('ui.recommendation_categories')}
         >
           {tabs.map((tab) => (
             <button
@@ -171,7 +185,9 @@ export default function HomeRecommendations() {
         >
           {visited.includes(tab.value) && (
             <RecommendationRow
-              title={`Popular ${tab.label}`}
+              title={i18n.t('messages.popularCategory', {
+                category: tab.label,
+              })}
               source={tab.value === 'movies' ? movieSource : seriesSource}
               home
             />

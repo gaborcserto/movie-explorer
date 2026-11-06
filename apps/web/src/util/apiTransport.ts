@@ -1,8 +1,16 @@
+import usePreferencesStore from '../features/preferences/preferencesStore';
 import {
   ApiRequestError,
   API_REQUEST_TIMEOUT_MS,
   classifyHttpStatus,
 } from './apiErrors';
+
+const activeRequests = new Set<AbortController>();
+usePreferencesStore.subscribe((state, previous) => {
+  if (state.preferences !== previous.preferences) {
+    activeRequests.forEach((controller) => controller.abort('cancelled'));
+  }
+});
 
 async function request<T>(
   url: string,
@@ -10,6 +18,24 @@ async function request<T>(
   timeoutMs = API_REQUEST_TIMEOUT_MS
 ): Promise<T> {
   const controller = new AbortController();
+  const { language, region } = usePreferencesStore.getState().preferences;
+  const localizationParams = new URLSearchParams();
+
+  if (language !== 'en-US') {
+    localizationParams.set('language', language);
+  }
+  if (region !== 'US') {
+    localizationParams.set('watchRegion', region);
+  }
+
+  const localizedUrl = localizationParams.size
+    ? `${url}${url.includes('?') ? '&' : '?'}${localizationParams}`
+    : url;
+
+  // Numeric rating outcomes are language/region-neutral and can finish in place.
+  if (!/\/ratings(?:\?|$)/.test(url)) {
+    activeRequests.add(controller);
+  }
   const callerSignal = init.signal;
 
   const cancel = () => {
@@ -34,7 +60,10 @@ async function request<T>(
   try {
     controller.signal.throwIfAborted();
 
-    const response = await fetch(url, { ...init, signal: controller.signal });
+    const response = await fetch(localizedUrl, {
+      ...init,
+      signal: controller.signal,
+    });
     status = response.status;
     controller.signal.throwIfAborted();
 
@@ -82,6 +111,7 @@ async function request<T>(
 
     throw new ApiRequestError('network', status);
   } finally {
+    activeRequests.delete(controller);
     clearTimeout(timer);
     callerSignal?.removeEventListener('abort', cancel);
     // Release any unread error response body using this request's controller.

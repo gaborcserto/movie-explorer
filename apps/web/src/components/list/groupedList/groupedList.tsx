@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   useCallback,
   useEffect,
@@ -9,6 +10,8 @@ import { Link, useLocation, useSearchParams } from 'react-router';
 import { FaFilm, FaTv, FaUsers } from 'react-icons/fa6';
 import type { SearchMediaType } from '@movie-explorer/contracts';
 
+import usePreferencesStore from '../../../features/preferences/preferencesStore';
+import { i18n } from '../../../i18n';
 import { getSearchResults } from '../../../util/apiUtils';
 import presentApiError from '../../../util/errorPresentation';
 import { ResultsSkeleton } from '../../skeleton';
@@ -17,12 +20,38 @@ import { useResultHistory, useSearchHistory } from '../useSearchHistory';
 import type { GroupedSnapshot } from '../useSearchHistory';
 
 const categories = [
-  { type: 'movie', view: 'movies', label: 'Movies', Icon: FaFilm },
-  { type: 'tv', view: 'tv', label: 'Series', Icon: FaTv },
-  { type: 'person', view: 'people', label: 'Persons', Icon: FaUsers },
+  {
+    type: 'movie',
+    view: 'movies',
+    get label() {
+      return i18n.t('ui.movies');
+    },
+    Icon: FaFilm,
+  },
+  {
+    type: 'tv',
+    view: 'tv',
+    get label() {
+      return i18n.t('ui.series');
+    },
+    Icon: FaTv,
+  },
+  {
+    type: 'person',
+    view: 'people',
+    get label() {
+      return i18n.t('ui.persons');
+    },
+    Icon: FaUsers,
+  },
 ] as const;
 
 export default function GroupedList({ query }: { query: string }) {
+  useTranslation();
+  const guestPreferences = usePreferencesStore((state) => state.preferences);
+  const [requestPreferences, setRequestPreferences] =
+    useState(guestPreferences);
+
   const history = useSearchHistory();
   const { restored, save } = useResultHistory(history?.grouped, query);
   const [groups, setGroups] = useState<GroupedSnapshot>(restored ?? {});
@@ -33,6 +62,13 @@ export default function GroupedList({ query }: { query: string }) {
   const controllers = useRef(new Map<SearchMediaType, AbortController>());
   const [params] = useSearchParams();
   const location = useLocation();
+
+  if (requestPreferences !== guestPreferences) {
+    setRequestPreferences(guestPreferences);
+    setGroups(restored ?? {});
+    setErrors({});
+    setPending([]);
+  }
 
   const load = useCallback(
     async (type: SearchMediaType) => {
@@ -83,7 +119,7 @@ export default function GroupedList({ query }: { query: string }) {
       requests.forEach((controller) => controller.abort());
       requests.clear();
     };
-  }, [load, restored]);
+  }, [load, restored, guestPreferences]);
 
   useLayoutEffect(() => {
     save(groups);
@@ -97,10 +133,10 @@ export default function GroupedList({ query }: { query: string }) {
   return (
     <section
       className="list__container container grouped-results"
-      aria-label="All results"
+      aria-label={i18n.t('ui.all_results')}
       aria-busy={pending.length > 0}
     >
-      {empty && <p role="status">{`No results found for "${query}".`}</p>}
+      {empty && <p role="status">{i18n.t('messages.noResults', { query })}</p>}
       {categories.map(({ type, view, label, Icon }) => {
         const response = groups[type];
         const error = errors[type];
@@ -111,7 +147,9 @@ export default function GroupedList({ query }: { query: string }) {
               <h2>{label}</h2>
               <ResultsSkeleton
                 className="grouped-results__pending"
-                label={`Loading ${label.toLowerCase()}`}
+                label={i18n.t('messages.loadingLabel', {
+                  label: label.toLowerCase(),
+                })}
               />
             </section>
           );
@@ -138,15 +176,17 @@ export default function GroupedList({ query }: { query: string }) {
               </h2>
               {response && (
                 <p aria-live="polite">
-                  {response.results.length} available results
+                  {response.results.length} {i18n.t('ui.available_results')}
                 </p>
               )}
               <Link
                 className="text-link"
                 to={{ pathname: location.pathname, search: next.toString() }}
-                aria-label={`View all ${label.toLowerCase()}`}
+                aria-label={i18n.t('messages.viewAll', {
+                  label: label.toLowerCase(),
+                })}
               >
-                View all
+                {i18n.t('ui.view_all')}
               </Link>
             </div>
             {error ? (
@@ -158,7 +198,7 @@ export default function GroupedList({ query }: { query: string }) {
                   disabled={pending.includes(type)}
                   onClick={() => load(type)}
                 >
-                  Try again
+                  {i18n.t('ui.try_again')}
                 </button>
               </div>
             ) : (

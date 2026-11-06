@@ -1,5 +1,6 @@
 import './App.scss';
 import { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router';
 
 import HomePage from './pages/homePage';
@@ -56,6 +57,8 @@ function SiteLayout() {
 }
 
 function App() {
+  const { t } = useTranslation();
+
   return (
     <ErrorBoundary>
       <RouteMetadata />
@@ -74,7 +77,7 @@ function App() {
                   fallback={
                     <Loading
                       className="main route-loading"
-                      title="Loading series"
+                      title={t('loading.series')}
                     />
                   }
                 >
@@ -89,7 +92,7 @@ function App() {
                   fallback={
                     <Loading
                       className="main route-loading"
-                      title="Loading season"
+                      title={t('loading.season')}
                     />
                   }
                 >
@@ -104,7 +107,7 @@ function App() {
                   fallback={
                     <Loading
                       className="main route-loading"
-                      title="Loading episode"
+                      title={t('loading.episode')}
                     />
                   }
                 >
@@ -128,7 +131,7 @@ function App() {
                   fallback={
                     <Loading
                       className="main route-loading"
-                      title="Loading person"
+                      title={t('loading.person')}
                     />
                   }
                 >

@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 import { FaXmark } from 'react-icons/fa6';
 
+import { i18n } from '../../i18n';
 import useDrawerDialog from './useDrawerDialog';
 import './drawer.scss';
 
@@ -21,6 +23,8 @@ export default function Drawer({
   children,
   footer,
 }: DrawerProps) {
+  useTranslation();
+
   const panel = useRef<HTMLElement>(null);
   const titleId = useId();
 
@@ -32,7 +36,7 @@ export default function Drawer({
         type="button"
         tabIndex={-1}
         className="drawer__backdrop"
-        aria-label={`Dismiss ${title}`}
+        aria-label={i18n.t('messages.dismiss', { title })}
         onClick={onClose}
       />
       <section
@@ -45,7 +49,11 @@ export default function Drawer({
       >
         <header className="drawer__header">
           <h2 id={titleId}>{title}</h2>
-          <button type="button" aria-label={`Close ${title}`} onClick={onClose}>
+          <button
+            type="button"
+            aria-label={i18n.t('messages.close', { title })}
+            onClick={onClose}
+          >
             <FaXmark aria-hidden="true" />
           </button>
         </header>

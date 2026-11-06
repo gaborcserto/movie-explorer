@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useId, useState } from 'react';
 import { Link } from 'react-router';
 import type {
@@ -6,6 +7,7 @@ import type {
   SectionAvailability,
 } from '@movie-explorer/contracts';
 
+import { i18n } from '../../i18n';
 import DetailRecommendations from '../../components/detailRecommendations';
 import CastPreview, { useCrewPreview } from '../../components/details/credits';
 import DetailsTabs from '../../components/details/detailsTabs';
@@ -23,9 +25,7 @@ const SERIES_CAST_INITIAL_COUNTS = {
 const unavailable: SectionAvailability = { status: 'unavailable' };
 
 function episodeLabel(count: number | null) {
-  return count === null
-    ? ''
-    : `${count} ${count === 1 ? 'episode' : 'episodes'}`;
+  return count === null ? '' : i18n.t('messages.episodes', { count });
 }
 
 function departmentRank(department: string | null) {
@@ -52,7 +52,11 @@ function castRoles(person: SeriesCastMember) {
     person.totalEpisodeCount !== null &&
     (characterTotal === null || characterTotal !== person.totalEpisodeCount)
   ) {
-    roles.push(`Total: ${episodeLabel(person.totalEpisodeCount)}`);
+    roles.push(
+      i18n.t('messages.episodeTotal', {
+        episodes: episodeLabel(person.totalEpisodeCount),
+      })
+    );
   }
 
   return roles.filter(Boolean).join(' · ');
@@ -67,6 +71,8 @@ export default function SeriesSections({
   recoverImages: (signal: AbortSignal) => Promise<void>;
   recoverVideos: (signal: AbortSignal) => Promise<void>;
 }) {
+  useTranslation();
+
   const creditTabId = useId();
   const [creditSelection, setCreditSelection] = useState<{
     resetKey: number;
@@ -120,7 +126,9 @@ export default function SeriesSections({
   const crewPreview = useCrewPreview(crew, series.id);
   crewPreview.visible.forEach((person) => {
     const departments = new Set(
-      person.departments.map((credit) => credit.department ?? 'Other crew')
+      person.departments.map(
+        (credit) => credit.department ?? i18n.t('ui.other_crew')
+      )
     );
     departments.forEach((department) => {
       crewGroups.set(department, [
@@ -136,9 +144,9 @@ export default function SeriesSections({
         className="details-section series-credits"
         aria-labelledby={`${creditTabId}-heading`}
       >
-        <h2 id={`${creditTabId}-heading`}>Cast &amp; Crew</h2>
+        <h2 id={`${creditTabId}-heading`}>{i18n.t('ui.cast_and_crew')}</h2>
         <SectionRecovery
-          label="Cast and crew"
+          label={i18n.t('ui.cast_and_crew_label')}
           availability={creditState}
           recover={async (signal) => {
             const result = await getSeriesCredits(series.id, signal);
@@ -151,11 +159,11 @@ export default function SeriesSections({
         <DetailsTabs
           id={creditTabId}
           tabs={[
-            { key: 'cast', label: 'Cast' },
-            { key: 'crew', label: 'Crew' },
+            { key: 'cast', label: i18n.t('ui.cast') },
+            { key: 'crew', label: i18n.t('ui.crew') },
           ]}
           activeTab={activeCreditTab}
-          ariaLabel="Cast and crew"
+          ariaLabel={i18n.t('ui.cast_and_crew_label')}
           onChange={selectCreditTab}
         />
         <div ref={creditPanelsRef} className="tab-panel-stable">
@@ -181,7 +189,7 @@ export default function SeriesSections({
               />
             ) : (
               credits?.sections.cast.status === 'available' && (
-                <p>No cast information available.</p>
+                <p>{i18n.t('ui.no_cast_information_available')}</p>
               )
             )}
           </div>
@@ -194,7 +202,7 @@ export default function SeriesSections({
             tabIndex={0}
           >
             {credits?.sections.crew.status === 'unavailable' && (
-              <p>Crew information is incomplete.</p>
+              <p>{i18n.t('ui.crew_information_is_incomplete')}</p>
             )}
             {crewPreview.summary}
             <div className="crew-groups" id={crewPreview.groupId}>
@@ -219,7 +227,8 @@ export default function SeriesSections({
                           {person.jobs
                             .filter(
                               (job) =>
-                                (job.department ?? 'Other crew') === department
+                                (job.department ?? i18n.t('ui.other_crew')) ===
+                                department
                             )
                             .map((job) => (
                               <p
@@ -236,15 +245,15 @@ export default function SeriesSections({
                           {person.departments
                             .filter(
                               (credit) =>
-                                (credit.department ?? 'Other crew') ===
-                                  department &&
+                                (credit.department ??
+                                  i18n.t('ui.other_crew')) === department &&
                                 credit.totalEpisodeCount !== null
                             )
                             .map((credit) => (
                               <p
                                 key={`${credit.department}:${credit.totalEpisodeCount}`}
                               >
-                                Department total:{' '}
+                                {i18n.t('ui.department_total')}{' '}
                                 {episodeLabel(credit.totalEpisodeCount)}
                               </p>
                             ))}
@@ -256,7 +265,9 @@ export default function SeriesSections({
             </div>
             {crewPreview.controls}
             {credits?.sections.crew.status === 'available' &&
-              !credits.crew.length && <p>No crew information available.</p>}
+              !credits.crew.length && (
+                <p>{i18n.t('ui.no_crew_information_available')}</p>
+              )}
           </div>
         </div>
       </section>
@@ -273,14 +284,14 @@ export default function SeriesSections({
         }}
         imagesRecovery={
           <SectionRecovery
-            label="Images"
+            label={i18n.t('ui.images')}
             availability={imageState}
             recover={recoverImages}
           />
         }
         videosRecovery={
           <SectionRecovery
-            label="Videos"
+            label={i18n.t('ui.videos')}
             availability={videos?.availability ?? unavailable}
             recover={recoverVideos}
           />

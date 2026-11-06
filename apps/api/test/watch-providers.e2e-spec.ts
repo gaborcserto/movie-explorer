@@ -99,7 +99,7 @@ describe.each([
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
       new URL(
-        `${config.apiBaseUrl}/${tmdbKind}/${id}/watch/providers?language=hu-HU&region=HU`,
+        `${config.apiBaseUrl}/${tmdbKind}/${id}/watch/providers?region=HU`,
       ),
       {
         signal: expect.any(AbortSignal),

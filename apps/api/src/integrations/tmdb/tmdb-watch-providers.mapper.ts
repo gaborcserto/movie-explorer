@@ -4,6 +4,8 @@ import type {
   WatchProviders,
 } from '@movie-explorer/contracts';
 
+import { contentRegion } from '../../localization';
+
 const categories = ['flatrate', 'rent', 'buy'] as const;
 const categoryNames: Record<
   (typeof categories)[number],
@@ -28,7 +30,8 @@ export function mapWatchProviders(
     return { providers: [] };
   }
 
-  const hu = (results as Record<string, unknown>).HU;
+  const regionCode = contentRegion('HU');
+  const hu = (results as Record<string, unknown>)[regionCode];
 
   if (!hu || typeof hu !== 'object' || Array.isArray(hu)) {
     return { providers: [] };
@@ -83,7 +86,7 @@ export function mapWatchProviders(
         name: row.provider_name.trim(),
         ...(logoUrl && { logoUrl }),
         category: categoryNames[key],
-        region: 'HU',
+        region: regionCode,
         ...(link && { watchUrl: link }),
       });
     }

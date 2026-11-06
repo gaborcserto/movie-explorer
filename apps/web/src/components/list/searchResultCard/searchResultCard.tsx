@@ -1,9 +1,21 @@
+import { useTranslation } from 'react-i18next';
 import type { SearchResult } from '@movie-explorer/contracts';
 
+import { i18n } from '../../../i18n';
 import Card from '../../card';
 import { mediaPath } from '../../../util/seriesRoutes';
 
-const typeLabels = { movie: 'Movie', tv: 'Series', person: 'Person' };
+const typeLabels = {
+  get movie() {
+    return i18n.t('ui.movie');
+  },
+  get tv() {
+    return i18n.t('mediaTypes.tv');
+  },
+  get person() {
+    return i18n.t('ui.person');
+  },
+};
 
 export default function SearchResultCard({
   item,
@@ -12,6 +24,8 @@ export default function SearchResultCard({
   item: SearchResult;
   showMediaType?: boolean;
 }) {
+  useTranslation();
+
   const person = item.mediaType === 'person';
   const label = typeLabels[item.mediaType];
   let date: string | undefined;

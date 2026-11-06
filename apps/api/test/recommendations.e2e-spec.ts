@@ -108,7 +108,7 @@ describe('Recommendations API', () => {
     'popular-tv',
     'popular-movies?page=1',
     'popular-movies?seed=1',
-    'popular-movies?language=en-US',
+    'popular-movies?language=de-DE',
     'popular-movies?region=HU',
     'popular-movies?category=popular-series',
     'popular-movies?limit=10',
@@ -300,6 +300,16 @@ describe('Recommendations API', () => {
             'top-rated-series',
           ],
         },
+      }),
+      expect.objectContaining({
+        name: 'language',
+        in: 'query',
+        required: false,
+      }),
+      expect.objectContaining({
+        name: 'watchRegion',
+        in: 'query',
+        required: false,
       }),
     ]);
     expect(Object.keys(operation.responses).sort()).toEqual([

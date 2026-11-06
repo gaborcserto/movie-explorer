@@ -19,6 +19,7 @@ import { RatingsService } from '../src/ratings/ratings.service';
 import { DISCOVERY_PROVIDER } from '../src/discovery/discovery.tokens';
 import { configureHttp } from '../src/configure-http';
 import { getServerConfig } from '../src/configuration/server.config';
+import { contentLanguage, contentRegion } from '../src/localization';
 
 const movies = [
   {
@@ -51,6 +52,42 @@ const discoveryProvider = {
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
+
+  it('isolates simultaneous locale/region requests and defaults to English/US', async () => {
+    movieProvider.findOne.mockImplementation(async (id) => {
+      await Promise.resolve();
+
+      return {
+        id,
+        title: `${contentLanguage()}:${contentRegion()}`,
+        releaseDate: '',
+        posterUrl: '',
+        genres: [],
+        cast: [],
+      };
+    });
+
+    const [english, hungarian, defaults] = await Promise.all([
+      request(app.getHttpServer())
+        .get('/api/v1/movies/1?language=en-US&watchRegion=HU')
+        .expect(200),
+      request(app.getHttpServer())
+        .get('/api/v1/movies/1?language=hu-HU&watchRegion=US')
+        .expect(200),
+      request(app.getHttpServer())
+        .get('/api/v1/movies/1')
+        .set('Accept-Language', 'hu-HU,hu;q=0.9')
+        .expect(200),
+    ]);
+    expect(english.body.title).toBe('en-US:HU');
+    expect(hungarian.body.title).toBe('hu-HU:US');
+    expect(defaults.body.title).toBe('en-US:US');
+
+    await request(app.getHttpServer())
+      .get('/api/v1/movies/1?language=de-DE')
+      .expect(400);
+    expect(movieProvider.findOne).toHaveBeenCalledTimes(3);
+  });
 
   it('serves process health without invoking upstream providers', async () => {
     await request(app.getHttpServer())

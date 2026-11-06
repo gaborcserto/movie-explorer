@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import usePreferencesStore from '../../../../features/preferences/preferencesStore';
 import { isCancelledError } from '../../../../util/errorPresentation';
 
 type Snapshot<Response, Item> = {
@@ -14,6 +15,8 @@ export default function usePaginatedResults<Response, Item>(
   getItems: (response: Response) => Item[],
   getKey: (item: Item) => string | number
 ) {
+  const guestPreferences = usePreferencesStore((state) => state.preferences);
+
   const [data, setData] = useState<Response | undefined>(restored?.data);
   const [items, setItems] = useState<Item[]>(restored?.items ?? []);
   const [visible, setVisible] = useState(restored?.visible ?? 10);
@@ -22,6 +25,19 @@ export default function usePaginatedResults<Response, Item>(
   const [moreError, setMoreError] = useState<unknown>(null);
   const controller = useRef<AbortController | null>(null);
   const busy = useRef(false);
+
+  const [requestPreferences, setRequestPreferences] =
+    useState(guestPreferences);
+
+  if (requestPreferences !== guestPreferences) {
+    setRequestPreferences(guestPreferences);
+    setData(restored?.data);
+    setItems(restored?.items ?? []);
+    setVisible(restored?.visible ?? 10);
+    setLoading(!restored);
+    setError(null);
+    setMoreError(null);
+  }
 
   const load = useCallback(
     async (page: number, revealed = 0) => {
@@ -83,7 +99,7 @@ export default function usePaginatedResults<Response, Item>(
       controller.current?.abort();
       busy.current = false;
     };
-  }, [load, restored]);
+  }, [load, restored, guestPreferences]);
 
   return { data, items, visible, setVisible, loading, error, moreError, load };
 }

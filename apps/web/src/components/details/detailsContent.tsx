@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Fragment, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import type {
@@ -7,6 +8,8 @@ import type {
   Ratings,
 } from '@movie-explorer/contracts';
 
+import { genreLabel } from '../../i18n/labels';
+import { i18n } from '../../i18n';
 import DetailsRatings from './ratings';
 import DetailRecommendations from '../detailRecommendations';
 import { SectionRecovery } from './recovery';
@@ -42,6 +45,8 @@ interface LowerDetailsProps {
 }
 
 function CreditNames({ people }: { people: MoviePersonCredit[] }) {
+  useTranslation();
+
   return people.map((person) => (
     <Fragment key={person.key}>
       {hasPersonId(person.id) ? (
@@ -59,16 +64,20 @@ function CreditNames({ people }: { people: MoviePersonCredit[] }) {
 }
 
 function CrewGroup({
+  groupKey,
   label,
   people,
   measurement = false,
 }: {
+  groupKey: string;
   label: string;
   people: MoviePersonCredit[];
   measurement?: boolean;
 }) {
-  const headingId = `crew-${label.toLowerCase()}-heading`;
-  const groupClass = `crew-group crew-group--${label.toLowerCase()}`;
+  useTranslation();
+
+  const headingId = `crew-${groupKey}-heading`;
+  const groupClass = `crew-group crew-group--${groupKey}`;
 
   return (
     <section
@@ -93,23 +102,26 @@ function CrewGroups({
   groupId,
   measurement = false,
 }: {
-  groups: { label: string; people: MoviePersonCredit[] }[];
+  groups: { key: string; label: string; people: MoviePersonCredit[] }[];
   visibleKeys: string[];
   groupId: string;
   measurement?: boolean;
 }) {
+  useTranslation();
+
   const visiblePeople = new Set(visibleKeys);
 
   return (
     <div className="crew-groups" id={measurement ? undefined : groupId}>
-      {groups.map(({ label, people: groupPeople }) => {
+      {groups.map(({ key: groupKey, label, people: groupPeople }) => {
         const visible = measurement
           ? groupPeople
           : groupPeople.filter((person) => visiblePeople.has(person.key));
 
         return visible.length > 0 ? (
           <CrewGroup
-            key={label}
+            key={groupKey}
+            groupKey={groupKey}
             label={label}
             people={visible}
             measurement={measurement}
@@ -127,6 +139,8 @@ export function DetailsHero({
   ratings,
   ratingsLoading,
 }: DetailsProps) {
+  useTranslation();
+
   const {
     title,
     releaseDate,
@@ -156,12 +170,14 @@ export function DetailsHero({
           previewSrc={posterPreviewUrl}
           photos={posters.map((poster, index) => ({
             ...poster,
-            alt: poster.alt ?? `Poster ${index + 1} for ${title}`,
+            alt:
+              poster.alt ??
+              i18n.t('messages.posterNumber', { number: index + 1, title }),
           }))}
           sizes="(max-width: 767.98px) min(320px, calc(100vw - 52px)), (max-width: 991.98px) 260px, 320px"
           alt={title}
           title={title}
-          actionLabel={`Open poster gallery for ${title}`}
+          actionLabel={i18n.t('messages.openPosters', { title })}
           className="movie-details__image"
         />
       }
@@ -174,13 +190,19 @@ export function DetailsHero({
       }
     >
       {genresData.length > 0 && (
-        <div className="movie-details__genre">{genresData.join(', ')}</div>
+        <div className="movie-details__genre">
+          {genresData.map(genreLabel).join(', ')}
+        </div>
       )}
       <div className="movie-details__facts-actions">
         {(releaseYear || hasRuntime) && (
           <div className="movie-details__data">
             {releaseYear && <span>{releaseYear}</span>}
-            {hasRuntime && <span>{runtimeMinutes} min</span>}
+            {hasRuntime && (
+              <span>
+                {runtimeMinutes} {i18n.t('messages.minuteUnit')}
+              </span>
+            )}
           </div>
         )}
         <PersonalLibraryActions
@@ -194,7 +216,9 @@ export function DetailsHero({
       </div>
       {movieData.description?.trim() && (
         <section className="movie-details__section">
-          <h2 className="movie-details__section-title">Overview</h2>
+          <h2 className="movie-details__section-title">
+            {i18n.t('ui.overview')}
+          </h2>
           <p className="movie-details__overview">{movieData.description}</p>
         </section>
       )}
@@ -208,6 +232,8 @@ export function DetailsLowerContent({
   movieData,
   recoverSection,
 }: LowerDetailsProps) {
+  useTranslation();
+
   const {
     title,
     photos = [],
@@ -219,9 +245,9 @@ export function DetailsLowerContent({
   const { cast, directors, writers, producers } =
     getMoviePersonCredits(movieData);
   const crewGroups = [
-    { label: 'Directors', people: directors },
-    { label: 'Writers', people: writers },
-    { label: 'Producers', people: producers },
+    { key: 'directors', label: i18n.t('ui.directors'), people: directors },
+    { key: 'writers', label: i18n.t('ui.writers'), people: writers },
+    { key: 'producers', label: i18n.t('ui.producers'), people: producers },
   ].filter((group) => group.people.length > 0);
   const showCastSection = cast.length > 0 || Boolean(movieData.sections);
   const showCrewSection =
@@ -297,19 +323,21 @@ export function DetailsLowerContent({
               aria-labelledby="cast-heading"
             >
               <div className="details-section__heading">
-                <h2 id="cast-heading">Cast</h2>
+                <h2 id="cast-heading">{i18n.t('ui.cast')}</h2>
               </div>
               <SectionRecovery
-                label="Credits"
+                label={i18n.t('ui.credits')}
                 availability={movieData.sections?.credits}
                 recover={(signal) =>
                   recoverSection
                     ? recoverSection('credits', signal)
-                    : Promise.reject(new Error('Recovery unavailable'))
+                    : Promise.reject(
+                        new Error(i18n.t('ui.recovery_unavailable'))
+                      )
                 }
               />
               {movieData.sections?.credits.status === 'available' &&
-                cast.length === 0 && <p>No cast available.</p>}
+                cast.length === 0 && <p>{i18n.t('ui.no_cast_available')}</p>}
               <CastPreview
                 key={movieData.id}
                 members={cast}
@@ -328,9 +356,11 @@ export function DetailsLowerContent({
               aria-labelledby="crew-heading"
             >
               <div className="details-section__heading">
-                <h2 id="crew-heading">Crew</h2>
+                <h2 id="crew-heading">{i18n.t('ui.crew')}</h2>
               </div>
-              {crewGroups.length === 0 && <p>No crew available.</p>}
+              {crewGroups.length === 0 && (
+                <p>{i18n.t('ui.no_crew_available')}</p>
+              )}
               {crewPreview.summary}
               <CrewGroups
                 groups={crewGroups}
@@ -345,11 +375,14 @@ export function DetailsLowerContent({
                 inert
               >
                 <div className="details-section__heading">
-                  <h2>Crew</h2>
+                  <h2>{i18n.t('ui.crew')}</h2>
                 </div>
                 <p className="cast-count">
-                  Showing {crewPeople.length} of {crewPeople.length} crew
-                  members
+                  {i18n.t('messages.shownCount', {
+                    shown: crewPeople.length,
+                    count: crewPeople.length,
+                    kind: i18n.t('ui.crew_members'),
+                  })}
                 </p>
                 <CrewGroups
                   groups={crewGroups}
@@ -376,34 +409,34 @@ export function DetailsLowerContent({
         }}
         backdropsRecovery={
           <SectionRecovery
-            label="Backdrops"
+            label={i18n.t('ui.backdrops')}
             availability={movieData.sections?.photos}
             recover={(signal) =>
               recoverSection
                 ? recoverSection('photos', signal)
-                : Promise.reject(new Error('Recovery unavailable'))
+                : Promise.reject(new Error(i18n.t('ui.recovery_unavailable')))
             }
           />
         }
         postersRecovery={
           <SectionRecovery
-            label="Posters"
+            label={i18n.t('ui.posters')}
             availability={movieData.sections?.posters}
             recover={(signal) =>
               recoverSection
                 ? recoverSection('posters', signal)
-                : Promise.reject(new Error('Recovery unavailable'))
+                : Promise.reject(new Error(i18n.t('ui.recovery_unavailable')))
             }
           />
         }
         videosRecovery={
           <SectionRecovery
-            label="Videos"
+            label={i18n.t('ui.videos')}
             availability={movieData.sections?.videos}
             recover={(signal) =>
               recoverSection
                 ? recoverSection('videos', signal)
-                : Promise.reject(new Error('Recovery unavailable'))
+                : Promise.reject(new Error(i18n.t('ui.recovery_unavailable')))
             }
           />
         }

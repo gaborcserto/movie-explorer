@@ -46,7 +46,7 @@
     border-radius: 4px;
     bottom: 12px;
     color: $white;
-    content: 'View photos';
+    content: attr(data-gallery-label);
     font-size: 12px;
     padding: 6px 8px;
     pointer-events: none;

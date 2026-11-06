@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { WatchProvider } from '@movie-explorer/contracts';
 
+import usePreferencesStore from '../../../features/preferences/preferencesStore';
 import { getWatchProviders } from '../../../util/apiUtils';
 
 export default function useWatchProvidersResource(
@@ -8,7 +9,9 @@ export default function useWatchProvidersResource(
   id: number,
   enabled: boolean
 ) {
-  const key = `${kind}:${id}`;
+  const guestPreferences = usePreferencesStore((state) => state.preferences);
+
+  const key = `${guestPreferences.region}:${kind}:${id}`;
   const [result, setResult] = useState<{
     key: string;
     providers: WatchProvider[];
@@ -51,7 +54,7 @@ export default function useWatchProvidersResource(
       });
 
     return () => controller.abort();
-  }, [kind, id, enabled, attempt, key]);
+  }, [kind, id, enabled, attempt, key, guestPreferences]);
 
   const providers = result?.key === key ? result.providers : [];
   const pending =

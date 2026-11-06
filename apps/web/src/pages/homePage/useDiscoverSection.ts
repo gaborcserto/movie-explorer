@@ -6,6 +6,7 @@ import type {
   StreamingProviderInfo,
 } from '@movie-explorer/contracts';
 
+import usePreferencesStore from '../../features/preferences/preferencesStore';
 import {
   getDiscoverySection,
   getStreamingProviderSection,
@@ -203,7 +204,12 @@ export function useDiscoverSection(
   provider?: StreamingProviderSelection,
   mediaType?: DiscoveryMediaType
 ) {
-  const key = feedKey(section, provider, mediaType);
+  const guestPreferences = usePreferencesStore((state) => state.preferences);
+
+  const feed = feedKey(section, provider, mediaType);
+  const key = feed
+    ? `${guestPreferences.language}:${guestPreferences.region}:${feed}`
+    : null;
   const [state, setState] = useState<SectionState>({ status: 'loading' });
   const [stateKey, setStateKey] = useState(key);
   const [attempt, setAttempt] = useState(0);
@@ -284,7 +290,7 @@ export function useDiscoverSection(
       moreController.current = null;
       loadingMoreRef.current = false;
     };
-  }, [attempt, key, mediaType, provider, section]);
+  }, [attempt, key, mediaType, provider, section, guestPreferences]);
 
   const loadMore = useCallback(async () => {
     if (!key || state.status !== 'success' || loadingMoreRef.current) {
@@ -390,15 +396,23 @@ export function useDiscoverSection(
 export type DiscoverSectionData = ReturnType<typeof useDiscoverSection>;
 
 export function useStreamingProviderCatalog() {
+  const guestPreferences = usePreferencesStore((state) => state.preferences);
+
   const [state, setState] = useState<ProviderCatalogState>({
     status: 'loading',
   });
   const [attempt, setAttempt] = useState(0);
+  const [identity, setIdentity] = useState(guestPreferences);
+
+  if (identity !== guestPreferences) {
+    setIdentity(guestPreferences);
+    setState({ status: 'loading' });
+  }
 
   useEffect(() => {
     const controller = new AbortController();
 
-    getStreamingProviders('HU', controller.signal)
+    getStreamingProviders(guestPreferences.region, controller.signal)
       .then((providers) => {
         if (!controller.signal.aborted) {
           setState({ status: 'success', providers });
@@ -411,7 +425,7 @@ export function useStreamingProviderCatalog() {
       });
 
     return () => controller.abort();
-  }, [attempt]);
+  }, [attempt, guestPreferences]);
 
   const retry = useCallback(() => {
     setState({ status: 'loading' });

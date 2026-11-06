@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import type {
   EpisodeSummary,
@@ -5,6 +6,8 @@ import type {
   SeriesDetails,
 } from '@movie-explorer/contracts';
 
+import { formatDate } from '../../../i18n/format';
+import { i18n } from '../../../i18n';
 import MovieImage from '../../../components/utility/customImage';
 import { seriesPath } from '../../../util/seriesRoutes';
 import SeriesRating from '../seriesRating';
@@ -22,6 +25,8 @@ export default function EpisodeList({
   season?: SeasonDetails;
   series?: SeriesDetails;
 }) {
+  useTranslation();
+
   return (
     <ol className="series-episodes">
       {episodes.map((episode) => (
@@ -57,17 +62,21 @@ export default function EpisodeList({
                   {episode.airDate && (
                     <span>
                       <span className="series-episode-metadata__label">
-                        Air date
+                        {i18n.t('ui.air_date')}
                       </span>
-                      <time dateTime={episode.airDate}>{episode.airDate}</time>
+                      <time dateTime={episode.airDate}>
+                        {formatDate(episode.airDate)}
+                      </time>
                     </span>
                   )}
                   {episode.runtimeMinutes !== null && (
                     <span>
                       <span className="series-episode-metadata__label">
-                        Runtime
+                        {i18n.t('ui.runtime')}
                       </span>
-                      <span>{episode.runtimeMinutes} min</span>
+                      <span>
+                        {episode.runtimeMinutes} {i18n.t('messages.minuteUnit')}
+                      </span>
                     </span>
                   )}
                 </div>

@@ -1,4 +1,7 @@
+import { useTranslation } from 'react-i18next';
 import { useLayoutEffect, useRef } from 'react';
+
+import { i18n } from '../../i18n';
 
 interface ErrorProps {
   message: string;
@@ -17,6 +20,8 @@ function Error({
   onAction,
   pending = false,
 }: ErrorProps) {
+  useTranslation();
+
   const retryRef = useRef<HTMLButtonElement>(null);
 
   useLayoutEffect(() => {
@@ -37,7 +42,7 @@ function Error({
       </div>
       {pending && (
         <span role="status" className="visually-hidden">
-          Loading...
+          {i18n.t('ui.loading')}
         </span>
       )}
       {actionLabel && onAction && (
@@ -53,7 +58,7 @@ function Error({
             }
           }}
         >
-          {pending ? 'Trying again...' : actionLabel}
+          {pending ? i18n.t('ui.trying_again') : actionLabel}
         </button>
       )}
     </section>

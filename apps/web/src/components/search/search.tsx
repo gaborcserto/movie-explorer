@@ -1,17 +1,21 @@
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
+import { i18n } from '../../i18n';
 import useAutocomplete from './useAutocomplete';
 import Suggestions from './suggestions';
 import './search.scss';
 
 function Search() {
+  useTranslation();
+
   const { searchQuery } = useParams();
   const { containerRef, ...autocomplete } = useAutocomplete(searchQuery);
 
   return (
     <header className="header page-hero" data-testid="search-component">
       <div className="header__container container">
-        <h1 className="header__title">FIND YOUR NEXT STORY</h1>
+        <h1 className="header__title">{i18n.t('ui.find_your_next_story')}</h1>
         <form
           className="header__search"
           role="search"
@@ -24,13 +28,13 @@ function Search() {
         >
           <div ref={containerRef} className="header__search__combobox">
             <label className="visually-hidden" htmlFor="movie-search">
-              Search movies, series and people
+              {i18n.t('ui.search_movies_series_and_people')}
             </label>
             <input
               id="movie-search"
               className="header__search__input"
               type="text"
-              placeholder="What do you want to watch?"
+              placeholder={i18n.t('ui.what_do_you_want_to_watch')}
               value={autocomplete.query}
               onChange={(event) => autocomplete.edit(event.target.value)}
               {...autocomplete.inputProps}
@@ -38,7 +42,7 @@ function Search() {
             <Suggestions autocomplete={autocomplete} />
           </div>
           <button className="btn--primary btn" type="submit">
-            search
+            {i18n.t('messages.searchAction')}
           </button>
         </form>
       </div>

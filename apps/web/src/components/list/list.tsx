@@ -1,8 +1,12 @@
+import { useTranslation } from 'react-i18next';
 import { useMemo } from 'react';
+
 import './list.scss';
 import { useParams, useSearchParams } from 'react-router';
 import { FaXmark } from 'react-icons/fa6';
 
+import { genreLabel, sortLabel } from '../../i18n/labels';
+import { i18n } from '../../i18n';
 import presentApiError from '../../util/errorPresentation';
 import Card from '../card';
 import Error from '../../layouts/error';
@@ -13,6 +17,8 @@ import useMovieResults from './hooks/useMovieResults';
 import { readFilters } from '../filter/filterState';
 
 function List() {
+  useTranslation();
+
   const history = useSearchHistory();
   const { searchQuery } = useParams();
   const [searchParams] = useSearchParams();
@@ -58,7 +64,7 @@ function List() {
   } = useMovieResults(params, signature, history?.movies);
 
   const capitalizeFirstLetter = (data: string) =>
-    data.charAt(0).toUpperCase() + data.slice(1);
+    genreLabel(data.charAt(0).toUpperCase() + data.slice(1));
 
   const getEmptyMessage = () => {
     if (
@@ -67,27 +73,30 @@ function List() {
       moviesData?.totalResults
     ) {
       return moviesData.page < Math.min(moviesData.totalPages, 500)
-        ? 'No matching movies yet. Load more to continue.'
-        : 'No matching movies found.';
+        ? i18n.t('ui.no_matching_movies_yet_load_more_to_continue')
+        : i18n.t('ui.no_matching_movies_found');
     }
 
     const genre = filter.length
-      ? filter.map(capitalizeFirstLetter).join(' or ')
+      ? filter.map(capitalizeFirstLetter).join(i18n.t('ui.or'))
       : null;
 
     if (searchQuery && genre) {
-      return `No movies found for "${searchQuery}" in ${genre}.`;
+      return i18n.t('messages.noMoviesGenreQuery', {
+        query: searchQuery,
+        genre,
+      });
     }
 
     if (searchQuery) {
-      return `No movies found for "${searchQuery}".`;
+      return i18n.t('messages.noMoviesQuery', { query: searchQuery });
     }
 
     if (genre) {
-      return `No movies found in ${genre}.`;
+      return i18n.t('messages.noMoviesGenre', { genre });
     }
 
-    return 'No movies available.';
+    return i18n.t('ui.no_movies_available');
   };
 
   if (loadingData && !errorData) {
@@ -101,7 +110,7 @@ function List() {
         message={presentApiError(errorData)?.description ?? ''}
         className="list__container container list__container--error"
         pending={loadingData}
-        actionLabel="Try again"
+        actionLabel={i18n.t('ui.try_again')}
         onAction={() => loadInitialMovies(true)}
       />
     );
@@ -111,10 +120,6 @@ function List() {
     moviesData &&
     (visibleMovieCount < movies.length ||
       moviesData.page < Math.min(moviesData.totalPages, 500))
-  );
-
-  const hasPageLevelSearchFilters = Boolean(
-    searchQuery && (filter.length > 0 || minimumRating)
   );
 
   const visibleMovies = movies.slice(0, visibleMovieCount);
@@ -130,13 +135,18 @@ function List() {
       : []),
     ...(releaseYear ? [{ key: 'year', label: releaseYear }] : []),
     ...(minimumRating
-      ? [{ key: 'rating', label: `Rating ${minimumRating}+` }]
+      ? [
+          {
+            key: 'rating',
+            label: i18n.t('messages.ratingBadge', { rating: minimumRating }),
+          },
+        ]
       : []),
     ...(!searchQuery && sorting && sorting !== 'popularity'
       ? [
           {
             key: 'sorting',
-            label: `Sort: ${sorting === 'releaseDate' ? 'Release Date' : sorting[0].toUpperCase() + sorting.slice(1)}`,
+            label: i18n.t('messages.sortBadge', { sort: sortLabel(sorting) }),
           },
         ]
       : []),
@@ -147,7 +157,12 @@ function List() {
       ? [
           {
             key: 'order',
-            label: `Order: ${sortOrder === 'asc' ? 'Ascending' : 'Descending'}`,
+            label: i18n.t('messages.orderBadge', {
+              order:
+                sortOrder === 'asc'
+                  ? i18n.t('ui.ascending')
+                  : i18n.t('ui.descending'),
+            }),
           },
         ]
       : []),
@@ -185,11 +200,14 @@ function List() {
     <section className="list__container container" aria-busy={loadingMore}>
       {loadingMore && (
         <span role="status" className="visually-hidden">
-          Loading more movies
+          {i18n.t('ui.loading_more_movies')}
         </span>
       )}
       {badges.length > 0 && (
-        <div className="active-filters" aria-label="Applied movie filters">
+        <div
+          className="active-filters"
+          aria-label={i18n.t('ui.applied_movie_filters')}
+        >
           {badges.map((badge) => {
             const badgeGenre = 'filter' in badge ? badge.filter : undefined;
 
@@ -198,7 +216,12 @@ function List() {
                 type="button"
                 className="active-filters__badge"
                 key={badge.key}
-                aria-label={`Remove ${badge.label} ${badgeGenre ? 'genre ' : ''}filter`}
+                aria-label={i18n.t(
+                  badgeGenre
+                    ? 'messages.removeGenreFilter'
+                    : 'messages.removeFilter',
+                  { label: badge.label }
+                )}
                 onClick={() => handleRemoveBadge(badge.key, badgeGenre)}
               >
                 {badge.label}
@@ -212,19 +235,26 @@ function List() {
               className="active-filters__clear"
               onClick={handleClearFilters}
             >
-              Clear all
+              {i18n.t('ui.clear_all')}
             </button>
           )}
         </div>
       )}
       <div className="list__summary" aria-live="polite">
         <p className="list__loaded">
-          {visibleMovies.length} {hasPageLevelSearchFilters ? 'matching ' : ''}
-          {visibleMovies.length === 1 ? 'movie' : 'movies'} loaded
+          {i18n.t(
+            searchQuery && (filter.length > 0 || minimumRating)
+              ? 'messages.matchingLoaded'
+              : 'messages.loadedCount',
+            {
+              count: visibleMovies.length,
+              kind: i18n.t('nouns.movies', { count: visibleMovies.length }),
+            }
+          )}
         </p>
         {searchQuery && (
           <p className="list__context">
-            Search: <strong>&quot;{searchQuery}&quot;</strong>
+            {i18n.t('ui.search')} <strong>&quot;{searchQuery}&quot;</strong>
           </p>
         )}
       </div>
@@ -253,7 +283,7 @@ function List() {
             disabled={loadingMore}
             onClick={loadMore}
           >
-            Try again
+            {i18n.t('ui.try_again')}
           </button>
         </div>
       )}
@@ -265,7 +295,7 @@ function List() {
             disabled={loadingMore}
             onClick={loadMore}
           >
-            {loadingMore ? 'Loading more…' : 'Load more'}
+            {loadingMore ? i18n.t('ui.loading_more') : i18n.t('ui.load_more')}
           </button>
         </div>
       )}

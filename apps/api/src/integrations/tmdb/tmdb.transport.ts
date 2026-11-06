@@ -5,6 +5,11 @@ import {
   Logger,
 } from '@nestjs/common';
 
+import {
+  contentLanguage,
+  contentRegion,
+  localization,
+} from '../../localization';
 import { parseRetryAfter } from './retry-after';
 import type { TmdbConfig } from './tmdb.config';
 
@@ -48,10 +53,22 @@ export class TmdbTransport {
     timeoutMs,
   }: TmdbRequestOptions): Promise<unknown> {
     const url = new URL(`${this.config.apiBaseUrl}${path}`);
-    url.searchParams.set('language', this.config.language);
+    const language = query.language ?? contentLanguage(this.config.language);
+    const startedAt = Date.now();
+    const budget = Math.min(
+      timeoutMs ?? Infinity,
+      this.config.requestTimeoutMs ?? 8000,
+    );
+    const neutral =
+      /\/(external_ids|watch\/providers)$/.test(path) ||
+      /^\/person\/\d+\/images$/.test(path);
+
+    if (!neutral) {
+      url.searchParams.set('language', language);
+    }
 
     if (this.config.region) {
-      url.searchParams.set('region', this.config.region);
+      url.searchParams.set('region', contentRegion(this.config.region));
     }
 
     Object.entries(query).forEach(([key, value]) => {
@@ -59,6 +76,22 @@ export class TmdbTransport {
         url.searchParams.set(key, value);
       }
     });
+
+    if (
+      localization.getStore() &&
+      (path === '/discover/movie' ||
+        path === '/movie/upcoming' ||
+        path === '/movie/now_playing')
+    ) {
+      url.searchParams.set('region', contentRegion());
+    }
+
+    if (
+      language === 'hu-HU' &&
+      (/\/images$/.test(path) || query.append_to_response?.includes('images'))
+    ) {
+      url.searchParams.set('include_image_language', 'hu,en,null');
+    }
 
     const controller = new AbortController();
     const timer = setTimeout(
@@ -108,6 +141,123 @@ export class TmdbTransport {
         controller.signal.throwIfAborted();
 
         validateBody(body);
+        clearTimeout(timer);
+
+        // Detail fallback is bounded to one English request, only for missing copy.
+        // Lists deliberately avoid per-result enrichment and its unbounded cost.
+        if (
+          language === 'hu-HU' &&
+          /^\/(movie|tv|person)\/\d+(?:\/season\/\d+(?:\/episode\/\d+)?)?$/.test(
+            path,
+          ) &&
+          body &&
+          typeof body === 'object' &&
+          !Array.isArray(body)
+        ) {
+          const record = body as Record<string, unknown>;
+          const copyField = path.startsWith('/person/')
+            ? 'biography'
+            : 'overview';
+
+          const missingCopy = (value: Record<string, unknown>) =>
+            value[copyField] === null ||
+            (typeof value[copyField] === 'string' && !value[copyField].trim());
+          const children = ['episodes', 'seasons'] as const;
+          const missing =
+            missingCopy(record) ||
+            children.some(
+              (field) =>
+                Array.isArray(record[field]) &&
+                record[field].some(
+                  (value: unknown) =>
+                    value !== null &&
+                    typeof value === 'object' &&
+                    !Array.isArray(value) &&
+                    missingCopy(value as Record<string, unknown>),
+                ),
+            );
+          const remaining = budget - (Date.now() - startedAt);
+
+          if (missing && remaining > 0) {
+            try {
+              const english = await this.request({
+                path,
+                query: { language: 'en-US' },
+                operation: `${operation}-fallback`,
+                allowNotFound: true,
+                timeoutMs: remaining,
+                validateBody: (value) => {
+                  if (
+                    !value ||
+                    typeof value !== 'object' ||
+                    Array.isArray(value)
+                  ) {
+                    throw new Error();
+                  }
+                },
+              });
+
+              if (
+                english &&
+                typeof english === 'object' &&
+                !Array.isArray(english)
+              ) {
+                const fallback = english as Record<string, unknown>;
+
+                if (fallback.id === record.id) {
+                  for (const field of [copyField, 'title', 'name', 'tagline']) {
+                    if (
+                      (typeof record[field] !== 'string' ||
+                        !record[field].trim()) &&
+                      typeof fallback[field] === 'string' &&
+                      fallback[field].trim()
+                    ) {
+                      record[field] = fallback[field];
+                    }
+                  }
+
+                  for (const field of children) {
+                    const localizedChildren = record[field];
+                    const englishChildren = fallback[field];
+
+                    if (
+                      Array.isArray(localizedChildren) &&
+                      Array.isArray(englishChildren)
+                    ) {
+                      for (const child of localizedChildren) {
+                        if (!child || typeof child !== 'object') {
+                          continue;
+                        }
+
+                        const source = englishChildren.find(
+                          (value) =>
+                            value &&
+                            typeof value === 'object' &&
+                            typeof child.id === 'number' &&
+                            value.id === child.id,
+                        );
+
+                        if (source) {
+                          for (const copy of ['overview', 'name']) {
+                            if (
+                              (child[copy] == null || child[copy] === '') &&
+                              typeof source[copy] === 'string' &&
+                              source[copy].trim()
+                            ) {
+                              child[copy] = source[copy];
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            } catch {
+              // Optional fallback failure must preserve valid localized details.
+            }
+          }
+        }
 
         return body;
       } catch {

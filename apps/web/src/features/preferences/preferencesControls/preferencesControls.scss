@@ -1,0 +1,130 @@
+@use '../../../assets/scss' as *;
+
+.preferences-controls {
+  border-radius: 0.5rem;
+  position: relative;
+  flex: 0 0 auto;
+  color: $red-1;
+
+  &[open] {
+    z-index: 51;
+  }
+
+  summary {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    min-height: 44px;
+    min-width: 44px;
+    justify-content: center;
+    padding: 0.5rem;
+    cursor: pointer;
+    list-style: none;
+    background: transparent;
+    box-shadow: none;
+    transition: background-color 180ms ease;
+
+    &:focus-visible {
+      outline: 2px solid $red-1;
+      outline-offset: 2px;
+    }
+  }
+
+  &[open] summary {
+    background: $grey-3;
+    border-radius: 0.5rem 0.5rem 0 0;
+    box-shadow: none;
+    position: relative;
+    z-index: 2;
+  }
+
+  select {
+    width: 100%;
+    min-width: 0;
+    padding: 0.5rem;
+    color: inherit;
+    background: $grey-3;
+    border: 1px solid currentcolor;
+    border-radius: 0.25rem;
+  }
+
+  select,
+  label,
+  p {
+    color: $white;
+  }
+
+  label {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  :focus-visible {
+    outline: 2px solid currentcolor;
+    outline-offset: 3px;
+  }
+
+  @media (width <= 360px) {
+    summary span {
+      display: none;
+    }
+  }
+}
+
+.preferences-controls__panel {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  top: calc(100% - 1px);
+  display: grid;
+  gap: 0.875rem;
+  width: min(18rem, calc(100vw - 2rem));
+  padding: 1rem;
+  color: $white;
+  background: $grey-3;
+  border: 0;
+  border-radius: 0.5rem 0 0.5rem 0.5rem;
+  box-shadow: 0 0.75rem 1.5rem -0.35rem #00000066;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition:
+    opacity 200ms ease-out,
+    transform 200ms ease-out,
+    visibility 0s linear 200ms;
+  visibility: hidden;
+
+  h2 {
+    color: $white;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  p {
+    color: $white;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  label {
+    color: $white;
+    font-size: 0.875rem;
+  }
+}
+
+.preferences-controls[open] .preferences-controls__panel {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition:
+    opacity 200ms ease-out,
+    transform 200ms ease-out,
+    visibility 0s;
+  visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preferences-controls__panel {
+    transition: none;
+  }
+}

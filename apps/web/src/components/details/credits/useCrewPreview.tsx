@@ -1,5 +1,7 @@
 import { useId, useRef, useState } from 'react';
 
+import { i18n } from '../../../i18n';
+
 const CREW_BATCH_SIZE = 12;
 
 // Count people before grouping: one person can have several departments/jobs.
@@ -27,7 +29,11 @@ export default function useCrewPreview<T>(
     visible,
     summary: (
       <p ref={countRef} role="status" tabIndex={-1} className="cast-count">
-        Showing {visible.length} of {people.length} crew members
+        {i18n.t('messages.shownCount', {
+          shown: visible.length,
+          count: people.length,
+          kind: i18n.t('ui.crew_members'),
+        })}
       </p>
     ),
     controls: (
@@ -45,7 +51,7 @@ export default function useCrewPreview<T>(
               }
             }}
           >
-            Show more crew
+            {i18n.t('ui.show_more_crew')}
           </button>
         )}
         {!showAll && limit > CREW_BATCH_SIZE && (
@@ -59,7 +65,7 @@ export default function useCrewPreview<T>(
               countRef.current?.focus({ preventScroll: true });
             }}
           >
-            Show less crew
+            {i18n.t('ui.show_less_crew')}
           </button>
         )}
       </div>

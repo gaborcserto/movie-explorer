@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { MovieCollectionResponse } from '@movie-explorer/contracts';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa6';
 
+import { i18n } from '../../i18n';
 import SearchResultCard from '../list/searchResultCard';
 import { CardSkeletons } from '../skeleton';
 import presentApiError from '../../util/errorPresentation';
@@ -28,6 +30,8 @@ function RecommendationRowContent({
   excludedMovieIds,
   onCollectionLoaded,
 }: Props) {
+  useTranslation();
+
   const headingId = useId();
   const { containerRef, data, error, pending, retry, delay } =
     useRecommendationResource(source);
@@ -143,7 +147,7 @@ function RecommendationRowContent({
       <button
         type="button"
         className="lightbox-control"
-        aria-label={`Previous ${title}`}
+        aria-label={i18n.t('messages.previousTitle', { title })}
         aria-controls={`${headingId}-cards`}
         disabled={edges.start}
         onClick={() => scroll(-1)}
@@ -153,7 +157,7 @@ function RecommendationRowContent({
       <button
         type="button"
         className="lightbox-control"
-        aria-label={`Next ${title}`}
+        aria-label={i18n.t('messages.nextTitle', { title })}
         aria-controls={`${headingId}-cards`}
         disabled={edges.end}
         onClick={() => scroll(1)}
@@ -188,22 +192,27 @@ function RecommendationRowContent({
         <div className={home ? 'recommendation-row__status' : undefined}>
           <p className="list__loaded" role="status">
             {pending && !data
-              ? `Loading ${title.toLowerCase()}...`
-              : `${results.length} titles loaded${pending ? ' - Retrying...' : ''}`}
+              ? i18n.t('messages.loadingTitleEllipsis', {
+                  title: title.toLowerCase(),
+                })
+              : i18n.t('messages.loadedCount', {
+                  count: results.length,
+                  kind: i18n.t('nouns.titles', { count: results.length }),
+                }) + (pending ? i18n.t('messages.retrying') : '')}
           </p>
           {home && controls}
         </div>
         {home && data && 'source' in data && data.source !== 'popular' && (
           <p className="discover-row__message">
-            Based on your Favorites
-            {data.source === 'mixed' ? ', with Popular titles' : ''}.
+            {i18n.t('ui.based_on_your_favorites')}
+            {data.source === 'mixed' ? i18n.t('ui.with_popular_titles') : ''}.
           </p>
         )}
         {partial && (
           <p className="discover-row__message">
             {isCollection
-              ? 'Some collection movies are unavailable.'
-              : 'Some recommendations are unavailable.'}
+              ? i18n.t('ui.some_collection_movies_are_unavailable')
+              : i18n.t('ui.some_recommendations_are_unavailable')}
           </p>
         )}
         {feedback && (
@@ -214,8 +223,10 @@ function RecommendationRowContent({
         {!isCollection && !pending && data && !results.length && (
           <p className="discover-row__message" role="status">
             {data.results.length
-              ? 'No recommendations with posters are available right now.'
-              : 'No recommendations are available right now.'}
+              ? i18n.t(
+                  'ui.no_recommendations_with_posters_are_available_right_now'
+                )
+              : i18n.t('ui.no_recommendations_are_available_right_now')}
           </p>
         )}
         {(error || partial) && (
@@ -225,7 +236,9 @@ function RecommendationRowContent({
             aria-disabled={pending || delay > 0}
             onClick={handleRetry}
           >
-            {delay > 0 ? `Retry in ${delay}s` : 'Try again'}
+            {delay > 0
+              ? i18n.t('messages.retryDelay', { count: delay })
+              : i18n.t('ui.try_again')}
           </button>
         )}
       </div>
@@ -235,7 +248,7 @@ function RecommendationRowContent({
           className="recommendation-row__viewport"
           id={`${headingId}-cards`}
           role="region"
-          aria-label={`Scroll ${title} cards`}
+          aria-label={i18n.t('messages.scrollCards', { title })}
           onScroll={measure}
         >
           <div className="list__items">
@@ -259,6 +272,8 @@ function RecommendationRowContent({
 }
 
 export default function RecommendationRow(props: Props) {
+  useTranslation();
+
   const { source } = props;
   const key = source.category
     ? `${source.category}:${source.libraryKey ?? ''}`

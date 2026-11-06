@@ -87,3 +87,4 @@ export type {
 } from './recommendations';
 
 export type { SeriesGenre, SeriesGenres } from './series';
+export type { ContentLanguage, GuestPreferences } from './localization';

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { MouseEvent } from 'react';
 import {
   FaCircleCheck,
@@ -8,6 +9,7 @@ import {
 import type { IconType } from 'react-icons';
 import { useStore } from 'zustand';
 
+import { i18n } from '../../../i18n';
 import {
   mediaKey,
   selectLibraryMembership,
@@ -33,21 +35,33 @@ const actions: ActionDefinition[] = [
     collection: 'watched',
     inactiveIcon: FaRegCircleCheck,
     activeIcon: FaCircleCheck,
-    addLabel: 'Mark as Watched',
-    removeLabel: 'Mark as Not Watched',
+    get addLabel() {
+      return i18n.t('ui.mark_as_watched');
+    },
+    get removeLabel() {
+      return i18n.t('ui.mark_as_not_watched');
+    },
   },
   {
     collection: 'favorites',
     inactiveIcon: FaRegHeart,
     activeIcon: FaHeart,
-    addLabel: 'Add to Favorites',
-    removeLabel: 'Remove from Favorites',
+    get addLabel() {
+      return i18n.t('ui.add_to_favorites');
+    },
+    get removeLabel() {
+      return i18n.t('ui.remove_from_favorites');
+    },
   },
 ];
 
 const actionLabels: Record<LibraryCollection, string> = {
-  watched: 'Watched',
-  favorites: 'Favorites',
+  get watched() {
+    return i18n.t('ui.watched');
+  },
+  get favorites() {
+    return i18n.t('ui.favorites');
+  },
 };
 
 export interface PersonalLibraryActionsProps {
@@ -73,6 +87,8 @@ export default function PersonalLibraryActions({
   firstAirDate,
   onMembershipRemoved,
 }: PersonalLibraryActionsProps) {
+  useTranslation();
+
   const key = mediaKey(mediaType, id);
   const media: LibraryMedia =
     mediaType === 'movie'
@@ -118,7 +134,7 @@ export default function PersonalLibraryActions({
   return (
     <div
       className={`personal-library-actions personal-library-actions--${presentation}`}
-      aria-label={`${title} library actions`}
+      aria-label={i18n.t('messages.libraryActions', { title })}
     >
       {actions.map(
         (

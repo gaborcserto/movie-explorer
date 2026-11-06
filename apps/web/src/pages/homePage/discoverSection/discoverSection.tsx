@@ -1,3 +1,6 @@
+import { useTranslation } from 'react-i18next';
+
+import { i18n } from '../../../i18n';
 import { CardSkeletons } from '../../../components/skeleton';
 import useStablePanelHeight from '../../../hooks/useStablePanelHeight';
 import SearchResultCard from '../../../components/list/searchResultCard';
@@ -18,6 +21,8 @@ export default function DiscoverRow({
   tabId,
   data: { state, retry, loadMore },
 }: DiscoverRowProps) {
+  useTranslation();
+
   const panelRef = useStablePanelHeight<HTMLElement>(tabId);
   const hasMore =
     state.status === 'success' &&
@@ -40,35 +45,43 @@ export default function DiscoverRow({
       <div className="list__summary discover-row__summary" aria-live="polite">
         {state.status === 'success' && state.results.length > 0 && (
           <p className="list__loaded">
-            {Math.min(state.visibleCount, state.results.length)} titles loaded
+            {i18n.t('messages.loadedCount', {
+              count: Math.min(state.visibleCount, state.results.length),
+              kind: i18n.t('nouns.titles', {
+                count: Math.min(state.visibleCount, state.results.length),
+              }),
+            })}
           </p>
         )}
       </div>
       <div
         className="discover-row__viewport"
         role="group"
-        aria-label={`Scroll ${title} cards`}
+        aria-label={i18n.t('messages.scrollCards', { title })}
       >
         {state.status === 'loading' && (
-          <div className="list__items" aria-label={`Loading ${title}`}>
+          <div
+            className="list__items"
+            aria-label={i18n.t('messages.loadingTitle', { title })}
+          >
             <CardSkeletons count={5} />
           </div>
         )}
         {state.status === 'error' && (
           <div className="list__container--error" role="status">
-            <p>This collection could not load.</p>
+            <p>{i18n.t('ui.this_collection_could_not_load')}</p>
             <button
               type="button"
               className="btn btn--outline btn--action"
               onClick={retry}
             >
-              Try again
+              {i18n.t('ui.try_again')}
             </button>
           </div>
         )}
         {state.status === 'success' && state.results.length === 0 && (
           <p className="discover-row__message" role="status">
-            No titles are available right now.
+            {i18n.t('ui.no_titles_are_available_right_now')}
           </p>
         )}
         {state.status === 'success' && state.results.length > 0 && (
@@ -87,14 +100,14 @@ export default function DiscoverRow({
       </div>
       {state.status === 'success' && state.loadMoreError && (
         <div className="list__more-error" role="alert">
-          <span>More titles could not load.</span>
+          <span>{i18n.t('ui.more_titles_could_not_load')}</span>
           <button
             type="button"
             className="btn btn--outline"
             disabled={state.loadingMore}
             onClick={retry}
           >
-            Try again
+            {i18n.t('ui.try_again')}
           </button>
         </div>
       )}
@@ -107,7 +120,9 @@ export default function DiscoverRow({
               disabled={state.loadingMore}
               onClick={loadMore}
             >
-              {state.loadingMore ? 'Loading more…' : 'Load more'}
+              {state.loadingMore
+                ? i18n.t('ui.loading_more')
+                : i18n.t('ui.load_more')}
             </button>
           )}
         </div>

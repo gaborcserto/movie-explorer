@@ -1,8 +1,12 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
+
 import './details.scss';
 import { useParams } from 'react-router';
 import type { MovieDetails, MovieSection } from '@movie-explorer/contracts';
 
+import usePreferencesStore from '../../features/preferences/preferencesStore';
+import { i18n } from '../../i18n';
 import DetailsPageLayout, { DetailsLowerLayout } from './detailsPageLayout';
 import DetailsContent, { DetailsLowerContent } from './detailsContent';
 import { DetailError } from './recovery';
@@ -24,6 +28,10 @@ import { EntityMetadata } from '../routeMetadata';
 type DetailsState = 'loading' | 'success' | 'not-found' | 'error';
 
 function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
+  const guestPreferences = usePreferencesStore((state) => state.preferences);
+
+  useTranslation();
+
   const movieId = parseDetailId(movieIdStr);
   const validId = Number.isSafeInteger(movieId);
 
@@ -44,6 +52,17 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
     validId
   );
   const updateSnapshot = useLibraryStore((state) => state.updateSnapshot);
+
+  const [requestPreferences, setRequestPreferences] =
+    useState(guestPreferences);
+
+  if (requestPreferences !== guestPreferences) {
+    setRequestPreferences(guestPreferences);
+    setMovieData(null);
+    setDetailsState(validId ? 'loading' : 'not-found');
+    setPending(validId);
+    setRequestError(null);
+  }
 
   useEffect(() => {
     let current = true;
@@ -86,7 +105,7 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
       current = false;
       controller.abort();
     };
-  }, [movieId, validId, attempt]);
+  }, [movieId, validId, attempt, guestPreferences]);
 
   useEffect(() => {
     if (detailsState === 'success' && movieData) {
@@ -98,7 +117,7 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
         releaseDate: movieData.releaseDate,
       });
     }
-  }, [detailsState, movieData, updateSnapshot]);
+  }, [detailsState, movieData, updateSnapshot, guestPreferences]);
 
   const recoverSection = async (section: MovieSection, signal: AbortSignal) => {
     const result = await getMovieSection(movieId, section, signal);
@@ -124,27 +143,33 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
   };
 
   const pageTitle = {
-    loading: 'Loading movie',
-    success: movieData?.title || 'Movie details',
-    'not-found': validId ? 'Movie not found' : 'Invalid movie ID',
+    loading: i18n.t('ui.loading_movie'),
+    success: movieData?.title || i18n.t('ui.movie_details'),
+    'not-found': validId
+      ? i18n.t('ui.movie_not_found')
+      : i18n.t('ui.invalid_movie_id'),
     error: pending
-      ? 'Loading movie'
-      : (presentApiError(requestError)?.heading ?? 'Movie details'),
+      ? i18n.t('ui.loading_movie')
+      : (presentApiError(requestError)?.heading ?? i18n.t('ui.movie_details')),
   }[detailsState];
 
   const renderContent = () => {
     if (detailsState === 'loading') {
-      return <DetailHeroSkeleton label="Loading movie details" />;
+      return <DetailHeroSkeleton label={i18n.t('ui.loading_movie_details')} />;
     }
 
     if (detailsState === 'not-found') {
       return (
         <DetailError
-          heading={validId ? 'Movie not found' : 'Invalid movie ID'}
+          heading={
+            validId
+              ? i18n.t('ui.movie_not_found')
+              : i18n.t('ui.invalid_movie_id')
+          }
           description={
             validId
-              ? 'We could not find that movie.'
-              : 'Please use a valid positive whole-number movie ID.'
+              ? i18n.t('ui.we_could_not_find_that_movie')
+              : i18n.t('ui.please_use_a_valid_positive_whole_number_movie_id')
           }
         />
       );
@@ -154,8 +179,8 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
       return (
         <DetailError
           {...(presentApiError(requestError) ?? {
-            heading: 'Something went wrong',
-            description: 'Please try again.',
+            heading: i18n.t('ui.something_went_wrong'),
+            description: i18n.t('ui.please_try_again'),
           })}
           pending={pending}
           retry={() => {
@@ -202,6 +227,8 @@ function MovieDetailsPage({ movieIdStr }: { movieIdStr: string }) {
 }
 
 export default function Details() {
+  useTranslation();
+
   const { movieId = '' } = useParams();
 
   return <MovieDetailsPage key={movieId} movieIdStr={movieId} />;

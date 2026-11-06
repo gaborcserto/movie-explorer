@@ -223,6 +223,14 @@
     flex: 0 0 auto;
   }
 
+  &__actions {
+    align-items: center;
+    display: flex;
+    flex: 0 0 auto;
+    gap: 0.5rem;
+    margin-left: auto;
+  }
+
   .detail-search {
     flex: 0 1 440px;
   }
@@ -234,8 +242,12 @@
   }
 
   @media (width <= 480px) {
-    &__inner:has(> .detail-search) {
+    &__inner:has(.detail-search) {
       padding-inline: 0;
+    }
+
+    &__actions:has(.detail-search) {
+      gap: 0;
 
       > .detail-search {
         flex: 0 0 44px;
@@ -247,13 +259,19 @@
     &__inner:has(.detail-search__form--expanded) {
       position: relative;
 
-      > .detail-search {
+      > .app-header__actions {
         max-width: none;
         position: absolute;
         inset-inline: 0;
         top: 0;
         width: auto;
         z-index: 5;
+      }
+
+      .detail-search {
+        flex: 1 1 auto;
+        max-width: none;
+        width: auto;
       }
     }
   }

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';
 import { useLocation } from 'react-router';
 import type {
@@ -19,6 +20,7 @@ function configuredOrigin() {
 }
 
 export default function RouteMetadata() {
+  const { t } = useTranslation();
   const { pathname, search } = useLocation();
 
   // Run after prior detail-title cleanups and before metadata in the route subtree.
@@ -26,20 +28,20 @@ export default function RouteMetadata() {
     const origin = configuredOrigin();
     const home = pathname === '/' && !search;
     const params = new URLSearchParams(search);
-    let title = 'Page not found';
+    let title = t('ui.page_not_found');
 
     if (pathname === '/') {
-      title = params.get('view') === 'tv' ? 'Series' : 'Movies';
+      title = params.get('view') === 'tv' ? t('ui.series') : t('ui.movies');
 
       if (home) {
         title = siteTitle;
       }
     } else if (pathname.startsWith('/search')) {
-      title = 'Search results';
+      title = t('ui.search_results');
     } else if (pathname === '/library') {
-      title = 'Library';
+      title = t('ui.library');
     } else if (/^\/(movie|series|person)\//.test(pathname)) {
-      title = 'Details';
+      title = t('ui.details');
     }
 
     applyMetadata({
@@ -60,7 +62,7 @@ export default function RouteMetadata() {
     });
 
     return () => applyMetadata({ title: siteTitle });
-  }, [pathname, search]);
+  }, [pathname, search, t]);
 
   return null;
 }

@@ -1854,7 +1854,7 @@ describe('Series hierarchy', () => {
     expect(episodes.parentElement).toBe(seasons.parentElement);
     expect(screen.getAllByText('0 seasons')).toHaveLength(1);
     expect(screen.getAllByText('0 episodes')).toHaveLength(1);
-    expect(informationSection).toHaveTextContent('2026-02-03');
+    expect(informationSection).toHaveTextContent('2/3/2026');
     expect(informationSection).toHaveTextContent('Returning Series');
     expect(informationSection).not.toHaveTextContent('0 seasons');
     expect(informationSection).not.toHaveTextContent('0 episodes');
@@ -1907,7 +1907,7 @@ describe('Series hierarchy', () => {
     expect(breadcrumb.compareDocumentPosition(overview)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
-    expect(episodeDetails).toHaveTextContent('2026-01-02 · 24 min');
+    expect(episodeDetails).toHaveTextContent('1/2/2026 · 24 min');
 
     expect(
       within(breadcrumb).getByRole('link', { name: 'Specials' })
@@ -1967,7 +1967,7 @@ describe('Series hierarchy', () => {
       await screen.findByRole('link', { name: 'Next: 8. Departure' })
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Episode details')).toHaveTextContent(
-      '2026-01-02 · 24 min'
+      '1/2/2026 · 24 min'
     );
     expect(screen.queryByText('0 votes')).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/^TMDB rating:/)).not.toBeInTheDocument();

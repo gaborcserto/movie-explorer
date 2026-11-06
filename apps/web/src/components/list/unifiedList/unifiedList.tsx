@@ -1,13 +1,15 @@
+import { useTranslation } from 'react-i18next';
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import type { SearchResponse, SearchResult } from '@movie-explorer/contracts';
 
+import { formatNumber } from '../../../i18n/format';
+import { i18n } from '../../../i18n';
 import presentApiError from '../../../util/errorPresentation';
 import { getSearchResults, getPopularSeries } from '../../../util/apiUtils';
 import SearchResultCard from '../searchResultCard';
 import { ResultsSkeleton, CardSkeletons } from '../../skeleton';
 import Error from '../../../layouts/error';
 import { useResultHistory, useSearchHistory } from '../useSearchHistory';
-
 import usePaginatedResults from '../hooks/usePaginatedResults';
 
 const resultItems = (response: SearchResponse, includePosterless: boolean) =>
@@ -38,6 +40,8 @@ export default function UnifiedList({
   sorting?: string;
   order?: string;
 }) {
+  useTranslation();
+
   const history = useSearchHistory();
   const { restored, save } = useResultHistory(
     history?.unified,
@@ -96,34 +100,41 @@ export default function UnifiedList({
         title={presentApiError(error)?.heading}
         message={presentApiError(error)?.description ?? ''}
         pending={loading}
-        actionLabel="Try again"
+        actionLabel={i18n.t('ui.try_again')}
         onAction={() => load(1)}
       />
     );
   }
 
-  const buttonLabel = moreError ? 'Try again' : 'Load more';
-  let emptyMessage = `No results found for "${query}".`;
+  const buttonLabel = moreError
+    ? i18n.t('ui.try_again')
+    : i18n.t('ui.load_more');
+  let emptyMessage = i18n.t('messages.noResults', { query });
 
   if (data?.totalResults) {
     emptyMessage = more
-      ? 'No matching series yet. Load more to continue.'
-      : 'No matching series found.';
+      ? i18n.t('ui.no_matching_series_yet_load_more_to_continue')
+      : i18n.t('ui.no_matching_series_found');
   }
 
   return (
     <section
       className="list__container container"
       aria-busy={loading}
-      aria-label="Series results"
+      aria-label={i18n.t('ui.series_results')}
     >
       <div className="list__summary" aria-live="polite">
         <p ref={countRef} tabIndex={-1} className="list__loaded">
-          {loading ? 'Loading more results... ' : ''}
-          {Math.min(visible, items.length)} results loaded
+          {loading ? i18n.t('ui.loading_more_results') : ''}
+          {formatNumber(Math.min(visible, items.length))}{' '}
+          {i18n.t('ui.results_loaded')}
         </p>
       </div>
-      {year && <p className="list__context">First-air year: {year}</p>}
+      {year && (
+        <p className="list__context">
+          {i18n.t('ui.first_air_year')} {year}
+        </p>
+      )}
       {!loading && items.length === 0 && <p role="status">{emptyMessage}</p>}
       <div className="list__items">
         {items.slice(0, visible).map((item) => {
@@ -156,7 +167,7 @@ export default function UnifiedList({
               }
             }}
           >
-            {loading ? 'Loading more...' : buttonLabel}
+            {loading ? i18n.t('ui.loading_more_label') : buttonLabel}
           </button>
         </div>
       )}

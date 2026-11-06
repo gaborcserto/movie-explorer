@@ -6,6 +6,8 @@ import type {
   PersonFilmographyEntry,
 } from '@movie-explorer/contracts';
 
+import { i18n } from '../../../i18n';
+
 export type FilmographyEntry =
   | PersonFilmographyEntry
   | CombinedFilmographyEntry;
@@ -224,7 +226,7 @@ export function getFilmographyRoles(
       return '';
     }
 
-    return `${count} ${count === 1 ? 'episode' : 'episodes'}`;
+    return i18n.t('messages.episodes', { count });
   };
 
   if (view === 'acting' && isSeries && movie.actingRoles?.length) {

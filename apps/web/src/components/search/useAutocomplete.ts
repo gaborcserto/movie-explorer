@@ -3,11 +3,15 @@ import type { KeyboardEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import type { SearchSuggestion } from '@movie-explorer/contracts';
 
+import usePreferencesStore from '../../features/preferences/preferencesStore';
+import { i18n } from '../../i18n';
 import { isCancelledError } from '../../util/errorPresentation';
 import { getSearchSuggestions } from '../../util/apiUtils';
 import { mediaPath } from '../../util/seriesRoutes';
 
 export default function useAutocomplete(committedQuery = '', enabled = true) {
+  const guestPreferences = usePreferencesStore((state) => state.preferences);
+
   const [query, setQuery] = useState(committedQuery);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [open, setOpen] = useState(false);
@@ -23,6 +27,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
   const [identity, setIdentity] = useState({
     committedQuery,
     locationKey: location.key,
+    guestPreferences,
   });
 
   const dismiss = () => {
@@ -35,11 +40,22 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
   };
 
   if (
+    identity.guestPreferences !== guestPreferences ||
     identity.committedQuery !== committedQuery ||
     identity.locationKey !== location.key
   ) {
-    setIdentity({ committedQuery, locationKey: location.key });
-    setQuery(committedQuery);
+    setIdentity({
+      committedQuery,
+      locationKey: location.key,
+      guestPreferences,
+    });
+
+    if (
+      identity.committedQuery !== committedQuery ||
+      identity.locationKey !== location.key
+    ) {
+      setQuery(committedQuery);
+    }
     setSuggestions([]);
     setOpen(false);
     setActive(-1);
@@ -64,7 +80,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
         return;
       }
 
-      setMessage('Loading suggestions…');
+      setMessage(i18n.t('ui.loading_suggestions'));
 
       try {
         const response = await getSearchSuggestions(text, controller.signal);
@@ -88,11 +104,14 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
         setOpen(items.length > 0);
         setActive(-1);
         const emptyMessage = partial
-          ? 'Some suggestions unavailable. Press Enter to search.'
-          : 'No suggestions found. Press Enter to search.';
+          ? i18n.t('ui.some_suggestions_unavailable_press_enter_to_search')
+          : i18n.t('ui.no_suggestions_found_press_enter_to_search');
         setMessage(
           items.length
-            ? `${items.length} suggestions available. Use arrow keys to navigate.${partial ? ' Some suggestions unavailable.' : ''}`
+            ? i18n.t('messages.suggestions', {
+                count: items.length,
+                partial: partial ? i18n.t('messages.partialSuggestions') : '',
+              })
             : emptyMessage
         );
       } catch (error: unknown) {
@@ -108,7 +127,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
         setActive(-1);
         setSuggestions([]);
         setOpen(false);
-        setMessage('Suggestions unavailable. Press Enter to search.');
+        setMessage(i18n.t('ui.suggestions_unavailable_press_enter_to_search'));
       }
     }, 300);
 
@@ -116,7 +135,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [query, committedQuery, enabled, location.key]);
+  }, [query, committedQuery, enabled, location.key, guestPreferences]);
 
   useEffect(() => {
     const outside = (event: MouseEvent) => {
@@ -131,7 +150,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
     document.addEventListener('mousedown', outside);
 
     return () => document.removeEventListener('mousedown', outside);
-  }, []);
+  }, [guestPreferences]);
 
   useEffect(() => {
     if (open && active >= 0) {
@@ -139,7 +158,7 @@ export default function useAutocomplete(committedQuery = '', enabled = true) {
         .getElementById(`${listId}-${active}`)
         ?.scrollIntoView?.({ block: 'nearest' });
     }
-  }, [active, open, listId]);
+  }, [active, open, listId, guestPreferences]);
 
   const edit = (value: string) => {
     dismiss();

@@ -1,5 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import type { CreditPerson } from '@movie-explorer/contracts';
+
+import { i18n } from '../../../i18n';
 
 export default function EpisodeCrew({
   people,
@@ -9,6 +12,8 @@ export default function EpisodeCrew({
     jobs: string[];
   })[];
 }) {
+  useTranslation();
+
   if (people.length === 0) {
     return null;
   }
@@ -16,7 +21,7 @@ export default function EpisodeCrew({
   const departments = new Map<string, typeof people>();
 
   people.forEach((person) => {
-    const department = person.department?.trim() || 'Other';
+    const department = person.department?.trim() || i18n.t('ui.other');
     const departmentPeople = departments.get(department) ?? [];
 
     departmentPeople.push(person);

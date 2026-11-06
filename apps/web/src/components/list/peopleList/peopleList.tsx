@@ -1,16 +1,18 @@
+import { useTranslation } from 'react-i18next';
 import { useCallback, useLayoutEffect } from 'react';
 import type {
   PersonListResponse,
   PersonSummary,
 } from '@movie-explorer/contracts';
 
+import { formatNumber } from '../../../i18n/format';
+import { i18n } from '../../../i18n';
 import presentApiError from '../../../util/errorPresentation';
 import { getPeople } from '../../../util/apiUtils';
 import Card from '../../card';
 import { ResultsSkeleton, CardSkeletons } from '../../skeleton';
 import Error from '../../../layouts/error';
 import { useResultHistory, useSearchHistory } from '../useSearchHistory';
-
 import usePaginatedResults from '../hooks/usePaginatedResults';
 
 const peopleItems = (response: PersonListResponse) => response.people;
@@ -18,6 +20,8 @@ const peopleItems = (response: PersonListResponse) => response.people;
 const personKey = (person: PersonSummary) => person.id;
 
 export default function PeopleList({ query }: { query: string }) {
+  useTranslation();
+
   const history = useSearchHistory();
   const { restored, save } = useResultHistory(history?.people, query);
 
@@ -54,7 +58,7 @@ export default function PeopleList({ query }: { query: string }) {
         title={presentApiError(error)?.heading}
         message={presentApiError(error)?.description ?? ''}
         pending={loading}
-        actionLabel="Try again"
+        actionLabel={i18n.t('ui.try_again')}
         onAction={() => load(1)}
       />
     );
@@ -63,26 +67,29 @@ export default function PeopleList({ query }: { query: string }) {
   const more =
     data &&
     (visible < people.length || data.page < Math.min(data.totalPages, 500));
-  const buttonLabel = moreError ? 'Try again' : 'Load more';
+  const buttonLabel = moreError
+    ? i18n.t('ui.try_again')
+    : i18n.t('ui.load_more');
   let emptyMessage = query
-    ? `No people found for "${query}".`
-    : 'No people available.';
+    ? i18n.t('messages.noPeople', { query })
+    : i18n.t('ui.no_people_available');
 
   if (data?.totalResults) {
     emptyMessage = more
-      ? 'No matching persons yet. Load more to continue.'
-      : 'No matching persons found.';
+      ? i18n.t('ui.no_matching_persons_yet_load_more_to_continue')
+      : i18n.t('ui.no_matching_persons_found');
   }
 
   return (
     <section
       className="list__container container"
-      aria-label="People results"
+      aria-label={i18n.t('ui.people_results')}
       aria-busy={loading}
     >
       <div className="list__summary" aria-live="polite">
         <p className="list__loaded">
-          {Math.min(visible, people.length)} people loaded
+          {formatNumber(Math.min(visible, people.length))}{' '}
+          {i18n.t('ui.people_loaded')}
         </p>
       </div>
       {!loading && people.length === 0 && <p role="status">{emptyMessage}</p>}
@@ -120,7 +127,7 @@ export default function PeopleList({ query }: { query: string }) {
               }
             }}
           >
-            {loading ? 'Loading more...' : buttonLabel}
+            {loading ? i18n.t('ui.loading_more_label') : buttonLabel}
           </button>
         </div>
       )}

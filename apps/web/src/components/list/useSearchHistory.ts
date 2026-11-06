@@ -5,7 +5,6 @@ import {
   useLayoutEffect,
   useState,
 } from 'react';
-
 import { useLocation } from 'react-router';
 import type {
   MovieListResponse,
@@ -16,6 +15,7 @@ import type {
   SearchResult,
 } from '@movie-explorer/contracts';
 
+import usePreferencesStore from '../../features/preferences/preferencesStore';
 import { readFilters } from '../filter/filterState';
 
 export type MovieSnapshot = {
@@ -72,8 +72,14 @@ export function useResultHistory<T>(
   signature: string
 ) {
   const location = useLocation();
-  const key = `${location.key}:${signature}`;
-  const [restored] = useState(() => cache?.get(key));
+  const preferences = usePreferencesStore((state) => state.preferences);
+  const locale =
+    preferences.language === 'en-US' && preferences.region === 'US'
+      ? ''
+      : `${preferences.language}:${preferences.region}:`;
+  const key = `${locale}${location.key}:${signature}`;
+  const [entry] = useState(() => ({ key, snapshot: cache?.get(key) }));
+  const restored = entry.key === key ? entry.snapshot : undefined;
 
   const save = useCallback(
     (snapshot: T | undefined) => {

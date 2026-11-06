@@ -1,3 +1,6 @@
+import { useTranslation } from 'react-i18next';
+
+import { i18n } from '../../i18n';
 import Skeleton, { SkeletonRegion } from './skeleton';
 
 export interface CardSkeletonsProps {
@@ -19,6 +22,8 @@ export interface DetailHeroSkeletonProps {
 }
 
 export function CardSkeletons({ count = 10 }: CardSkeletonsProps) {
+  useTranslation();
+
   return Array.from({ length: count }, (_, index) => (
     <div className="card skeleton-card" aria-hidden="true" key={index}>
       <Skeleton className="skeleton-card__poster" radius={4} />
@@ -32,8 +37,10 @@ export function CardSkeletons({ count = 10 }: CardSkeletonsProps) {
 
 export function ResultsSkeleton({
   className = 'list__container container',
-  label = 'Loading results',
+  label = i18n.t('ui.loading_results'),
 }: ResultsSkeletonProps) {
+  useTranslation();
+
   return (
     <SkeletonRegion className={className} label={label}>
       <div className="list__summary">
@@ -50,8 +57,13 @@ export function SectionSkeleton({
   label,
   portraits = false,
 }: SectionSkeletonProps) {
+  useTranslation();
+
   return (
-    <SkeletonRegion label={`Loading ${label}`} className="section-skeleton">
+    <SkeletonRegion
+      label={i18n.t('messages.loadingLabel', { label })}
+      className="section-skeleton"
+    >
       <Skeleton width={150} height={24} />
       <div className="section-skeleton__items">
         {Array.from({ length: portraits ? 6 : 3 }, (_, index) => (
@@ -73,8 +85,10 @@ export function SectionSkeleton({
 }
 
 export function DetailHeroSkeleton({
-  label = 'Loading details',
+  label = i18n.t('ui.loading_details'),
 }: DetailHeroSkeletonProps) {
+  useTranslation();
+
   return (
     <SkeletonRegion label={label}>
       <div className="movie-details__container">
@@ -124,9 +138,11 @@ export function DetailHeroSkeleton({
 }
 
 export function DetailSectionsSkeleton() {
+  useTranslation();
+
   return (
     <div aria-hidden="true">
-      <SectionSkeleton label="cast and crew" portraits />
+      <SectionSkeleton label={i18n.t('ui.cast_and_crew_label')} portraits />
       <SectionSkeleton label="media" />
     </div>
   );

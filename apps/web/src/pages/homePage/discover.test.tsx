@@ -361,7 +361,7 @@ describe('Discover page', () => {
     );
 
     const providerTabs = await screen.findByRole('tablist', {
-      name: 'Streaming providers available in Hungary',
+      name: 'Streaming providers available in the selected region',
     });
     const skyShowtimeTab = within(providerTabs).getByRole('tab', {
       name: 'SkyShowtime',
@@ -371,7 +371,7 @@ describe('Discover page', () => {
     expect(skyShowtimeTab).toHaveAttribute('aria-selected', 'true');
     expect(getStreamingProviderSection).toHaveBeenCalledWith(
       102,
-      'HU',
+      'US',
       1,
       expect.any(AbortSignal)
     );
@@ -609,7 +609,7 @@ describe('Discover page', () => {
     renderDiscover();
 
     expect(getStreamingProviders).toHaveBeenCalledWith(
-      'HU',
+      'US',
       expect.any(AbortSignal)
     );
     expect(
@@ -621,7 +621,7 @@ describe('Discover page', () => {
     );
 
     const providerTabs = screen.getByRole('tablist', {
-      name: 'Streaming providers available in Hungary',
+      name: 'Streaming providers available in the selected region',
     });
     const netflixTab = within(providerTabs).getByRole('tab', {
       name: 'Netflix',
@@ -646,7 +646,7 @@ describe('Discover page', () => {
     renderDiscover();
 
     const providerTabs = await screen.findByRole('tablist', {
-      name: 'Streaming providers available in Hungary',
+      name: 'Streaming providers available in the selected region',
     });
     const appleTab = within(providerTabs).getByRole('tab', {
       name: 'Apple TV+',
@@ -697,7 +697,7 @@ describe('Discover page', () => {
       expect(providerTabs.scrollLeft).toBe(140);
       expect(getStreamingProviderSection).toHaveBeenCalledWith(
         106,
-        'HU',
+        'US',
         1,
         expect.any(AbortSignal)
       );
@@ -720,7 +720,7 @@ describe('Discover page', () => {
     renderDiscover();
 
     const providerTabs = await screen.findByRole('tablist', {
-      name: 'Streaming providers available in Hungary',
+      name: 'Streaming providers available in the selected region',
     });
 
     expect(within(providerTabs).getAllByRole('tab')).toHaveLength(1);
@@ -732,13 +732,15 @@ describe('Discover page', () => {
     );
 
     expect(
-      screen.getByText('Providers not listed for Hungary are omitted.')
+      screen.getByText(
+        'Providers not listed for the selected region are omitted.'
+      )
     ).toBeInTheDocument();
 
     await waitFor(() =>
       expect(getStreamingProviderSection).toHaveBeenCalledWith(
         901,
-        'HU',
+        'US',
         1,
         expect.any(AbortSignal)
       )

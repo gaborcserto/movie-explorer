@@ -42,6 +42,132 @@ Set `TMDB_ACCESS_TOKEN` in `apps/api/.env`. `OMDB_API_KEY` is optional and enabl
 
 Start both apps with `npm run dev`. The web app runs at [http://localhost:5173](http://localhost:5173), the API at [http://localhost:4000](http://localhost:4000), and Swagger UI at [http://localhost:4000/api-docs](http://localhost:4000/api-docs).
 
+## Localization and guest preferences
+
+The header's globe control selects English (`en-US`) or Hungarian (`hu-HU`)
+and an independent streaming region. New visitors start with English and the
+US region; browser language, IP address, and location do not select defaults.
+Changing either preference applies immediately without a page reload or route
+change. The compact region selector offers thirteen common markets, including
+the US and Hungary, and also displays any valid restored region.
+
+### Translation resources and formatting
+
+i18next and react-i18next load static JSON resources from
+`apps/web/src/locales/en.json` and `hu.json`. Resources are bundled with the
+frontend, initialize before rendering, and work with lazy React Router routes.
+There is no runtime translation service or translation API. Hungarian copy is
+a development draft available for language review.
+
+Keys are grouped under navigation, actions, loading, UI, messages, genres,
+media types, statuses, and settings. TypeScript checks keys against the English
+resource. Use `useTranslation()` for reactive components, named `{{values}}`
+for interpolation, and `count` with `_one`/`_other` keys for plurals. Automated
+tests require matching English/Hungarian leaf keys and interpolation parameters.
+The current catalogs contain 514 keys each, including accessible labels and
+dynamic status messages.
+Missing or empty Hungarian values fall back to English. Dates, numbers,
+ratings, currency, language names, and region names use locale-aware `Intl`
+formatting; source values, currency codes, and URL filter identifiers remain
+unchanged. CSS overlay copy also comes from the JSON resources.
+
+Intentional untranslated content includes Movie Explorer and provider brands,
+people/title names, user search text, saved Library metadata snapshots, license
+identifiers, language endonyms (English/Magyar), and technical identifiers.
+TMDB job, department, character, organization and place names remain provider
+data where that endpoint does not supply localized values. Static HTML/social
+metadata and the favicon's brand description remain English. These are not
+missing Hungarian application UI keys.
+
+### API localization and fallback
+
+The canonical content locale is the optional, validated `language` query
+parameter on application API requests. Only `en-US` and `hu-HU` are accepted;
+omitting it uses `en-US`. `watchRegion` is an independent uppercase two-letter
+market code and defaults to `US`. Swagger documents both parameters. Browser
+`Accept-Language` headers remain compatible and do not override preferences.
+
+```text
+GET /api/v1/movies/550?language=hu-HU&watchRegion=US
+GET /api/v1/series/1396?language=en-US&watchRegion=HU
+GET /api/v1/discover/providers?language=hu-HU&region=US
+```
+
+Streaming Discovery retains its existing explicit `region` parameter (and its
+legacy API default of `HU`) for consumer compatibility. The frontend always
+sends the selected market to those endpoints. Detail watch-provider responses
+select `watchRegion`; language does not select the streaming market.
+
+Nest's HTTP boundary validates preferences and uses Node `AsyncLocalStorage`
+to isolate each asynchronous request without changing singleton provider
+lifetimes. Applicable TMDB movie, series, season, episode, person, search,
+discovery, recommendation and genre requests receive the selected language.
+External-ID and per-title watch-provider endpoints are language-neutral.
+Regional release and streaming queries use their endpoint-specific region
+parameters. Images retain selected-language, English and language-neutral
+variants; thumbnail and original-image URLs retain their existing behavior.
+
+Empty/null Hungarian overview or biography fields can trigger **one** English
+detail request within the remaining request-time budget. Only missing copy is
+filled, with matching identities; valid Hungarian fields remain intact. A
+season/series response can reuse that same fallback for embedded episodes or
+seasons, without per-item requests. Fallback failure preserves the localized
+response and existing nullability. Search/discovery/recommendation lists do
+not fetch English details per result: missing list descriptions remain absent
+until details are opened. All descriptions still come from TMDB.
+
+Discovery, recommendation pools, collection responses and their in-flight
+requests include locale/region in cache identity. Genre caches include language;
+stable English genre filter identifiers are resolved independently of display
+labels. External-ID caches stay shared. Frontend history/discovery caches
+include preference identity, and preference changes cancel obsolete requests,
+clear obsolete visible resource state, and reload affected resources through
+the existing hooks. Pagination, URL filters and Back/Forward behavior remain
+under React Router.
+
+### Persistence, AWS and future accounts
+
+The separate `movie-explorer.preferences.v1` localStorage key stores only
+`{ "language": "en-US", "region": "US" }`. A small storage boundary validates
+saved data and safely defaults when JSON, values, or storage access are invalid.
+If saving fails, preferences still apply in memory and the settings panel
+announces the limitation. Library keys and collection memberships are preserved.
+Saved title snapshots retain their captured language until normal detail
+refreshes update them; switching language does not fetch every Library item.
+
+Preference state is independent of the localStorage adapter. Future optional
+account storage can reuse the same shared contract; OAuth, databases, migration,
+account synchronization and list merging are deferred.
+
+Bundled resources need no Lambda filesystem writes, workers, authentication,
+database, cloud service, or runtime translation calls. Existing CloudFront API
+behaviors disable caching and forward query parameters through the same-origin
+API Gateway/Nest Lambda route. No infrastructure or domain changes are required.
+
+This SPA does not publish separately indexed language pages. Client-side titles
+and detail metadata can change with preferences, while static HTML and initial
+Open Graph remain English. Existing URLs have no language prefixes or hreflang
+variants, so language-specific indexing and social previews are not guaranteed.
+A future localized SEO design is separate from this phase; no SSR migration is
+included.
+
+### Localization verification
+
+The completed milestone checks passed 1,161 frontend tests (101 files), 748 API
+unit tests (45 suites), 351 API E2E tests (9 suites), 34 infrastructure tests,
+and three Lambda artifact/smoke tests. Root lint, typecheck, coverage and
+production build, readability validation, formatter stability, and whitespace
+checks passed. The build retains a non-blocking warning for the approximately
+551 KB minified main frontend chunk (169 KB gzip).
+
+Headless Edge checks covered English/Hungarian selection, independent regions,
+restoration after reload, preserved URL filters, Library navigation and browser
+Back/Forward, at configured widths of 320, 360, 390, 768 and 1440 pixels. No
+document overflow or JavaScript exceptions were observed. Browser API responses
+were mocked; live TMDB content and manual assistive-technology checks were not
+verified. Hungarian copy remains available for human language review. No AWS
+deployment was performed.
+
 ## Development and verification
 
 Run workspace tasks from the root:

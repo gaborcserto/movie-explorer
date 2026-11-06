@@ -26,6 +26,7 @@ import type {
   RecommendationResponse,
 } from '@movie-explorer/contracts';
 
+import { LocalizationQuery } from '../localization.dto';
 import {
   PersonalizedRecommendationBody,
   PersonalizedRecommendationResponseDto,
@@ -65,9 +66,20 @@ export class RecommendationsController {
   personalize(
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
     body: PersonalizedRecommendationBody,
-    @Query() query: Record<string, unknown>,
+    @Query(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
+    query: LocalizationQuery,
   ): Promise<PersonalizedRecommendationResponse> {
-    if (Object.keys(query).length) {
+    if (
+      Object.keys(query).some(
+        (key) => key !== 'language' && key !== 'watchRegion',
+      )
+    ) {
       throw new BadRequestException(
         'Recommendation query parameters are not supported',
       );
@@ -86,9 +98,20 @@ export class RecommendationsController {
   @ApiOkResponse({ type: RecommendationResponseDto })
   find(
     @Param() params: RecommendationParams,
-    @Query() query: Record<string, unknown>,
+    @Query(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
+    query: LocalizationQuery,
   ): Promise<RecommendationResponse> {
-    if (Object.keys(query).length) {
+    if (
+      Object.keys(query).some(
+        (key) => key !== 'language' && key !== 'watchRegion',
+      )
+    ) {
       throw new BadRequestException(
         'Recommendation query parameters are not supported',
       );

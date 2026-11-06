@@ -67,8 +67,10 @@
     max-height: min(40vh, 320px);
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 4px;
+    padding: 4px 8px 4px 4px;
     position: fixed;
+    scrollbar-color: $grey-1 $grey-3;
+    scrollbar-width: thin;
     transform: translateY(-8px);
     transform-origin: top center;
     transition:
@@ -79,6 +81,25 @@
     opacity: 0;
     pointer-events: none;
     z-index: 120;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: $grey-3;
+      border-radius: 10px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: $grey-1;
+      border: 1px solid $grey-3;
+      border-radius: 10px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: $red-1;
+    }
 
     &[data-placement='top'] {
       transform: translateY(8px);

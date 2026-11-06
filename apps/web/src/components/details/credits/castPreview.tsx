@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import type { MovieDirector } from '@movie-explorer/contracts';
 
+import { i18n } from '../../../i18n';
 import MovieImage from '../../utility/customImage';
 import { getDisplaySrcSet } from '../../../util/imageSizing';
 
@@ -27,13 +29,18 @@ export default function CastPreview({
     wideDesktop: number;
   };
 }) {
+  useTranslation();
+
   const gridId = useId();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [baseVisibleCount, setBaseVisibleCount] = useState(initialVisibleCount);
   const [additionalCount, setAdditionalCount] = useState(0);
   const countRef = useRef<HTMLSpanElement>(null);
 
-  const pluralMemberLabel = memberLabel === 'cast' ? 'cast' : `${memberLabel}s`;
+  const pluralMemberLabel =
+    memberLabel === 'cast'
+      ? i18n.t('ui.cast').toLowerCase()
+      : i18n.t('nouns.guest', { count: 2 });
 
   useEffect(() => {
     if (
@@ -86,15 +93,31 @@ export default function CastPreview({
     <>
       <div className="media-preview__summary">
         <span ref={countRef} role="status" tabIndex={-1} className="cast-count">
-          Showing {visible.length} of {members.length}{' '}
-          {memberLabel === 'cast' ? 'cast members' : `${memberLabel}s`}
+          {i18n.t(
+            memberLabel === 'cast'
+              ? 'messages.shownCount'
+              : 'messages.guestSummary',
+            {
+              shown: visible.length,
+              count: members.length,
+              kind: i18n.t(
+                memberLabel === 'cast' ? 'nouns.cast' : 'nouns.guest',
+                { count: members.length }
+              ),
+            }
+          )}
         </span>
       </div>
       <div
         className="cast-scroll"
         ref={scrollRef}
         role="region"
-        aria-label={`${memberLabel} members`}
+        aria-label={i18n.t('messages.memberRegion', {
+          members:
+            memberLabel === 'cast'
+              ? i18n.t('ui.cast').toLowerCase()
+              : i18n.t('nouns.guest', { count: 1 }),
+        })}
       >
         <div className="cast-grid" id={gridId} role="list">
           {visible.map((member) => {
@@ -144,7 +167,9 @@ export default function CastPreview({
           <button
             type="button"
             className="btn btn--outline btn--action btn--mobile-full"
-            aria-label={`Show more ${pluralMemberLabel}`}
+            aria-label={i18n.t('messages.moreMembers', {
+              members: pluralMemberLabel,
+            })}
             aria-controls={gridId}
             aria-expanded={visibleCount > initialVisibleCount}
             onClick={() => {
@@ -159,14 +184,16 @@ export default function CastPreview({
               }
             }}
           >
-            Show more
+            {i18n.t('ui.show_more')}
           </button>
         )}
         {additionalCount > 0 && (
           <button
             type="button"
             className="btn btn--outline btn--action btn--mobile-full"
-            aria-label={`Show less ${pluralMemberLabel}`}
+            aria-label={i18n.t('messages.lessMembers', {
+              members: pluralMemberLabel,
+            })}
             aria-controls={gridId}
             aria-expanded
             onClick={() => {
@@ -174,7 +201,7 @@ export default function CastPreview({
               countRef.current?.focus({ preventScroll: true });
             }}
           >
-            Show less
+            {i18n.t('ui.show_less')}
           </button>
         )}
       </div>

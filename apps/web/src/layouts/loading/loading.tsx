@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Skeleton, SkeletonRegion } from '../../components/skeleton';
 
@@ -8,6 +9,8 @@ interface LoadingProps {
 }
 
 function Loading({ className, title }: LoadingProps) {
+  const { t } = useTranslation();
+
   useEffect(() => {
     if (!title) {
       return undefined;
@@ -27,7 +30,7 @@ function Loading({ className, title }: LoadingProps) {
         <div className="movie-details container">
           <SkeletonRegion
             className="movie-details__container movie-details__container--loading"
-            label={title ?? 'Loading content'}
+            label={title ?? t('loading.content')}
           >
             <div className="skeleton-copy">
               <Skeleton height={32} width="60%" />

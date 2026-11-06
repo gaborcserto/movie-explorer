@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { MovieVideo } from '@movie-explorer/contracts';
 
+import { i18n } from '../../../i18n';
 import MovieImage from '../../utility/customImage';
 import { Lightbox } from '../../lightbox';
 
@@ -53,6 +55,8 @@ function isSupportedVideo(entry: {
 }
 
 function VideoPreviewContent({ videos, title }: Omit<Props, 'resetKey'>) {
+  useTranslation();
+
   const gridId = useId();
   const [visibleVideoCount, setVisibleVideoCount] = useState(4);
   const [selectedVideo, setSelectedVideo] = useState<number | null>(null);
@@ -84,27 +88,30 @@ function VideoPreviewContent({ videos, title }: Omit<Props, 'resetKey'>) {
     <>
       <div className="media-preview__summary">
         <span>
-          {videos.length} {videos.length === 1 ? 'video' : 'videos'} available
+          {i18n.t('messages.availableCount', {
+            count: videos.length,
+            kind: i18n.t('nouns.videos', { count: videos.length }),
+          })}
         </span>
         {visibleVideoCount < videos.length && (
           <button
             type="button"
             className="btn btn--outline btn--mobile-full"
             aria-controls={gridId}
-            aria-label="Show more videos"
+            aria-label={i18n.t('ui.show_more_videos')}
             onClick={() => {
               focusLastVideo.current = visibleVideoCount + 4 >= videos.length;
               setVisibleVideoCount((count) => count + 4);
             }}
           >
-            Show more
+            {i18n.t('ui.show_more')}
           </button>
         )}
       </div>
       <div className="video-grid" id={gridId}>
         {videoEntries.slice(0, visibleVideoCount).map((entry) => {
           const { video, videoId } = entry;
-          const label = video.name || 'Video';
+          const label = video.name || i18n.t('ui.video');
           const playerIndex = videoId
             ? supportedVideos.findIndex(
                 (supportedVideo) => supportedVideo === entry
@@ -126,7 +133,7 @@ function VideoPreviewContent({ videos, title }: Omit<Props, 'resetKey'>) {
               <button
                 type="button"
                 className="video-tile"
-                aria-label={`Play ${label}`}
+                aria-label={i18n.t('messages.playVideo', { label })}
                 key={`${video.url}-${video.name}`}
                 ref={
                   entry === videoEntries[lastVisibleVideoIndex]
@@ -171,7 +178,10 @@ function VideoPreviewContent({ videos, title }: Omit<Props, 'resetKey'>) {
               tabIndex={-1}
             >
               {content}
-              <p>Playback unavailable for {video.site || 'this site'}.</p>
+              <p>
+                {i18n.t('ui.playback_unavailable_for')}{' '}
+                {video.site || i18n.t('ui.this_site')}.
+              </p>
             </div>
           );
         })}
@@ -190,5 +200,7 @@ function VideoPreviewContent({ videos, title }: Omit<Props, 'resetKey'>) {
 }
 
 export default function VideoPreview({ resetKey, ...props }: Props) {
+  useTranslation();
+
   return <VideoPreviewContent key={resetKey} {...props} />;
 }

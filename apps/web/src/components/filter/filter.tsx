@@ -1,13 +1,18 @@
+import { useTranslation } from 'react-i18next';
+
 import './filter.scss';
 
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router';
 import { FaSliders } from 'react-icons/fa6';
 
+import { i18n } from '../../i18n';
 import { normalizeFilters, readFilters, writeFilters } from './filterState';
 import FilterPanel from './filterPanel';
 
 export default function Filter() {
+  useTranslation();
+
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const { searchQuery } = useParams();
@@ -70,7 +75,9 @@ export default function Filter() {
     <section
       className="movie-filters"
       aria-label={
-        series ? 'Series filters and sorting' : 'Movie filters and sorting'
+        series
+          ? i18n.t('ui.series_filters_and_sorting')
+          : i18n.t('ui.movie_filters_and_sorting')
       }
     >
       <div className="movie-filters__anchor">
@@ -89,11 +96,11 @@ export default function Filter() {
           }}
         >
           <FaSliders aria-hidden="true" />
-          Filters & Sort
+          {i18n.t('ui.filters_sort')}
           {count > 0 && (
             <span
               className="movie-filters__count"
-              aria-label={`${count} active filters`}
+              aria-label={i18n.t('messages.activeFilters', { count })}
             >
               {count}
             </span>

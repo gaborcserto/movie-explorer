@@ -1,7 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { useCallback } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa6';
 
+import { formatDate } from '../../i18n/format';
+import { i18n } from '../../i18n';
 import {
   getEpisode,
   getSeason,
@@ -35,6 +38,8 @@ function EpisodeDetails({
   seasonText: string;
   episodeText: string;
 }) {
+  useTranslation();
+
   const id = parseDetailId(idText);
   const seasonNumber = parseSeasonNumber(seasonText);
   const episodeNumber = parseDetailId(episodeText);
@@ -129,7 +134,7 @@ function EpisodeDetails({
 
   return (
     <SeriesLayout
-      title={episode?.title ?? 'Episode details'}
+      title={episode?.title ?? i18n.t('ui.episode_details')}
       hero={
         episode ? (
           <SeriesHero
@@ -147,7 +152,7 @@ function EpisodeDetails({
                 <SeriesBreadcrumbs>
                   <li>
                     <Link className="text-link" to={seriesPath(idText)}>
-                      {series?.title ?? `Series ${id}`}
+                      {series?.title ?? i18n.t('messages.seriesNumber', { id })}
                     </Link>
                   </li>
                   <li>
@@ -160,27 +165,33 @@ function EpisodeDetails({
                     </Link>
                   </li>
                   <li>
-                    <span aria-current="page">Episode {episodeNumber}</span>
+                    <span aria-current="page">
+                      {i18n.t('ui.episode')} {episodeNumber}
+                    </span>
                   </li>
                 </SeriesBreadcrumbs>
               )}
               {(episode.airDate || episode.runtimeMinutes !== null) && (
                 <p
                   className="series-detail__metadata"
-                  aria-label="Episode details"
+                  aria-label={i18n.t('ui.episode_details')}
                 >
-                  {episode.airDate}
+                  {episode.airDate ? formatDate(episode.airDate) : null}
                   {episode.airDate && episode.runtimeMinutes !== null && ' · '}
                   {episode.runtimeMinutes !== null &&
-                    `${episode.runtimeMinutes} min`}
+                    i18n.t('messages.minutes', {
+                      count: episode.runtimeMinutes,
+                    })}
                 </p>
               )}
             </div>
             <section className="movie-details__section">
-              <h2 className="movie-details__section-title">Overview</h2>
+              <h2 className="movie-details__section-title">
+                {i18n.t('ui.overview')}
+              </h2>
               <p className="movie-details__overview">
                 {episode.description?.trim() ||
-                  'No episode overview available.'}
+                  i18n.t('ui.no_episode_overview_available')}
               </p>
             </section>
           </SeriesHero>
@@ -191,17 +202,23 @@ function EpisodeDetails({
     >
       {episode && (
         <>
-          <nav aria-label="Episode navigation" className="series-neighbors">
+          <nav
+            aria-label={i18n.t('ui.episode_navigation')}
+            className="series-neighbors"
+          >
             {previous && (
               <Link
                 className="series-neighbors__previous"
                 to={seriesPath(id, seasonNumber, previous.episodeNumber)}
                 state={{ season, series }}
-                aria-label={`Previous: ${previous.episodeNumber}. ${previous.title}`}
+                aria-label={i18n.t('messages.previousEpisode', {
+                  number: previous.episodeNumber,
+                  title: previous.title,
+                })}
               >
                 <span>
                   <FaChevronLeft aria-hidden="true" />
-                  Previous Episode
+                  {i18n.t('ui.previous_episode')}
                 </span>
                 <strong>
                   {previous.episodeNumber}. {previous.title}
@@ -213,10 +230,13 @@ function EpisodeDetails({
                 className="series-neighbors__next"
                 to={seriesPath(id, seasonNumber, next.episodeNumber)}
                 state={{ season, series }}
-                aria-label={`Next: ${next.episodeNumber}. ${next.title}`}
+                aria-label={i18n.t('messages.nextEpisode', {
+                  number: next.episodeNumber,
+                  title: next.title,
+                })}
               >
                 <span>
-                  Next Episode
+                  {i18n.t('ui.next_episode')}
                   <FaChevronRight aria-hidden="true" />
                 </span>
                 <strong>
@@ -227,14 +247,14 @@ function EpisodeDetails({
           </nav>
           {parent.error !== undefined && (
             <p role="status">
-              Episode navigation unavailable.{' '}
+              {i18n.t('ui.episode_navigation_unavailable')}{' '}
               <button
                 type="button"
                 className="btn btn--outline btn--action"
                 onClick={parent.retry}
                 disabled={parent.pending}
               >
-                Retry season context
+                {i18n.t('ui.retry_season_context')}
               </button>
             </p>
           )}
@@ -243,14 +263,16 @@ function EpisodeDetails({
             aria-labelledby="episode-credits-heading"
           >
             <div className="details-section__heading">
-              <h2 id="episode-credits-heading">Episode credits</h2>
+              <h2 id="episode-credits-heading">
+                {i18n.t('ui.episode_credits')}
+              </h2>
             </div>
             <div className="episode-credits">
               {(['cast', 'guestStars', 'crew'] as const).map((category) => {
                 const labels = {
-                  cast: 'Cast',
-                  guestStars: 'Guest stars',
-                  crew: 'Crew',
+                  cast: i18n.t('ui.cast'),
+                  guestStars: i18n.t('ui.guest_stars'),
+                  crew: i18n.t('ui.crew'),
                 };
                 const people = episode.credits[category];
 
@@ -276,16 +298,26 @@ function EpisodeDetails({
                     {episode.credits.sections[category].status ===
                       'available' &&
                       people.length === 0 && (
-                        <p>No {labels[category].toLowerCase()} listed.</p>
+                        <p>
+                          {i18n.t('messages.noneListed', {
+                            label: labels[category].toLowerCase(),
+                          })}
+                        </p>
                       )}
                     {episode.credits.sections[category].status ===
-                      'unavailable' && <p>{labels[category]} unavailable.</p>}
+                      'unavailable' && (
+                      <p>
+                        {i18n.t('messages.unavailable', {
+                          label: labels[category],
+                        })}
+                      </p>
+                    )}
                   </section>
                 );
               })}
             </div>
             <SectionRecovery
-              label="Episode credits"
+              label={i18n.t('ui.episode_credits')}
               availability={
                 Object.values(episode.credits.sections).some(
                   (section) => section.status === 'unavailable'
@@ -303,6 +335,8 @@ function EpisodeDetails({
 }
 
 export default function EpisodePage() {
+  useTranslation();
+
   const { id = '', seasonNumber = '', episodeNumber = '' } = useParams();
 
   return (

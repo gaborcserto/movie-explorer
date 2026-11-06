@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import type { CombinedFilmography } from '@movie-explorer/contracts';
 
+import { i18n } from '../../../i18n';
 import { CardRating } from '../../../components/card';
 import AnimatedSelect from '../../../components/animatedSelect';
 import MovieImage from '../../../components/utility/customImage';
@@ -20,9 +22,24 @@ import type { FilmographyView, FilmographyEntry } from './filmographyRules';
 
 const FILMOGRAPHY_BATCH_SIZE = 10;
 const filmographySortOptions = [
-  { value: 'newest', label: 'Newest first' },
-  { value: 'oldest', label: 'Oldest first' },
-  { value: 'title', label: 'Title A–Z' },
+  {
+    value: 'newest',
+    get label() {
+      return i18n.t('ui.newest_first');
+    },
+  },
+  {
+    value: 'oldest',
+    get label() {
+      return i18n.t('ui.oldest_first');
+    },
+  },
+  {
+    value: 'title',
+    get label() {
+      return i18n.t('ui.title_a_z');
+    },
+  },
 ];
 
 function FilmographyResults({
@@ -36,11 +53,12 @@ function FilmographyResults({
   role: string;
   combined: boolean;
 }) {
+  useTranslation();
+
   const [visibleCount, setVisibleCount] = useState(FILMOGRAPHY_BATCH_SIZE);
   const countRef = useRef<HTMLParagraphElement>(null);
 
   const visibleMovies = movies.slice(0, visibleCount);
-  const countLabel = combined ? 'title' : 'movie';
 
   return (
     <>
@@ -50,14 +68,19 @@ function FilmographyResults({
         className="filmography__count"
         role="status"
       >
-        Showing {visibleMovies.length} of {movies.length}{' '}
-        {movies.length === 1 ? countLabel : `${countLabel}s`}
+        {i18n.t('messages.shownCount', {
+          shown: visibleMovies.length,
+          count: movies.length,
+          kind: i18n.t(combined ? 'nouns.titles' : 'nouns.movies', {
+            count: movies.length,
+          }),
+        })}
       </p>
       {movies.length === 0 && (
         <p>
           {combined
-            ? 'No credits available for this selection.'
-            : 'No movie credits available.'}
+            ? i18n.t('ui.no_credits_available_for_this_selection')
+            : i18n.t('ui.no_movie_credits_available')}
         </p>
       )}
       <ul className="filmography__list">
@@ -85,7 +108,7 @@ function FilmographyResults({
                 <span className="filmography__title">{movie.title}</span>
                 {combined && (
                   <span className="filmography__media-type">
-                    {isSeries ? 'Series' : 'Movie'}
+                    {i18n.t(isSeries ? 'mediaTypes.tv' : 'mediaTypes.movie')}
                   </span>
                 )}
               </div>
@@ -138,7 +161,7 @@ function FilmographyResults({
               }
             }}
           >
-            Load more
+            {i18n.t('ui.load_more')}
           </button>
         </div>
       )}
@@ -157,6 +180,8 @@ export default function Filmography({
   recovery?: ReactNode;
   groups?: CombinedFilmography['groups'];
 }) {
+  useTranslation();
+
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedType = searchParams.get('personType');
   const partial =
@@ -181,21 +206,21 @@ export default function Filmography({
   );
   const query = searchParams.toString();
 
-  let emptyMessage = 'No movie credits available.';
+  let emptyMessage = i18n.t('ui.no_movie_credits_available');
 
   if (groups) {
     emptyMessage = partial
-      ? 'Credits for this selection are unavailable.'
-      : 'No credits available for this selection.';
+      ? i18n.t('ui.credits_for_this_selection_are_unavailable')
+      : i18n.t('ui.no_credits_available_for_this_selection');
   }
 
   const jobOptions = [
-    { value: '', label: 'All jobs' },
+    { value: '', label: i18n.t('ui.all_jobs') },
     ...roles.map((value) => ({
       value,
       label: value.startsWith('job:')
         ? value.slice(4)
-        : `${value.slice(11)} (department)`,
+        : i18n.t('messages.department', { department: value.slice(11) }),
     })),
   ];
 
@@ -222,13 +247,13 @@ export default function Filmography({
 
   return (
     <section className="filmography" aria-labelledby="filmography-heading">
-      <h2 id="filmography-heading">Filmography</h2>
+      <h2 id="filmography-heading">{i18n.t('ui.filmography')}</h2>
       {recovery}
       {groups && (
         <div
           className="filmography__media-tabs"
           role="group"
-          aria-label="Filmography media type"
+          aria-label={i18n.t('ui.filmography_media_type')}
         >
           {(['all', 'movie', 'tv'] as const).map((type) => (
             <button
@@ -239,7 +264,13 @@ export default function Filmography({
                 updateSelection('personType', type === 'all' ? '' : type)
               }
             >
-              {{ all: 'All', movie: 'Movies', tv: 'Series' }[type]}
+              {
+                {
+                  all: i18n.t('ui.all'),
+                  movie: i18n.t('ui.movies'),
+                  tv: i18n.t('ui.series'),
+                }[type]
+              }
             </button>
           ))}
         </div>
@@ -251,7 +282,7 @@ export default function Filmography({
               <div
                 className="filmography__views"
                 role="group"
-                aria-label="Filmography view"
+                aria-label={i18n.t('ui.filmography_view')}
               >
                 {hasActing && (
                   <button
@@ -260,7 +291,7 @@ export default function Filmography({
                     aria-pressed={view === 'acting'}
                     onClick={() => updateSelection('personView', 'acting')}
                   >
-                    Acting
+                    {i18n.t('ui.acting')}
                   </button>
                 )}
                 {hasCrew && (
@@ -270,15 +301,15 @@ export default function Filmography({
                     aria-pressed={view === 'crew'}
                     onClick={() => updateSelection('personView', 'crew')}
                   >
-                    Crew
+                    {i18n.t('ui.crew')}
                   </button>
                 )}
               </div>
               {view === 'crew' && (
                 <div className="filmography__field">
-                  <span>Job or department</span>
+                  <span>{i18n.t('ui.job_or_department')}</span>
                   <AnimatedSelect
-                    label="Job or department"
+                    label={i18n.t('ui.job_or_department')}
                     options={jobOptions}
                     value={role}
                     onChange={(value) => updateSelection('personRole', value)}
@@ -286,9 +317,9 @@ export default function Filmography({
                 </div>
               )}
               <div className="filmography__field">
-                <span>Sort filmography</span>
+                <span>{i18n.t('ui.sort_filmography')}</span>
                 <AnimatedSelect
-                  label="Sort filmography"
+                  label={i18n.t('ui.sort_filmography')}
                   options={filmographySortOptions}
                   className="filmography__sort-select"
                   value={sort}

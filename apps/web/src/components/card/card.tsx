@@ -1,8 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import { Fragment } from 'react';
 import { FaStar } from 'react-icons/fa6';
 import { Link, useSearchParams } from 'react-router';
 import type { MovieSummary } from '@movie-explorer/contracts';
 
+import { genreLabel, genreFilterValue } from '../../i18n/labels';
+import { i18n } from '../../i18n';
 import MovieImage from '../utility/customImage';
 import { getPosterDisplaySrcSet } from '../../util/imageSizing';
 import PersonalLibraryActions from '../../features/library/personalLibraryActions';
@@ -16,6 +19,8 @@ export function CardRating({
   rating: number | null | undefined;
   className?: string;
 }) {
+  useTranslation();
+
   if (
     typeof rating !== 'number' ||
     !Number.isFinite(rating) ||
@@ -28,10 +33,20 @@ export function CardRating({
   return (
     <p
       className={`${className} tmdb-rating`}
-      aria-label={`TMDB rating: ${rating.toFixed(1)} out of 10`}
+      aria-label={i18n.t('messages.cardRating', {
+        score: new Intl.NumberFormat(i18n.language, {
+          maximumFractionDigits: 1,
+          minimumFractionDigits: 1,
+        }).format(rating),
+      })}
     >
       <FaStar aria-hidden="true" />
-      <span>{rating.toFixed(1)}</span>
+      <span>
+        {new Intl.NumberFormat(i18n.language, {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        }).format(rating)}
+      </span>
     </p>
   );
 }
@@ -59,6 +74,8 @@ function Card({
   rating = movie.rating,
   onLibraryMembershipRemoved,
 }: CardProps) {
+  useTranslation();
+
   const { id, title, releaseDate, posterUrl, posterSrcSet, genres } = movie;
   const [searchParams] = useSearchParams();
 
@@ -109,22 +126,22 @@ function Card({
           >
             {genreNavigation
               ? genres.map((genre, index) => (
-                  <Fragment key={genre}>
+                  <Fragment key={genreLabel(genre)}>
                     {index > 0 && ', '}
                     <span>
                       <Link
                         to={`?${new URLSearchParams({
                           ...Object.fromEntries(searchParams),
-                          filter: genre.toLowerCase(),
+                          filter: genreFilterValue(genre),
                         }).toString()}`}
                         className="card__type__link"
                       >
-                        {genre}
+                        {genreLabel(genre)}
                       </Link>
                     </span>
                   </Fragment>
                 ))
-              : genres.join(', ')}
+              : genres.map(genreLabel).join(', ')}
           </p>
           {subtitle && <p className="card__subtitle">{subtitle}</p>}
         </div>
