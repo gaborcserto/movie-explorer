@@ -55,7 +55,7 @@ export class RecommendationsController {
   @ApiOperation({
     summary: 'Recommend titles using bounded Favorite IDs',
     description:
-      'At most three seeds, one Similar page each, up to three parallel calls with a six-second per-call ceiling. Favorites and Watched are excluded. Popular fills up to ten eligible titles. No final response cache or automatic retries. No preference logging or persistence. Unknown body fields and query parameters are rejected.',
+      'At most three seeds, one Similar page each with a six-second ceiling. Each seed also uses cached source metadata or one parallel lookup capped at 1.5 seconds (at most six concurrent upstream calls). Genre, rating confidence and source relevance determine stable ranking. Favorites and Watched are excluded. Popular fills remaining slots using seed relevance. No final response cache or automatic retries. No preference logging or persistence. Unknown body fields and query parameters are rejected.',
   })
   @ApiOkResponse({ type: PersonalizedRecommendationResponseDto })
   @ApiNotFoundResponse({

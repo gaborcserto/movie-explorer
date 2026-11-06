@@ -100,6 +100,7 @@ describe('TMDB recommendation pools through DiscoveryProvider', () => {
       expect(await provider.findRecommendationPool('popular-movies')).toEqual({
         availability: 'available',
         results: [],
+        signals: new Map(),
       });
       expect(fetchMock).toHaveBeenCalledTimes(
         Math.max(1, Math.min(5, totalPages)),

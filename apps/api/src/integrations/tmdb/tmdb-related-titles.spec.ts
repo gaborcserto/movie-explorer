@@ -37,6 +37,7 @@ const response = (body: unknown, status = 200) =>
 describe.each(cases)('%s %s', (mediaType, kind) => {
   const originalFetch = global.fetch;
   const fetchMock = jest.fn();
+  const sourceMock = jest.fn();
 
   const provider = () =>
     mediaType === 'movie'
@@ -54,8 +55,17 @@ describe.each(cases)('%s %s', (mediaType, kind) => {
   });
 
   beforeEach(() => {
-    global.fetch = fetchMock;
+    global.fetch = (input, init) => {
+      const url = new URL(String(input));
+
+      return url.pathname.endsWith('/1')
+        ? sourceMock(input, init)
+        : fetchMock(input, init);
+    };
     fetchMock.mockReset();
+    sourceMock
+      .mockReset()
+      .mockImplementation(async () => response({ id: 1, genres: [] }));
     jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
   });
 
@@ -88,6 +98,7 @@ describe.each(cases)('%s %s', (mediaType, kind) => {
       posterUrl: config.imageBaseUrl + '/poster.jpg',
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(sourceMock).toHaveBeenCalledTimes(1);
 
     const [url, init] = fetchMock.mock.calls[0];
 
@@ -106,6 +117,17 @@ describe.each(cases)('%s %s', (mediaType, kind) => {
     await expect(provider().findRelated(1, kind)).resolves.toEqual({
       results: [],
       availability: 'available',
+      ...(mediaType === 'movie' && {
+        signals: new Map(),
+        scores: new Map(),
+        sourceSignals: {
+          genreIds: [],
+          rating: undefined,
+          voteCount: undefined,
+          popularity: undefined,
+          year: undefined,
+        },
+      }),
     });
 
     fetchMock.mockResolvedValueOnce(

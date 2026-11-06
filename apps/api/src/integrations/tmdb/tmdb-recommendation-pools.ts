@@ -5,6 +5,8 @@ import type {
 } from '@movie-explorer/contracts';
 
 import type { RecommendationPool } from '../../recommendations/recommendation-provider';
+import type { TitleSignals } from '../../recommendations/title-ranking';
+import { rankingSignals } from './tmdb-ranking-signals';
 import type { TmdbConfig } from './tmdb.config';
 import { mapSearch, searchPage } from './tmdb-search.mapper';
 import { TmdbTransport } from './tmdb.transport';
@@ -102,6 +104,7 @@ export class TmdbRecommendationPools {
     );
 
     const candidates = new Map<string, RecommendationTitle>();
+    const signals = new Map<number, TitleSignals>();
     const responses = [
       first,
       ...pages.flatMap((page) =>
@@ -120,6 +123,11 @@ export class TmdbRecommendationPools {
           candidates.size < 100
         ) {
           candidates.set(key, title);
+          const metadata = response.signals.get(title.id);
+
+          if (metadata) {
+            signals.set(title.id, metadata);
+          }
         }
       }
     }
@@ -132,6 +140,7 @@ export class TmdbRecommendationPools {
 
     return {
       results: [...candidates.values()],
+      signals,
       availability: failure ? 'partial' : 'available',
     };
   }
@@ -156,6 +165,25 @@ export class TmdbRecommendationPools {
       },
     });
 
-    return mapSearch(body, route.mediaType, this.config.imageBaseUrl);
+    const mapped = mapSearch(body, route.mediaType, this.config.imageBaseUrl);
+    const signals = new Map<number, TitleSignals>();
+    const eligibleIds = new Set(
+      mapped.results.slice(0, 100).map((title) => title.id),
+    );
+
+    for (const entry of searchPage(body).results) {
+      if (
+        entry &&
+        typeof entry === 'object' &&
+        'id' in entry &&
+        typeof entry.id === 'number' &&
+        eligibleIds.has(entry.id) &&
+        !signals.has(entry.id)
+      ) {
+        signals.set(entry.id, rankingSignals(entry, route.mediaType));
+      }
+    }
+
+    return { ...mapped, signals };
   }
 }

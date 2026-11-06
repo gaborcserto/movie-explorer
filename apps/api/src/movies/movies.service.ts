@@ -29,7 +29,12 @@ export class MoviesService {
     kind: RelatedTitleKind,
   ): Promise<RelatedTitlesResponse> {
     if (kind !== 'similar') {
-      return this.movieProvider.findRelated(id, kind);
+      const { results, availability } = await this.movieProvider.findRelated(
+        id,
+        kind,
+      );
+
+      return { results, availability };
     }
 
     const [collection, recommended, similar] = await Promise.allSettled([
@@ -40,6 +45,18 @@ export class MoviesService {
 
     const results = new Map<number, RecommendationTitle>();
     const sources = [collection, recommended, similar];
+    const scores = new Map<number, number>();
+
+    for (const [index, source] of [recommended, similar].entries()) {
+      if (source.status === 'fulfilled') {
+        source.value.results.forEach((title, rank) => {
+          const score =
+            (source.value.scores?.get(title.id) ?? 0.3 / (1 + rank / 10)) +
+            (index === 0 ? 0.01 : 0);
+          scores.set(title.id, Math.max(scores.get(title.id) ?? 0, score));
+        });
+      }
+    }
 
     for (const source of sources) {
       if (source.status === 'fulfilled') {
@@ -55,8 +72,23 @@ export class MoviesService {
       throw similar.reason;
     }
 
+    const collectionIds = new Set(
+      collection.status === 'fulfilled'
+        ? collection.value.results.map((title) => title.id)
+        : [],
+    );
+    const ranked = [...results.values()].sort((a, b) => {
+      if (collectionIds.has(a.id) || collectionIds.has(b.id)) {
+        return (
+          Number(collectionIds.has(b.id)) - Number(collectionIds.has(a.id))
+        );
+      }
+
+      return (scores.get(b.id) ?? 0) - (scores.get(a.id) ?? 0) || a.id - b.id;
+    });
+
     return {
-      results: [...results.values()].slice(0, 10),
+      results: ranked.slice(0, 10),
       availability: sources.some(
         (source) =>
           source.status === 'rejected' ||

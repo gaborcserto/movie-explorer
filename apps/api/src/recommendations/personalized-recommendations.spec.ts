@@ -174,6 +174,67 @@ describe('Favorites-based recommendations', () => {
     expect(provider.findRecommendationPool).toHaveBeenCalledTimes(1);
   });
 
+  it('ranks fallback by multiple seed genres and quality, preserving exclusions and stable diversity', async () => {
+    provider.findFavoriteSimilar.mockImplementation(
+      async (_type: string, id: number) => ({
+        ...response([title(10)]),
+        sourceSignals: {
+          genreIds: id === 1 ? [27] : [80, 18],
+          rating: 8.8,
+          voteCount: 10000,
+        },
+      }),
+    );
+    provider.findRecommendationPool.mockResolvedValue({
+      ...response([
+        title(4),
+        title(20),
+        title(30),
+        title(40),
+        title(40),
+        title(50, 'tv'),
+      ]),
+      signals: new Map([
+        [20, { genreIds: [35], rating: 5.1, voteCount: 1000 }],
+        [30, { genreIds: [80, 18], rating: 8.2, voteCount: 10000 }],
+        [40, { genreIds: [27], rating: 7.5, voteCount: 10000 }],
+      ]),
+    });
+
+    const first = await service.personalize(preferences);
+    const second = await service.personalize({
+      ...preferences,
+      favoriteIds: [3, 1, 2],
+    });
+
+    expect(first.results.map(({ id }) => id)).toEqual([10, 30, 40, 20]);
+    expect(second).toEqual(first);
+    expect(first.source).toBe('mixed');
+    expect(new Set(first.results.map(({ id }) => id)).size).toBe(4);
+    expect(Object.keys(first).sort()).toEqual([
+      'availability',
+      'mediaType',
+      'results',
+      'source',
+    ]);
+  });
+
+  it('uses multi-seed support as a boost while allowing a large quality gap to win', async () => {
+    provider.findFavoriteSimilar.mockImplementation(
+      async (_type: string, id: number) => ({
+        ...response(id === 1 ? [title(10), title(20)] : [title(20)]),
+        scores: new Map([
+          [10, 0.9],
+          [20, 0.2],
+        ]),
+      }),
+    );
+
+    expect(
+      (await service.personalize(preferences)).results.map(({ id }) => id),
+    ).toEqual([10, 20]);
+  });
+
   it('preserves usable partial Similar results and marks a full fallback as degraded', async () => {
     provider.findFavoriteSimilar
       .mockResolvedValueOnce(response([title(10)], 'partial'))

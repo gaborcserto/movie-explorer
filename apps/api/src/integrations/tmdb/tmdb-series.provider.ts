@@ -5,7 +5,7 @@ import type {
   SeriesDetails,
 } from '@movie-explorer/contracts';
 
-import { findRelatedTitles } from './tmdb-related-titles';
+import { TmdbRelatedTitles } from './tmdb-related-titles';
 import { TmdbExternalIds } from './tmdb-external-ids';
 import { normalizeTmdbRating } from './tmdb-ratings';
 import { mapWatchProviders } from './tmdb-watch-providers.mapper';
@@ -48,6 +48,7 @@ const seriesGenreIds = {
 export class TmdbSeriesProvider implements SeriesProvider {
   private readonly transport: TmdbTransport;
   private readonly mapper: TmdbSeriesMapper;
+  private readonly related: TmdbRelatedTitles;
 
   private readonly imageBaseUrl: string;
   private readonly language: string;
@@ -63,10 +64,13 @@ export class TmdbSeriesProvider implements SeriesProvider {
       new Logger(TmdbSeriesProvider.name),
     );
     this.mapper = new TmdbSeriesMapper(config.imageBaseUrl);
+    this.related = new TmdbRelatedTitles(this.transport, config.imageBaseUrl);
   }
 
-  findRelated(id: number, kind: RelatedTitleKind) {
-    return findRelatedTitles(this.transport, this.imageBaseUrl, 'tv', id, kind);
+  async findRelated(id: number, kind: RelatedTitleKind) {
+    const { results, availability } = await this.related.find('tv', id, kind);
+
+    return { results, availability };
   }
 
   async findPopular(query: SeriesProviderQuery) {
@@ -123,6 +127,7 @@ export class TmdbSeriesProvider implements SeriesProvider {
     }
 
     validateTmdbSeriesDetails(body, id);
+    this.related.remember('tv', id, body);
 
     const external = seriesRecord(body.external_ids);
 

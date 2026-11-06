@@ -1,7 +1,6 @@
 import type {
   MovieCollectionResponse,
   RelatedTitleKind,
-  RelatedTitlesResponse,
   MovieDetails,
   WatchProviders,
   MovieSection,
@@ -14,12 +13,14 @@ import type {
   RatingResult,
 } from '@movie-explorer/contracts';
 
+import type { RankedRecommendationPool } from '../recommendations/recommendation-provider';
+
 export interface MovieProvider {
   findCollection(id: number): Promise<MovieCollectionResponse>;
   findRelated(
     id: number,
     kind: RelatedTitleKind,
-  ): Promise<RelatedTitlesResponse>;
+  ): Promise<RankedRecommendationPool>;
   findMovieSection(
     id: number,
     section: MovieSection,

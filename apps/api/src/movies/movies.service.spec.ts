@@ -134,6 +134,56 @@ describe('MoviesService', () => {
     expect(movieProvider.findCollection).not.toHaveBeenCalled();
   });
 
+  it('retains Fellowship of the Ring collection entries despite a large synthetic rating gap', async () => {
+    movieProvider.findCollection.mockResolvedValue({
+      collection: { id: 119 },
+      availability: 'available',
+      results: [{ ...title(2), title: 'The Two Towers', rating: 5.1 }],
+    });
+    movieProvider.findRelated.mockResolvedValue({
+      results: [
+        { ...title(3), title: 'Unrelated acclaimed film', rating: 9.1 },
+      ],
+      availability: 'available',
+      scores: new Map([[3, 0.99]]),
+      sourceSignals: { rating: 8.8, genreIds: [12, 14] },
+    });
+
+    const result = await service.findRelated(1, 'similar');
+
+    expect(result.results.map(({ id }) => id)).toEqual([2, 3]);
+    expect(Object.keys(result).sort()).toEqual(['availability', 'results']);
+    expect(JSON.stringify(result)).not.toMatch(/scores|sourceSignals|genreIds/);
+  });
+
+  it('compares ranked Similar and Recommendations together after collection priority', async () => {
+    movieProvider.findCollection.mockResolvedValue({
+      collection: null,
+      results: [],
+      availability: 'available',
+    });
+    movieProvider.findRelated.mockImplementation(async (_id, kind) =>
+      kind === 'similar'
+        ? {
+            results: [title(3)],
+            availability: 'available',
+            scores: new Map([[3, 0.9]]),
+          }
+        : {
+            results: [title(2)],
+            availability: 'available',
+            scores: new Map([[2, 0.4]]),
+          },
+    );
+
+    expect(
+      (await service.findRelated(1, 'similar')).results.map(({ id }) => id),
+    ).toEqual([3, 2]);
+    expect(
+      Object.keys(await service.findRelated(1, 'recommendations')).sort(),
+    ).toEqual(['availability', 'results']);
+  });
+
   it('returns movies from the configured provider using query filters', async () => {
     const query = {
       search: 'Alpha',

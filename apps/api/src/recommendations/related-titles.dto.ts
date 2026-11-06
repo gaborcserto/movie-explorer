@@ -12,7 +12,7 @@ export class RelatedTitlesResponseDto
   @ApiProperty({
     enum: ['available', 'partial'],
     description:
-      'Available includes empty sources. Partial means malformed entries were omitted from the first source page. Complete failure is an HTTP error.',
+      'Available includes empty sources. Partial means source data or ranking metadata was unavailable or malformed. Complete failure is an HTTP error.',
   })
   availability: RelatedTitlesResponse['availability'];
 }

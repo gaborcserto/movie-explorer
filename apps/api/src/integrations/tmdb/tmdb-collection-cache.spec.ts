@@ -296,7 +296,8 @@ describe('bounded collection enrichment', () => {
     expect(result).toMatchObject({ availability: 'partial' });
     expect(result.results.map(({ id }) => id)).toEqual([2, 3, 4]);
     expect(aborted).toEqual(['/3/collection/10']);
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    // Related sources share one additional ranking-context lookup.
+    expect(fetchMock).toHaveBeenCalledTimes(5);
     expect(jest.getTimerCount()).toBe(0);
   });
 

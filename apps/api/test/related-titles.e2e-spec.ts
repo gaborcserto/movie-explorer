@@ -75,12 +75,24 @@ describe('Related titles HTTP routes', () => {
           ? [title(3), title(4), title(1)]
           : [title(5), title(4)],
       availability: 'available',
+      scores: new Map(
+        kind === 'recommendations'
+          ? [
+              [3, 0.9],
+              [4, 0.4],
+            ]
+          : [
+              [5, 0.8],
+              [4, 0.4],
+            ],
+      ),
+      sourceSignals: { genreIds: [18], rating: 8.8, voteCount: 10000 },
     }));
 
     await request(app.getHttpServer())
       .get('/api/v1/movies/1/similar')
       .expect(200, {
-        results: [2, 3, 4, 5].map(title),
+        results: [2, 3, 5, 4].map(title),
         availability: 'available',
       });
 

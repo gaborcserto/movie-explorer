@@ -13,10 +13,23 @@ const config = {
 describe('Favorite Similar integration', () => {
   const originalFetch = global.fetch;
   const fetchMock = jest.fn();
+  const sourceMock = jest.fn();
 
   beforeEach(() => {
-    global.fetch = fetchMock;
+    global.fetch = (input, init) => {
+      const url = new URL(String(input));
+
+      return /\/(movie|tv)\/\d+$/.test(url.pathname)
+        ? sourceMock(input, init)
+        : fetchMock(input, init);
+    };
     fetchMock.mockReset();
+    sourceMock.mockReset().mockImplementation(async (url: URL) =>
+      Response.json({
+        id: Number(url.pathname.split('/').pop()),
+        genres: [],
+      }),
+    );
     jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
   });
 
@@ -52,6 +65,7 @@ describe('Favorite Similar integration', () => {
       ).findFavoriteSimilar(mediaType, 1);
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(sourceMock).toHaveBeenCalledTimes(1);
 
       const [url] = fetchMock.mock.calls[0];
 
@@ -125,6 +139,15 @@ describe('Favorite Similar integration', () => {
     expect(await provider.findFavoriteSimilar('tv', 1)).toEqual({
       results: [],
       availability: 'available',
+      signals: new Map(),
+      scores: new Map(),
+      sourceSignals: {
+        genreIds: [],
+        rating: undefined,
+        voteCount: undefined,
+        popularity: undefined,
+        year: undefined,
+      },
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });

@@ -30,16 +30,24 @@ describe('deployment recommendation workload budgets', () => {
       active += 1;
       peak = Math.max(peak, active);
       const similar = url.pathname.endsWith('/similar');
+      const source = /\/(movie|tv)\/\d+$/.test(url.pathname);
       const page = Number(url.searchParams.get('page'));
 
       // Just under each transport deadline: 6s seeds, then two 8s pool rounds.
       await new Promise((resolve) =>
-        setTimeout(resolve, similar ? 5990 : 7990),
+        setTimeout(resolve, source ? 1490 : similar ? 5990 : 7990),
       );
       active -= 1;
 
       if (mode === 'outage' || (mode === 'partial' && page === 3)) {
         return new Response(null, { status: 503 });
+      }
+
+      if (source) {
+        return Response.json({
+          id: Number(url.pathname.split('/').pop()),
+          genres: [],
+        });
       }
 
       const results =
@@ -93,15 +101,15 @@ describe('deployment recommendation workload budgets', () => {
         result.results.every((title) => title.mediaType === mediaType),
       ).toBe(true);
       expect(result.source).toBe('popular');
-      expect(fetchMock).toHaveBeenCalledTimes(seeds.length + 5);
-      expect(peak).toBe(4);
+      expect(fetchMock).toHaveBeenCalledTimes(seeds.length * 2 + 5);
+      expect(peak).toBe(Math.max(4, seeds.length * 2));
       expect(Date.now() - started).toBe(seeds.length ? 21970 : 15980);
 
       const warm = service.personalize(preferences);
       await jest.runAllTimersAsync();
 
       expect((await warm).results).toHaveLength(10);
-      expect(fetchMock).toHaveBeenCalledTimes(seeds.length * 2 + 5);
+      expect(fetchMock).toHaveBeenCalledTimes(seeds.length * 3 + 5);
     },
   );
 
@@ -123,9 +131,9 @@ describe('deployment recommendation workload budgets', () => {
     expect(
       (await pending).every((result) => result.results.length === 10),
     ).toBe(true);
-    expect(fetchMock).toHaveBeenCalledTimes(6 + 5);
+    expect(fetchMock).toHaveBeenCalledTimes(9 + 5);
     // Similar limits are per request, not a process-wide semaphore.
-    expect(peak).toBe(6);
+    expect(peak).toBe(9);
   });
 
   it('isolates Movie and Series pools for concurrent mixed-library requests', async () => {
@@ -140,7 +148,7 @@ describe('deployment recommendation workload budgets', () => {
     await jest.runAllTimersAsync();
     const results = await pending;
 
-    expect(fetchMock).toHaveBeenCalledTimes(12);
+    expect(fetchMock).toHaveBeenCalledTimes(14);
     expect(
       results[0].results.every((title) => title.mediaType === 'movie'),
     ).toBe(true);
@@ -172,7 +180,7 @@ describe('deployment recommendation workload budgets', () => {
     await jest.runAllTimersAsync();
 
     expect(await recovered).toMatchObject({ availability: 'available' });
-    expect(fetchMock).toHaveBeenCalledTimes(12);
+    expect(fetchMock).toHaveBeenCalledTimes(13);
 
     mode = 'empty';
     const emptyService = new RecommendationsService(
@@ -204,7 +212,7 @@ describe('deployment recommendation workload budgets', () => {
     await jest.runAllTimersAsync();
     await assertion;
 
-    expect(fetchMock).toHaveBeenCalledTimes(4);
-    expect(peak).toBe(3);
+    expect(fetchMock).toHaveBeenCalledTimes(7);
+    expect(peak).toBe(6);
   });
 });

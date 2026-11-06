@@ -116,7 +116,7 @@ export class PersonalizedRecommendationResponseDto
   @ApiProperty({
     enum: ['available', 'partial'],
     description:
-      'Partial means at least one Similar or Popular source failed or was malformed, even when fallback fills all ten slots. Complete failure preserves classified HTTP errors.',
+      'Partial means at least one Similar, Popular or ranking metadata source failed or was malformed, even when fallback fills all ten slots. Complete failure preserves classified HTTP errors.',
   })
   availability: PersonalizedRecommendationResponse['availability'];
 
