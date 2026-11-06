@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router';
 
 import PreferencesControls from './preferencesControls';
@@ -40,7 +41,8 @@ afterEach(() => {
   );
 });
 
-test('switches immediately, preserves route and filters, and restores saved preferences', () => {
+test('switches immediately, preserves route and filters, and restores saved preferences', async () => {
+  const user = userEvent.setup();
   render(
     <MemoryRouter initialEntries={['/search/Arrival?year=2020&view=tv']}>
       <PreferencesControls />
@@ -49,39 +51,47 @@ test('switches immediately, preserves route and filters, and restores saved pref
     </MemoryRouter>
   );
 
-  fireEvent.click(screen.getByText('EN · US'));
-  fireEvent.change(screen.getByLabelText('Language'), {
-    target: { value: 'hu-HU' },
-  });
+  await user.click(screen.getByLabelText('Language and region settings'));
+  await user.click(screen.getByRole('combobox', { name: 'Language' }));
+  await user.click(screen.getByRole('option', { name: 'Magyar' }));
   expect(
     screen.getByRole('navigation', { name: 'Fő navigáció' })
   ).toBeVisible();
-  expect(screen.getByLabelText('Nyelv')).toHaveValue('hu-HU');
+  expect(screen.getByRole('combobox', { name: 'Nyelv' })).toHaveAttribute(
+    'data-value',
+    'hu-HU'
+  );
   expect(document.documentElement.lang).toBe('hu-HU');
   expect(
     screen.getByText('/search/Arrival?year=2020&view=tv')
   ).toBeInTheDocument();
 
-  fireEvent.change(screen.getByLabelText('Streamingrégió'), {
-    target: { value: 'HU' },
-  });
-  expect(screen.getByLabelText('Nyelv')).toHaveValue('hu-HU');
+  await user.click(screen.getByRole('combobox', { name: 'Streamingrégió' }));
+  await user.click(
+    screen.getByRole('option', {
+      name: new Intl.DisplayNames(['hu-HU'], { type: 'region' }).of('HU')!,
+    })
+  );
+  expect(screen.getByRole('combobox', { name: 'Nyelv' })).toHaveAttribute(
+    'data-value',
+    'hu-HU'
+  );
   expect(readPreferences()).toEqual({ language: 'hu-HU', region: 'HU' });
   expect(JSON.parse(localStorage.getItem(preferencesKey) ?? '{}')).toEqual(
     readPreferences()
   );
 });
 
-test('applies preferences in memory when persistence is unavailable', () => {
+test('applies preferences in memory when persistence is unavailable', async () => {
+  const user = userEvent.setup();
   vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
     throw new Error('denied');
   });
   render(<PreferencesControls />);
 
-  fireEvent.click(screen.getByText('EN · US'));
-  fireEvent.change(screen.getByLabelText('Streaming region'), {
-    target: { value: 'HU' },
-  });
+  await user.click(screen.getByLabelText('Language and region settings'));
+  await user.click(screen.getByRole('combobox', { name: 'Streaming region' }));
+  await user.click(screen.getByRole('option', { name: 'Hungary' }));
   expect(usePreferencesStore.getState().preferences).toEqual({
     language: 'en-US',
     region: 'HU',

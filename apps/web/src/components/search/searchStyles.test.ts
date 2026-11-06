@@ -157,12 +157,12 @@ test('overlays expanded detail search over the brand only on narrow screens', ()
   const mobileQuery = '(width <= 480px)';
   const mobileHeader = declarationsFor(
     appStylesheet,
-    '.app-header__inner:has(> .detail-search)',
+    '.app-header__inner:has(.detail-search)',
     mobileQuery
   );
   const collapsedSearch = declarationsFor(
     appStylesheet,
-    '.app-header__inner:has(> .detail-search) > .detail-search',
+    '.app-header__actions:has(.detail-search) > .detail-search',
     mobileQuery
   );
   const expandedHeader = declarationsFor(
@@ -170,9 +170,14 @@ test('overlays expanded detail search over the brand only on narrow screens', ()
     '.app-header__inner:has(.detail-search__form--expanded)',
     mobileQuery
   );
+  const expandedActions = declarationsFor(
+    appStylesheet,
+    '.app-header__inner:has(.detail-search__form--expanded) > .app-header__actions',
+    mobileQuery
+  );
   const expandedSearch = declarationsFor(
     appStylesheet,
-    '.app-header__inner:has(.detail-search__form--expanded) > .detail-search',
+    '.app-header__inner:has(.detail-search__form--expanded) .detail-search',
     mobileQuery
   );
 
@@ -185,7 +190,7 @@ test('overlays expanded detail search over the brand only on narrow screens', ()
   expect(expandedHeader).toMatchObject({
     position: 'relative',
   });
-  expect(expandedSearch).toMatchObject({
+  expect(expandedActions).toMatchObject({
     'max-width': 'none',
     position: 'absolute',
     'inset-inline': '0',
@@ -193,6 +198,14 @@ test('overlays expanded detail search over the brand only on narrow screens', ()
     width: 'auto',
     'z-index': '5',
   });
+  expect(expandedSearch).toMatchObject({
+    flex: '1 1 auto',
+    'max-width': 'none',
+    width: 'auto',
+  });
+  expect(declarationsFor(appStylesheet, '.app-header__brand').flex).toBe(
+    '0 0 auto'
+  );
 });
 
 test('allows unbroken queries to wrap in result context and empty states', () => {
