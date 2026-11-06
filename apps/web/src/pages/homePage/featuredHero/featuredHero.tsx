@@ -4,6 +4,8 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa6';
 import type { KeyboardEvent } from 'react';
 import { Link } from 'react-router';
 
+import { CardRating } from '../../../components/card';
+
 import { mediaPath } from '../../../util/seriesRoutes';
 import type { DiscoverSectionData } from '../useDiscoverSection';
 import '../discover.scss';
@@ -107,9 +109,10 @@ export default function FeaturedHero({
                   )?.slice(0, 4)}
                 </span>
               )}
-              {item.rating !== undefined && (
-                <span>★ {item.rating.toFixed(1)} / 10</span>
-              )}
+              <CardRating
+                rating={item.rating}
+                className="discover-featured__rating"
+              />
             </div>
             <p className="discover-featured__overview">
               {item.description?.trim() || 'Discover a story worth watching.'}

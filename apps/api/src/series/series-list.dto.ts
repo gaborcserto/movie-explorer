@@ -1,5 +1,15 @@
-import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsNumber, IsOptional, Max, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  ArrayNotEmpty,
+  ArrayUnique,
+  IsArray,
+  IsIn,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  Max,
+  Min,
+} from 'class-validator';
 import { ApiPropertyOptional, PickType } from '@nestjs/swagger';
 
 import type { SeriesGenre } from '@movie-explorer/contracts';
@@ -32,11 +42,24 @@ export class SeriesListQuery
 {
   @ApiPropertyOptional({
     enum: seriesGenres,
-    description: 'Series browse genre',
+    isArray: true,
+    description:
+      'Series browse genres; comma-separated values use AND matching',
   })
   @IsOptional()
-  @IsIn(seriesGenres)
-  genre?: SeriesGenre;
+  @Transform(({ value }: { value: unknown }) => {
+    if (typeof value === 'string') {
+      return value.split(',').map((genre) => genre.trim());
+    }
+
+    // Repeated query keys must fail array validation; accept one CSV value only.
+    return Array.isArray(value) ? value.join(',') : value;
+  })
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique()
+  @IsIn(seriesGenres, { each: true })
+  genre?: SeriesGenre[];
 
   @ApiPropertyOptional({ minimum: 1874, maximum: 9999 })
   @IsOptional()

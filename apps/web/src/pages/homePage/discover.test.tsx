@@ -175,7 +175,9 @@ describe('Discover page', () => {
     );
     expect(within(featured).getByText('A featured story.')).toBeInTheDocument();
     expect(within(featured).getByText('2025')).toBeInTheDocument();
-    expect(within(featured).getByText(/8\.2 \/ 10/)).toBeInTheDocument();
+    expect(
+      within(featured).getByLabelText('TMDB rating: 8.2 out of 10')
+    ).toBeInTheDocument();
     expect(
       featured.querySelector('.discover-featured__image--active')
     ).toHaveAttribute('src', '/backdrop.jpg');
@@ -188,7 +190,9 @@ describe('Discover page', () => {
       await screen.findByRole('heading', { name: 'Featured Series' })
     ).toBeInTheDocument();
     expect(within(featured).getByText('2024')).toBeInTheDocument();
-    expect(within(featured).getByText(/7\.4 \/ 10/)).toBeInTheDocument();
+    expect(
+      within(featured).getByLabelText('TMDB rating: 7.4 out of 10')
+    ).toBeInTheDocument();
     expect(
       featured.querySelector('.discover-featured__image--active')
     ).toHaveAttribute('src', '/series-backdrop.jpg');

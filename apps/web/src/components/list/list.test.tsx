@@ -930,3 +930,31 @@ describe('<List />', () => {
     expect(screen.getByText('First movie')).toBeInTheDocument();
   });
 });
+
+test('renders the Movie summary rating with its scale and preserves navigation', async () => {
+  getMovies.mockResolvedValueOnce({
+    movies: [
+      {
+        id: 42,
+        title: 'Rated Movie',
+        posterUrl: '/42.jpg',
+        genres: [],
+        rating: 7.56,
+      },
+    ],
+    page: 1,
+    totalPages: 1,
+    totalResults: 1,
+  });
+
+  renderList();
+
+  expect(
+    await screen.findByLabelText('TMDB rating: 7.6 out of 10')
+  ).toBeVisible();
+  expect(screen.getByText('7.6')).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Rated Movie' })).toHaveAttribute(
+    'href',
+    '/movie/42'
+  );
+});

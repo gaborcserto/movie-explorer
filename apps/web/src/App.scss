@@ -116,6 +116,22 @@
     opacity: 0.55;
   }
 
+  &--mobile-full {
+    @media (width <= 480px) {
+      align-items: center;
+      box-sizing: border-box;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      max-width: 100%;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      text-align: center;
+      white-space: normal;
+      width: 100%;
+    }
+  }
+
   &--transparent {
     @include btn-variant(
       rgba(96, 96, 96, 0.68),

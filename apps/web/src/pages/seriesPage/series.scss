@@ -836,8 +836,35 @@
 
 @media (width < 768px) {
   .season-preview {
-    grid-template-columns: 72px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
+  }
+
+  .series-season-poster {
+    aspect-ratio: auto;
+    height: auto;
+    width: 100%;
+
+    img {
+      aspect-ratio: auto;
+      display: block;
+      height: auto;
+      object-fit: contain;
+      width: 100%;
+    }
+
+    .image-placeholder {
+      aspect-ratio: 2 / 3;
+      height: auto;
+      width: 100%;
+    }
+  }
+
+  .season-preview__actions .btn {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    width: 100%;
   }
 }
 

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import type { MovieSummary } from '@movie-explorer/contracts';
 
-import Card from './card';
+import Card, { CardRating } from './card';
 
 const mockMovie: MovieSummary = {
   id: 1234,
@@ -119,4 +119,23 @@ describe('<Card />', () => {
     expect(screen.getByText(mockMovie.title)).toBeVisible();
     expect(screen.queryByText('1894')).not.toBeInTheDocument();
   });
+});
+
+test.each([0, -1, 10.1, Number.NaN, Number.POSITIVE_INFINITY, null, undefined])(
+  'does not render invalid or unavailable card rating %s',
+  (rating) => {
+    const { container } = render(<CardRating rating={rating} />);
+
+    expect(container).toBeEmptyDOMElement();
+  }
+);
+
+test('renders a star and one-decimal accessible TMDB rating', () => {
+  render(<CardRating rating={7.5} />);
+
+  expect(screen.getByLabelText('TMDB rating: 7.5 out of 10')).toBeVisible();
+  expect(screen.getByText('7.5')).toBeVisible();
+  expect(
+    screen.getByLabelText('TMDB rating: 7.5 out of 10').querySelector('svg')
+  ).toHaveAttribute('aria-hidden', 'true');
 });

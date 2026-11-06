@@ -83,6 +83,7 @@ export class TmdbPersonMapper {
               title,
               release_date: text(value.release_date),
               poster_path: text(value.poster_path) ?? null,
+              vote_average: value.vote_average,
             },
             [],
           ),

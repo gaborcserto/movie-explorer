@@ -35,7 +35,7 @@ export default function useCrewPreview<T>(
         {!showAll && hasMore && (
           <button
             type="button"
-            className="btn btn--outline btn--action"
+            className="btn btn--outline btn--action btn--mobile-full"
             aria-controls={groupId}
             aria-expanded={limit > CREW_BATCH_SIZE}
             onClick={() => {
@@ -51,7 +51,7 @@ export default function useCrewPreview<T>(
         {!showAll && limit > CREW_BATCH_SIZE && (
           <button
             type="button"
-            className="btn btn--outline btn--action"
+            className="btn btn--outline btn--action btn--mobile-full"
             aria-controls={groupId}
             aria-expanded
             onClick={() => {

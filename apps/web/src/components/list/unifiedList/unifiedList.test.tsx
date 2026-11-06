@@ -206,7 +206,9 @@ test('Series cards show library actions, year, title, and rating without interce
   }
 
   expect(within(card).getByText('2005')).toBeVisible();
-  expect(within(card).getByText('8.0 / 10')).toBeVisible();
+  expect(
+    within(card).getByLabelText('TMDB rating: 8.0 out of 10')
+  ).toBeVisible();
   expect(within(card).getByText('Series 1')).toBeVisible();
 
   const favorite = within(card).getByRole('button', {

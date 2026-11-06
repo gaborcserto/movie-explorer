@@ -15,7 +15,7 @@ export default function SearchResultCard({
   const person = item.mediaType === 'person';
   const label = typeLabels[item.mediaType];
   let date: string | undefined;
-  let rating: string | undefined;
+  let rating: number | undefined;
 
   if (item.mediaType !== 'person') {
     date =
@@ -28,7 +28,7 @@ export default function SearchResultCard({
       item.rating > 0 &&
       item.rating <= 10
     ) {
-      rating = `${item.rating.toFixed(1)} / 10`;
+      rating = item.rating;
     }
   }
 

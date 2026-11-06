@@ -5,6 +5,13 @@
   justify-content: flex-end;
 }
 
+@media (width <= 480px) {
+  .search-toolbar__filters {
+    display: block;
+    width: 100%;
+  }
+}
+
 .active-filters {
   display: flex;
   align-items: center;

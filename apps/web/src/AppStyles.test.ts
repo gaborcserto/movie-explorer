@@ -66,3 +66,24 @@ test('transitions stable tab panel heights and disables that transition for redu
     ).transition
   ).toBe('none');
 });
+
+test('fills mobile content width only for explicitly marked action buttons', () => {
+  expect(declarationsForSelector(stylesheet, '.btn--mobile-full')).toEqual({});
+  expect(
+    declarationsForMedia(stylesheet, '.btn--mobile-full', '(width <= 480px)')
+  ).toMatchObject({
+    width: '100%',
+    'max-width': '100%',
+    'min-width': '0',
+    display: 'flex',
+    'align-items': 'center',
+    'justify-content': 'center',
+    'text-align': 'center',
+    'white-space': 'normal',
+    'overflow-wrap': 'anywhere',
+    'box-sizing': 'border-box',
+  });
+  expect(
+    declarationsForMedia(stylesheet, '.btn', '(width <= 480px)')
+  ).not.toHaveProperty('width');
+});

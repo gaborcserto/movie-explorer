@@ -14,7 +14,13 @@ const config = {
 const movie = {
   id: 1,
   cast: [
-    { id: 7, title: 'Movie', release_date: '2020-01-01', character: 'Actor' },
+    {
+      id: 7,
+      title: 'Movie',
+      release_date: '2020-01-01',
+      character: 'Actor',
+      vote_average: 7.5,
+    },
   ],
   crew: [],
 };
@@ -27,6 +33,7 @@ const tv = {
       first_air_date: '2021-01-01',
       character: 'One',
       credit_id: 'a',
+      vote_average: 8.2,
       episode_count: 4,
     },
     {
@@ -80,6 +87,7 @@ describe('Combined Person filmography', () => {
 
     ok(person);
     expect(person.filmography).toHaveLength(1);
+    expect(person.filmography[0].rating).toBe(7.5);
     expect(person.filmography[0]).not.toHaveProperty('mediaType');
     ok(person.combinedFilmography);
     expect(
@@ -90,6 +98,7 @@ describe('Combined Person filmography', () => {
 
     expect(person.combinedFilmography.entries[1]).toMatchObject({
       firstAirDate: '2021-01-01',
+      rating: 8.2,
       actingCredits: ['One', 'Two'],
       actingRoles: [
         { character: 'One', episodeCount: 4 },

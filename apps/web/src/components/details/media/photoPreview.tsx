@@ -65,7 +65,7 @@ function PhotoPreviewContent({
         {visibleCount < available.length && (
           <button
             type="button"
-            className="btn btn--outline"
+            className="btn btn--outline btn--mobile-full"
             aria-label={`Show more ${plural} for ${title}`}
             onClick={() => {
               focusLastPhoto.current =

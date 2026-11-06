@@ -671,3 +671,25 @@ test('rejects malformed people and movie suggestion entries', async () => {
     category: 'invalid-response',
   });
 });
+
+test('preserves summary ratings from the Movie listing response', async () => {
+  fetchMock.mockResolvedValueOnce(response(mockMoviesData));
+
+  const result = await getMovies({});
+
+  expect(result.movies[0].rating).toBe(8.5);
+});
+
+test.each([null, -1, 11, '7.5', Number.NaN, Infinity])(
+  'rejects invalid summary rating %s',
+  async (rating) => {
+    fetchMock.mockResolvedValueOnce(
+      response({
+        ...mockMoviesData,
+        movies: [{ ...mockMovieData, rating }],
+      })
+    );
+
+    await expect(getMovies({})).rejects.toThrow();
+  }
+);

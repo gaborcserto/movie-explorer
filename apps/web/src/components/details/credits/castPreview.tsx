@@ -143,7 +143,7 @@ export default function CastPreview({
         {visibleCount < members.length && (
           <button
             type="button"
-            className="btn btn--outline btn--action"
+            className="btn btn--outline btn--action btn--mobile-full"
             aria-label={`Show more ${pluralMemberLabel}`}
             aria-controls={gridId}
             aria-expanded={visibleCount > initialVisibleCount}
@@ -165,7 +165,7 @@ export default function CastPreview({
         {additionalCount > 0 && (
           <button
             type="button"
-            className="btn btn--outline btn--action"
+            className="btn btn--outline btn--action btn--mobile-full"
             aria-label={`Show less ${pluralMemberLabel}`}
             aria-controls={gridId}
             aria-expanded

@@ -46,6 +46,10 @@ export class TmdbPersonFilmographyMapper {
         posterUrl: this.images.toImageUrl(path) || null,
         ...(path && { posterSrcSet: this.images.toPosterSrcSet(path) }),
         genres: [],
+        ...(typeof row.vote_average === 'number' &&
+          Number.isFinite(row.vote_average) &&
+          row.vote_average >= 0 &&
+          row.vote_average <= 10 && { rating: row.vote_average }),
         crewCredits: [],
       };
 

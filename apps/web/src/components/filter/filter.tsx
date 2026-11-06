@@ -23,9 +23,7 @@ export default function Filter() {
   const count =
     series && isSearch
       ? Number(Boolean(committed.year))
-      : (!series
-          ? committed.filter.length
-          : Number(Boolean(committed.seriesGenre))) +
+      : (!series ? committed.filter.length : committed.seriesGenre.length) +
         Number(Boolean(committed.year)) +
         Number(Boolean(committed.rating)) +
         Number(!isSearch && committed.sorting !== 'popularity') +

@@ -11,6 +11,18 @@
     margin-left: auto;
   }
 
+  @media (width <= 480px) {
+    &__anchor {
+      width: 100%;
+    }
+
+    &__trigger {
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+    }
+  }
+
   button {
     cursor: pointer;
     font: inherit;
@@ -302,6 +314,7 @@
     border-radius: 2px;
     color: inherit;
     text-transform: capitalize;
+    transition: color 160ms ease;
 
     &:not(:last-child):after {
       content: ',';
@@ -310,10 +323,8 @@
 
     &:hover {
       background: transparent;
-      color: $white;
-      text-decoration: underline;
-      text-decoration-color: $red-1;
-      text-underline-offset: 3px;
+      color: $red-1;
+      text-decoration: none;
     }
   }
 }

@@ -82,8 +82,10 @@ export class TmdbSeriesProvider implements SeriesProvider {
       query: {
         page: String(query.page),
         include_adult: 'false',
-        ...(query.genre && {
-          with_genres: String(seriesGenreIds[query.genre]),
+        ...(query.genre?.length && {
+          with_genres: query.genre
+            .map((genre) => seriesGenreIds[genre])
+            .join(','),
         }),
         sort_by: `${sortFields[query.sort]}.${query.order}`,
         ...(query.year !== undefined && {

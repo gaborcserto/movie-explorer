@@ -23,6 +23,8 @@ export interface MovieSummary {
   /** Provider-owned density candidates for posters rendered at up to 320px. */
   posterSrcSet?: string;
   genres: string[];
+  /** TMDB score on a 0 to 10 scale; zero represents an unrated title. */
+  rating?: number;
 }
 
 export interface MovieCastMember {

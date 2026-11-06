@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import type { CombinedFilmography } from '@movie-explorer/contracts';
 
+import { CardRating } from '../../../components/card';
 import AnimatedSelect from '../../../components/animatedSelect';
 import MovieImage from '../../../components/utility/customImage';
 import useStablePanelHeight from '../../../hooks/useStablePanelHeight';
@@ -94,6 +95,10 @@ function FilmographyResults({
                     {date.substring(0, 4)}
                   </time>
                 )}
+                <CardRating
+                  rating={movie.rating}
+                  className="filmography__rating"
+                />
                 {roles.length > 0 && (
                   <p className="filmography__role">{roles.join(' · ')}</p>
                 )}
@@ -123,7 +128,7 @@ function FilmographyResults({
         <div className="filmography__more">
           <button
             type="button"
-            className="btn btn--outline btn--action"
+            className="btn btn--outline btn--action btn--mobile-full"
             onClick={() => {
               const nextCount = visibleCount + FILMOGRAPHY_BATCH_SIZE;
               setVisibleCount(nextCount);

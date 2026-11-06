@@ -145,6 +145,9 @@ export class MovieSummary implements MovieSummaryContract {
     example: ['Comedy', 'Drama', 'Romance'],
   })
   genres: string[];
+
+  @ApiPropertyOptional({ description: 'Movie rating', example: 7.9 })
+  rating?: number;
 }
 
 export class MovieDirectorDto implements MovieDirectorContract {
@@ -231,9 +234,6 @@ export class MovieDetails extends MovieSummary implements MovieDetailsContract {
 
   @ApiPropertyOptional({ type: () => [MovieCrewMemberDto] })
   producers?: MovieCrewMemberDto[];
-
-  @ApiPropertyOptional({ description: 'Movie rating', example: 7.9 })
-  rating?: number;
 
   @ApiPropertyOptional({
     description: 'Movie duration in minutes',

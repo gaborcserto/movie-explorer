@@ -121,11 +121,11 @@ test('movie history uses canonical repeated filters and ignores invalid URL valu
 
 test('normalizes invalid and repeated Series genres deterministically', () => {
   const params = new URLSearchParams(
-    'view=tv&seriesGenre=drama&seriesGenre=comedy&extra=a&extra=b'
+    'view=tv&seriesGenre=drama,invalid,drama&seriesGenre=comedy&extra=a&extra=b'
   );
   const next = normalizeSearchFilters(params, false);
 
-  expect(next.getAll('seriesGenre')).toEqual(['drama']);
+  expect(next.get('seriesGenre')).toBe('comedy,drama');
   expect(next.getAll('extra')).toEqual(['a', 'b']);
   expect(normalizeSearchFilters(next, false).toString()).toBe(next.toString());
   expect(

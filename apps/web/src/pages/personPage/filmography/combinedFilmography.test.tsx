@@ -13,6 +13,7 @@ const series: PersonSeriesCredit = {
   mediaType: 'tv',
   id: 7,
   title: 'A Series',
+  rating: 8.2,
   originalTitle: null,
   firstAirDate: '2022-01-01',
   posterUrl: null,
@@ -25,6 +26,7 @@ const movie = {
   mediaType: 'movie' as const,
   id: 7,
   title: 'A Movie',
+  rating: 7.5,
   releaseDate: '2020-01-01',
   posterUrl: '',
   genres: [],
@@ -88,6 +90,8 @@ it('displays distinct Movie/Series identities, dates, role counts and correct li
     'href',
     '/series/7'
   );
+  expect(screen.getByLabelText('TMDB rating: 7.5 out of 10')).toBeVisible();
+  expect(screen.getByLabelText('TMDB rating: 8.2 out of 10')).toBeVisible();
   expect(screen.getByText('Showing 2 of 2 titles')).toBeInTheDocument();
   expect(screen.getByText('Guide · 3 episodes')).toBeInTheDocument();
   expect(screen.queryByText('Series premiere')).not.toBeInTheDocument();

@@ -17,7 +17,7 @@ import type {
 export const SERIES_PROVIDER = Symbol('SERIES_PROVIDER');
 
 export interface SeriesProviderQuery {
-  genre?: SeriesGenre;
+  genre?: SeriesGenre[];
   page?: number;
   year?: number;
   minimumRating?: number;

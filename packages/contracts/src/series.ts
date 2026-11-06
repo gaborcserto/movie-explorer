@@ -19,6 +19,8 @@ export type SeriesGenre =
   | 'war & politics'
   | 'western';
 
+export type SeriesGenres = SeriesGenre[];
+
 export interface SeriesSummary {
   /** Stable wire discriminator; retained for existing mediaType:id identities. */
   mediaType: 'tv';
@@ -29,6 +31,8 @@ export interface SeriesSummary {
   posterUrl: string | null;
   posterSrcSet?: string;
   genres: string[];
+  /** TMDB score on a 0 to 10 scale; zero represents an unrated title. */
+  rating?: number | null;
 }
 
 export interface SeasonSummary {

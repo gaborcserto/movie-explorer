@@ -554,3 +554,39 @@ test('centers the season details action and removes its link underline in every 
     ).toMatchObject({ 'text-decoration': 'none' });
   });
 });
+
+test('stacks the mobile season preview and keeps its poster proportional', () => {
+  const mobileQuery = '(width < 768px)';
+
+  expect(
+    declarationsForMedia(seriesStyles, '.season-preview', mobileQuery)
+  ).toMatchObject({ 'grid-template-columns': 'minmax(0, 1fr)' });
+  expect(
+    declarationsForMedia(seriesStyles, '.series-season-poster', mobileQuery)
+  ).toMatchObject({
+    'aspect-ratio': 'auto',
+    height: 'auto',
+    width: '100%',
+  });
+  expect(
+    declarationsForMedia(seriesStyles, '.series-season-poster img', mobileQuery)
+  ).toMatchObject({
+    'object-fit': 'contain',
+    height: 'auto',
+    width: '100%',
+  });
+  expect(
+    declarationsForMedia(
+      seriesStyles,
+      '.season-preview__actions .btn',
+      mobileQuery
+    )
+  ).toMatchObject({
+    display: 'flex',
+    'justify-content': 'center',
+    width: '100%',
+  });
+  expect(
+    declarationsForSelector(seriesStyles, '.season-preview')
+  ).toMatchObject({ 'grid-template-columns': '100px minmax(0, 1fr)' });
+});

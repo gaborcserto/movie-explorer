@@ -284,7 +284,7 @@ export default function SeasonPreview({ series }: { series: SeriesDetails }) {
           )}
           <div className="season-preview__actions">
             <Link
-              className="btn btn--outline btn--action"
+              className="btn btn--outline btn--action btn--mobile-full"
               to={seriesPath(series.id, season.seasonNumber)}
               state={{
                 series,

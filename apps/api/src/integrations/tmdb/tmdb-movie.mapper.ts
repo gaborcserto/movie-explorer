@@ -61,10 +61,10 @@ export class TmdbMovieMapper {
   public toMovieSummary(
     movie:
       | TmdbMovieListItem
-      | Pick<
+      | (Pick<
           TmdbMovieListItem,
           'id' | 'title' | 'release_date' | 'poster_path' | 'genre_ids'
-        >,
+        > & { vote_average?: unknown }),
     genres: TmdbGenre[],
   ): MovieSummary {
     // TMDB may omit genre_ids on an individual discovery result. The public
@@ -87,6 +87,10 @@ export class TmdbMovieMapper {
         posterSrcSet: this.toPosterSrcSet(movie.poster_path),
       }),
       genres: movieGenres,
+      ...(typeof movie.vote_average === 'number' &&
+        Number.isFinite(movie.vote_average) &&
+        movie.vote_average >= 0 &&
+        movie.vote_average <= 10 && { rating: movie.vote_average }),
     };
   }
 

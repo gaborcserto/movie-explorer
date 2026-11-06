@@ -313,5 +313,11 @@
     display: flex;
     justify-content: center;
     padding-top: 36px;
+
+    @media (width <= 480px) {
+      .btn {
+        width: 100%;
+      }
+    }
   }
 }

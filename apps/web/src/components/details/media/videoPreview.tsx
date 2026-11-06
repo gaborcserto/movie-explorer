@@ -89,7 +89,7 @@ function VideoPreviewContent({ videos, title }: Omit<Props, 'resetKey'>) {
         {visibleVideoCount < videos.length && (
           <button
             type="button"
-            className="btn btn--outline"
+            className="btn btn--outline btn--mobile-full"
             aria-controls={gridId}
             aria-label="Show more videos"
             onClick={() => {

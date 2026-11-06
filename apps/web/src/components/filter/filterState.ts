@@ -58,8 +58,20 @@ export function readFilters(params: URLSearchParams, isSearch: boolean) {
   const sorting = sortParams(params.get('sorting')) ?? 'popularity';
 
   return {
-    seriesGenre:
-      seriesGenres.find((genre) => genre === params.get('seriesGenre')) ?? '',
+    seriesGenre: Array.from(
+      new Set(
+        params
+          .getAll('seriesGenre')
+          .flatMap((value) => value.split(','))
+          .map((genre) => genre.trim().toLowerCase())
+          .filter((genre): genre is (typeof seriesGenres)[number] =>
+            seriesGenres.some((item) => item === genre)
+          )
+      )
+    ).sort(
+      (first, second) =>
+        seriesGenres.indexOf(first) - seriesGenres.indexOf(second)
+    ),
     filter: genres,
     year: validYear(year) ? year : '',
     rating: ratingOptions.includes(rating) ? rating : '',
@@ -84,13 +96,13 @@ export function writeFilters(
     order: omitSorting ? '' : values.order,
   };
   Object.entries(entries).forEach(([key, value]) => {
-    if (key === 'filter') {
+    if (key === 'filter' || key === 'seriesGenre') {
       const genres = Array.isArray(value) ? value : [];
 
       if (genres.length) {
-        next.set('filter', genres.join(','));
+        next.set(key, genres.join(','));
       } else {
-        next.delete('filter');
+        next.delete(key);
       }
 
       return;

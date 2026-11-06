@@ -330,6 +330,7 @@ describe('TmdbMovieMapper', () => {
       posterSrcSet:
         'https://image.tmdb.org/t/p/w342/alpha.jpg 1x, https://image.tmdb.org/t/p/w780/alpha.jpg 2x, https://image.tmdb.org/t/p/original/alpha.jpg 3x',
       genres: ['Drama', 'Comedy'],
+      rating: 8,
     });
   });
 
@@ -355,6 +356,7 @@ describe('TmdbMovieMapper', () => {
       posterSrcSet:
         'https://image.tmdb.org/t/p/w342/kaalidas.jpg 1x, https://image.tmdb.org/t/p/w780/kaalidas.jpg 2x, https://image.tmdb.org/t/p/original/kaalidas.jpg 3x',
       genres: [],
+      rating: 0,
     });
   });
 
@@ -488,4 +490,25 @@ describe('TmdbMovieMapper', () => {
 
     expect(movie.runtimeMinutes).toBeUndefined();
   });
+});
+
+describe('Movie summary rating validation', () => {
+  const mapper = new TmdbMovieMapper('https://image.tmdb.org/t/p/w500');
+
+  it.each([null, undefined, -1, 11, NaN, Infinity, '7.5'])(
+    'omits unavailable or invalid rating %s',
+    (vote_average) => {
+      const summary = mapper.toMovieSummary(
+        {
+          id: 1,
+          title: 'Movie',
+          poster_path: null,
+          vote_average,
+        },
+        [],
+      );
+
+      expect(summary).not.toHaveProperty('rating');
+    },
+  );
 });

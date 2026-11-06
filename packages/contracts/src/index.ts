@@ -86,4 +86,4 @@ export type {
   RecommendationResponse,
 } from './recommendations';
 
-export type { SeriesGenre } from './series';
+export type { SeriesGenre, SeriesGenres } from './series';

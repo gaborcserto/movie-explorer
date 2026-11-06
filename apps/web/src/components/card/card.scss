@@ -189,3 +189,15 @@
     }
   }
 }
+
+.tmdb-rating {
+  align-items: center;
+  color: $red-1;
+  display: inline-flex;
+  gap: 5px;
+
+  svg {
+    flex: 0 0 auto;
+    font-size: 0.9em;
+  }
+}

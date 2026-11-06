@@ -60,6 +60,31 @@ export default function FilterPanel({
   const update = (values: Partial<FilterValues>) =>
     setDraft((current) => ({ ...current, ...values }));
 
+  const selectedGenres: string[] = series ? draft.seriesGenre : draft.filter;
+  const availableGenres: readonly string[] = series
+    ? seriesGenres
+    : genresFilter;
+
+  const handleRemoveGenre = (genre: string) => {
+    update(
+      series
+        ? { seriesGenre: draft.seriesGenre.filter((item) => item !== genre) }
+        : { filter: draft.filter.filter((item) => item !== genre) }
+    );
+  };
+
+  const handleSelectGenre = (genre: string) => {
+    if (series) {
+      const seriesGenre = seriesGenres.find((item) => item === genre);
+
+      if (seriesGenre && !draft.seriesGenre.includes(seriesGenre)) {
+        update({ seriesGenre: [...draft.seriesGenre, seriesGenre] });
+      }
+    } else if (!draft.filter.includes(genre)) {
+      update({ filter: [...draft.filter, genre] });
+    }
+  };
+
   const invalidYear = Boolean(draft.year && !validYear(draft.year));
   const ratingNumber = Number(draft.rating);
   const validRating =
@@ -212,47 +237,22 @@ export default function FilterPanel({
             }
           }}
         >
-          {series && !isSearch && (
-            <section className="filter-section">
-              <label htmlFor={`${formId}-genre`}>Genre</label>
-              <select
-                id={`${formId}-genre`}
-                value={draft.seriesGenre}
-                onChange={(event) =>
-                  update({ seriesGenre: event.target.value })
-                }
-              >
-                <option value="">Any genre</option>
-                {seriesGenres.map((genre) => (
-                  <option key={genre} value={genre}>
-                    {genre}
-                  </option>
-                ))}
-              </select>
-            </section>
-          )}
-          {!series && (
+          {(!series || !isSearch) && (
             <section className="filter-section">
               <h3>Genre</h3>
               <div className="filter-genres" aria-label="Genres">
                 <div
-                  className={`filter-genres__selected${draft.filter.length ? '' : ' is-empty'}`}
+                  className={`filter-genres__selected${selectedGenres.length ? '' : ' is-empty'}`}
                   role="group"
                   aria-label="Selected genres"
                 >
-                  {draft.filter.map((genre) => (
+                  {selectedGenres.map((genre) => (
                     <span className="filter-genre-chip is-selected" key={genre}>
                       {genre}
                       <button
                         type="button"
                         aria-label={`Remove ${genre} genre`}
-                        onClick={() =>
-                          update({
-                            filter: draft.filter.filter(
-                              (item) => item !== genre
-                            ),
-                          })
-                        }
+                        onClick={() => handleRemoveGenre(genre)}
                       >
                         <FaXmark aria-hidden="true" />
                       </button>
@@ -264,21 +264,15 @@ export default function FilterPanel({
                   role="group"
                   aria-label="Available genres"
                 >
-                  {genresFilter
-                    .filter((genre) => !draft.filter.includes(genre))
+                  {availableGenres
+                    .filter((genre) => !selectedGenres.includes(genre))
                     .map((genre) => (
                       <button
                         type="button"
                         key={genre}
                         className="filter-genre-link"
                         aria-label={`Select ${genre} genre`}
-                        onClick={() =>
-                          update({
-                            filter: draft.filter.includes(genre)
-                              ? draft.filter
-                              : [...draft.filter, genre],
-                          })
-                        }
+                        onClick={() => handleSelectGenre(genre)}
                       >
                         {genre}
                       </button>

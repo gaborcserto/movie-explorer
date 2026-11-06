@@ -261,6 +261,7 @@ describe('TmdbMovieProvider', () => {
           posterSrcSet:
             'https://image.tmdb.org/t/p/w342/alpha.jpg 1x, https://image.tmdb.org/t/p/w780/alpha.jpg 2x, https://image.tmdb.org/t/p/original/alpha.jpg 3x',
           genres: ['Drama', 'Comedy'],
+          rating: 8,
         },
       ],
       page: 1,
@@ -489,6 +490,7 @@ describe('TmdbMovieProvider', () => {
           posterSrcSet:
             'https://image.tmdb.org/t/p/w342/alpha-1798695.jpg 1x, https://image.tmdb.org/t/p/w780/alpha-1798695.jpg 2x, https://image.tmdb.org/t/p/original/alpha-1798695.jpg 3x',
           genres: [],
+          rating: 8,
         },
       ],
       page: 1,

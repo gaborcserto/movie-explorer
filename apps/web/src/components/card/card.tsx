@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { FaStar } from 'react-icons/fa6';
 import { Link, useSearchParams } from 'react-router';
 import type { MovieSummary } from '@movie-explorer/contracts';
 
@@ -8,6 +9,33 @@ import PersonalLibraryActions from '../../features/library/personalLibraryAction
 import type { LibraryMediaType } from '../../features/library/libraryStore';
 import './card.scss';
 
+export function CardRating({
+  rating,
+  className = 'card__subtitle card__rating',
+}: {
+  rating: number | null | undefined;
+  className?: string;
+}) {
+  if (
+    typeof rating !== 'number' ||
+    !Number.isFinite(rating) ||
+    rating <= 0 ||
+    rating > 10
+  ) {
+    return null;
+  }
+
+  return (
+    <p
+      className={`${className} tmdb-rating`}
+      aria-label={`TMDB rating: ${rating.toFixed(1)} out of 10`}
+    >
+      <FaStar aria-hidden="true" />
+      <span>{rating.toFixed(1)}</span>
+    </p>
+  );
+}
+
 interface CardProps {
   movie: MovieSummary;
   loading?: 'lazy' | 'eager';
@@ -16,7 +44,7 @@ interface CardProps {
   displayDate?: string;
   genreNavigation?: boolean;
   libraryMedia?: { mediaType: LibraryMediaType; firstAirDate?: string | null };
-  rating?: string;
+  rating?: number | null;
   onLibraryMembershipRemoved?: () => void;
 }
 
@@ -28,7 +56,7 @@ function Card({
   displayDate,
   genreNavigation = true,
   libraryMedia,
-  rating,
+  rating = movie.rating,
   onLibraryMembershipRemoved,
 }: CardProps) {
   const { id, title, releaseDate, posterUrl, posterSrcSet, genres } = movie;
@@ -100,7 +128,7 @@ function Card({
           </p>
           {subtitle && <p className="card__subtitle">{subtitle}</p>}
         </div>
-        {rating && <p className="card__subtitle card__rating">{rating}</p>}
+        <CardRating rating={rating} />
       </div>
     </article>
   );

@@ -85,7 +85,7 @@ export default function PersonProfile({ person }: { person: PersonDetails }) {
           {isLong && (
             <button
               type="button"
-              className="btn btn--outline btn--action"
+              className="btn btn--outline btn--action btn--mobile-full"
               aria-expanded={expanded}
               aria-controls="person-biography"
               onClick={() => setExpanded(!expanded)}

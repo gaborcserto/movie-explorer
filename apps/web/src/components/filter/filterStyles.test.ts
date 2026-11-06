@@ -106,3 +106,42 @@ test('animates the Release Year picker in both directions and respects reduced m
     ).transition
   ).toBe('none');
 });
+
+test('mobile trigger centers its flex children at full width', () => {
+  const base: Record<string, string> = {};
+  const mobile: Record<string, string> = {};
+
+  stylesheet.walkRules('.movie-filters__trigger', (rule) => {
+    rule.walkDecls((decl) => {
+      const target = rule.parent?.type === 'atrule' ? mobile : base;
+      target[decl.prop] = decl.value;
+    });
+  });
+
+  expect(base).toMatchObject({ display: 'flex', 'align-items': 'center' });
+  expect(mobile).toMatchObject({
+    width: '100%',
+    'justify-content': 'center',
+    'text-align': 'center',
+  });
+});
+
+test('genre hover changes color without underlining and keeps visible focus', () => {
+  const hover: Record<string, string> = {};
+  const focus: Record<string, string> = {};
+
+  stylesheet.walkRules('.filter-genres__available button:hover', (rule) => {
+    rule.walkDecls((decl) => {
+      hover[decl.prop] = decl.value;
+    });
+  });
+  stylesheet.walkRules('.movie-filters button:focus-visible', (rule) => {
+    rule.walkDecls((decl) => {
+      focus[decl.prop] = decl.value;
+    });
+  });
+
+  expect(hover['text-decoration']).toBe('none');
+  expect(focus.outline).toBe(`2px solid ${hover.color}`);
+  expect(focus['outline-offset']).toBe('3px');
+});

@@ -34,7 +34,12 @@ function movieSummary(value: unknown): value is MovieSummary {
     typeof value.posterUrl === 'string' &&
     Array.isArray(value.genres) &&
     value.genres.every((genre: unknown) => typeof genre === 'string') &&
-    optionalText(value, ['releaseDate', 'posterSrcSet'])
+    optionalText(value, ['releaseDate', 'posterSrcSet']) &&
+    (value.rating === undefined ||
+      (typeof value.rating === 'number' &&
+        Number.isFinite(value.rating) &&
+        value.rating >= 0 &&
+        value.rating <= 10))
   );
 }
 

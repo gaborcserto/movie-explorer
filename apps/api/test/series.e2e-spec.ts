@@ -53,7 +53,7 @@ describe('Series details API (e2e)', () => {
     provider.findPopular.mockResolvedValue(response);
     await request(app.getHttpServer())
       .get(
-        '/api/v1/series?genre=drama&page=2&year=2005&minimumRating=7&sort=title&order=asc',
+        '/api/v1/series?genre=drama%2Ccomedy&page=2&year=2005&minimumRating=7&sort=title&order=asc',
       )
       .expect(200)
       .expect(response);
@@ -61,7 +61,7 @@ describe('Series details API (e2e)', () => {
     expect(provider.findPopular).toHaveBeenCalledWith({
       page: 2,
       year: 2005,
-      genre: 'drama',
+      genre: ['drama', 'comedy'],
       minimumRating: 7,
       sort: 'title',
       order: 'asc',
@@ -113,6 +113,8 @@ describe('Series details API (e2e)', () => {
     'minimumRating=11',
     'minimumRating=-1',
     'genre=invalid',
+    'genre=drama%2Cinvalid',
+    'genre=drama%2Cdrama',
     'genre=science%20fiction',
     'genre=drama&genre=comedy',
     'sort=bad',

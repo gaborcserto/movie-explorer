@@ -747,16 +747,22 @@ test('applies Series browse genre independently of dormant Movie genres and rest
   const router = setup('/search?view=tv&filter=drama');
 
   await open();
-  await userEvent.selectOptions(
-    screen.getByLabelText('Genre'),
-    'sci-fi & fantasy'
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Select sci-fi & fantasy genre' })
+  );
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Select drama genre' })
+  );
+  expect(screen.getByText('sci-fi & fantasy')).toHaveClass(
+    'filter-genre-chip',
+    'is-selected'
   );
   await apply();
   await closed();
 
   expect(
     new URLSearchParams(router.state.location.search).get('seriesGenre')
-  ).toBe('sci-fi & fantasy');
+  ).toBe('drama,sci-fi & fantasy');
   expect(new URLSearchParams(router.state.location.search).get('filter')).toBe(
     'drama'
   );
@@ -766,5 +772,63 @@ test('applies Series browse genre independently of dormant Movie genres and rest
   });
   await open();
 
-  expect(screen.getByLabelText('Genre')).toHaveValue('');
+  expect(
+    screen.queryByRole('button', { name: 'Remove sci-fi & fantasy genre' })
+  ).toBeNull();
+});
+
+test('Series chips support removal, reset and Back/Forward restoration', async () => {
+  const router = setup('/search?view=tv&seriesGenre=drama,comedy');
+
+  await open();
+  expect(
+    screen.getByRole('button', { name: 'Remove drama genre' })
+  ).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'Remove comedy genre' })
+  ).toBeVisible();
+
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Remove drama genre' })
+  );
+  await apply();
+  await closed();
+  expect(
+    new URLSearchParams(router.state.location.search).get('seriesGenre')
+  ).toBe('comedy');
+
+  await act(async () => {
+    await router.navigate(-1);
+  });
+  await open();
+  expect(
+    screen.getByRole('button', { name: 'Remove drama genre' })
+  ).toBeVisible();
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Close Filters & Sort' })
+  );
+  await closed();
+
+  await act(async () => {
+    await router.navigate(1);
+  });
+  await open();
+  expect(
+    screen.queryByRole('button', { name: 'Remove drama genre' })
+  ).toBeNull();
+  expect(
+    screen.getByRole('button', { name: 'Remove comedy genre' })
+  ).toBeVisible();
+  await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
+  expect(
+    screen.queryByRole('button', { name: 'Remove comedy genre' })
+  ).toBeNull();
+  expect(
+    new URLSearchParams(router.state.location.search).get('seriesGenre')
+  ).toBe('comedy');
+  await apply();
+  await closed();
+  expect(
+    new URLSearchParams(router.state.location.search).has('seriesGenre')
+  ).toBe(false);
 });

@@ -98,7 +98,7 @@ describe('TmdbSeriesProvider', () => {
       provider.findPopular({
         page: 2,
         year: 2005,
-        genre: 'sci-fi & fantasy',
+        genre: ['sci-fi & fantasy', 'drama'],
         minimumRating: 7,
         sort: 'title',
         order: 'asc',
@@ -120,7 +120,7 @@ describe('TmdbSeriesProvider', () => {
       page: '2',
       include_adult: 'false',
       sort_by: 'name.asc',
-      with_genres: '10765',
+      with_genres: '10765,18',
       'first_air_date.gte': '2005-01-01',
       'first_air_date.lte': '2005-12-31',
       'vote_average.gte': '7',

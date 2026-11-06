@@ -118,6 +118,12 @@ export function filmography(value: unknown, allowUnlinked = false): boolean {
         typeof item.title === 'string' &&
         typeof item.posterUrl === 'string' &&
         strings(item.genres) &&
+        (item.rating === undefined ||
+          (item.mediaType === 'tv' && item.rating === null) ||
+          (typeof item.rating === 'number' &&
+            Number.isFinite(item.rating) &&
+            item.rating >= 0 &&
+            item.rating <= 10)) &&
         ['posterSrcSet', 'releaseDate'].every(
           (key) => item[key] === undefined || typeof item[key] === 'string'
         ) &&
