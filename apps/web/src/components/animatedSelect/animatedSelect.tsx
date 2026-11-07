@@ -46,6 +46,8 @@ export default function AnimatedSelect({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listboxRef = useRef<HTMLDivElement>(null);
 
+  const typeaheadRef = useRef({ text: '', time: 0 });
+
   const activeOptionId = `${id}-option-${activeIndex}`;
 
   useEffect(() => {
@@ -157,6 +159,39 @@ export default function AnimatedSelect({
 
   const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (options.length === 0) {
+      return;
+    }
+
+    if (
+      event.key.length === 1 &&
+      event.key !== ' ' &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey
+    ) {
+      const now = event.timeStamp;
+      const previous = typeaheadRef.current;
+      const text =
+        (now - previous.time < 700 ? previous.text : '') +
+        event.key.toLocaleLowerCase();
+      typeaheadRef.current = { text, time: now };
+
+      const repeated = [...text].every((character) => character === text[0]);
+      const prefix = repeated ? text[0] : text;
+      const start = open ? activeIndex : selectedIndex;
+      const offset = repeated ? 1 : 0;
+      const index = Array.from(
+        { length: options.length },
+        (_, step) => (start + step + offset) % options.length
+      ).find((candidate) =>
+        options[candidate].label.toLocaleLowerCase().startsWith(prefix)
+      );
+
+      if (index !== undefined) {
+        event.preventDefault();
+        openAt(index);
+      }
+
       return;
     }
 

@@ -67,6 +67,26 @@ function ControlledSelect() {
 }
 
 describe('<AnimatedSelect />', () => {
+  it('finds options by typing and commits only on Enter', async () => {
+    const user = userEvent.setup();
+    render(<ControlledSelect />);
+    const trigger = screen.getByRole('combobox', { name: 'Sort filmography' });
+    trigger.focus();
+
+    await user.keyboard('old');
+
+    expect(trigger).toHaveAttribute('data-value', 'newest');
+    expect(trigger).toHaveAttribute(
+      'aria-activedescendant',
+      screen.getByRole('option', { name: 'Oldest first' }).id
+    );
+
+    await user.keyboard('{Enter}');
+
+    expect(trigger).toHaveAttribute('data-value', 'oldest');
+    expect(trigger).toHaveFocus();
+  });
+
   it('opens from the trigger and commits pointer selections without losing focus', async () => {
     const user = userEvent.setup();
     render(<ControlledSelect />);

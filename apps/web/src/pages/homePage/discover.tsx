@@ -9,6 +9,7 @@ import { FaClapperboard, FaPlay, FaTv } from 'react-icons/fa6';
 
 import usePreferencesStore from '../../features/preferences/preferencesStore';
 import { i18n } from '../../i18n';
+import AnimatedSelect from '../../components/animatedSelect';
 import FeaturedHero from './featuredHero';
 import HomeRecommendations from './homeRecommendations';
 import DiscoverRow from './discoverSection';
@@ -129,6 +130,9 @@ export default function DiscoverPage() {
   const [requestedProviderId, setSelectedProviderId] = useState<number | null>(
     null
   );
+  const [streamingMediaType, setStreamingMediaType] = useState<
+    'all' | 'movie' | 'tv'
+  >('all');
   const providerTabsRef = useRef<HTMLDivElement>(null);
   const providerCatalog = useStreamingProviderCatalog();
   const availableProviders = useMemo(
@@ -183,7 +187,11 @@ export default function DiscoverPage() {
         : undefined,
     [selectedProvider, guestPreferences.region]
   );
-  const streaming = useDiscoverSection(null, streamingProviderSelection);
+  const streaming = useDiscoverSection(
+    null,
+    streamingProviderSelection,
+    streamingMediaType === 'all' ? undefined : streamingMediaType
+  );
 
   return (
     <div className="discover-page container">
@@ -310,6 +318,20 @@ export default function DiscoverPage() {
               </div>
             )}
           </div>
+          <AnimatedSelect
+            label={i18n.t('ui.streaming_media_type')}
+            value={streamingMediaType}
+            options={[
+              { value: 'all', label: i18n.t('ui.all') },
+              { value: 'movie', label: i18n.t('ui.movies') },
+              { value: 'tv', label: i18n.t('ui.series') },
+            ]}
+            onChange={(value) => {
+              if (value === 'all' || value === 'movie' || value === 'tv') {
+                setStreamingMediaType(value);
+              }
+            }}
+          />
           {providerCatalog.state.status === 'loading' && (
             <p className="discover-row__message" role="status">
               {i18n.t('ui.loading_streaming_providers')}

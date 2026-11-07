@@ -117,7 +117,7 @@ function feedKey(
   mediaType?: DiscoveryMediaType
 ) {
   if (provider) {
-    return `streaming:${provider.region}:${provider.id}`;
+    return `streaming:${provider.region}:${provider.id}:${mediaType ?? 'all'}`;
   }
 
   if (section && mediaType) {

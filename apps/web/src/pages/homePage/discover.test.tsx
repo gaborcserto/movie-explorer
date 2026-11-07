@@ -87,6 +87,51 @@ describe('Discover page', () => {
     );
   });
 
+  it('filters streaming titles by media type and restores the All feed', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getStreamingProviderSection).mockResolvedValue({
+      ...emptyResponse,
+      totalResults: 2,
+      results: [
+        {
+          id: 901,
+          mediaType: 'movie',
+          title: 'Stream Movie',
+          posterUrl: '/movie.jpg',
+        },
+        {
+          id: 902,
+          mediaType: 'tv',
+          title: 'Stream Series',
+          posterUrl: '/series.jpg',
+        },
+      ],
+    });
+    renderDiscover();
+
+    const section = screen.getByRole('region', { name: 'Streaming' });
+    await within(section).findByText('Stream Movie');
+    const select = within(section).getByRole('combobox', {
+      name: 'Streaming media type',
+    });
+
+    await user.click(select);
+    await user.click(screen.getByRole('option', { name: 'Series' }));
+
+    await waitFor(() =>
+      expect(
+        within(section).queryByText('Stream Movie')
+      ).not.toBeInTheDocument()
+    );
+    expect(await within(section).findByText('Stream Series')).toBeVisible();
+
+    await user.click(select);
+    await user.click(screen.getByRole('option', { name: 'All' }));
+
+    expect(await within(section).findByText('Stream Movie')).toBeVisible();
+    expect(within(section).getByText('Stream Series')).toBeVisible();
+  });
+
   it('renders featured content and consolidated movie and series categories', async () => {
     const user = userEvent.setup();
     const { container } = renderDiscover();
