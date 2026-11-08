@@ -1759,6 +1759,17 @@ describe('Series hierarchy', () => {
       name: 'Remove from Favorites The Journey',
     });
 
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Add to Watchlist The Journey' })
+    );
+    expect(
+      screen.getByRole('button', { name: 'Remove from Watchlist The Journey' })
+    ).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Remove from Watchlist The Journey' })
+    );
+    expect(useLibraryStore.getState().has('tv:1', 'favorites')).toBe(true);
+
     expect(actions.closest('.personal-library-actions')).toHaveClass(
       'personal-library-actions--expanded'
     );

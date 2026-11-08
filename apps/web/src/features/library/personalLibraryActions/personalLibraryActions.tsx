@@ -5,6 +5,8 @@ import {
   FaHeart,
   FaRegCircleCheck,
   FaRegHeart,
+  FaBookmark,
+  FaRegBookmark,
 } from 'react-icons/fa6';
 import type { IconType } from 'react-icons';
 import { useStore } from 'zustand';
@@ -53,9 +55,23 @@ const actions: ActionDefinition[] = [
       return i18n.t('ui.remove_from_favorites');
     },
   },
+  {
+    collection: 'watchlist',
+    inactiveIcon: FaRegBookmark,
+    activeIcon: FaBookmark,
+    get addLabel() {
+      return i18n.t('ui.add_to_watchlist');
+    },
+    get removeLabel() {
+      return i18n.t('ui.remove_from_watchlist');
+    },
+  },
 ];
 
 const actionLabels: Record<LibraryCollection, string> = {
+  get watchlist() {
+    return i18n.t('ui.watchlist');
+  },
   get watched() {
     return i18n.t('ui.watched');
   },
@@ -116,7 +132,11 @@ export default function PersonalLibraryActions({
     useLibraryStore,
     selectLibraryMembership(key, 'favorites')
   );
-  const memberships = [isWatched, isFavorite];
+  const isWatchlisted = useStore(
+    useLibraryStore,
+    selectLibraryMembership(key, 'watchlist')
+  );
+  const memberships = [isWatched, isFavorite, isWatchlisted];
 
   const handleToggle = (
     event: MouseEvent<HTMLButtonElement>,

@@ -28,6 +28,61 @@ describe('TmdbDiscoveryProvider', () => {
     jest.restoreAllMocks();
   });
 
+  it('returns the complete ranked pool for stable client Load More without detail requests', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      const request = new URL(url);
+
+      if (request.pathname.includes('/watch/providers/')) {
+        return Promise.resolve(
+          Response.json({
+            results: [{ provider_id: 8, provider_name: 'Netflix' }],
+          }),
+        );
+      }
+
+      const movie = request.pathname.endsWith('/movie');
+      const page = Number(request.searchParams.get('page'));
+
+      return Promise.resolve(
+        Response.json({
+          page,
+          total_pages: 2,
+          total_results: 40,
+          results: Array.from({ length: 20 }, (_, index) => ({
+            id: (page - 1) * 20 + index + 1,
+            title: movie ? 'Movie' : undefined,
+            name: movie ? undefined : 'Series',
+            popularity: index + 1,
+            release_date: '2025-01-01',
+            first_air_date: '2005-01-01',
+          })),
+        }),
+      );
+    });
+    const first = await provider.findStreaming(8, 'HU', 1);
+    const count = fetchMock.mock.calls.length;
+    const second = await provider.findStreaming(8, 'HU', 2);
+
+    expect(first.totalResults).toBe(80);
+    expect(first.totalPages).toBe(1);
+    expect(first.results).toHaveLength(80);
+    expect(second.results).toHaveLength(0);
+    expect(
+      new Set(
+        [...first.results, ...second.results].map(
+          (item) => `${item.mediaType}:${item.id}`,
+        ),
+      ).size,
+    ).toBe(80);
+    expect(fetchMock).toHaveBeenCalledTimes(count);
+    expect(count).toBe(7);
+    expect(
+      fetchMock.mock.calls.every(([url]) =>
+        /\/(discover|watch\/providers)\//.test(new URL(String(url)).pathname),
+      ),
+    ).toBe(true);
+  });
+
   it('expires unused search entries and deduplicates concurrent refetches', async () => {
     const now = jest.spyOn(Date, 'now').mockReturnValue(1000);
     fetchMock.mockImplementation(() =>
@@ -251,15 +306,15 @@ describe('TmdbDiscoveryProvider', () => {
       { id: 10, name: 'TV Provider' },
     ]);
     expect(results.results.map((item) => item.mediaType)).toEqual([
-      'movie',
       'tv',
+      'movie',
     ]);
 
     const discoveryCalls = fetchMock.mock.calls.filter(([url]) =>
       String(url).includes('/discover/'),
     );
 
-    expect(discoveryCalls).toHaveLength(2);
+    expect(discoveryCalls).toHaveLength(3);
 
     discoveryCalls.forEach(([url]) => {
       const requestUrl = new URL(url);

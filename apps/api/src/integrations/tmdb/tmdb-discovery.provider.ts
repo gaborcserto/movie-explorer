@@ -18,6 +18,7 @@ import { TmdbTransport } from './tmdb.transport';
 import { mapSearch, searchPage } from './tmdb-search.mapper';
 import { TmdbRecommendationPools } from './tmdb-recommendation-pools';
 import { TmdbRelatedTitles } from './tmdb-related-titles';
+import { rankStreaming } from './tmdb-streaming-ranking';
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const SEARCH_CACHE_CAPACITY = 100;
@@ -136,41 +137,91 @@ export class TmdbDiscoveryProvider {
       throw new BadRequestException('Streaming provider is not available');
     }
 
-    return this.cachedSearch(
-      `streaming:${region}:${providerId}:${page}`,
+    const pool = await this.cachedSearch(
+      `streaming-ranked:${region}:${providerId}`,
       async () => {
+        const today = new Date(Date.now() - 86400000)
+          .toISOString()
+          .slice(0, 10);
+        const since = new Date(Date.now() - 365 * 86400000)
+          .toISOString()
+          .slice(0, 10);
         const query = {
           watch_region: region,
           with_watch_providers: String(providerId),
           with_watch_monetization_types: 'flatrate',
           sort_by: 'popularity.desc',
         };
-
-        const [movies, series] = await Promise.all([
+        const [movies, series, active] = await Promise.all([
           this.fetchPage(
             '/discover/movie',
             'movie',
             query,
             'streaming-movies',
-            page,
+            1,
           ),
-          this.fetchPage('/discover/tv', 'tv', query, 'streaming-series', page),
+          this.fetchPage('/discover/tv', 'tv', query, 'streaming-series', 1),
+          this.fetchPage(
+            '/discover/tv',
+            'tv',
+            { ...query, 'air_date.gte': since, 'air_date.lte': today },
+            'streaming-series',
+            1,
+          ),
         ]);
-
-        const results = new Map<string, SearchResult>();
-
-        [...movies.results, ...series.results].forEach((result) => {
-          results.set(`${result.mediaType}:${result.id}`, result);
-        });
+        const extras = await Promise.all([
+          ...(movies.totalPages > 1
+            ? [
+                this.fetchPage(
+                  '/discover/movie',
+                  'movie',
+                  query,
+                  'streaming-movies',
+                  2,
+                ),
+              ]
+            : []),
+          ...(series.totalPages > 1
+            ? [
+                this.fetchPage(
+                  '/discover/tv',
+                  'tv',
+                  query,
+                  'streaming-series',
+                  2,
+                ),
+              ]
+            : []),
+        ]);
+        const results = rankStreaming(
+          [
+            ...movies.results,
+            ...series.results,
+            ...extras.flatMap((response) => response.results),
+            ...active.results,
+          ],
+          new Set(
+            active.results
+              .filter((item) => item.mediaType === 'tv')
+              .map((item) => item.id),
+          ),
+          Date.now(),
+        );
 
         return {
-          results: [...results.values()],
-          page,
-          totalPages: Math.max(movies.totalPages, series.totalPages),
-          totalResults: movies.totalResults + series.totalResults,
+          results,
+          page: 1,
+          totalPages: results.length ? 1 : 0,
+          totalResults: results.length,
         };
       },
     );
+
+    return {
+      ...pool,
+      results: page === 1 ? pool.results : [],
+      page,
+    };
   }
 
   private async cachedSearch(
@@ -242,7 +293,7 @@ export class TmdbDiscoveryProvider {
     section: DiscoverySection,
     page: number,
   ): Promise<SearchResponse> {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
     const daysAgo = (days: number) => {
       const date = new Date(`${today}T00:00:00Z`);

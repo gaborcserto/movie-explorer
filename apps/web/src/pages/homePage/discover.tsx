@@ -9,7 +9,6 @@ import { FaClapperboard, FaPlay, FaTv } from 'react-icons/fa6';
 
 import usePreferencesStore from '../../features/preferences/preferencesStore';
 import { i18n } from '../../i18n';
-import AnimatedSelect from '../../components/animatedSelect';
 import FeaturedHero from './featuredHero';
 import HomeRecommendations from './homeRecommendations';
 import DiscoverRow from './discoverSection';
@@ -318,20 +317,29 @@ export default function DiscoverPage() {
               </div>
             )}
           </div>
-          <AnimatedSelect
-            label={i18n.t('ui.streaming_media_type')}
-            value={streamingMediaType}
-            options={[
-              { value: 'all', label: i18n.t('ui.all') },
-              { value: 'movie', label: i18n.t('ui.movies') },
-              { value: 'tv', label: i18n.t('ui.series') },
-            ]}
-            onChange={(value) => {
-              if (value === 'all' || value === 'movie' || value === 'tv') {
-                setStreamingMediaType(value);
-              }
-            }}
-          />
+          <div
+            className="streaming-media-control"
+            role="group"
+            aria-label={i18n.t('ui.streaming_media_type')}
+          >
+            {(
+              [
+                ['all', i18n.t('ui.all')],
+                ['movie', i18n.t('ui.movies')],
+                ['tv', i18n.t('ui.series')],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className="btn"
+                aria-pressed={streamingMediaType === value}
+                onClick={() => setStreamingMediaType(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           {providerCatalog.state.status === 'loading' && (
             <p className="discover-row__message" role="status">
               {i18n.t('ui.loading_streaming_providers')}

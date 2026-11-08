@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { createEvent, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 
@@ -67,6 +67,76 @@ function ControlledSelect() {
 }
 
 describe('<AnimatedSelect />', () => {
+  it('cycles repeated letters without committing the active option', () => {
+    render(
+      <AnimatedSelect
+        label="Year order"
+        options={[
+          { value: 'new', label: 'Newest' },
+          { value: 'name', label: 'Name' },
+          { value: 'old', label: 'Oldest' },
+        ]}
+        value="new"
+        onChange={vi.fn()}
+      />
+    );
+    const trigger = screen.getByRole('combobox', { name: 'Year order' });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: 'n' });
+
+    expect(trigger).toHaveAttribute(
+      'aria-activedescendant',
+      screen.getByRole('option', { name: 'Name' }).id
+    );
+
+    fireEvent.keyDown(trigger, { key: 'n' });
+
+    expect(trigger).toHaveAttribute(
+      'aria-activedescendant',
+      screen.getByRole('option', { name: 'Newest' }).id
+    );
+    expect(trigger).toHaveAttribute('data-value', 'new');
+  });
+
+  it('starts a new prefix after the type-ahead timeout', () => {
+    render(<ControlledSelect />);
+    const trigger = screen.getByRole('combobox', { name: 'Sort filmography' });
+    trigger.focus();
+    const first = createEvent.keyDown(trigger, { key: 'o' });
+    Object.defineProperty(first, 'timeStamp', { value: 1000 });
+    fireEvent(trigger, first);
+
+    const next = createEvent.keyDown(trigger, { key: 't' });
+    Object.defineProperty(next, 'timeStamp', { value: 1800 });
+    fireEvent(trigger, next);
+
+    expect(trigger).toHaveAttribute(
+      'aria-activedescendant',
+      screen.getByRole('option', { name: /Title/ }).id
+    );
+    expect(trigger).toHaveAttribute('data-value', 'newest');
+  });
+
+  it.each(['ctrlKey', 'metaKey', 'altKey'])(
+    'leaves %s shortcuts available without opening suggestions',
+    (modifier) => {
+      render(<ControlledSelect />);
+      const trigger = screen.getByRole('combobox', {
+        name: 'Sort filmography',
+      });
+      trigger.focus();
+      const event = createEvent.keyDown(trigger, {
+        key: 'o',
+        [modifier]: true,
+      });
+      fireEvent(trigger, event);
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(trigger).toHaveAttribute('aria-expanded', 'false');
+      expect(trigger).toHaveAttribute('data-value', 'newest');
+    }
+  );
+
   it('finds options by typing and commits only on Enter', async () => {
     const user = userEvent.setup();
     render(<ControlledSelect />);

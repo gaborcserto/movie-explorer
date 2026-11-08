@@ -1,5 +1,9 @@
 {
   "ui": {
+    "watchlist": "Megnézendők",
+    "add_to_watchlist": "Hozzáadás a Megnézendőkhöz",
+    "remove_from_watchlist": "Eltávolítás a Megnézendők közül",
+    "your_watchlist_collection_is_empty": "A Megnézendők gyűjteményed üres.",
     "invalid_request": "Érvénytelen kérés",
     "please_check_your_request_and_try_again": "Ellenőrizd a kérést, majd próbáld újra.",
     "information_not_found": "Az információ nem található",

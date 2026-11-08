@@ -26,6 +26,10 @@
     "query": "Results for {{query}}"
   },
   "ui": {
+    "watchlist": "Watchlist",
+    "add_to_watchlist": "Add to Watchlist",
+    "remove_from_watchlist": "Remove from Watchlist",
+    "your_watchlist_collection_is_empty": "Your Watchlist is empty.",
     "invalid_request": "Invalid request",
     "please_check_your_request_and_try_again": "Please check your request and try again.",
     "information_not_found": "Information not found",

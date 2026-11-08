@@ -5,7 +5,7 @@ import type { StateStorage } from 'zustand/middleware';
 import { i18n } from '../../i18n';
 
 export type LibraryMediaType = 'movie' | 'tv';
-export type LibraryCollection = 'watched' | 'favorites';
+export type LibraryCollection = 'watched' | 'favorites' | 'watchlist';
 
 export type LibraryMedia = {
   mediaType: LibraryMediaType;
@@ -40,9 +40,9 @@ interface LibraryState extends PersistedLibrary {
 }
 
 export const LIBRARY_STORAGE_KEY = 'movie-explorer.personal-library';
-export const LIBRARY_STORAGE_VERSION = 2;
+export const LIBRARY_STORAGE_VERSION = 3;
 
-const collections: LibraryCollection[] = ['watched', 'favorites'];
+const collections: LibraryCollection[] = ['watched', 'favorites', 'watchlist'];
 const mediaTypes: LibraryMediaType[] = ['movie', 'tv'];
 
 let writesBlocked = false;
@@ -136,8 +136,8 @@ function toItem(media: LibraryMedia): Omit<LibraryItem, 'collections'> {
 function isValidStoredItem(
   value: unknown,
   key: string,
-  legacy: boolean
-): value is LibraryItem & { collections: { watchlist?: boolean } } {
+  version: number
+): value is LibraryItem {
   if (!isRecord(value) || !isMediaType(value.mediaType)) {
     return false;
   }
@@ -159,14 +159,17 @@ function isValidStoredItem(
         value.year <= 9999));
 
   const flags = value.collections;
-  const storedCollections = legacy
-    ? [...collections, 'watchlist']
-    : collections;
+  const storedCollections =
+    version === 2
+      ? collections.filter((collection) => collection !== 'watchlist')
+      : collections;
 
   const validFlags =
     isRecord(flags) &&
     Object.keys(flags).every((collection) =>
-      storedCollections.includes(collection)
+      storedCollections.some(
+        (storedCollection) => storedCollection === collection
+      )
     ) &&
     storedCollections.every(
       (collection) => typeof flags[collection] === 'boolean'
@@ -177,7 +180,7 @@ function isValidStoredItem(
 
 function readItems(
   value: unknown,
-  legacy = false
+  version = LIBRARY_STORAGE_VERSION
 ): Record<string, LibraryItem> {
   if (!isRecord(value) || !isRecord(value.items)) {
     return {};
@@ -186,14 +189,15 @@ function readItems(
   const items: Record<string, LibraryItem> = {};
 
   Object.entries(value.items).forEach(([key, item]) => {
-    if (isValidStoredItem(item, key, legacy)) {
+    if (isValidStoredItem(item, key, version)) {
       items[key] = {
         ...item,
         collections: {
           favorites:
             item.collections.favorites ||
-            (legacy && item.collections.watchlist === true),
+            (version === 1 && item.collections.watchlist === true),
           watched: item.collections.watched,
+          watchlist: version === 2 ? false : item.collections.watchlist,
         },
       };
     }
@@ -223,7 +227,7 @@ const safeStateStorage: StateStorage = {
         return null;
       }
 
-      if (parsed.version !== 1 && parsed.version !== LIBRARY_STORAGE_VERSION) {
+      if (![1, 2, LIBRARY_STORAGE_VERSION].includes(parsed.version)) {
         writesBlocked = true;
         reportWarning(
           parsed.version > LIBRARY_STORAGE_VERSION
@@ -236,14 +240,19 @@ const safeStateStorage: StateStorage = {
         );
       } else {
         writesBlocked = false;
-        // Keep the original payload, including unrecognized records, before v2 writes.
-        // A failed backup leaves migration usable in memory without overwriting v1.
+        // Preserve older payloads before migration, including unrecognized records.
+        // A failed backup allows in-memory use without overwriting the original.
         if (
-          parsed.version === 1 &&
-          globalThis.localStorage.getItem(`${name}.v1-backup`) === null
+          parsed.version < LIBRARY_STORAGE_VERSION &&
+          globalThis.localStorage.getItem(
+            `${name}.v${parsed.version}-backup`
+          ) === null
         ) {
           try {
-            globalThis.localStorage.setItem(`${name}.v1-backup`, raw);
+            globalThis.localStorage.setItem(
+              `${name}.v${parsed.version}-backup`,
+              raw
+            );
           } catch {
             writesBlocked = true;
             reportWarning(
@@ -256,7 +265,9 @@ const safeStateStorage: StateStorage = {
 
         const storedState = isRecord(parsed.state) ? parsed.state : undefined;
         lastItemsSignature =
-          parsed.version === 1 ? '' : JSON.stringify(storedState?.items ?? {});
+          parsed.version < LIBRARY_STORAGE_VERSION
+            ? ''
+            : JSON.stringify(storedState?.items ?? {});
         if (!writesBlocked) {
           reportWarning(null);
         }
@@ -341,6 +352,7 @@ export const useLibraryStore = create<LibraryState>()(
                 : {
                     watched: collection === 'watched',
                     favorites: collection === 'favorites',
+                    watchlist: collection === 'watchlist',
                   },
             },
           },
@@ -436,8 +448,8 @@ export const useLibraryStore = create<LibraryState>()(
         items: readItems(persisted),
       }),
       migrate: (persisted, version) => {
-        if (version === 1) {
-          return { items: readItems(persisted, true) };
+        if (version === 1 || version === 2) {
+          return { items: readItems(persisted, version) };
         }
         if (version !== LIBRARY_STORAGE_VERSION) {
           reportWarning(

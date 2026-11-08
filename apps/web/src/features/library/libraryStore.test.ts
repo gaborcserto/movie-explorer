@@ -133,7 +133,130 @@ describe('Personal Library store', () => {
 });
 
 describe('Personal Library persistence', () => {
-  it('merges legacy saved titles into Favorites, preserves Watched and retains the original payload', async () => {
+  it('retains v2 data when its backup fails while Watchlist remains usable in memory', async () => {
+    const key = 'movie-explorer.personal-library';
+    const original = JSON.stringify({
+      version: 2,
+      state: {
+        items: {
+          'movie:42': {
+            ...movie,
+            collections: { favorites: true, watched: true },
+          },
+        },
+      },
+    });
+    localStorage.setItem(key, original);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    const { useLibraryStore } = await loadStore();
+    useLibraryStore.getState().add(movie, 'watchlist');
+
+    expect(useLibraryStore.getState().items['movie:42'].collections).toEqual({
+      favorites: true,
+      watched: true,
+      watchlist: true,
+    });
+    expect(localStorage.getItem(key)).toBe(original);
+    expect(useLibraryStore.getState().persistenceWarning).toMatch(
+      /original data is preserved/i
+    );
+  });
+
+  it('ignores invalid v3 flags and missing fields while retaining valid Watchlist entries', async () => {
+    localStorage.setItem(
+      'movie-explorer.personal-library',
+      JSON.stringify({
+        version: 3,
+        state: {
+          items: {
+            'movie:42': {
+              ...movie,
+              collections: {
+                favorites: false,
+                watched: false,
+                watchlist: true,
+              },
+            },
+            'tv:42': {
+              ...series,
+              collections: { favorites: false, watched: false },
+            },
+            'movie:43': {
+              ...movie,
+              id: 43,
+              collections: {
+                favorites: false,
+                watched: false,
+                watchlist: 'true',
+              },
+            },
+          },
+        },
+      })
+    );
+    const { useLibraryStore } = await loadStore();
+
+    expect(Object.keys(useLibraryStore.getState().items)).toEqual(['movie:42']);
+    expect(useLibraryStore.getState().has('movie:42', 'watchlist')).toBe(true);
+  });
+
+  it('migrates v2 without changing Favorites or Watched and starts Watchlist empty', async () => {
+    const key = 'movie-explorer.personal-library';
+    const original = JSON.stringify({
+      version: 2,
+      state: {
+        items: {
+          'movie:42': {
+            ...movie,
+            collections: { favorites: true, watched: true },
+          },
+        },
+      },
+    });
+    localStorage.setItem(key, original);
+    const { useLibraryStore } = await loadStore();
+
+    expect(useLibraryStore.getState().items['movie:42'].collections).toEqual({
+      favorites: true,
+      watched: true,
+      watchlist: false,
+    });
+    expect(localStorage.getItem(`${key}.v2-backup`)).toBe(original);
+    expect(JSON.parse(localStorage.getItem(key) ?? '{}').version).toBe(3);
+  });
+
+  it('persists independent Watchlist entries, deduplicates identities and removes only the requested membership', async () => {
+    const first = await loadStore();
+    first.useLibraryStore.getState().add(movie, 'watchlist');
+    first.useLibraryStore.getState().add(movie, 'watchlist');
+    first.useLibraryStore.getState().add(series, 'watchlist');
+    first.useLibraryStore.getState().add(movie, 'favorites');
+    first.useLibraryStore.getState().toggle(movie, 'watched');
+    const second = await loadStore();
+
+    expect(Object.keys(second.useLibraryStore.getState().items)).toEqual([
+      'movie:42',
+      'tv:42',
+    ]);
+    expect(
+      second.useLibraryStore.getState().items['movie:42'].collections
+    ).toEqual({ favorites: true, watched: true, watchlist: true });
+    expect(
+      second.useLibraryStore.getState().items['tv:42'].collections
+    ).toEqual({ favorites: false, watched: false, watchlist: true });
+    second.useLibraryStore.getState().remove('movie:42', 'watchlist');
+    second.useLibraryStore.getState().remove('tv:42', 'watchlist');
+    const third = await loadStore();
+
+    expect(
+      third.useLibraryStore.getState().items['movie:42'].collections
+    ).toEqual({ favorites: true, watched: true, watchlist: false });
+    expect(third.useLibraryStore.getState().items['tv:42']).toBeUndefined();
+  });
+
+  it('restores legacy Watchlist while preserving migrated Favorites, Watched and the original payload', async () => {
     const key = 'movie-explorer.personal-library';
     const legacy = JSON.stringify({
       version: 1,
@@ -164,20 +287,20 @@ describe('Personal Library persistence', () => {
 
     expect(
       first.useLibraryStore.getState().items['movie:42'].collections
-    ).toEqual({ favorites: true, watched: true });
+    ).toEqual({ favorites: true, watched: true, watchlist: true });
     expect(first.useLibraryStore.getState().items['tv:42'].collections).toEqual(
-      { favorites: true, watched: false }
+      { favorites: true, watched: false, watchlist: true }
     );
     expect(
       first.useLibraryStore.getState().items['movie:43'].collections
-    ).toEqual({ favorites: false, watched: true });
+    ).toEqual({ favorites: false, watched: true, watchlist: false });
     expect(Object.keys(first.useLibraryStore.getState().items)).toHaveLength(3);
     expect(localStorage.getItem(`${key}.v1-backup`)).toBe(legacy);
 
     const migrated = localStorage.getItem(key);
 
-    expect(JSON.parse(migrated ?? '{}').version).toBe(2);
-    expect(migrated).not.toContain('watchlist');
+    expect(JSON.parse(migrated ?? '{}').version).toBe(3);
+    expect(migrated).toContain('watchlist');
 
     const second = await loadStore();
 
@@ -378,7 +501,7 @@ describe('Personal Library snapshots', () => {
       mediaType: 'tv',
       id: 77,
       title: 'No poster or year',
-      collections: { watched: false, favorites: true },
+      collections: { watched: false, favorites: true, watchlist: false },
     });
   });
 
@@ -399,7 +522,7 @@ describe('Personal Library snapshots', () => {
       title: 'Fresh Movie Title',
       posterUrl: '/fresh.jpg',
       year: 2025,
-      collections: { watched: true, favorites: true },
+      collections: { watched: true, favorites: true, watchlist: false },
     });
     expect(
       useLibraryStore.getState().updateSnapshot({ ...series, id: 88 })

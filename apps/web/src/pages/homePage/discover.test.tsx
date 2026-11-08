@@ -111,12 +111,20 @@ describe('Discover page', () => {
 
     const section = screen.getByRole('region', { name: 'Streaming' });
     await within(section).findByText('Stream Movie');
-    const select = within(section).getByRole('combobox', {
+    const control = within(section).getByRole('group', {
       name: 'Streaming media type',
     });
-
-    await user.click(select);
-    await user.click(screen.getByRole('option', { name: 'Series' }));
+    expect(within(control).getAllByRole('button')).toHaveLength(3);
+    expect(
+      within(control).getByRole('button', { name: 'All' })
+    ).toHaveAttribute('aria-pressed', 'true');
+    const seriesButton = within(control).getByRole('button', {
+      name: 'Series',
+    });
+    seriesButton.focus();
+    await user.keyboard('{Enter}');
+    expect(seriesButton).toHaveFocus();
+    expect(seriesButton).toHaveAttribute('aria-pressed', 'true');
 
     await waitFor(() =>
       expect(
@@ -125,8 +133,10 @@ describe('Discover page', () => {
     );
     expect(await within(section).findByText('Stream Series')).toBeVisible();
 
-    await user.click(select);
-    await user.click(screen.getByRole('option', { name: 'All' }));
+    await user.click(within(control).getByRole('button', { name: 'Movies' }));
+    expect(await within(section).findByText('Stream Movie')).toBeVisible();
+    expect(within(section).queryByText('Stream Series')).toBeNull();
+    await user.click(within(control).getByRole('button', { name: 'All' }));
 
     expect(await within(section).findByText('Stream Movie')).toBeVisible();
     expect(within(section).getByText('Stream Series')).toBeVisible();

@@ -46,14 +46,58 @@ beforeEach(() => {
 });
 
 describe('Personal Library page', () => {
-  it('opens legacy Watchlist URLs in Favorites without a Watchlist navigation entry', () => {
+  it('renders Movie and Series Watchlist cards, removes independently and restores tab history', async () => {
+    const movie = { mediaType: 'movie' as const, id: 9, title: 'Plan film' };
+    const series = { mediaType: 'tv' as const, id: 9, title: 'Plan series' };
+    useLibraryStore.getState().add(movie, 'watchlist');
+    useLibraryStore.getState().add(series, 'watchlist');
+    useLibraryStore.getState().add(movie, 'favorites');
+    const user = userEvent.setup();
     renderLibrary('/library?collection=watchlist');
 
+    expect(screen.getByRole('link', { name: 'Plan film' })).toHaveAttribute(
+      'href',
+      '/movie/9'
+    );
+    expect(screen.getByRole('link', { name: 'Plan series' })).toHaveAttribute(
+      'href',
+      '/series/9'
+    );
+    expect(screen.getByRole('img', { name: 'Plan series' })).toBeVisible();
+    const remove = screen.getByRole('button', {
+      name: 'Remove from Watchlist Plan film',
+    });
+
+    expect(remove.closest('a')).toBeNull();
+    expect(remove.closest('button')).toBe(remove);
+    await user.click(remove);
+
+    expect(screen.queryByRole('link', { name: 'Plan film' })).toBeNull();
+    expect(useLibraryStore.getState().has('movie:9', 'favorites')).toBe(true);
+    expect(screen.getByRole('link', { name: /Watchlist \(1\)/ })).toHaveFocus();
+    await user.click(screen.getByRole('link', { name: /Favorites \(1\)/ }));
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByRole('link', { name: /Watchlist/ })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+    await user.click(screen.getByRole('button', { name: 'Forward' }));
     expect(screen.getByRole('link', { name: /Favorites/ })).toHaveAttribute(
       'aria-current',
       'page'
     );
-    expect(screen.queryByRole('link', { name: /Watchlist/ })).toBeNull();
+  });
+  it('opens Watchlist directly with its own empty state', () => {
+    renderLibrary('/library?collection=watchlist');
+
+    expect(screen.getByRole('link', { name: /Watchlist/ })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+    expect(screen.getByText('Your Watchlist is empty.')).toHaveAttribute(
+      'role',
+      'status'
+    );
   });
 
   it('reuses the primary navigation with Library active and working browse links', async () => {

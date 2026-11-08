@@ -17,6 +17,12 @@ import './libraryPage.scss';
 
 const collections: { id: LibraryCollection; label: string }[] = [
   {
+    id: 'watchlist',
+    get label() {
+      return i18n.t('ui.watchlist');
+    },
+  },
+  {
     id: 'favorites',
     get label() {
       return i18n.t('ui.favorites');
@@ -31,6 +37,9 @@ const collections: { id: LibraryCollection; label: string }[] = [
 ];
 
 const emptyMessages: Record<LibraryCollection, string> = {
+  get watchlist() {
+    return i18n.t('ui.your_watchlist_collection_is_empty');
+  },
   get watched() {
     return i18n.t('ui.you_have_not_marked_any_movies_or_series_as_watched_yet');
   },

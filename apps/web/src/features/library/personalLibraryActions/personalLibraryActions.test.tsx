@@ -8,6 +8,60 @@ beforeEach(() => {
   useLibraryStore.setState({ items: {} });
 });
 
+test.each(['movie', 'tv'] as const)(
+  'synchronizes %s Watchlist actions across components using keyboard activation',
+  async (mediaType) => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <PersonalLibraryActions
+          mediaType={mediaType}
+          id={42}
+          title="Shared title"
+        />
+        <PersonalLibraryActions
+          mediaType={mediaType}
+          id={42}
+          title="Shared title"
+          presentation="expanded"
+        />
+      </>
+    );
+    screen
+      .getAllByRole('button', { name: 'Add to Watchlist Shared title' })[0]
+      .focus();
+    await user.keyboard('{Enter}');
+
+    expect(
+      screen.getAllByRole('button', {
+        name: 'Remove from Watchlist Shared title',
+      })
+    ).toHaveLength(2);
+    expect(
+      useLibraryStore.getState().items[`${mediaType}:42`].collections
+    ).toEqual({ watched: false, favorites: false, watchlist: true });
+
+    await user.click(
+      screen.getAllByRole('button', { name: 'Mark as Watched Shared title' })[0]
+    );
+    expect(useLibraryStore.getState().has(`${mediaType}:42`, 'watchlist')).toBe(
+      true
+    );
+
+    screen
+      .getAllByRole('button', { name: 'Remove from Watchlist Shared title' })[1]
+      .focus();
+    await user.keyboard(' ');
+
+    expect(
+      screen.getAllByRole('button', { name: 'Add to Watchlist Shared title' })
+    ).toHaveLength(2);
+    expect(useLibraryStore.getState().has(`${mediaType}:42`, 'watched')).toBe(
+      true
+    );
+  }
+);
+
 test('renders independently toggleable accessible controls and synchronizes with the store', () => {
   render(
     <PersonalLibraryActions
@@ -54,7 +108,9 @@ test('renders independently toggleable accessible controls and synchronizes with
   expect(
     screen.getByRole('button', { name: 'Mark as Not Watched Interstellar' })
   ).toHaveAttribute('aria-pressed', 'true');
-  expect(screen.queryByRole('button', { name: /Watchlist/ })).toBeNull();
+  expect(
+    screen.getByRole('button', { name: 'Add to Watchlist Interstellar' })
+  ).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('keeps movie and TV items with the same TMDB ID independent', () => {

@@ -18,10 +18,17 @@ Movie Explorer is a React and NestJS app for browsing movies, series, and people
 - Browse and filter results, with shareable search and detail routes.
 - Explore movie and series details, cast, photos, videos, watch providers, and optional IMDb ratings.
 - Browse Favorites-based homepage recommendations with independent Popular fallback for Movies/Series, and Similar titles after detail-page Media.
-- Save movies and series independently in Favorites and Watched in the guest Personal Library.
+- Save movies and series independently in Favorites, Watched and Watchlist in the guest Personal Library. Favorites means liked, Watched means already seen, and Watchlist means planned viewing; a title can belong to all three. Marking Watched does not remove Watchlist membership.
 - Explore other movies in a TMDB collection on movie details, with collection duplicates removed from Similar titles.
 - View person profiles and filmographies, plus season and episode details.
 - Use the responsive photo viewer with zoom, pan, and fullscreen controls.
+
+The guest Library uses browser localStorage (`movie-explorer.personal-library`,
+schema v3), with separate `movie:id` and `tv:id` identities and compact metadata.
+Open `/library?collection=watchlist` for planned titles. Older v1/v2 data is
+migrated with a backup before writing; existing Favorites and Watched are retained.
+Storage failures show a warning while actions continue in memory. There is no
+cross-tab or cloud synchronization; clearing browser storage removes local data.
 
 ## Tech stack
 
