@@ -6,13 +6,9 @@ Movie Explorer is a full-stack application for discovering and exploring movies,
 
 ## Screenshots
 
-**Discover**
-
-![Discover page](docs/screenshots/home.png)
-
-**Movie Details**
-
-![Movie details page](docs/screenshots/details.png)
+| Discover | Movie Details |
+| --- | --- |
+| ![Discover page](docs/screenshots/home.png) | ![Movie details page](docs/screenshots/details.png) |
 
 ## Features
 
