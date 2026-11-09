@@ -24,9 +24,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Quality Gates
+  checks:
+    name: ${{ matrix.lane }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [static-security, coverage, build-e2e]
 
     steps:
       - name: Check out repository
@@ -43,19 +47,36 @@ jobs:
         run: npm ci
 
       - name: Audit production dependencies
+        if: matrix.lane == 'static-security'
         run: npm audit --omit=dev
 
       - name: Lint
+        if: matrix.lane == 'static-security'
         run: npm run lint
 
       - name: Typecheck
+        if: matrix.lane == 'static-security'
         run: npm run typecheck
 
       - name: Tests and coverage
+        if: matrix.lane == 'coverage'
         run: npm run coverage
 
       - name: Build
+        if: matrix.lane == 'build-e2e'
         run: npm run build
 
       - name: E2E tests
+        if: matrix.lane == 'build-e2e'
         run: npm run test:e2e
+
+  quality:
+    name: Quality Gates
+    needs: checks
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every verification lane
+        env:
+          RESULT: ${{ needs.checks.result }}
+        run: test "$RESULT" = success

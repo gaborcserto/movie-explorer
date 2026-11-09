@@ -194,6 +194,25 @@ npm run test:e2e
 
 The API end-to-end suite uses a mocked provider and does not require TMDB credentials.
 
+Use `npm run check:changed` during development and `npm run check:all` before
+delivery. The full command runs the production dependency audit, lint,
+typechecks, coverage (including infrastructure), builds and API E2E checks.
+It stops at the first failure and reports stage durations.
+
+Changed checks include staged, unstaged and untracked files. To include branch
+commits, use `npm run check:changed -- --base origin/main`; `--dry-run` prints
+the plan without running checks. Renames include both paths and deleted files
+still select their workspace. An invalid or unavailable base, an unknown path,
+or a package manifest change selects full verification. Shared contracts select
+both apps through workspace dependencies. Otherwise, the complete affected
+workspace lint, typecheck, coverage and build scripts run; API changes also
+run E2E. No changes select no checks. Default detection compares against HEAD;
+use an explicit base for committed branch work.
+
+CI runs the full gates in three concurrent lanes: static checks and security,
+coverage, and builds followed by E2E. The aggregate `Quality Gates` check
+requires every lane to succeed. Husky retains its existing staged-file checks.
+
 Frontend `lint` runs Oxlint, ESLint 9 Flat Config, TypeScript, an independent
 Oxfmt check, and Stylelint for SCSS. Run individual checks with
 `npm run <script> --workspace @movie-explorer/web`: `lint:oxlint`,

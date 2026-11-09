@@ -98,13 +98,13 @@ describe('<Details />', () => {
       screen.getByRole('button', { name: 'Mark as Not Watched Sample Movie' })
     ).toHaveAttribute('aria-pressed', 'true');
 
-    fireEvent.click(
+    await userEvent.click(
       screen.getByRole('button', { name: 'Add to Watchlist Sample Movie' })
     );
     expect(
       screen.getByRole('button', { name: 'Remove from Watchlist Sample Movie' })
     ).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(
+    await userEvent.click(
       screen.getByRole('button', { name: 'Remove from Watchlist Sample Movie' })
     );
     expect(

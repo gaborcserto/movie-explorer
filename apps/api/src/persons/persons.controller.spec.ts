@@ -1,5 +1,5 @@
 import { BadGatewayException, NotFoundException } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 
 import { PersonsController } from './persons.controller';
 import { PersonsService } from './persons.service';
@@ -7,16 +7,19 @@ import { PersonsService } from './persons.service';
 describe('PersonsController', () => {
   const service = { findOne: jest.fn() };
   let controller: PersonsController;
+  let module: TestingModule;
 
-  beforeEach(async () => {
-    service.findOne.mockReset();
-
-    const module = await Test.createTestingModule({
+  beforeAll(async () => {
+    module = await Test.createTestingModule({
       controllers: [PersonsController],
       providers: [{ provide: PersonsService, useValue: service }],
     }).compile();
     controller = module.get(PersonsController);
   });
+
+  beforeEach(() => service.findOne.mockReset());
+
+  afterAll(async () => module.close());
 
   it('returns the person from the service', async () => {
     const person = { id: 1, name: 'Person', filmography: [] };

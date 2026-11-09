@@ -24,7 +24,9 @@
     "aws:package": "vp run @movie-explorer/aws#task:package",
     "aws:synth": "vp run @movie-explorer/aws#task:synth",
     "aws:test": "vp run @movie-explorer/aws#task:package-test",
-    "lint:readability": "node --test scripts/readability.test.cjs && node scripts/readability.cjs && vp fmt -c apps/api/.oxfmtrc.json --check scripts/*.cjs"
+    "lint:readability": "node --test scripts/*.test.cjs && node scripts/readability.cjs && vp fmt -c apps/api/.oxfmtrc.json --check scripts/*.cjs",
+    "check:changed": "node scripts/check.cjs",
+    "check:all": "node scripts/check.cjs --all"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.72.1",
