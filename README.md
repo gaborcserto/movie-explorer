@@ -230,3 +230,9 @@ Type checking and declaration generation use TypeScript 6.0.3. Frontend
 typechecks include both application source and the Vite configuration project.
 Native Vite+ type-aware checking is available, but does not replace these
 compiler checks or declaration builds.
+
+## Agent development
+
+See [agent engineering](docs/agent-engineering.md) for mandatory instruction
+ownership, skill and workflow discovery, changed-file verification, test quality,
+and measured CI practices. Git staging and commits remain manual.

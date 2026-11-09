@@ -1,6 +1,6 @@
 ---
 name: code-readability
-description: Review source readability or apply behavior-preserving visual grouping in formatting tasks across TypeScript, React, Next.js, Node.js, NestJS, PHP/Laravel, and SCSS. Use for explicit readability audits or formatting work, not as permission for unrelated refactoring.
+description: Review source readability or apply behavior-preserving visual grouping in formatting tasks across TypeScript, JavaScript, React, Node.js, NestJS, and SCSS. Use for explicit readability audits or formatting work, not as permission for unrelated refactoring.
 ---
 
 # Code readability
@@ -45,6 +45,10 @@ order. Let the project's ESLint, Prettier, Oxfmt or equivalent rules determine
 syntax and wrapping, and do not add an import sorter for this convention.
 
 ## React component organization
+
+The directory and public-entry-point rules here are Movie Explorer conventions,
+not requirements imposed by React or Vite. When extracting this skill, adapt them
+to the target repository; they do not establish Next.js compatibility.
 
 Every new reusable React component in React, Vite, or Next.js projects must
 live in its own dedicated directory with an `index.ts` public entry point.
@@ -514,6 +518,7 @@ const filters = readFilters(params);
 const normalized = normalizeFilters(filters);
 
 saveFilters(normalized);
+
 return normalized;
 ```
 
@@ -544,13 +549,13 @@ Read only relevant references:
   directory ownership, and safe moves.
 - [TypeScript and React](references/typescript-react.md): imports, expressions,
   hooks, component structure, JSX, Next.js and Node.js boundaries.
-- [Backend](references/backend.md): NestJS classes, DTOs, integrations, PHP/Laravel.
+- [Backend](references/backend.md): NestJS classes, DTOs and integrations.
 - [Styles](references/styles.md): SCSS selectors, declarations, states and media.
 - [Testing](references/testing.md): fixtures, setup, assertions and cleanup.
 
 ## Tool boundaries and verification
 
-1. **Formatter:** let Prettier, Oxfmt, Pint, or the configured equivalent own
+1. **Formatter:** let Prettier, Oxfmt, or the configured equivalent own
    indentation, quotes, punctuation and wrapping. Do not duplicate its rulebook.
 2. **Linter:** retain enforced quality, import, accessibility and style rules.
    Do not disable rules or add formatter-ignore comments for a visual preference.
@@ -594,3 +599,14 @@ and import evaluation order; do not sort imports to satisfy grouping. A formatti
 task does not authorize extracting inline JSX handlers or reorganizing files.
 Before completion, inspect the full diff and run formatting twice to confirm
 stability. Do not claim that syntactic checks prove semantic grouping.
+
+## Scope and completion
+
+Inputs: requested files, applicable instructions, neighboring source and actual
+formatter configuration. This phase supports TypeScript/JavaScript, React,
+NestJS and existing SCSS; PHP/Python generalization is excluded. Framework
+examples apply only when that framework exists in the target project.
+Complete when the scoped diff preserves behavior and established visual groups,
+formatting is stable, and verify-change outcomes are reported. Naming, early
+returns and error paths should clarify intent; changing them is implementation,
+not formatting. Test value belongs to [test-quality](../test-quality/SKILL.md).

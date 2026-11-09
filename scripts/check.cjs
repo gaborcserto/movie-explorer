@@ -58,7 +58,16 @@ function changed(base, cwd = root) {
       .split('\0')
       .filter(Boolean);
   const files = [
-    ...git('diff', '--name-only', '-z', '--no-renames', 'HEAD', '--'),
+    ...git(
+      'diff',
+      '--cached',
+      '--name-only',
+      '-z',
+      '--no-renames',
+      'HEAD',
+      '--',
+    ),
+    ...git('diff', '--name-only', '-z', '--no-renames', '--'),
     ...git('ls-files', '--others', '--exclude-standard', '-z'),
   ];
 

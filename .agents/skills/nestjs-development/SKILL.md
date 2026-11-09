@@ -33,3 +33,11 @@ Refer to the official NestJS guides for [controllers](https://docs.nestjs.com/co
 [providers](https://docs.nestjs.com/providers), [modules](https://docs.nestjs.com/modules),
 and [validation](https://docs.nestjs.com/techniques/validation).
 For project-specific module, DTO, and error-handling examples, load [the NestJS API design reference](references/nestjs-api-design.md).
+
+## Inputs and completion
+
+Inputs: affected module graph, DTO validation, service/provider behavior and
+Jest failure/success scenarios.
+
+Complete when DI registration and HTTP error behavior are verified, focused
+regressions pass and verify-change outcomes are reported.

@@ -28,3 +28,11 @@ Use React's official [render and commit guide](https://react.dev/learn/render-an
 and [memo reference](https://react.dev/reference/react/memo) as guidance; do
 not add memoization solely because it is available. For investigation steps
 and Vite-compatible examples, load [the React performance reference](references/react-performance.md).
+
+## Inputs and completion
+
+Inputs: reproducible interaction, profiler/timing evidence, runner conditions
+and relevant component/effect dependencies.
+
+Complete when before/after evidence supports the claim, behavior remains
+protected and verification outcomes and measurement limits are reported.

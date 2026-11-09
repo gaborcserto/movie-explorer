@@ -1,20 +1,24 @@
 # Final verification
 
-Use when completing a larger phase or cross-cutting change.
+Use before delivery; check selection belongs to
+[verify-change](../skills/verify-change/SKILL.md).
 
-1. Recheck all selected skills, inspect the complete diff, and run
-   `git diff --check`. For repository-wide audits, enumerate maintained files
-   and exclusions, record each file's review outcome, and report exact inspected,
-   modified, excluded, and unresolved counts. Sampling is insufficient.
-2. For file moves, complete verify-change structural checks, including public
-   exports, imports, test discovery, hook order and stylesheet order. Run root lint, typecheck, coverage, and build.
-3. Run root e2e when API behavior, build ordering, or CI scope is involved.
-4. Check changed paths, workspace names, commands, generated output, secrets,
-   and unrelated changes. Report every check that was skipped.
-5. For formatting work, confirm a second formatter pass is stable and review
-   contextual conventions in addition to machine checks. Document justified
-   exceptions; do not report PASS with unexplained unresolved violations.
-
-For documentation-only or agent-infrastructure-only changes, validate
-referenced paths and scripts and do not run the complete application suite
-without a reason.
+1. Review the complete diff and all selected skills, including untracked files.
+   Complete [code-review](code-review.md). For audits, record exact scoped file
+   counts, exclusions, exceptions and unresolved outcomes; sampling is insufficient.
+2. Complete structural-move checks from verify-change when relevant. Run focused
+   checks while iterating and `npm run check:changed` after meaningful changes.
+   Require full verification for cross-workspace, dependency, CI or shared
+   tooling changes: use `npm run check:all` unless check:changed already passed
+   the full plan for the same inputs. Do not repeat equivalent passing gates. For documentation/skill-only work validate references and
+   scripts with `npm run validate:agents`; a selector's conservative full fallback
+   remains valid and must not be bypassed.
+3. Investigate failures, fix introduced regressions and distinguish pre-existing
+   failures with evidence. Never weaken gates, tests or assertions to get PASS.
+   Later checks after a stopped command remain unrun.
+4. Check paths, commands, generated output, secrets and unrelated changes. Run
+   `git diff --check`. For formatting changes confirm a second pass is stable;
+   machine checks do not establish semantic grouping or behavior preservation.
+5. Report scope, actual check outcomes, cache use, skipped checks and remaining
+   risks. Do not report PASS with unexplained unresolved violations. Preserve
+   manual Git: no staging, commits, pushes or pull requests without authorization.

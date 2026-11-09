@@ -44,3 +44,11 @@ project-specific code and do not copy its implementation. Consult React's
 and [Rules of Hooks](https://react.dev/reference/rules/rules-of-hooks) for
 current guidance. For project-specific component, state, effect, and
 accessibility examples, load [the React UI design reference](references/react-ui-design.md).
+
+## Inputs and completion
+
+Inputs: UI behavior, route state, ownership review, existing components and
+interaction tests.
+
+Complete when ownership, keyboard interaction, URL state and async cleanup
+are reviewed and verify-change outcomes cover affected consumers.

@@ -78,6 +78,8 @@ test('detects staged, unstaged, untracked, renamed, deleted and committed paths'
     git('commit', '-m', 'committed fixture');
     write('staged', 'changed');
     git('add', 'staged');
+    // The index still differs even when the working copy matches HEAD.
+    write('staged', 'staged');
     write('unstaged', 'changed');
     write('untracked space');
     renameSync(path.join(cwd, 'rename'), path.join(cwd, 'renamed'));

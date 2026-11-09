@@ -1,14 +1,15 @@
 # Dependency update
 
-Use for a deliberate manual dependency or workspace-tooling update. Routine
-updates may also arrive through Dependabot.
+Use for deliberate dependency/workspace-tooling changes; Dependabot owns routine
+updates. Follow AGENTS.md skill selection and inspect existing working-tree changes.
 
-1. Follow mandatory skill selection in `AGENTS.md`, then inspect the package,
-   workspace usage, lockfile, release scope, and breaking changes before editing.
-2. Update the minimum required package versions with npm from the repository
-   root; keep the lockfile aligned and do not hand-edit it.
-3. Run the affected workspace checks, then root lint, typecheck, coverage,
-   and build for cross-workspace or major changes. Run e2e when API/build
-   behavior is affected.
-4. Review the dependency diff, `git diff --check`, and ensure no generated
-   artifacts, secrets, or unrelated updates were included.
+1. Inspect package usage, actual release scope and breaking changes. Plan safe
+   milestones for larger upgrades; avoid unrelated refactoring.
+2. Update only necessary dependencies from the root with npm. Keep the lockfile
+   aligned; do not hand-edit it. Continue authorized related work autonomously.
+3. Run focused checks, then `npm run check:changed`. Use
+   [verify-change](../skills/verify-change/SKILL.md) for scope and `npm run check:all`
+   before final cross-workspace/dependency-tooling delivery unless check:changed
+   already passed the same full plan.
+4. Complete [final-verification](final-verification.md); inspect dependency scope,
+   generated artifacts, secrets and unrelated updates in particular.

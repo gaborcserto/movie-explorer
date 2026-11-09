@@ -19,3 +19,11 @@ Read `code-readability` when implementing or reviewing TypeScript readability.
 - Add or update observable tests for both API mapping/behavior and affected
   frontend behavior. Run contracts typecheck plus both app checks; use broader
   verification for breaking or cross-workspace changes.
+
+## Inputs and completion
+
+Inputs: contract diff, API DTO/provider mapping, frontend consumers and contract
+regressions.
+
+Complete when provider-neutral types and both consumers agree, compatibility
+is reviewed and verify-change outcomes cover the shared boundary.

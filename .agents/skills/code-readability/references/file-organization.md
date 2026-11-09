@@ -8,6 +8,9 @@ responsibilities, not simply collect whatever is currently nearby.
 
 ### Reusable React components
 
+The following directory rules are Movie Explorer policy, not framework
+requirements. Adapt them to the target repository before reuse elsewhere.
+
 In React, Vite, and Next.js projects, put each new reusable component in its
 own dedicated directory and provide an `index.ts` as its public entry point.
 This applies to Server and Client Components. The entry point should export the

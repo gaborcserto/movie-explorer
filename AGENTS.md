@@ -30,6 +30,9 @@ Install from the repository root with `npm install` (CI uses `npm ci`). Root
 commands run the matching workspace tasks through Vite Task:
 
 ```text
+npm run check:changed
+npm run check:all
+npm run validate:agents
 npm run dev
 npm run lint
 npm run typecheck
@@ -107,7 +110,7 @@ TypeScript and web style files; the staged commands use Oxfmt. The API also expo
 
 ### Backend and API conventions
 
-- Keep the responsibility flow clear: controller → service → provider or
+- Keep the responsibility flow clear: controller â†’ service â†’ provider or
   integration. Keep controllers thin, use NestJS dependency injection and
   module boundaries, and keep application logic in services where appropriate.
 - Validate request DTOs. Separate query, request, response, and integration
@@ -197,8 +200,8 @@ unless necessary. Reuse repository conventions, do not repeatedly run the
 full suite after minor edits, and keep final reports concise and evidence
 based.
 
-Do not rewrite history, commit, or push unless the user explicitly requests
-it. Avoid unrelated cleanup, broad formatting, and changes outside the stated
+Do not stage, create pull requests, rewrite history, commit, or push unless the
+user explicitly requests it. Avoid unrelated cleanup, broad formatting, and changes outside the stated
 scope.
 
 ## Mandatory skill selection
@@ -244,3 +247,24 @@ verification selection.
 | Implement React UI behavior and components | [.agents/skills/react-development/SKILL.md](.agents/skills/react-development/SKILL.md) |
 | Diagnose or improve measured React performance | [.agents/skills/react-performance/SKILL.md](.agents/skills/react-performance/SKILL.md) |
 | Implement general NestJS API behavior | [.agents/skills/nestjs-development/SKILL.md](.agents/skills/nestjs-development/SKILL.md) |
+
+## Instruction ownership and completion
+
+This guide and applicable nested guides are mandatory repository rules. Apply
+explicit task requirements within that scope; optional references are diagnostic
+aids, not new quality gates. Agents without native skill discovery must read the
+linked Markdown files directly; vendor-specific settings are not interchangeable.
+
+Use [dependency-update](.agents/workflows/dependency-update.md) for dependency work,
+[feature-change](.agents/workflows/feature-change.md) for implementation,
+[code-review](.agents/workflows/code-review.md) for review, and
+[final-verification](.agents/workflows/final-verification.md) before delivery.
+Execute related authorized steps autonomously; preserve unrelated working-tree
+changes. Report scope, checks actually run, cache use, unresolved failures and
+remaining risks. Never claim selected checks cover skipped workspaces.
+
+Read [test-quality](.agents/skills/test-quality/SKILL.md) when designing or
+reviewing tests, investigating flakes, or proposing consolidation/removal.
+Read [ci-performance](.agents/skills/ci-performance/SKILL.md) when measuring or
+changing CI execution. Verification selection remains owned by verify-change.
+See [agent engineering](docs/agent-engineering.md) for ownership and validation.

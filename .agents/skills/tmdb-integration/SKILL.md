@@ -20,3 +20,11 @@ that changes TMDB requests/mapping. Follow the repository rules in the root
 - Update mapper/provider/config tests for request parameters, mapping, missing
   data, and failure paths. The API e2e suite uses a mocked provider and does
   not require TMDB credentials.
+
+## Inputs and completion
+
+Inputs: provider request/response examples, integration configuration, mapper
+contracts and existing failure-path tests; use no real credentials.
+
+Complete when request/mapping and failure scenarios remain application-owned,
+contract consumers agree and verify-change outcomes are reported.
