@@ -109,7 +109,7 @@ jobs:
         run: curl --fail --retry 5 --retry-delay 5 "$SITE/api/health"
       - name: Save release artifacts for rollback
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: aws-release-${{ github.sha }}
           retention-days: 30
