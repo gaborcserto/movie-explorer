@@ -1,19 +1,23 @@
 # Movie Explorer
 
-![Movie Explorer](apps/web/public/movie-explorer-logo.svg)
+<img src="apps/web/public/movie-explorer-logo.svg" alt="Movie Explorer" width="110">
 
 Movie Explorer is a full-stack application for discovering and exploring movies, TV series, and people. It uses TMDB for catalog data and provides a responsive React interface backed by a NestJS API.
 
 ## Screenshots
 
-| Discover | Title details |
-| --- | --- |
-| ![Discover page](docs/screenshots/home.png) | ![Movie details page](docs/screenshots/details.png) |
+**Discover**
+
+![Discover page](docs/screenshots/home.png)
+
+**Movie Details**
+
+![Movie details page](docs/screenshots/details.png)
 
 ## Features
 
 - Discover movies, series, and people; search with autocomplete and filter results.
-- Open movie, series, person, season, and episode details, including cast, crew, and filmographies.
+- Open movie, series, person, season, and episode details, including cast, crew, and person filmographies.
 - Browse photo galleries in a zoomable lightbox, watch available videos, and explore related, similar, and recommended titles.
 - View regional streaming availability and optional IMDb ratings.
 - Save movies and series to a guest Library (Favorites, Watched, and Watchlist), stored in browser local storage.
@@ -70,9 +74,6 @@ GitHub Actions runs quality gates for static checks and security, coverage, buil
 ## Documentation
 
 - [Web app](apps/web/README.md) and [API](apps/api/README.md)
-- [Deployment baseline](docs/deployment.md)
-- [Recommendations and collections](docs/recommendations.md)
-- [Library persistence](docs/library.md)
 - [Agent engineering](docs/agent-engineering.md): [AGENTS.md](AGENTS.md), skills, workflows, changed-file verification, and full verification
 
 ## Credits and attribution
