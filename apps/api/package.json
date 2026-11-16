@@ -43,8 +43,9 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^24.19.2",
     "@types/supertest": "^7.2.1",
-    "eslint": "^8.57.1",
+    "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.14.0",
     "jest": "^30.5.2",
     "supertest": "^7.3.0",
     "ts-jest": "^29.4.14",
@@ -52,7 +53,7 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "6.0.3",
-    "vite-plus": "1.3.0"
+    "vite-plus": "1.6.0"
   },
   "jest": {
     "moduleFileExtensions": [

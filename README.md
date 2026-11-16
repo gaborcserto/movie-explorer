@@ -36,9 +36,10 @@ The web app calls the Movie Explorer API through its API client. NestJS controll
 
 ## Getting started
 
-Requirements: Node.js `>=24.11.0 <25` and npm `>=11.6.2 <12`.
+Requirements: Node.js `>=24.11.0 <25` and npm `>=11.21.2 <12`.
 
 ```sh
+npm install --global npm@11.21.2
 npm ci
 ```
 
