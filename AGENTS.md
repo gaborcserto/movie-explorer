@@ -77,8 +77,8 @@ TypeScript and web style files; the staged commands use Oxfmt. The API also expo
   conventions in [.agents/skills/code-readability/SKILL.md](.agents/skills/code-readability/SKILL.md) from implementation
   through final review. For React, NestJS, or other focused work, use it
   alongside the relevant implementation skill.
-- Keep changes small, focused, readable, and reviewable. Prefer descriptive
-  names and focused functions/components over clever code.
+- Prefer simple, explicit, readable, and maintainable solutions. Apply DRY, KISS, YAGNI, SOLID, and separation of concerns pragmatically: avoid hypothetical requirements, unnecessary layers, and abstractions added only to satisfy a principle. Extract or reuse code when it removes meaningful duplication, clarifies responsibility, or improves testability and maintenance; repeated lines do not automatically need a shared utility, and local solutions are preferable when sharing would create coupling.
+- Keep changes small, focused, readable, and reviewable. Prefer descriptive names and focused functions/components over clever code. Favor straightforward implementations with few moving parts; optimize when requirements or measurable evidence justify it.
 - Prefer existing local patterns when they are still appropriate. Introduce
   an abstraction only when it solves a concrete problem; avoid unnecessary
   wrappers, factories, generic utilities, speculative abstractions, dead code,
