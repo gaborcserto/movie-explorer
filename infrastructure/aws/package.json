@@ -15,11 +15,11 @@
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
-    "aws-cdk": "2.1148.1",
+    "aws-cdk": "2.1149.0",
     "aws-cdk-lib": "2.277.0",
     "constructs": "10.8.1",
     "typescript": "6.0.3",
-    "vite-plus": "1.6.0",
+    "vite-plus": "1.7.0",
     "yazl": "^3.3.1"
   }
 }
